@@ -9,6 +9,7 @@ members = [
     "crates/ere-pico",
     "crates/ere-jolt",
     "crates/ere-zisk",
+    "crates/ere-zkm",
 ]
 resolver = "2"
 
