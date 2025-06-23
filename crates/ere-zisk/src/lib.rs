@@ -186,6 +186,9 @@ impl zkVM for EreZisk {
                 //       `features = gpu` and call it here.
                 unimplemented!()
             }
+            ProverResourceType::Network(_) => {
+                panic!("Network proving not yet implemented for ZisK. Use CPU or GPU resource type.");
+            }
         }
         let proving_time = start.elapsed();
 

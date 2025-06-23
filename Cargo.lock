@@ -1297,7 +1297,7 @@ dependencies = [
  "bitflags 2.9.0",
  "cexpr",
  "clang-sys",
- "itertools 0.11.0",
+ "itertools 0.13.0",
  "log",
  "prettyplease 0.2.32",
  "proc-macro2",
@@ -2914,7 +2914,6 @@ name = "ere-sp1"
 version = "0.1.0"
 dependencies = [
  "bincode",
- "indexmap 2.9.0",
  "sp1-sdk",
  "tempfile",
  "thiserror 2.0.12",
@@ -4260,6 +4259,22 @@ name = "httpdate"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "df3b46402a9d5adb4c86a0cf463f42e19994e3ee891101b1841f30a545cb49a9"
+
+[[package]]
+name = "humantime"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9b112acc8b3adf4b107a8ec20977da0273a8c386765a3ec0229bd500a1443f9f"
+
+[[package]]
+name = "humantime-serde"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57a3db5ea5923d99402c94e9feb261dc5ee9b4efa158b0315f788cf549cc200c"
+dependencies = [
+ "humantime",
+ "serde",
+]
 
 [[package]]
 name = "hybrid-array"
@@ -8691,7 +8706,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a56d757972c98b346a9b766e3f02746cde6dd1cd1d1d563472929fdd74bec4d"
 dependencies = [
  "anyhow",
- "itertools 0.11.0",
+ "itertools 0.14.0",
  "proc-macro2",
  "quote",
  "syn 2.0.101",
@@ -9261,9 +9276,9 @@ dependencies = [
 
 [[package]]
 name = "risc0-build"
-version = "2.1.1"
+version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31d104165340cba919a3dac26c4be7da04b20b941601a7ad50c04834c4d26de5"
+checksum = "d17d6657b1fb615c0482bd4b57aae7850911ed7dbdc8e783df20e93f33209a8f"
 dependencies = [
  "anyhow",
  "cargo_metadata 0.19.2",
@@ -9300,9 +9315,9 @@ dependencies = [
 
 [[package]]
 name = "risc0-circuit-keccak"
-version = "2.0.1"
+version = "2.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7cd8acfc84307ed1be64cf9fefc390963fc22b2865d027f03405977a0cfa9747"
+checksum = "8d339c65b0e011677404bd6bdfe1b0f29748187a568fb2f74df7fb650590181a"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -9338,9 +9353,9 @@ dependencies = [
 
 [[package]]
 name = "risc0-circuit-recursion"
-version = "2.0.1"
+version = "2.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3fdd1514e94440e2da301f48d345e1937b315147f58c5dc4992feb045324651d"
+checksum = "8c6501fd3936aea2dd3e55915f34328fe96e6ca25ef00320242f837ae668785b"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -9377,9 +9392,9 @@ dependencies = [
 
 [[package]]
 name = "risc0-circuit-rv32im"
-version = "2.0.3"
+version = "2.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23f6ed144d8b8f93c4a6096e3dd90f9dcbd91eff83eae690a72fd6e640760b94"
+checksum = "c80e0a8f0f56106295bb682dbc27093438e163a5f6384a79e877ab895a11d9ae"
 dependencies = [
  "anyhow",
  "auto_ops",
@@ -9409,9 +9424,9 @@ dependencies = [
 
 [[package]]
 name = "risc0-circuit-rv32im-sys"
-version = "2.0.1"
+version = "2.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3904bb2fb2d26f96dd8dea5c5fcd7b86efd7e6f3e6dc56ef33e3e7fee51c4de"
+checksum = "ddac6b8acb1db761872fafa063155d99fe2cc845dc60037cde9ac05466044898"
 dependencies = [
  "cc",
  "cust",
@@ -9517,9 +9532,9 @@ dependencies = [
 
 [[package]]
 name = "risc0-zkvm"
-version = "2.0.2"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a049319790277845335445b549d49e66341f4a7ffba7f7aaa1e77e2fc4a9c19"
+checksum = "0f1014d2efcb3b359aff878c9aeb6aa949a6d91f091a2ffb5ffd8d928a1ab7f3"
 dependencies = [
  "addr2line 0.22.0",
  "anyhow",
@@ -13399,6 +13414,7 @@ dependencies = [
  "auto_impl",
  "bincode",
  "erased-serde",
+ "humantime-serde",
  "indexmap 2.9.0",
  "serde",
  "serde_json",

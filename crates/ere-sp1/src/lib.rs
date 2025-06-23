@@ -4,13 +4,13 @@ use std::time::Instant;
 
 use compile::compile_sp1_program;
 use sp1_sdk::{
-    CpuProver, CudaProver, Prover, ProverClient, SP1ProofWithPublicValues, SP1ProvingKey, SP1Stdin,
-    SP1VerifyingKey,
+    CpuProver, CudaProver, NetworkProver, Prover, ProverClient, SP1ProofWithPublicValues,
+    SP1ProvingKey, SP1Stdin, SP1VerifyingKey,
 };
 use tracing::info;
 use zkvm_interface::{
-    Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
-    zkVM, zkVMError,
+    Compiler, Input, InputItem, NetworkProverConfig, ProgramExecutionReport, ProgramProvingReport,
+    ProverResourceType, zkVM, zkVMError,
 };
 
 mod compile;
@@ -21,6 +21,7 @@ use error::{ExecuteError, ProveError, SP1Error, VerifyError};
 enum ProverType {
     Cpu(CpuProver),
     Gpu(CudaProver),
+    Network(NetworkProver),
 }
 
 impl ProverType {
@@ -31,6 +32,7 @@ impl ProverType {
         match self {
             ProverType::Cpu(cpu_prover) => cpu_prover.setup(program),
             ProverType::Gpu(cuda_prover) => cuda_prover.setup(program),
+            ProverType::Network(network_prover) => network_prover.setup(program),
         }
     }
 
@@ -42,6 +44,7 @@ impl ProverType {
         let cpu_executor_builder = match self {
             ProverType::Cpu(cpu_prover) => cpu_prover.execute(program, input),
             ProverType::Gpu(cuda_prover) => cuda_prover.execute(program, input),
+            ProverType::Network(network_prover) => network_prover.execute(program, input),
         };
 
         cpu_executor_builder
@@ -54,8 +57,11 @@ impl ProverType {
         input: &SP1Stdin,
     ) -> Result<SP1ProofWithPublicValues, SP1Error> {
         match self {
-            ProverType::Cpu(cpu_prover) => cpu_prover.prove(pk, input).core().run(),
-            ProverType::Gpu(cuda_prover) => cuda_prover.prove(pk, input).core().run(),
+            ProverType::Cpu(cpu_prover) => cpu_prover.prove(pk, input).compressed().run(),
+            ProverType::Gpu(cuda_prover) => cuda_prover.prove(pk, input).compressed().run(),
+            ProverType::Network(network_prover) => {
+                network_prover.prove(pk, input).compressed().run()
+            }
         }
         .map_err(|e| SP1Error::Prove(ProveError::Client(e.into())))
     }
@@ -68,6 +74,7 @@ impl ProverType {
         match self {
             ProverType::Cpu(cpu_prover) => cpu_prover.verify(proof, vk),
             ProverType::Gpu(cuda_prover) => cuda_prover.verify(proof, vk),
+            ProverType::Network(network_prover) => network_prover.verify(proof, vk),
         }
         .map_err(|e| SP1Error::Verify(VerifyError::Client(e.into())))
     }
@@ -96,6 +103,28 @@ impl Compiler for RV32_IM_SUCCINCT_ZKVM_ELF {
 }
 
 impl EreSP1 {
+    fn create_network_prover(config: &NetworkProverConfig) -> NetworkProver {
+        let mut builder = ProverClient::builder().network();
+        // Check if we have a private key in the config or environment
+        if let Some(api_key) = &config.api_key {
+            builder = builder.private_key(api_key);
+        } else if let Ok(private_key) = std::env::var("NETWORK_PRIVATE_KEY") {
+            builder = builder.private_key(&private_key);
+        } else {
+            panic!(
+                "Network proving requires a private key. Set NETWORK_PRIVATE_KEY environment variable or provide api_key in NetworkProverConfig"
+            );
+        }
+        // Set the RPC URL if provided
+        if !config.endpoint.is_empty() {
+            builder = builder.rpc_url(&config.endpoint);
+        } else if let Ok(rpc_url) = std::env::var("NETWORK_RPC_URL") {
+            builder = builder.rpc_url(&rpc_url);
+        }
+        // Otherwise SP1 SDK will use its default RPC URL
+        builder.build()
+    }
+
     pub fn new(
         program: <RV32_IM_SUCCINCT_ZKVM_ELF as Compiler>::Program,
         resource: ProverResourceType,
@@ -103,6 +132,9 @@ impl EreSP1 {
         let client = match resource {
             ProverResourceType::Cpu => ProverType::Cpu(ProverClient::builder().cpu().build()),
             ProverResourceType::Gpu => ProverType::Gpu(ProverClient::builder().cuda().build()),
+            ProverResourceType::Network(config) => {
+                ProverType::Network(Self::create_network_prover(&config))
+            }
         };
         let (pk, vk) = client.setup(&program);
 
@@ -292,5 +324,53 @@ mod prove_tests {
         let zkvm = EreSP1::new(elf_bytes, ProverResourceType::Cpu);
         let prove_result = zkvm.prove(&empty_input);
         assert!(prove_result.is_err())
+    }
+
+    #[test]
+    #[ignore = "Requires NETWORK_PRIVATE_KEY environment variable to be set"]
+    fn test_prove_sp1_network() {
+        // Check if we have the required environment variable
+        if std::env::var("NETWORK_PRIVATE_KEY").is_err() {
+            eprintln!("Skipping network test: NETWORK_PRIVATE_KEY not set");
+            return;
+        }
+
+        let elf_bytes = get_compiled_test_sp1_elf_for_prove()
+            .expect("Failed to compile test SP1 guest for proving test");
+
+        let mut input_builder = Input::new();
+        let n: u32 = 42;
+        let a: u16 = 42;
+        input_builder.write(n);
+        input_builder.write(a);
+
+        // Create a network prover configuration
+        let network_config = NetworkProverConfig {
+            endpoint: std::env::var("NETWORK_RPC_URL").unwrap_or_default(),
+            api_key: std::env::var("NETWORK_PRIVATE_KEY").ok(),
+        };
+
+        let zkvm = EreSP1::new(elf_bytes, ProverResourceType::Network(network_config));
+
+        // Execute first to ensure the program works
+        let exec_result = zkvm.execute(&input_builder);
+        assert!(exec_result.is_ok(), "Execution should succeed");
+
+        // Now prove using the network
+        let proof_bytes = match zkvm.prove(&input_builder) {
+            Ok((prove_result, report)) => {
+                println!("Network proving completed in {:?}", report.proving_time);
+                prove_result
+            }
+            Err(err) => {
+                panic!("Network proving error: {:?}", err);
+            }
+        };
+
+        assert!(!proof_bytes.is_empty(), "Proof bytes should not be empty.");
+
+        // Verify the proof
+        let verify_result = zkvm.verify(&proof_bytes);
+        assert!(verify_result.is_ok(), "Verification should succeed");
     }
 }

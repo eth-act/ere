@@ -13,6 +13,7 @@ indexmap = { version = "2.9.0", features = ["serde"] }
 thiserror = "2"
 auto_impl = "1.0"
 erased-serde = "0.4.6"
+humantime-serde = "1.1"
 
 [dev-dependencies]
 serde_json = "1"
