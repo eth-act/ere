@@ -52,11 +52,27 @@ else
     exit 1
 fi
 
-echo "Checking for cargo-zisk CLI tool (using +zisk toolchain)..."
+echo "Checking for cargo-zisk CLI tool..."
 if cargo-zisk --version; then
     echo "cargo-zisk CLI tool verified successfully."
 else
     echo "Error: 'cargo-zisk --version' failed." >&2
-    echo "       Attempting verification with cargo-zisk directly (if in PATH from ${ZISK_BIN_DIR})..."
+    exit 1
+fi
+
+# Step 3: Build cargo-zisk-gpu from source with GPU features enabled
+TEMP_DIR=$(mktemp -d)
+git clone https://github.com/0xPolygonHermez/zisk.git "$TEMP_DIR/zisk"
+cd "$TEMP_DIR/zisk"
+cargo build --release --features gpu
+cp ./target/release/cargo-zisk "${HOME}/.zisk/bin/cargo-zisk-gpu"
+cp ./target/release/libzisk_witness.so "${HOME}/.zisk/bin/libzisk_witness_gpu.so"
+rm -rf "$TEMP_DIR"
+
+echo "Checking for cargo-zisk-gpu CLI tool..."
+if cargo-zisk-gpu --version; then
+    echo "cargo-zisk-gpu CLI tool verified successfully."
+else
+    echo "Error: 'cargo-zisk-gpu --version' failed." >&2
     exit 1
 fi
