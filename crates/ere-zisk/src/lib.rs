@@ -202,6 +202,7 @@ impl zkVM for EreZisk {
                     .arg("--output-dir")
                     .arg(tempdir.output_dir_path())
                     .arg("--aggregation")
+                    .arg("--verify-proofs")
                     .status()
                     .map_err(|e| ZiskError::Prove(ProveError::CargoZiskProve { source: e }))?;
 
