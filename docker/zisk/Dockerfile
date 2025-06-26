@@ -28,8 +28,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openmpi-bin \
     openmpi-common \
     libclang-dev \
-    clang \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    clang
+
+RUN wget https://developer.download.nvidia.com/compute/cuda/repos/$(. /etc/os-release && echo "${ID}${VERSION_ID}" | tr -d '.')/$(uname -i)/cuda-keyring_1.1-1_all.deb && \
+    dpkg -i cuda-keyring_1.1-1_all.deb && \
+    rm cuda-keyring_1.1-1_all.deb && \
+    apt update && \
+    apt install -y cuda-toolkit && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy the ZisK SDK installer script from the workspace context
 COPY scripts/sdk_installers/install_zisk_sdk.sh /tmp/install_zisk_sdk.sh
