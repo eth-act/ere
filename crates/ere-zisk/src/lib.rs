@@ -184,9 +184,32 @@ impl zkVM for EreZisk {
                 }
             }
             ProverResourceType::Gpu => {
-                // TODO: Need to install another version of `cargo-zisk` with
-                //       `features = gpu` and call it here.
-                unimplemented!()
+                // TODO: Use `mpi` to do distributed proving, probably need the
+                // `ProverResourceType` to specify the number of cores to use.
+                let witness_lib_path = dot_zisk_dir_path()
+                    .join("bin")
+                    .join("libzisk_witness_gpu.so");
+                let status = Command::new("cargo-zisk-gpu")
+                    .arg("prove")
+                    .arg("--witness-lib")
+                    .arg(witness_lib_path)
+                    .arg("--elf")
+                    .arg(tempdir.elf_path())
+                    .arg("--asm")
+                    .arg(tempdir.asm_path())
+                    .arg("--input")
+                    .arg(tempdir.input_path())
+                    .arg("--output-dir")
+                    .arg(tempdir.output_dir_path())
+                    .arg("--aggregation")
+                    .status()
+                    .map_err(|e| ZiskError::Prove(ProveError::CargoZiskProve { source: e }))?;
+
+                if !status.success() {
+                    return Err(
+                        ZiskError::Prove(ProveError::CargoZiskProveFailed { status }).into(),
+                    );
+                }
             }
             ProverResourceType::Network(_) => {
                 panic!(
@@ -257,6 +280,10 @@ impl zkVM for EreZisk {
     }
 }
 
+fn dot_zisk_dir_path() -> PathBuf {
+    PathBuf::from(std::env::var("HOME").expect("env `$HOME` should be set")).join(".zisk")
+}
+
 struct ZiskTempDir {
     tempdir: TempDir,
     elf_hash: Option<String>,
@@ -285,8 +312,7 @@ impl ZiskTempDir {
             fs::create_dir(tempdir.zisk_dir_path())?;
 
             // Check the global zisk directory exists.
-            let home_dir = std::env::var("HOME").unwrap_or_default();
-            let global_zisk_dir_path = PathBuf::from(home_dir).join(".zisk").join("zisk");
+            let global_zisk_dir_path = dot_zisk_dir_path().join("zisk");
             if !global_zisk_dir_path.exists() {
                 return Err(io::Error::new(
                     io::ErrorKind::NotFound,
