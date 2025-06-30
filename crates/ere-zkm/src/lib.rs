@@ -37,10 +37,9 @@ impl ProverType {
         &self,
         program: &<RV32_IM_ZKM_ZKVM_ELF as Compiler>::Program,
         input: &ZKMStdin,
-    ) -> Result<(ZKM_sdk::ZKMPublicValues, ZKM_sdk::ExecutionReport), ZKMError> {
+    ) -> Result<(zkm_sdk::ZKMPublicValues, zkm_sdk::ExecutionReport), ZKMError> {
         let cpu_executor_builder = match self {
             ProverType::Cpu(cpu_prover) => cpu_prover.execute(program, input),
-            ProverType::Gpu(cuda_prover) => cuda_prover.execute(program, input),
         };
 
         cpu_executor_builder
@@ -185,7 +184,7 @@ mod execute_tests {
         let workspace_dir = env!("CARGO_WORKSPACE_DIR");
         PathBuf::from(workspace_dir)
             .join("tests")
-            .join("ZKM")
+            .join("zkm")
             .join("execute")
             .join("basic")
             .canonicalize()
@@ -240,7 +239,7 @@ mod prove_tests {
         let workspace_dir = env!("CARGO_WORKSPACE_DIR");
         PathBuf::from(workspace_dir)
             .join("tests")
-            .join("ZKM")
+            .join("zkm")
             .join("prove")
             .join("basic")
             .canonicalize()
