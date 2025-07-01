@@ -3747,8 +3747,8 @@ dependencies = [
 
 [[package]]
 name = "lib-c"
-version = "0.8.1"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.8.1#f9a3655e16e1a767235fe50c23b6de74ad2f6534"
+version = "0.9.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.9.0#efbcdd4dddb39cf410d496358d01ee133a484780"
 
 [[package]]
 name = "libc"

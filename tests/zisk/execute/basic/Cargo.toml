@@ -6,4 +6,4 @@ edition = "2021"
 [workspace]
 
 [dependencies]
-ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.8.1" }
+ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.9.0" }

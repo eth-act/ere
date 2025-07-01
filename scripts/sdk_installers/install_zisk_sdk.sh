@@ -32,11 +32,10 @@ ensure_tool_installed "cargo" "as cargo-zisk is a cargo subcommand"
 
 # Step 1: Download and run the script that installs the ziskup binary itself.
 # Export SETUP_KEY=proving to ensure no interactive options in `ziskup`.
+export ZISK_VERSION="0.9.0"
 export SETUP_KEY=${SETUP_KEY:=proving}
-export ZISK_VERSION=0.8.1
-curl https://raw.githubusercontent.com/0xPolygonHermez/zisk/v0.8.1/ziskup/install.sh | sed "s/main/v$ZISK_VERSION/g" | bash
+curl "https://raw.githubusercontent.com/0xPolygonHermez/zisk/v$ZISK_VERSION/ziskup/install.sh" | sed "s/main/v$ZISK_VERSION/g" | bash
 unset SETUP_KEY
-unset ZISK_VERSION
 
 # Step 2: Ensure the installed cargo-zisk binary is in PATH for this script session.
 export PATH="${PATH}:${HOME}/.zisk/bin"
@@ -62,7 +61,7 @@ fi
 
 # Step 3: Build cargo-zisk-gpu from source with GPU features enabled
 TEMP_DIR=$(mktemp -d)
-git clone https://github.com/0xPolygonHermez/zisk.git "$TEMP_DIR/zisk"
+git clone https://github.com/0xPolygonHermez/zisk.git --single-branch --branch "v$ZISK_VERSION" "$TEMP_DIR/zisk"
 cd "$TEMP_DIR/zisk"
 cargo build --release --features gpu
 cp ./target/release/cargo-zisk "${HOME}/.zisk/bin/cargo-zisk-gpu"
