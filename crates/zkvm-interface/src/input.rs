@@ -1,15 +1,28 @@
+use std::{fmt::Debug, sync::Arc};
+
 use bincode::Options;
 use erased_serde::Serialize as ErasedSerialize;
 use serde::Serialize;
 
+#[derive(Clone)]
 pub enum InputItem {
     /// A serializable object stored as a trait object
-    Object(Box<dyn ErasedSerialize>),
+    Object(Arc<Box<dyn ErasedSerialize + Send + Sync>>),
     /// Pre-serialized bytes (e.g., from bincode)
     Bytes(Vec<u8>),
 }
 
+impl Debug for InputItem {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            InputItem::Object(_) => f.write_str("Object(<erased>)"),
+            InputItem::Bytes(bytes) => f.debug_tuple("Bytes").field(bytes).finish(),
+        }
+    }
+}
+
 /// Represents a builder for input data to be passed to a ZKVM guest program.
+#[derive(Debug, Clone)]
 pub struct Input {
     items: Vec<InputItem>,
 }
@@ -28,8 +41,9 @@ impl Input {
     }
 
     /// Write a serializable value as a trait object
-    pub fn write<T: Serialize + 'static>(&mut self, value: T) {
-        self.items.push(InputItem::Object(Box::new(value)));
+    pub fn write<T: Serialize + Send + Sync + 'static>(&mut self, value: T) {
+        self.items
+            .push(InputItem::Object(Arc::new(Box::new(value))));
     }
 
     /// Write pre-serialized bytes directly
@@ -81,7 +95,7 @@ impl InputItem {
                 erased_serde::serialize(obj.as_ref(), &mut serializer)?;
                 Ok(buf)
             }
-            InputItem::Bytes(bytes) => Ok(bytes.clone()),
+            InputItem::Bytes(bytes) => Ok(bytes.to_vec()),
         }
     }
 }
@@ -91,7 +105,7 @@ mod input_erased_tests {
     use super::*;
     use serde::{Deserialize, Serialize};
 
-    #[derive(Debug, Serialize, Deserialize, PartialEq)]
+    #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
     struct Person {
         name: String,
         age: u32,
@@ -125,7 +139,7 @@ mod input_erased_tests {
         assert_eq!(input.len(), 1);
 
         match &input.items[0] {
-            InputItem::Bytes(stored_bytes) => assert_eq!(stored_bytes, &bytes),
+            InputItem::Bytes(stored_bytes) => assert_eq!(stored_bytes.to_vec(), bytes),
             InputItem::Object(_) => panic!("Expected Bytes, got Object"),
         }
     }

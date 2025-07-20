@@ -6,7 +6,7 @@ edition = "2021"
 [workspace]
 
 [build-dependencies]
-risc0-build = { version = "^2.1.1" }
+risc0-build = { version = "^2.3.0" }
 
 [package.metadata.risc0]
 methods = ["guest"]
