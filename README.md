@@ -46,6 +46,7 @@
 - Jolt
 - Pico
 - Zisk
+- Nexus
 
 ## Quick Start
 
