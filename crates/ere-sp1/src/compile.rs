@@ -19,7 +19,7 @@ pub fn compile(
     docker::build_image(&PathBuf::from("docker/sp1/Dockerfile"), tag)
         .map_err(|e| CompileError::DockerImageBuildFailed(Box::new(e)))?;
 
-    // Compile the guest program using the SP1 docker image
+    // Prepare paths for compilation
     let mount_directory_str = workspace_directory
         .to_str()
         .ok_or_else(|| CompileError::InvalidMountPath(workspace_directory.to_path_buf()))?;
@@ -41,22 +41,15 @@ pub fn compile(
         mount_directory_str, container_guest_program_str
     );
 
-    let status = Command::new("docker")
-        .args([
-            "run",
-            "--rm",
-            // Mount volumes
-            "-v",
-            &format!("{mount_directory_str}:/guest-workspace"),
-            "-v",
-            &format!("{elf_output_dir_str}:/output"),
-            tag,
-            // Guest compiler execution
-            "./guest-compiler",
-            container_guest_program_str,
-            "/output",
-        ])
-        .status()
+    // Build and run Docker command
+    let docker_cmd = DockerRunCommand::new(tag)
+        .remove_after_run()
+        .with_volume(mount_directory_str, "/guest-workspace")
+        .with_volume(elf_output_dir_str, "/output")
+        .with_command(["./guest-compiler", container_guest_program_str, "/output"]);
+
+    let status = docker_cmd
+        .run()
         .map_err(CompileError::DockerCommandFailed)?;
 
     if !status.success() {
@@ -120,5 +113,65 @@ mod tests {
                 );
             }
         }
+    }
+}
+
+#[derive(Debug)]
+struct DockerRunCommand {
+    image: String,
+    volumes: Vec<(String, String)>, // (host_path, container_path)
+    command: Vec<String>,
+    // remove image after running
+    remove_after: bool,
+}
+
+impl DockerRunCommand {
+    fn new(image: impl Into<String>) -> Self {
+        Self {
+            image: image.into(),
+            volumes: Vec::new(),
+            command: Vec::new(),
+            remove_after: false,
+        }
+    }
+
+    fn with_volume(
+        mut self,
+        host_path: impl Into<String>,
+        container_path: impl Into<String>,
+    ) -> Self {
+        self.volumes.push((host_path.into(), container_path.into()));
+        self
+    }
+
+    fn with_command(mut self, args: impl IntoIterator<Item = impl Into<String>>) -> Self {
+        self.command.extend(args.into_iter().map(|s| s.into()));
+        self
+    }
+
+    fn remove_after_run(mut self) -> Self {
+        self.remove_after = true;
+        self
+    }
+
+    fn to_args(&self) -> Vec<String> {
+        let mut args = vec!["run".to_string()];
+
+        if self.remove_after {
+            args.push("--rm".to_string());
+        }
+
+        for (host_path, container_path) in &self.volumes {
+            args.extend(["-v".to_string(), format!("{host_path}:{container_path}")]);
+        }
+
+        args.push(self.image.clone());
+        args.extend(self.command.iter().cloned());
+
+        args
+    }
+
+    fn run(&self) -> Result<std::process::ExitStatus, std::io::Error> {
+        Command::new("docker").args(self.to_args()).status()
     }
 }
