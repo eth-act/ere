@@ -25,7 +25,9 @@ build-utils = { workspace = true }
 
 [features]
 metal = ["risc0-zkvm/metal"]
-cuda = ["risc0-zkvm/cuda"]
+# Cuda prover is temporarily disabled, will be re-enabled after
+# https://github.com/eth-act/ere/pull/50 is merged, and supports multi-gpus.
+cuda = []
 
 [lints]
 workspace = true
