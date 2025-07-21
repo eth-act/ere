@@ -162,8 +162,8 @@ impl zkVM for EreZisk {
         // Prove.
 
         // TODO: Use `mpirun --np {num_processes} cargo-zisk prove ...` to
-        //       utilize multiple CPU cores, probably need the `ProverResourceType`
-        //       to specify the number of cores to use.
+        //       utilize multiple CPUs, probably need the `ProverResourceType`
+        //       to specify the number of available CPUs.
 
         let start = time::Instant::now();
         match self.resource {
@@ -195,7 +195,7 @@ impl zkVM for EreZisk {
             ProverResourceType::Gpu => {
                 // TODO: Set env `CUDA_VISIBLE_DEVICES = {0..num_devices}` to
                 //       control how many GPUs to use, probably need the `ProverResourceType`
-                //       to specify the number of cores to use.
+                //       to specify the number of available GPUs.
                 let witness_lib_path = dot_zisk_dir_path()
                     .join("bin")
                     .join("libzisk_witness_gpu.so");
