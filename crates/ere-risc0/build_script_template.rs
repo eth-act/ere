@@ -1,4 +1,4 @@
-// This is ere-risczero/build_script_template.rs
+// This is ere-risc0/build_script_template.rs
 // This script will be temporarily copied as build.rs into the target methods crate.
 
 use std::env;

@@ -2336,7 +2336,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ere-risczero"
+name = "ere-risc0"
 version = "0.1.0"
 dependencies = [
  "anyhow",

@@ -2,7 +2,7 @@ use std::{io, path::PathBuf, process::ExitStatus};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum RiscZeroError {
+pub enum Risc0Error {
     #[error(transparent)]
     Compile(#[from] CompileError),
 }

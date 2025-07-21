@@ -6,7 +6,7 @@ members = [
     "crates/ere-nexus",
     "crates/ere-openvm",
     "crates/ere-pico",
-    "crates/ere-risczero",
+    "crates/ere-risc0",
     "crates/ere-sp1",
     "crates/ere-zisk",
     # zkVM interface

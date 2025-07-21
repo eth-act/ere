@@ -1,6 +1,6 @@
 use std::{path::Path, time::Instant};
 
-use compile::compile_risczero_program;
+use compile::compile_risc0_program;
 use risc0_zkvm::{ExecutorEnv, ProverOpts, Receipt, default_executor, default_prover};
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
@@ -13,13 +13,13 @@ mod compile;
 pub use compile::Risc0Program;
 
 mod error;
-use error::RiscZeroError;
+use error::Risc0Error;
 
 #[allow(non_camel_case_types)]
-pub struct RV32_IM_RISCZERO_ZKVM_ELF;
+pub struct RV32_IM_RISC0_ZKVM_ELF;
 
-impl Compiler for RV32_IM_RISCZERO_ZKVM_ELF {
-    type Error = RiscZeroError;
+impl Compiler for RV32_IM_RISC0_ZKVM_ELF {
+    type Error = Risc0Error;
 
     type Program = Risc0Program;
 
@@ -27,14 +27,13 @@ impl Compiler for RV32_IM_RISCZERO_ZKVM_ELF {
         workspace_directory: &Path,
         guest_relative: &Path,
     ) -> Result<Self::Program, Self::Error> {
-        compile_risczero_program(&workspace_directory.join(guest_relative))
-            .map_err(RiscZeroError::from)
+        compile_risc0_program(&workspace_directory.join(guest_relative)).map_err(Risc0Error::from)
     }
 }
 
 impl EreRisc0 {
     pub fn new(
-        program: <RV32_IM_RISCZERO_ZKVM_ELF as Compiler>::Program,
+        program: <RV32_IM_RISC0_ZKVM_ELF as Compiler>::Program,
         resource_type: ProverResourceType,
     ) -> Self {
         match resource_type {
@@ -61,7 +60,7 @@ impl EreRisc0 {
 }
 
 pub struct EreRisc0 {
-    program: <RV32_IM_RISCZERO_ZKVM_ELF as Compiler>::Program,
+    program: <RV32_IM_RISC0_ZKVM_ELF as Compiler>::Program,
     #[allow(dead_code)]
     resource_type: ProverResourceType,
 }
@@ -148,16 +147,16 @@ mod prove_tests {
         let workspace_dir = env!("CARGO_WORKSPACE_DIR");
         PathBuf::from(workspace_dir)
             .join("tests")
-            .join("risczero")
+            .join("risc0")
             .join("compile")
             .join("project_structure_build")
             .canonicalize()
             .expect("Failed to find or canonicalize test Risc0 methods crate")
     }
 
-    fn get_compiled_test_r0_elf_for_prove() -> Result<Risc0Program, RiscZeroError> {
+    fn get_compiled_test_r0_elf_for_prove() -> Result<Risc0Program, Risc0Error> {
         let test_guest_path = get_prove_test_guest_program_path();
-        RV32_IM_RISCZERO_ZKVM_ELF::compile(&test_guest_path, Path::new(""))
+        RV32_IM_RISC0_ZKVM_ELF::compile(&test_guest_path, Path::new(""))
     }
 
     #[test]
@@ -208,16 +207,16 @@ mod execute_tests {
     use super::*;
     use zkvm_interface::Input;
 
-    fn get_compiled_test_r0_elf() -> Result<Risc0Program, RiscZeroError> {
+    fn get_compiled_test_r0_elf() -> Result<Risc0Program, Risc0Error> {
         let test_guest_path = get_execute_test_guest_program_path();
-        RV32_IM_RISCZERO_ZKVM_ELF::compile(&test_guest_path, Path::new(""))
+        RV32_IM_RISC0_ZKVM_ELF::compile(&test_guest_path, Path::new(""))
     }
 
     fn get_execute_test_guest_program_path() -> PathBuf {
         let workspace_dir = env!("CARGO_WORKSPACE_DIR");
         PathBuf::from(workspace_dir)
             .join("tests")
-            .join("risczero")
+            .join("risc0")
             .join("compile")
             .join("project_structure_build")
             .canonicalize()
