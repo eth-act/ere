@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        crate: [ere-sp1] 
+        crate: [ere-sp1, ere-risc0]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

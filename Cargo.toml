@@ -14,6 +14,7 @@ members = [
 
     # Guest compilers
     "docker/sp1",
+    "docker/risc0",
 ]
 resolver = "2"
 

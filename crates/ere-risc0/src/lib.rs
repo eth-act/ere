@@ -27,7 +27,7 @@ impl Compiler for RV32_IM_RISC0_ZKVM_ELF {
         workspace_directory: &Path,
         guest_relative: &Path,
     ) -> Result<Self::Program, Self::Error> {
-        compile_risc0_program(&workspace_directory.join(guest_relative)).map_err(Risc0Error::from)
+        compile_risc0_program(workspace_directory, guest_relative).map_err(Risc0Error::from)
     }
 }
 
@@ -149,7 +149,7 @@ mod prove_tests {
             .join("tests")
             .join("risc0")
             .join("compile")
-            .join("project_structure_build")
+            .join("basic")
             .canonicalize()
             .expect("Failed to find or canonicalize test Risc0 methods crate")
     }
@@ -218,7 +218,7 @@ mod execute_tests {
             .join("tests")
             .join("risc0")
             .join("compile")
-            .join("project_structure_build")
+            .join("basic")
             .canonicalize()
             .expect("Failed to find or canonicalize test Risc0 methods crate")
     }

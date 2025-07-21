@@ -1,8 +1,16 @@
 ARG BASE_IMAGE_TAG=latest
+
+# Build guest-compiler binary
+FROM rust:1.85 AS builder
+RUN apt-get update && apt-get install -y build-essential libclang-dev
+WORKDIR /guest-compiler
+COPY . .
+RUN cargo build --release -p risc0-guest-compiler
+
+# Build zkVM builder image
 FROM ere-base:${BASE_IMAGE_TAG}
 
 ARG USERNAME=ere_user
-USER root
 
 # Ensure Cargo/Rustup environment variables are set from the base image for SDK script
 ENV RUSTUP_HOME=/usr/local/rustup \
@@ -20,14 +28,11 @@ RUN /tmp/install_risc0_sdk.sh
 # Verify Risc0 installation (script also does this, but good for Dockerfile sanity)
 RUN echo "Verifying Risc0 installation in Dockerfile (post-script)..." && cargo risczero --version
 
-# Copy the entire ere project context
-# The WORKDIR is /app from the base image
-WORKDIR /app
-COPY . .
+# Get docker for `cargo risczero build`
+RUN curl -fsSL https://get.docker.com | sh
 
-# Run tests
-RUN echo "Running tests for ere-risczero library..." && \
-    cargo test --release -p ere-risczero --lib -- --color always
+# Copy guest compiler binary
+COPY --from=builder /guest-compiler/target/release/risc0-guest-compiler /guest-compiler/guest-compiler
+WORKDIR /guest-compiler
 
-
-CMD ["/bin/bash"] 
+CMD ["/bin/bash"]

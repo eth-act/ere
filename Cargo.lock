@@ -2348,6 +2348,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "thiserror 2.0.12",
+ "tracing",
  "zkvm-interface",
 ]
 
@@ -7839,6 +7840,17 @@ dependencies = [
  "serde_json",
  "stability",
  "tempfile",
+ "tracing",
+]
+
+[[package]]
+name = "risc0-guest-compiler"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "tempfile",
+ "toml 0.8.22",
  "tracing",
 ]
 

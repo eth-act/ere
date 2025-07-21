@@ -1,15 +1,13 @@
-mod file_utils;
-use file_utils::FileRestorer;
-use risc0_zkvm::Digest;
-
 use crate::error::CompileError;
+use build_utils::docker;
+use risc0_zkvm::{Digest, compute_image_id};
 use serde::{Deserialize, Serialize};
-use serde_json::Value as JsonValue;
 use std::{
-    fs,
     path::{Path, PathBuf},
-    process::Command,
+    str::FromStr,
 };
+use tempfile::TempDir;
+use tracing::info;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Risc0Program {
@@ -19,70 +17,68 @@ pub struct Risc0Program {
     pub(crate) image_id: Digest,
 }
 
-/// BUILD_SCRIPT_TEMPLATE that we will use to fetch the elf-path
-/// TODO: We might be able to deterministically get the elf path
-/// TODO: But note we also probably want the image id too, so not sure
-/// TODO: we can remove this hack sometime soon.
-const BUILD_SCRIPT_TEMPLATE: &str = include_str!("../build_script_template.rs");
+pub fn compile_risc0_program(
+    workspace_directory: &Path,
+    guest_program_relative: &Path,
+) -> Result<Risc0Program, CompileError> {
+    // Build the SP1 docker image
+    let tag = "ere-build-risc0:latest";
+    docker::build_image(&PathBuf::from("docker/risc0/Dockerfile"), tag)
+        .map_err(|e| CompileError::DockerImageBuildFailed(Box::new(e)))?;
 
-pub(crate) fn compile_risc0_program(path: &Path) -> Result<Risc0Program, CompileError> {
-    if !path.exists() || !path.is_dir() {
-        return Err(CompileError::InvalidMethodsPath(path.to_path_buf()));
+    // Prepare paths for compilation
+    let mount_directory_str = workspace_directory
+        .to_str()
+        .ok_or_else(|| CompileError::InvalidMountPath(workspace_directory.to_path_buf()))?;
+
+    let elf_output_dir = TempDir::new().map_err(CompileError::CreatingTempOutputDirectoryFailed)?;
+    let elf_output_dir_str = elf_output_dir
+        .path()
+        .to_str()
+        .ok_or_else(|| CompileError::InvalidTempOutputPath(elf_output_dir.path().to_path_buf()))?;
+
+    let container_mount_directory = PathBuf::from_str("/guest-workspace").unwrap();
+    let container_guest_program_path = container_mount_directory.join(guest_program_relative);
+    let container_guest_program_str = container_guest_program_path
+        .to_str()
+        .ok_or_else(|| CompileError::InvalidGuestPath(guest_program_relative.to_path_buf()))?;
+
+    info!(
+        "Compiling program: mount_directory={} guest_program={}",
+        mount_directory_str, container_guest_program_str
+    );
+
+    // Build and run Docker command
+    let docker_cmd = docker::DockerRunCommand::new(tag)
+        .remove_after_run()
+        // Needed by `cargo risczero build` which uses docker in docker.
+        .with_volume("/var/run/docker.sock", "/var/run/docker.sock")
+        .with_volume(mount_directory_str, "/guest-workspace")
+        .with_volume(elf_output_dir_str, "/output")
+        .with_command(["./guest-compiler", container_guest_program_str, "/output"]);
+
+    let status = docker_cmd
+        .run()
+        .map_err(CompileError::DockerCommandFailed)?;
+
+    if !status.success() {
+        return Err(CompileError::DockerContainerRunFailed(status));
     }
 
-    // Inject `build.rs`
-    let build_rs_path = path.join("build.rs");
-    let _restorer = FileRestorer::new(&build_rs_path)?;
-    fs::write(&build_rs_path, BUILD_SCRIPT_TEMPLATE)
-        .map_err(|e| CompileError::io(e, "writing template build.rs"))?;
+    // Read the compiled ELF program from the output directory
+    let elf = std::fs::read(elf_output_dir.path().join("guest.elf"))
+        .map_err(CompileError::ReadCompiledELFProgram)?;
 
-    // Run `cargo build`
-    let output = Command::new("cargo")
-        .current_dir(path)
-        .arg("build")
-        .arg("--release")
-        .output()
-        .map_err(|e| CompileError::io(e, "spawning cargo build"))?;
+    let image_id = compute_image_id(&elf).map_err(CompileError::ComputeImaegIdFailed)?;
 
-    if !output.status.success() {
-        return Err(CompileError::CargoBuildFailure {
-            crate_path: path.to_path_buf(),
-            status: output.status,
-            stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
-            stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
-        });
-    }
-
-    // Read guest info JSON
-    let info_file = path.join("ere_guest_info.json");
-    let info_text = fs::read_to_string(&info_file)
-        .map_err(|e| CompileError::io(e, "reading ere_guest_info.json"))?;
-    let info_json: JsonValue = serde_json::from_str(&info_text)
-        .map_err(|e| CompileError::serde(e, "parsing ere_guest_info.json"))?;
-
-    let elf_path = info_json["elf_path"]
-        .as_str()
-        .map(PathBuf::from)
-        .ok_or_else(|| CompileError::MissingJsonField {
-            field: "elf_path",
-            file: info_file.clone(),
-        })?;
-    let image_id_hex_str = info_json["image_id_hex"].as_str().unwrap();
-    let image_id = hex::decode(image_id_hex_str).unwrap();
-    let image_id = image_id.try_into().unwrap();
-
-    // Return Program
-    fs::read(&elf_path)
-        .map_err(|e| CompileError::io(e, "reading ELF file"))
-        .map(|elf| Risc0Program { elf, image_id })
+    Ok(Risc0Program { elf, image_id })
 }
 
 #[cfg(test)]
 mod tests {
     mod compile {
-
         use crate::compile::compile_risc0_program;
-        use std::path::PathBuf;
+        use std::path::{Path, PathBuf};
 
         fn get_test_risc0_methods_crate_path() -> PathBuf {
             let workspace_dir = env!("CARGO_WORKSPACE_DIR");
@@ -90,7 +86,7 @@ mod tests {
                 .join("tests")
                 .join("risc0")
                 .join("compile")
-                .join("project_structure_build")
+                .join("basic")
                 .canonicalize()
                 .expect("Failed to find or canonicalize test Risc0 methods crate")
         }
@@ -99,8 +95,8 @@ mod tests {
         fn test_compile_risc0_method_with_custom_build_rs() {
             let test_methods_path = get_test_risc0_methods_crate_path();
 
-            let program =
-                compile_risc0_program(&test_methods_path).expect("risc0 compilation failed");
+            let program = compile_risc0_program(&test_methods_path, Path::new(""))
+                .expect("risc0 compilation failed");
             assert!(
                 !program.elf.is_empty(),
                 "Risc0 ELF bytes should not be empty."
