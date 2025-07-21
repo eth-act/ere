@@ -16,7 +16,3 @@ tracing = "0.1"
 
 [build-dependencies]
 build-utils.workspace = true
-
-[lib]
-name = "ere_succinct"
-path = "src/lib.rs"
