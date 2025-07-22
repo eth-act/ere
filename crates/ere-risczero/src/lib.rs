@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::{path::Path, time::Instant};
 
 use compile::compile_risczero_program;
 use risc0_zkvm::{ExecutorEnv, ProverOpts, Receipt, default_executor, default_prover};
@@ -23,8 +23,12 @@ impl Compiler for RV32_IM_RISCZERO_ZKVM_ELF {
 
     type Program = Risc0Program;
 
-    fn compile(path_to_program: &std::path::Path) -> Result<Self::Program, Self::Error> {
-        compile_risczero_program(path_to_program).map_err(RiscZeroError::from)
+    fn compile(
+        workspace_directory: &Path,
+        guest_relative: &Path,
+    ) -> Result<Self::Program, Self::Error> {
+        compile_risczero_program(&workspace_directory.join(guest_relative))
+            .map_err(RiscZeroError::from)
     }
 }
 
@@ -153,7 +157,7 @@ mod prove_tests {
 
     fn get_compiled_test_r0_elf_for_prove() -> Result<Risc0Program, RiscZeroError> {
         let test_guest_path = get_prove_test_guest_program_path();
-        RV32_IM_RISCZERO_ZKVM_ELF::compile(&test_guest_path)
+        RV32_IM_RISCZERO_ZKVM_ELF::compile(&test_guest_path, Path::new(""))
     }
 
     #[test]
@@ -206,7 +210,7 @@ mod execute_tests {
 
     fn get_compiled_test_r0_elf() -> Result<Risc0Program, RiscZeroError> {
         let test_guest_path = get_execute_test_guest_program_path();
-        RV32_IM_RISCZERO_ZKVM_ELF::compile(&test_guest_path)
+        RV32_IM_RISCZERO_ZKVM_ELF::compile(&test_guest_path, Path::new(""))
     }
 
     fn get_execute_test_guest_program_path() -> PathBuf {

@@ -17,7 +17,12 @@ pub trait Compiler {
     type Program: Clone + Send + Sync;
 
     /// Compiles the program and returns the program
-    fn compile(path_to_program: &Path) -> Result<Self::Program, Self::Error>;
+    ///
+    /// # Arguments
+    /// * `mount_directory` - The base directory (workspace root)
+    /// * `guest_relative` - The relative path from mount_directory to the guest program
+    fn compile(mount_directory: &Path, guest_relative: &Path)
+    -> Result<Self::Program, Self::Error>;
 }
 
 /// ResourceType specifies what resource will be used to create the proofs.

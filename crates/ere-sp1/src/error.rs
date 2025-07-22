@@ -33,6 +33,8 @@ pub enum CompileError {
     DockerCommandFailed(#[source] std::io::Error),
     #[error("Docker container run failed with status: {0}")]
     DockerContainerRunFailed(std::process::ExitStatus),
+    #[error("Invalid mount path: {0}")]
+    InvalidMountPath(PathBuf),
     #[error("Invalid guest program path: {0}")]
     InvalidGuestPath(PathBuf),
     #[error("Failed to create temporary directory: {0}")]

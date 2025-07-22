@@ -1,6 +1,6 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use std::time::Instant;
+use std::{path::Path, time::Instant};
 
 use sp1_sdk::{
     CpuProver, CudaProver, NetworkProver, Prover, ProverClient, SP1ProofWithPublicValues,
@@ -106,8 +106,11 @@ impl Compiler for RV32_IM_SUCCINCT_ZKVM_ELF {
 
     type Program = Vec<u8>;
 
-    fn compile(path_to_program: &std::path::Path) -> Result<Self::Program, Self::Error> {
-        compile::compile(path_to_program).map_err(SP1Error::from)
+    fn compile(
+        workspace_directory: &Path,
+        guest_relative: &Path,
+    ) -> Result<Self::Program, Self::Error> {
+        compile::compile(workspace_directory, guest_relative).map_err(SP1Error::from)
     }
 }
 
@@ -232,7 +235,7 @@ mod execute_tests {
 
     fn get_compiled_test_sp1_elf() -> Result<Vec<u8>, SP1Error> {
         let test_guest_path = get_execute_test_guest_program_path();
-        RV32_IM_SUCCINCT_ZKVM_ELF::compile(&test_guest_path)
+        RV32_IM_SUCCINCT_ZKVM_ELF::compile(&test_guest_path, Path::new(""))
     }
 
     fn get_execute_test_guest_program_path() -> PathBuf {
@@ -303,7 +306,7 @@ mod prove_tests {
 
     fn get_compiled_test_sp1_elf_for_prove() -> Result<Vec<u8>, SP1Error> {
         let test_guest_path = get_prove_test_guest_program_path();
-        RV32_IM_SUCCINCT_ZKVM_ELF::compile(&test_guest_path)
+        RV32_IM_SUCCINCT_ZKVM_ELF::compile(&test_guest_path, Path::new(""))
     }
 
     #[test]

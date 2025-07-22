@@ -17,7 +17,7 @@ blake3 = "1.3.1"
 
 [dev-dependencies]
 # Adding this to make sure `lib-c/build.rs` is ran before testing.
-lib-c = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.8.1" }
+lib-c = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.9.0" }
 
 [build-dependencies]
 build-utils = { workspace = true }

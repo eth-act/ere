@@ -78,8 +78,9 @@ ere-sp1        = { path = "crates/ere-sp1" }
 use zkvm_interface::{Compiler, zkVM, Input};
 use ere_sp1::{EreSP1, RV32_IM_SUCCINCT_ZKVM_ELF};
 
-let guest = std::path::Path::new("guest/hello");
-let elf    = RV32_IM_SUCCINCT_ZKVM_ELF::compile(guest)?;      // compile
+let mount_directory = std::path::Path::new(".");
+let guest_relative = std::path::Path::new("guest/hello");
+let elf = RV32_IM_SUCCINCT_ZKVM_ELF::compile(mount_directory, guest_relative)?; // compile
 let mut io = Input::new();
 io.write(&42u32)?;
 let zkvm = EreSP1::new(elf);
