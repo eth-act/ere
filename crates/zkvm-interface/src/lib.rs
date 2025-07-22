@@ -71,16 +71,23 @@ pub enum zkVMError {
 
 #[allow(non_camel_case_types)]
 #[auto_impl::auto_impl(&, Arc, Box)]
-/// zkVM trait to abstract away the differences between each zkVM
+/// zkVM trait to abstract away the differences between each zkVM.
+///
+/// This trait provides a unified interface, the workflow is:
+/// 1. Compile a guest program using the corresponding `Compiler`.
+/// 2. Create a zkVM instance with the compiled program and prover resource.
+/// 3. Execute, prove, and verify using the zkVM instance methods.
+///
+/// Note that a zkVM instance is created for specific program, each zkVM
+/// implementation will have their own construction function.
 pub trait zkVM {
-    /// Executes the given program with the inputs accumulated in the Input struct.
-    /// For RISCV programs, `program_bytes` will be the ELF binary
+    /// Executes the program with the provided inputs.
     fn execute(&self, inputs: &Input) -> Result<ProgramExecutionReport, zkVMError>;
 
-    /// Creates a proof for a given program
+    /// Creates a proof of the program execution with given inputs.
     fn prove(&self, inputs: &Input) -> Result<(Vec<u8>, ProgramProvingReport), zkVMError>;
 
-    /// Verifies a proof for the given program
+    /// Verifies a proof of the program used to create this zkVM instance.
     /// TODO: Pass public inputs too and check that they match if they come with the
     /// TODO: proof, or append them if they do not.
     /// TODO: We can also just have this return the public inputs, but then the user needs

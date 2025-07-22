@@ -74,7 +74,7 @@ ere-sp1        = { path = "crates/ere-sp1" }
 ### 3. Compile & Prove Example
 
 ```rust
-use zkvm_interface::{Compiler, zkVM, Input};
+use zkvm_interface::{Compiler, zkVM, Input, ProverResourceType};
 use ere_sp1::{EreSP1, RV32_IM_SUCCINCT_ZKVM_ELF};
 
 let mount_directory = std::path::Path::new(".");
@@ -82,9 +82,9 @@ let guest_relative = std::path::Path::new("guest/hello");
 let elf = RV32_IM_SUCCINCT_ZKVM_ELF::compile(mount_directory, guest_relative)?; // compile
 let mut io = Input::new();
 io.write(&42u32)?;
-let zkvm = EreSP1::new(elf);
-let (proof, _report) = zkvm.prove(&io)?;             // prove
-zkvm.verify(&elf, &proof)?;                                // verify
+let zkvm = EreSP1::new(elf, ProverResourceType::Cpu);      // create zkVM instance
+let (proof, _report) = zkvm.prove(&io)?;                   // prove
+zkvm.verify(&proof)?;                                      // verify
 ```
 
 ### 4. Run the Test Suite
@@ -113,7 +113,7 @@ docker/               ← Dockerfiles & build contexts
 `zkvm-interface` exposes two core traits:
 
 * **Compiler** – compile a guest project into the correct zkVM artifact. For most this will be a RISCV ELF binary or some type that wraps it and includes extra metadata such as a proving and verifying key.
-* **zkVM** – execute, prove & verify that artifact
+* **zkVM** – execute, prove & verify that artifact. A zkVM instance is created for specific `program`, where the `program` comes from the `Compiler`.
 
 ### Backend Crates
 
