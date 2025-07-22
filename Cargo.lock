@@ -8730,9 +8730,9 @@ dependencies = [
 
 [[package]]
 name = "sp1-sdk"
-version = "5.0.7"
+version = "5.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d20372512858547350dc4fcbed57b9c6af3812da10aa9d497f7625b22bd564d2"
+checksum = "bb6f73c5efb1f55c0b6dca8a9427124eff4e36bd57108a96a7eb5a6034cf61a1"
 dependencies = [
  "alloy-primitives 1.1.0",
  "anyhow",
