@@ -8,9 +8,8 @@ license.workspace = true
 [dependencies]
 zkvm-interface = { workspace = true }
 build-utils = { workspace = true }
-anyhow = "1.0"                                               #TODO: remove only needed in tests
-#toml = "0.8"
-risc0-zkvm = { version = "2.3.0", features = ["unstable"] }
+anyhow = "1.0"
+risc0-zkvm = { version = "^2.3.0", features = ["prove", "unstable"] }
 borsh = "1.5.7"
 hex = "*"
 
