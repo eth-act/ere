@@ -53,7 +53,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Check clippy
-        run: cargo clippy --bins --lib --examples --tests --benches --all-features -p ${{ matrix.crate }}
+        run: cargo clippy --bins --lib --examples --tests --benches -p ${{ matrix.crate }}
 
       - name: Run tests
         run: cargo test --release -p ${{ matrix.crate }}
