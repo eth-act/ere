@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use thiserror::Error;
 use zkvm_interface::zkVMError;
 
@@ -17,6 +18,14 @@ pub enum NexusError {
 
     #[error(transparent)]
     Verify(#[from] VerifyError),
+
+    /// Guest program directory does not exist.
+    #[error("guest program directory not found: {0}")]
+    PathNotFound(PathBuf),
+
+    /// Expected ELF file was not produced.
+    #[error("ELF file not found at {0}")]
+    ElfNotFound(PathBuf),
 }
 
 #[derive(Debug, Error)]

@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Instant;
 
 use nexus_sdk::compile::cargo::CargoPackager;
@@ -28,13 +28,22 @@ impl Compiler for NEXUS_TARGET {
 
     type Program = PathBuf;
 
-    fn compile(path: &std::path::Path) -> Result<Self::Program, Self::Error> {
-        std::env::set_current_dir(path).map_err(|e| CompileError::Client(e.into()))?;
+    fn compile(
+        workspace_directory: &Path,
+        guest_relative: &Path,
+    ) -> Result<Self::Program, Self::Error> {
+        let guest_path = workspace_directory.join(guest_relative);
 
-        let package_name = get_cargo_package_name(path)
+        // 1. Check guest path
+        if !guest_path.exists() {
+            return Err(NexusError::PathNotFound(guest_path.to_path_buf()));
+        }
+        std::env::set_current_dir(&guest_path).map_err(|e| CompileError::Client(e.into()))?;
+
+        let package_name = get_cargo_package_name(&guest_path)
             .ok_or(CompileError::Client(Box::from(format!(
                 "Failed to get guest package name, where guest path: {:?}",
-                path
+                guest_path
             ))))
             .map_err(|e| CompileError::Client(e.into()))?;
         let mut prover_compiler = NexusCompiler::<CargoPackager>::new(&package_name);
@@ -172,7 +181,7 @@ mod tests {
     #[test]
     fn test_compile() -> anyhow::Result<()> {
         let test_guest_path = get_test_guest_program_path();
-        let elf_path = NEXUS_TARGET::compile(&test_guest_path)?;
+        let elf_path = NEXUS_TARGET::compile(&test_guest_path, Path::new(""))?;
         let prover: Stwo<Local> = Stwo::new_from_file(&elf_path.to_string_lossy().to_string())?;
         let elf = prover.elf.clone();
         assert!(
@@ -185,7 +194,8 @@ mod tests {
     #[test]
     fn test_execute() {
         let test_guest_path = get_test_guest_program_path();
-        let elf = NEXUS_TARGET::compile(&test_guest_path).expect("compilation failed");
+        let elf =
+            NEXUS_TARGET::compile(&test_guest_path, Path::new("")).expect("compilation failed");
         let mut input = Input::new();
         input.write(10u64);
 
@@ -196,7 +206,7 @@ mod tests {
     #[test]
     fn test_prove_verify() -> anyhow::Result<()> {
         let test_guest_path = get_test_guest_program_path();
-        let elf = NEXUS_TARGET::compile(&test_guest_path)?;
+        let elf = NEXUS_TARGET::compile(&test_guest_path, Path::new(""))?;
         let mut input = Input::new();
         input.write(10u64);
 
