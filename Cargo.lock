@@ -7849,6 +7849,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
+ "hex",
  "tempfile",
  "toml 0.8.22",
  "tracing",

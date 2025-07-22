@@ -1,6 +1,6 @@
 use crate::error::CompileError;
 use build_utils::docker;
-use risc0_zkvm::{Digest, compute_image_id};
+use risc0_zkvm::Digest;
 use serde::{Deserialize, Serialize};
 use std::{
     path::{Path, PathBuf},
@@ -68,8 +68,13 @@ pub fn compile_risc0_program(
     // Read the compiled ELF program from the output directory
     let elf = std::fs::read(elf_output_dir.path().join("guest.elf"))
         .map_err(CompileError::ReadCompiledELFProgram)?;
-
-    let image_id = compute_image_id(&elf).map_err(CompileError::ComputeImaegIdFailed)?;
+    let image_id = std::fs::read(elf_output_dir.path().join("image_id"))
+        .and_then(|image_id| {
+            Digest::try_from(image_id)
+                .map_err(|image_id| format!("Invalid image id: {image_id:?}"))
+                .map_err(std::io::Error::other)
+        })
+        .map_err(CompileError::ReadImageId)?;
 
     Ok(Risc0Program { elf, image_id })
 }
@@ -92,7 +97,7 @@ mod tests {
         }
 
         #[test]
-        fn test_compile_risc0_method_with_custom_build_rs() {
+        fn test_compile_risc0_method() {
             let test_methods_path = get_test_risc0_methods_crate_path();
 
             let program = compile_risc0_program(&test_methods_path, Path::new(""))

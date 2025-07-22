@@ -11,8 +11,8 @@ struct Cli {
     /// Path to the guest program crate directory.
     guest_folder: PathBuf,
 
-    /// Compiled ELF output folder where guest.elf will be placed.
-    elf_output_folder: PathBuf,
+    /// Output folder where compiled `guest.elf` and `image_id` will be placed.
+    output_folder: PathBuf,
 }
 
 pub fn main() -> anyhow::Result<()> {
@@ -65,7 +65,7 @@ pub fn main() -> anyhow::Result<()> {
     // ── build into a temp dir ─────────────────────────────────────────────
     info!(
         "Running `cargo risczero build` → dir: {}",
-        args.elf_output_folder.display()
+        args.output_folder.display()
     );
 
     let output = Command::new("cargo")
@@ -112,11 +112,17 @@ pub fn main() -> anyhow::Result<()> {
     info!("Risc0 program compiled OK - {} bytes", elf_bytes.len());
     info!("Image ID - {image_id}");
 
-    fs::copy(&elf_path, args.elf_output_folder.join("guest.elf")).with_context(|| {
+    fs::copy(&elf_path, args.output_folder.join("guest.elf")).with_context(|| {
         format!(
             "Failed to copy elf file from {} to {}",
             elf_path.display(),
-            args.elf_output_folder.join("guest.elf").display()
+            args.output_folder.join("guest.elf").display()
+        )
+    })?;
+    fs::write(args.output_folder.join("image_id"), hex::decode(image_id)?).with_context(|| {
+        format!(
+            "Failed to write image id to {}",
+            args.output_folder.join("image_id").display()
         )
     })?;
 

@@ -25,6 +25,8 @@ pub enum CompileError {
     InvalidTempOutputPath(PathBuf),
     #[error("Failed to read compiled ELF program: {0}")]
     ReadCompiledELFProgram(#[source] std::io::Error),
+    #[error("Failed to read image id: {0}")]
+    ReadImageId(#[source] std::io::Error),
     #[error("Failed to compute image id: {0}")]
     ComputeImaegIdFailed(#[source] anyhow::Error),
 }
