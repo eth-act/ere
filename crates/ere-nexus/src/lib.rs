@@ -1,3 +1,4 @@
+#![allow(clippy::uninlined_format_args)]
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
@@ -77,7 +78,7 @@ impl zkVM for EreNexus {
             private_input.extend(
                 input
                     .as_bytes()
-                    .map_err(|e| NexusError::Prove(ProveError::Client(e.into())))
+                    .map_err(|err| NexusError::Prove(ProveError::Client(err)))
                     .map_err(zkVMError::from)?,
             );
         }
@@ -106,7 +107,7 @@ impl zkVM for EreNexus {
             private_input.extend(
                 input
                     .as_bytes()
-                    .map_err(|e| NexusError::Prove(ProveError::Client(e.into())))
+                    .map_err(|err| NexusError::Prove(ProveError::Client(err)))
                     .map_err(zkVMError::from)?,
             );
         }

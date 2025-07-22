@@ -264,8 +264,8 @@ mod execute_tests {
 
         let result = zkvm.execute(&input_builder);
 
-        if let Err(e) = &result {
-            panic!("Execution error: {:?}", e);
+        if let Err(err) = &result {
+            panic!("Execution error: {err}");
         }
     }
 
@@ -325,7 +325,7 @@ mod prove_tests {
         let proof_bytes = match zkvm.prove(&input_builder) {
             Ok((prove_result, _)) => prove_result,
             Err(err) => {
-                panic!("Proving error in test: {:?}", err);
+                panic!("Proving error in test: {err}");
             }
         };
 
@@ -387,7 +387,7 @@ mod prove_tests {
                 prove_result
             }
             Err(err) => {
-                panic!("Network proving error: {:?}", err);
+                panic!("Network proving error: {err}");
             }
         };
 

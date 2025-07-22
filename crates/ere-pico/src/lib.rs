@@ -161,7 +161,7 @@ mod tests {
             "Attempting to find test guest program at: {}",
             path.display()
         );
-        println!("Workspace dir is: {}", workspace_dir);
+        println!("Workspace dir is: {workspace_dir}");
 
         path.canonicalize()
             .expect("Failed to find or canonicalize test guest program at <CARGO_WORKSPACE_DIR>/tests/pico/compile/basic/app")
@@ -176,11 +176,8 @@ mod tests {
             Ok(elf_bytes) => {
                 assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
             }
-            Err(e) => {
-                panic!(
-                    "compile_sp1_program direct call failed for dedicated guest: {:?}",
-                    e
-                );
+            Err(err) => {
+                panic!("compile_sp1_program direct call failed for dedicated guest: {err}");
             }
         }
     }

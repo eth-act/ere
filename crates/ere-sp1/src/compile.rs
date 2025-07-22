@@ -93,8 +93,8 @@ mod tests {
             Ok(elf_bytes) => {
                 assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
             }
-            Err(e) => {
-                panic!("compile failed for dedicated guest: {:?}", e);
+            Err(err) => {
+                panic!("compile failed for dedicated guest: {err}");
             }
         }
     }
@@ -106,11 +106,8 @@ mod tests {
             Ok(elf_bytes) => {
                 assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
             }
-            Err(e) => {
-                panic!(
-                    "compile_sp1_program direct call failed for dedicated guest: {:?}",
-                    e
-                );
+            Err(err) => {
+                panic!("compile_sp1_program direct call failed for dedicated guest: {err}");
             }
         }
     }

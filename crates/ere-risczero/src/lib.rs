@@ -102,7 +102,7 @@ impl zkVM for EreRisc0 {
                     env.write(serialize).unwrap();
                 }
                 InputItem::Bytes(items) => {
-                    env.write_frame(&items);
+                    env.write_frame(items);
                 }
             }
         }
@@ -121,7 +121,7 @@ impl zkVM for EreRisc0 {
 
     fn verify(&self, proof: &[u8]) -> Result<(), zkVMError> {
         let decoded: Receipt =
-            borsh::from_slice(&proof).map_err(|err| zkVMError::Other(Box::new(err)))?;
+            borsh::from_slice(proof).map_err(|err| zkVMError::Other(Box::new(err)))?;
 
         decoded
             .verify(self.program.image_id)
@@ -175,7 +175,7 @@ mod prove_tests {
         let proof_bytes = match zkvm.prove(&input_builder) {
             Ok((prove_result, _)) => prove_result,
             Err(err) => {
-                panic!("Proving error in test: {:?}", err);
+                panic!("Proving error in test: {err}",);
             }
         };
 
@@ -238,8 +238,8 @@ mod execute_tests {
 
         let result = zkvm.execute(&input_builder);
 
-        if let Err(e) = &result {
-            panic!("Execution error: {:?}", e);
+        if let Err(err) = &result {
+            panic!("Execution error: {err}");
         }
     }
 
