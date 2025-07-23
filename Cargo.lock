@@ -7818,7 +7818,7 @@ dependencies = [
  "hex",
  "risc0-zkvm",
  "tempfile",
- "toml",
+ "toml 0.8.22",
  "tracing",
  "zkvm-interface",
 ]
