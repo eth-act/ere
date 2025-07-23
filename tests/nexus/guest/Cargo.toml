@@ -10,4 +10,5 @@ nexus-rt = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "0.3.4",
 #
 [features]
 cycles = [] # Enable cycle counting for run command
+[workspace]
 

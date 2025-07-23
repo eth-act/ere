@@ -17,8 +17,6 @@ members = [
 ]
 resolver = "2"
 
-exclude = ["tests"]
-
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
