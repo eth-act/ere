@@ -2340,8 +2340,10 @@ name = "ere-risc0"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bincode",
  "borsh",
  "build-utils",
+ "bytemuck",
  "hex",
  "risc0-zkvm",
  "serde",
@@ -7806,6 +7808,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "risc0-cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bincode",
+ "borsh",
+ "clap",
+ "hex",
+ "risc0-zkvm",
+ "tempfile",
+ "toml",
+ "tracing",
+ "zkvm-interface",
+]
+
+[[package]]
 name = "risc0-core"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7840,18 +7858,6 @@ dependencies = [
  "serde_json",
  "stability",
  "tempfile",
- "tracing",
-]
-
-[[package]]
-name = "risc0-guest-compiler"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "hex",
- "tempfile",
- "toml 0.8.22",
  "tracing",
 ]
 

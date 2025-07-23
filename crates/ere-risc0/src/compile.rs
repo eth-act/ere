@@ -22,7 +22,7 @@ pub fn compile_risc0_program(
     guest_program_relative: &Path,
 ) -> Result<Risc0Program, CompileError> {
     // Build the SP1 docker image
-    let tag = "ere-build-risc0:latest";
+    let tag = "ere-risc0-cli:latest";
     docker::build_image(&PathBuf::from("docker/risc0/Dockerfile"), tag)
         .map_err(|e| CompileError::DockerImageBuildFailed(Box::new(e)))?;
 
@@ -55,7 +55,7 @@ pub fn compile_risc0_program(
         .with_volume("/var/run/docker.sock", "/var/run/docker.sock")
         .with_volume(mount_directory_str, "/guest-workspace")
         .with_volume(elf_output_dir_str, "/output")
-        .with_command(["./guest-compiler", container_guest_program_str, "/output"]);
+        .with_command(["compile", container_guest_program_str, "/output"]);
 
     let status = docker_cmd
         .run()
