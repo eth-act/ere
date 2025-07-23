@@ -153,7 +153,7 @@ mod tests {
         let test_guest_path = get_compile_test_guest_program_path();
         let program = JOLT_TARGET::compile(&test_guest_path, Path::new("")).unwrap();
         let mut inputs = Input::new();
-        inputs.write(1);
+        inputs.write(1_u32);
 
         let zkvm = EreJolt::new(program, ProverResourceType::Cpu);
         let _execution = zkvm.execute(&inputs).unwrap();
