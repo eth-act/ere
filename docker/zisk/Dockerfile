@@ -43,8 +43,7 @@ RUN chmod +x /tmp/install_zisk_sdk.sh
 
 # Run the ZisK SDK installation script using ziskup.
 # This script installs the 'zisk' Rust toolchain and cargo-zisk.
-# TODO: Download the proving key if the CI runner has enough disk space.
-RUN SETUP_KEY=verify /tmp/install_zisk_sdk.sh && rm /tmp/install_zisk_sdk.sh # Clean up the script
+RUN /tmp/install_zisk_sdk.sh && rm /tmp/install_zisk_sdk.sh # Clean up the script
 
 # The 'zisk' Rust toolchain is now installed.
 # cargo-zisk is installed in /root/.zisk/bin.
@@ -55,17 +54,3 @@ ENV PATH="${PATH}:${ZISK_BIN_DIR}"
 
 # Verify cargo-zisk is accessible
 RUN echo "Verifying Zisk installation in Dockerfile ..." && cargo-zisk --version
-
-# Copy the entire ere project context
-# The WORKDIR is /app from the base image
-WORKDIR /app
-COPY . .
-
-# Run only compile and execution test, because proving requires ~31 GiB disk
-# space for the provingKey.
-# TODO: Run all tests if the CI runner has enough disk space to install the proving key.
-RUN echo "Running tests for ere-zisk library..." && \
-    rm -rf ~/.zisk/provingKey && \
-    cargo test --release -p ere-zisk --lib -- --color always compile::tests execute_tests
-
-CMD ["/bin/bash"]

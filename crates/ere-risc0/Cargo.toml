@@ -7,7 +7,6 @@ license.workspace = true
 
 [dependencies]
 zkvm-interface = { workspace = true }
-build-utils = { workspace = true }
 anyhow = "1.0"
 risc0-zkvm = { version = "^2.3.0", features = ["unstable"] }
 borsh = "1.5.7"

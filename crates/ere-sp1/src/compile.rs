@@ -1,65 +1,102 @@
-use std::{
-    path::{Path, PathBuf},
-    str::FromStr,
-};
-
-use build_utils::docker;
+use crate::error::CompileError;
+use std::{fs, path::Path, process::Command};
 use tempfile::TempDir;
 use tracing::info;
-
-use crate::error::CompileError;
 
 pub fn compile(
     workspace_directory: &Path,
     guest_program_relative: &Path,
 ) -> Result<Vec<u8>, CompileError> {
-    // Build the SP1 docker image
-    let tag = "ere-build-sp1:latest";
-    docker::build_image(&PathBuf::from("docker/sp1/Dockerfile"), tag)
-        .map_err(|e| CompileError::DockerImageBuildFailed(Box::new(e)))?;
+    let program_crate_path = workspace_directory.join(guest_program_relative);
+    info!("Compiling SP1 program at {}", program_crate_path.display());
 
-    // Prepare paths for compilation
-    let mount_directory_str = workspace_directory
-        .to_str()
-        .ok_or_else(|| CompileError::InvalidMountPath(workspace_directory.to_path_buf()))?;
-
-    let elf_output_dir = TempDir::new().map_err(CompileError::CreatingTempOutputDirectoryFailed)?;
-    let elf_output_dir_str = elf_output_dir
-        .path()
-        .to_str()
-        .ok_or_else(|| CompileError::InvalidTempOutputPath(elf_output_dir.path().to_path_buf()))?;
-
-    let container_mount_directory = PathBuf::from_str("/guest-workspace").unwrap();
-    let container_guest_program_path = container_mount_directory.join(guest_program_relative);
-    let container_guest_program_str = container_guest_program_path
-        .to_str()
-        .ok_or_else(|| CompileError::InvalidGuestPath(guest_program_relative.to_path_buf()))?;
-
-    info!(
-        "Compiling program: mount_directory={} guest_program={}",
-        mount_directory_str, container_guest_program_str
-    );
-
-    // Build and run Docker command
-    let docker_cmd = docker::DockerRunCommand::new(tag)
-        .remove_after_run()
-        .with_volume(mount_directory_str, "/guest-workspace")
-        .with_volume(elf_output_dir_str, "/output")
-        .with_command(["./guest-compiler", container_guest_program_str, "/output"]);
-
-    let status = docker_cmd
-        .run()
-        .map_err(CompileError::DockerCommandFailed)?;
-
-    if !status.success() {
-        return Err(CompileError::DockerContainerRunFailed(status));
+    if !program_crate_path.exists() || !program_crate_path.is_dir() {
+        return Err(CompileError::InvalidProgramPath(
+            program_crate_path.to_path_buf(),
+        ));
     }
 
-    // Read the compiled ELF program from the output directory
-    let elf = std::fs::read(elf_output_dir.path().join("guest.elf"))
-        .map_err(CompileError::ReadCompiledELFProgram)?;
+    let guest_manifest_path = program_crate_path.join("Cargo.toml");
+    if !guest_manifest_path.exists() {
+        return Err(CompileError::CargoTomlMissing {
+            program_dir: program_crate_path.to_path_buf(),
+            manifest_path: guest_manifest_path.clone(),
+        });
+    }
 
-    Ok(elf)
+    // ── read + parse Cargo.toml ───────────────────────────────────────────
+    let manifest_content =
+        fs::read_to_string(&guest_manifest_path).map_err(|e| CompileError::ReadFile {
+            path: guest_manifest_path.clone(),
+            source: e,
+        })?;
+
+    let manifest_toml: toml::Value =
+        manifest_content
+            .parse::<toml::Value>()
+            .map_err(|e| CompileError::ParseCargoToml {
+                path: guest_manifest_path.clone(),
+                source: e,
+            })?;
+
+    let program_name = manifest_toml
+        .get("package")
+        .and_then(|p| p.get("name"))
+        .and_then(|n| n.as_str())
+        .ok_or_else(|| CompileError::MissingPackageName {
+            path: guest_manifest_path.clone(),
+        })?;
+
+    info!("Parsed program name: {program_name}");
+
+    // ── build into a temp dir ─────────────────────────────────────────────
+    let temp_output_dir = TempDir::new_in(&program_crate_path)?;
+    let temp_output_dir_path = temp_output_dir.path();
+    let elf_name = format!("{program_name}.elf");
+
+    info!(
+        "Running `cargo prove build` → dir: {}, ELF: {}",
+        temp_output_dir_path.display(),
+        elf_name
+    );
+
+    let status = Command::new("cargo")
+        .current_dir(&program_crate_path)
+        .args([
+            "prove",
+            "build",
+            "--output-directory",
+            temp_output_dir_path.to_str().unwrap(),
+            "--elf-name",
+            &elf_name,
+        ])
+        .stdout(std::process::Stdio::inherit())
+        .stderr(std::process::Stdio::inherit())
+        .status()
+        .map_err(|e| CompileError::CargoProveBuild {
+            cwd: program_crate_path.to_path_buf(),
+            source: e,
+        })?;
+
+    if !status.success() {
+        return Err(CompileError::CargoBuildFailed {
+            status,
+            path: program_crate_path.to_path_buf(),
+        });
+    }
+
+    let elf_path = temp_output_dir_path.join(&elf_name);
+    if !elf_path.exists() {
+        return Err(CompileError::ElfNotFound(elf_path));
+    }
+
+    let elf_bytes = fs::read(&elf_path).map_err(|e| CompileError::ReadFile {
+        path: elf_path,
+        source: e,
+    })?;
+
+    info!("SP1 program compiled OK - {} bytes", elf_bytes.len());
+    Ok(elf_bytes)
 }
 
 #[cfg(test)]

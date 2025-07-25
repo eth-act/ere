@@ -2283,6 +2283,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "ere-dockerized"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bincode",
+ "clap",
+ "ere-jolt",
+ "ere-nexus",
+ "ere-openvm",
+ "ere-pico",
+ "ere-risc0",
+ "ere-sp1",
+ "ere-zisk",
+ "serde",
+ "tempfile",
+ "toml 0.8.22",
+ "tracing",
+ "zkvm-interface",
+]
+
+[[package]]
 name = "ere-jolt"
 version = "0.1.0"
 dependencies = [
@@ -2315,11 +2336,13 @@ name = "ere-openvm"
 version = "0.1.0"
 dependencies = [
  "build-utils",
+ "openvm",
  "openvm-build",
  "openvm-circuit",
  "openvm-sdk",
  "openvm-stark-sdk",
  "openvm-transpiler",
+ "serde",
  "thiserror 2.0.12",
  "zkvm-interface",
 ]
@@ -2363,6 +2386,7 @@ dependencies = [
  "sp1-sdk",
  "tempfile",
  "thiserror 2.0.12",
+ "toml 0.8.22",
  "tracing",
  "zkvm-interface",
 ]
@@ -7808,22 +7832,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "risc0-cli"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bincode",
- "borsh",
- "clap",
- "hex",
- "risc0-zkvm",
- "tempfile",
- "toml 0.8.22",
- "tracing",
- "zkvm-interface",
-]
-
-[[package]]
 name = "risc0-core"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8890,17 +8898,6 @@ checksum = "c25a3bd262f3b0b0ab59d9bc86638ebd895ade9c16526203023c08f926d62732"
 dependencies = [
  "quote",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "sp1-guest-compiler"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "tempfile",
- "toml 0.8.22",
- "tracing",
 ]
 
 [[package]]

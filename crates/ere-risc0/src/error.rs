@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{io, path::PathBuf, process::ExitStatus};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -9,24 +9,33 @@ pub enum Risc0Error {
 
 #[derive(Debug, Error)]
 pub enum CompileError {
-    #[error("Failed to build Docker image: {0}")]
-    DockerImageBuildFailed(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
-    #[error("Docker command failed to execute: {0}")]
-    DockerCommandFailed(#[source] std::io::Error),
-    #[error("Docker container run failed with status: {0}")]
-    DockerContainerRunFailed(std::process::ExitStatus),
-    #[error("Invalid mount path: {0}")]
-    InvalidMountPath(PathBuf),
-    #[error("Invalid guest program path: {0}")]
+    #[error("{context}: {source}")]
+    Io {
+        #[source]
+        source: io::Error,
+        context: &'static str,
+    },
+    #[error("Guest crate path does not exist or is not a directory: {0}")]
     InvalidGuestPath(PathBuf),
-    #[error("Failed to create temporary directory: {0}")]
-    CreatingTempOutputDirectoryFailed(#[source] std::io::Error),
-    #[error("Failed to create temporary output path: {0}")]
-    InvalidTempOutputPath(PathBuf),
-    #[error("Failed to read compiled ELF program: {0}")]
-    ReadCompiledELFProgram(#[source] std::io::Error),
-    #[error("Failed to read image id: {0}")]
-    ReadImageId(#[source] std::io::Error),
-    #[error("Failed to compute image id: {0}")]
-    ComputeImaegIdFailed(#[source] anyhow::Error),
+    #[error(
+        "`cargo risczero build` for {crate_path} failed with status {status}\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    )]
+    CargoRisczeroBuildFailure {
+        crate_path: PathBuf,
+        status: ExitStatus,
+        stdout: String,
+        stderr: String,
+    },
+    #[error("Could not find image id and elf path in `cargo risczero build` output")]
+    MissingImageIdAndElfPath,
+    #[error("Invalid image id {0}")]
+    InvalidImageId(String),
+    #[error("Could not elf at {0}")]
+    InvalidElfPath(PathBuf),
+}
+
+impl CompileError {
+    pub fn io(e: io::Error, context: &'static str) -> Self {
+        Self::Io { source: e, context }
+    }
 }
