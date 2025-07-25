@@ -1,7 +1,15 @@
-use crate::{
-    docker::{DockerBuildCmd, DockerFile, DockerRunCmd},
-    input::serialize_inputs,
-};
+#[cfg(not(any(
+    feature = "jolt",
+    feature = "nexus",
+    feature = "openvm",
+    feature = "pico",
+    feature = "risc0",
+    feature = "sp1",
+    feature = "zisk",
+)))]
+compile_error!("At least one zkVM feature must be enabled");
+
+use crate::docker::{DockerBuildCmd, DockerFile, DockerRunCmd};
 use std::{
     fmt::{self, Display, Formatter},
     fs, io,
@@ -16,50 +24,40 @@ use zkvm_interface::{
 pub mod docker;
 pub mod input;
 
-// Compile-time check to ensure exactly one backend feature is enabled
-const _: () = {
-    let features = [
-        cfg!(feature = "jolt"),
-        cfg!(feature = "nexus"),
-        cfg!(feature = "openvm"),
-        cfg!(feature = "pico"),
-        cfg!(feature = "risc0"),
-        cfg!(feature = "sp1"),
-        cfg!(feature = "zisk"),
-    ];
-    let mut count = 0;
-    let mut idx = 0;
-    while idx < features.len() {
-        count += features[idx] as usize;
-        idx += 1;
-    }
-    match count {
-        0 => panic!("Exactly one zkVM backend feature must be enabled"),
-        1 => {}
-        _ => panic!("Only one zkVM backend feature can be enabled at a time"),
-    }
-};
-
 #[derive(Clone, Copy, Debug)]
 pub enum ErezkVM {
+    #[cfg(feature = "jolt")]
     Jolt,
+    #[cfg(feature = "nexus")]
     Nexus,
+    #[cfg(feature = "openvm")]
     OpenVM,
+    #[cfg(feature = "pico")]
     Pico,
+    #[cfg(feature = "risc0")]
     Risc0,
+    #[cfg(feature = "sp1")]
     SP1,
+    #[cfg(feature = "zisk")]
     Zisk,
 }
 
 impl ErezkVM {
     pub fn as_str(&self) -> &'static str {
         match self {
+            #[cfg(feature = "jolt")]
             Self::Jolt => "jolt",
+            #[cfg(feature = "nexus")]
             Self::Nexus => "nexus",
+            #[cfg(feature = "openvm")]
             Self::OpenVM => "openvm",
+            #[cfg(feature = "pico")]
             Self::Pico => "pico",
+            #[cfg(feature = "risc0")]
             Self::Risc0 => "risc0",
+            #[cfg(feature = "sp1")]
             Self::SP1 => "sp1",
+            #[cfg(feature = "zisk")]
             Self::Zisk => "zisk",
         }
     }
@@ -159,6 +157,7 @@ impl Compiler for EreDockerizedCompiler {
             .volume(tempdir.path(), "/guest-output");
 
         cmd = match self.0 {
+            #[cfg(feature = "risc0")]
             ErezkVM::Risc0 => cmd.volume("/var/run/docker.sock", "/var/run/docker.sock"),
             _ => cmd,
         };
@@ -216,7 +215,9 @@ impl zkVM for EreDockerizedzkVM {
             .map_err(|err| zkVMError::Other(err.into()))?;
         fs::write(
             tempdir.path().join("input"),
-            serialize_inputs(inputs).map_err(|err| zkVMError::Other(err.into()))?,
+            self.zkvm
+                .serialize_inputs(inputs)
+                .map_err(|err| zkVMError::Other(err.into()))?,
         )
         .map_err(|err| zkVMError::Other(err.into()))?;
 
@@ -251,7 +252,9 @@ impl zkVM for EreDockerizedzkVM {
             .map_err(|err| zkVMError::Other(err.into()))?;
         fs::write(
             tempdir.path().join("input"),
-            serialize_inputs(inputs).map_err(|err| zkVMError::Other(err.into()))?,
+            self.zkvm
+                .serialize_inputs(inputs)
+                .map_err(|err| zkVMError::Other(err.into()))?,
         )
         .map_err(|err| zkVMError::Other(err.into()))?;
 

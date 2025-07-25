@@ -7,6 +7,30 @@ use std::{
 };
 use zkvm_interface::{Compiler, Input, zkVM};
 
+// Compile-time check to ensure exactly one backend feature is enabled
+const _: () = {
+    let features = [
+        cfg!(feature = "jolt"),
+        cfg!(feature = "nexus"),
+        cfg!(feature = "openvm"),
+        cfg!(feature = "pico"),
+        cfg!(feature = "risc0"),
+        cfg!(feature = "sp1"),
+        cfg!(feature = "zisk"),
+    ];
+    let mut count = 0;
+    let mut idx = 0;
+    while idx < features.len() {
+        count += features[idx] as usize;
+        idx += 1;
+    }
+    match count {
+        0 => panic!("Exactly one zkVM backend feature must be enabled"),
+        1 => {}
+        _ => panic!("Only one zkVM backend feature can be enabled at a time"),
+    }
+};
+
 #[derive(Parser)]
 #[command(author, version)]
 struct Cli {
