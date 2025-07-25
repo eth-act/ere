@@ -28,6 +28,7 @@ impl Compiler for RV32_IM_RISC0_ZKVM_ELF {
     type Program = Risc0Program;
 
     fn compile(
+        &self,
         workspace_directory: &Path,
         guest_relative: &Path,
     ) -> Result<Self::Program, Self::Error> {
@@ -218,7 +219,7 @@ mod prove_tests {
 
     fn get_compiled_test_r0_elf_for_prove() -> Result<Risc0Program, Risc0Error> {
         let test_guest_path = get_prove_test_guest_program_path();
-        RV32_IM_RISC0_ZKVM_ELF::compile(&test_guest_path, Path::new(""))
+        RV32_IM_RISC0_ZKVM_ELF.compile(&test_guest_path, Path::new(""))
     }
 
     #[test]
@@ -266,7 +267,7 @@ mod execute_tests {
 
     fn get_compiled_test_r0_elf() -> Result<Risc0Program, Risc0Error> {
         let test_guest_path = get_execute_test_guest_program_path();
-        RV32_IM_RISC0_ZKVM_ELF::compile(&test_guest_path, Path::new(""))
+        RV32_IM_RISC0_ZKVM_ELF.compile(&test_guest_path, Path::new(""))
     }
 
     fn get_execute_test_guest_program_path() -> PathBuf {

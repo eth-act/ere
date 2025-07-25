@@ -30,7 +30,11 @@ impl Compiler for OPENVM_TARGET {
 
     type Program = Elf;
 
-    fn compile(workspace_path: &Path, guest_relative: &Path) -> Result<Self::Program, Self::Error> {
+    fn compile(
+        &self,
+        workspace_path: &Path,
+        guest_relative: &Path,
+    ) -> Result<Self::Program, Self::Error> {
         let sdk = Sdk::new();
 
         // Build the guest crate
@@ -199,8 +203,9 @@ mod tests {
     #[test]
     fn test_compile() {
         let test_guest_path = get_compile_test_guest_program_path();
-        let elf =
-            OPENVM_TARGET::compile(&test_guest_path, Path::new("")).expect("compilation failed");
+        let elf = OPENVM_TARGET
+            .compile(&test_guest_path, Path::new(""))
+            .expect("compilation failed");
         assert!(
             !elf.instructions.is_empty(),
             "ELF bytes should not be empty."
@@ -212,8 +217,9 @@ mod tests {
     fn test_execute_empty_input_panic() {
         // Panics because the program expects input arguments, but we supply none
         let test_guest_path = get_compile_test_guest_program_path();
-        let elf =
-            OPENVM_TARGET::compile(&test_guest_path, Path::new("")).expect("compilation failed");
+        let elf = OPENVM_TARGET
+            .compile(&test_guest_path, Path::new(""))
+            .expect("compilation failed");
         let empty_input = Input::new();
         let zkvm = EreOpenVM::new(elf, ProverResourceType::Cpu);
 
@@ -223,8 +229,9 @@ mod tests {
     #[test]
     fn test_execute() {
         let test_guest_path = get_compile_test_guest_program_path();
-        let elf =
-            OPENVM_TARGET::compile(&test_guest_path, Path::new("")).expect("compilation failed");
+        let elf = OPENVM_TARGET
+            .compile(&test_guest_path, Path::new(""))
+            .expect("compilation failed");
         let mut input = Input::new();
         input.write(10u64);
 
@@ -235,8 +242,9 @@ mod tests {
     #[test]
     fn test_prove_verify() {
         let test_guest_path = get_compile_test_guest_program_path();
-        let elf =
-            OPENVM_TARGET::compile(&test_guest_path, Path::new("")).expect("compilation failed");
+        let elf = OPENVM_TARGET
+            .compile(&test_guest_path, Path::new(""))
+            .expect("compilation failed");
         let mut input = Input::new();
         input.write(10u64);
 

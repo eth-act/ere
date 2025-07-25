@@ -172,7 +172,7 @@ mod tests {
         let test_guest_path = get_compile_test_guest_program_path();
         println!("Using test guest path: {}", test_guest_path.display());
 
-        match PICO_TARGET::compile(&test_guest_path, Path::new("")) {
+        match PICO_TARGET.compile(&test_guest_path, Path::new("")) {
             Ok(elf_bytes) => {
                 assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
             }

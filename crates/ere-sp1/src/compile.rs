@@ -101,7 +101,7 @@ mod tests {
     #[test]
     fn test_compile_trait() {
         let test_guest_path = get_compile_test_guest_program_path();
-        match RV32_IM_SUCCINCT_ZKVM_ELF::compile(&test_guest_path, Path::new("")) {
+        match RV32_IM_SUCCINCT_ZKVM_ELF.compile(&test_guest_path, Path::new("")) {
             Ok(elf_bytes) => {
                 assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
             }

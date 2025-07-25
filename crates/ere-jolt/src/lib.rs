@@ -27,6 +27,7 @@ impl Compiler for JOLT_TARGET {
     type Program = Program;
 
     fn compile(
+        &self,
         workspace_directory: &Path,
         guest_relative: &Path,
     ) -> Result<Self::Program, Self::Error> {
@@ -144,14 +145,18 @@ mod tests {
     #[test]
     fn test_compile_trait() {
         let test_guest_path = get_compile_test_guest_program_path();
-        let program = JOLT_TARGET::compile(&test_guest_path, Path::new("")).unwrap();
+        let program = JOLT_TARGET
+            .compile(&test_guest_path, Path::new(""))
+            .unwrap();
         assert!(program.elf.is_some(), "elf has not been compiled");
     }
 
     #[test]
     fn test_execute() {
         let test_guest_path = get_compile_test_guest_program_path();
-        let program = JOLT_TARGET::compile(&test_guest_path, Path::new("")).unwrap();
+        let program = JOLT_TARGET
+            .compile(&test_guest_path, Path::new(""))
+            .unwrap();
         let mut inputs = Input::new();
         inputs.write(1_u32);
 
@@ -161,7 +166,7 @@ mod tests {
     // #[test]
     // fn test_prove_verify() {
     //     let test_guest_path = get_compile_test_guest_program_path();
-    //     let program = JOLT_TARGET::compile(&test_guest_path).unwrap();
+    //     let program = JOLT_TARGET.compile(&test_guest_path).unwrap();
 
     //     // TODO: I don't think we should require the inputs when verifying
     //     let inputs = Input::new();
