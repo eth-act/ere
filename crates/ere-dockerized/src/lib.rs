@@ -81,6 +81,16 @@ impl ErezkVM {
             .file(
                 workspace_dir
                     .join("docker")
+                    .join("base")
+                    .join("Dockerfile.base"),
+            )
+            .tag("ere-base:latest")
+            .run(&workspace_dir)?;
+
+        DockerBuildCmd::new()
+            .file(
+                workspace_dir
+                    .join("docker")
                     .join(self.as_str())
                     .join("Dockerfile"),
             )
