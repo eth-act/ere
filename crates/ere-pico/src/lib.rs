@@ -18,6 +18,7 @@ impl Compiler for PICO_TARGET {
     type Program = Vec<u8>;
 
     fn compile(
+        &self,
         workspace_directory: &Path,
         guest_relative: &Path,
     ) -> Result<Self::Program, Self::Error> {
