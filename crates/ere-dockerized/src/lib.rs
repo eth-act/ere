@@ -11,6 +11,8 @@ use zkvm_interface::{
     zkVMError,
 };
 
+include!(concat!(env!("OUT_DIR"), "/zkvm_sdk_version_impl.rs"));
+
 pub mod docker;
 pub mod input;
 
@@ -290,8 +292,7 @@ impl zkVM for EreDockerizedzkVM {
     }
 
     fn sdk_version(&self) -> &'static str {
-        // TODO: Find the dependency version, perhaps needs to change the `&'static str` to `String`.
-        ""
+        self.zkvm.sdk_version()
     }
 }
 

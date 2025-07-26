@@ -2306,6 +2306,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bincode",
+ "build-utils",
  "bytemuck",
  "clap",
  "risc0-zkvm",

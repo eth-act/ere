@@ -22,6 +22,9 @@ bytemuck = "1.13"
 
 [dev-dependencies]
 
+[build-dependencies]
+build-utils = { workspace = true }
+
 [lints]
 workspace = true
 
