@@ -12,24 +12,21 @@ pub struct Risc0Program {
     pub(crate) image_id: Digest,
 }
 
-pub fn compile_risc0_program(guest_dir: &Path) -> Result<Risc0Program, CompileError> {
-    info!("Compiling Risc0 program at {}", guest_dir.display());
+pub fn compile_risc0_program(guest_directory: &Path) -> Result<Risc0Program, CompileError> {
+    info!("Compiling Risc0 program at {}", guest_directory.display());
 
-    let metadata = MetadataCommand::new()
-        .current_dir(guest_dir)
-        .manifest_path("Cargo.toml")
-        .exec()?;
+    let metadata = MetadataCommand::new().current_dir(guest_directory).exec()?;
     let package = metadata
         .root_package()
         .ok_or_else(|| CompileError::MissingPackageName {
-            path: guest_dir.to_path_buf(),
+            path: guest_directory.to_path_buf(),
         })?;
 
     let guest =
         risc0_build::build_package(package, &metadata.target_directory, GuestOptions::default())
             .map_err(|source| CompileError::Risc0BuildFailure {
                 source,
-                crate_path: guest_dir.to_path_buf(),
+                crate_path: guest_directory.to_path_buf(),
             })?
             .into_iter()
             .next()

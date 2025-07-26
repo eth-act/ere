@@ -125,7 +125,7 @@ fn compile(guest_path: PathBuf, program_path: PathBuf) -> Result<(), Error> {
     macro_rules! compile {
         ($compiler:expr, serialize) => {
             $compiler
-                .compile(&guest_path, Path::new(""))
+                .compile(&guest_path)
                 .with_context(|| "Failed to compile program")
                 .and_then(|program| {
                     bincode::serialize(&program).with_context(|| "Failed to serialize program")
@@ -133,7 +133,7 @@ fn compile(guest_path: PathBuf, program_path: PathBuf) -> Result<(), Error> {
         };
         ($compiler:expr) => {
             $compiler
-                .compile(&guest_path, Path::new(""))
+                .compile(&guest_path)
                 .with_context(|| "Failed to compile program")?
         };
     }

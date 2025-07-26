@@ -3,23 +3,19 @@ use std::{fs, path::Path, process::Command};
 use tempfile::TempDir;
 use tracing::info;
 
-pub fn compile(
-    workspace_directory: &Path,
-    guest_program_relative: &Path,
-) -> Result<Vec<u8>, CompileError> {
-    let program_crate_path = workspace_directory.join(guest_program_relative);
-    info!("Compiling SP1 program at {}", program_crate_path.display());
+pub fn compile(guest_directory: &Path) -> Result<Vec<u8>, CompileError> {
+    info!("Compiling SP1 program at {}", guest_directory.display());
 
-    if !program_crate_path.exists() || !program_crate_path.is_dir() {
+    if !guest_directory.exists() || !guest_directory.is_dir() {
         return Err(CompileError::InvalidProgramPath(
-            program_crate_path.to_path_buf(),
+            guest_directory.to_path_buf(),
         ));
     }
 
-    let guest_manifest_path = program_crate_path.join("Cargo.toml");
+    let guest_manifest_path = guest_directory.join("Cargo.toml");
     if !guest_manifest_path.exists() {
         return Err(CompileError::CargoTomlMissing {
-            program_dir: program_crate_path.to_path_buf(),
+            program_dir: guest_directory.to_path_buf(),
             manifest_path: guest_manifest_path.clone(),
         });
     }
@@ -50,7 +46,7 @@ pub fn compile(
     info!("Parsed program name: {program_name}");
 
     // ── build into a temp dir ─────────────────────────────────────────────
-    let temp_output_dir = TempDir::new_in(&program_crate_path)?;
+    let temp_output_dir = TempDir::new_in(guest_directory)?;
     let temp_output_dir_path = temp_output_dir.path();
     let elf_name = format!("{program_name}.elf");
 
@@ -61,7 +57,7 @@ pub fn compile(
     );
 
     let status = Command::new("cargo")
-        .current_dir(&program_crate_path)
+        .current_dir(guest_directory)
         .args([
             "prove",
             "build",
@@ -74,14 +70,14 @@ pub fn compile(
         .stderr(std::process::Stdio::inherit())
         .status()
         .map_err(|e| CompileError::CargoProveBuild {
-            cwd: program_crate_path.to_path_buf(),
+            cwd: guest_directory.to_path_buf(),
             source: e,
         })?;
 
     if !status.success() {
         return Err(CompileError::CargoBuildFailed {
             status,
-            path: program_crate_path.to_path_buf(),
+            path: guest_directory.to_path_buf(),
         });
     }
 
@@ -125,7 +121,7 @@ mod tests {
     fn test_compile_sp1_program() {
         let test_guest_path = get_compile_test_guest_program_path();
 
-        match compile(&test_guest_path, Path::new("")) {
+        match compile(&test_guest_path) {
             Ok(elf_bytes) => {
                 assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
             }
@@ -138,7 +134,7 @@ mod tests {
     #[test]
     fn test_compile_trait() {
         let test_guest_path = get_compile_test_guest_program_path();
-        match RV32_IM_SUCCINCT_ZKVM_ELF.compile(&test_guest_path, Path::new("")) {
+        match RV32_IM_SUCCINCT_ZKVM_ELF.compile(&test_guest_path) {
             Ok(elf_bytes) => {
                 assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
             }

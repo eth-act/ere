@@ -1,4 +1,5 @@
 use crate::docker::{DockerBuildCmd, DockerFile, DockerRunCmd};
+use cargo_metadata::MetadataCommand;
 use std::{
     fmt::{self, Display, Formatter},
     fs, io,
@@ -131,12 +132,16 @@ impl Compiler for EreDockerizedCompiler {
     type Error = io::Error;
     type Program = Vec<u8>;
 
-    fn compile(
-        &self,
-        mount_directory: &Path,
-        guest_relative: &Path,
-    ) -> Result<Self::Program, Self::Error> {
+    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
         self.0.build_docker_image()?;
+
+        let metadata = MetadataCommand::new()
+            .current_dir(guest_directory)
+            .exec()
+            .map_err(io::Error::other)?;
+        let guest_rel_path = guest_directory
+            .strip_prefix(&metadata.workspace_root)
+            .map_err(io::Error::other)?;
 
         let cli_tag = self.0.cli_tag();
 
@@ -144,7 +149,7 @@ impl Compiler for EreDockerizedCompiler {
 
         let mut cmd = DockerRunCmd::new(cli_tag)
             .rm()
-            .volume(mount_directory, "/guest")
+            .volume(&metadata.workspace_root, "/guest")
             .volume(tempdir.path(), "/guest-output");
 
         cmd = match self.0 {
@@ -155,7 +160,7 @@ impl Compiler for EreDockerizedCompiler {
         cmd.run([
             "compile",
             PathBuf::from("/guest")
-                .join(guest_relative)
+                .join(guest_rel_path)
                 .to_string_lossy()
                 .as_ref(),
             "/guest-output/program",
@@ -307,16 +312,15 @@ fn workspace_dir() -> PathBuf {
 #[cfg(test)]
 mod test {
     use crate::{EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM, workspace_dir};
-    use std::path::PathBuf;
     use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
 
     #[test]
     fn dockerized_sp1() {
         let zkvm = ErezkVM::SP1;
 
-        let guest_rel_path = PathBuf::from(format!("tests/{zkvm}/prove/basic"));
+        let guest_directory = workspace_dir().join(format!("tests/{zkvm}/prove/basic"));
         let program = EreDockerizedCompiler(zkvm)
-            .compile(&workspace_dir(), guest_rel_path.as_ref())
+            .compile(&guest_directory)
             .unwrap();
 
         let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
@@ -336,9 +340,9 @@ mod test {
     fn dockerized_risc0() {
         let zkvm = ErezkVM::Risc0;
 
-        let guest_rel_path = PathBuf::from(format!("tests/{zkvm}/compile/basic"));
+        let guest_directory = workspace_dir().join(format!("tests/{zkvm}/compile/basic"));
         let program = EreDockerizedCompiler(zkvm)
-            .compile(&workspace_dir(), guest_rel_path.as_ref())
+            .compile(&guest_directory)
             .unwrap();
 
         let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
@@ -357,9 +361,9 @@ mod test {
     fn dockerized_zisk() {
         let zkvm = ErezkVM::Zisk;
 
-        let guest_rel_path = PathBuf::from(format!("tests/{zkvm}/prove/basic"));
+        let guest_directory = workspace_dir().join(format!("tests/{zkvm}/prove/basic"));
         let program = EreDockerizedCompiler(zkvm)
-            .compile(&workspace_dir(), guest_rel_path.as_ref())
+            .compile(&guest_directory)
             .unwrap();
 
         let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();

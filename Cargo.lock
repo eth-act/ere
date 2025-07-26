@@ -2308,6 +2308,7 @@ dependencies = [
  "bincode",
  "build-utils",
  "bytemuck",
+ "cargo_metadata 0.19.2",
  "clap",
  "risc0-zkvm",
  "serde",

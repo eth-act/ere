@@ -17,21 +17,15 @@ impl Compiler for PICO_TARGET {
 
     type Program = Vec<u8>;
 
-    fn compile(
-        &self,
-        workspace_directory: &Path,
-        guest_relative: &Path,
-    ) -> Result<Self::Program, Self::Error> {
-        let guest_path = workspace_directory.join(guest_relative);
-
+    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
         // 1. Check guest path
-        if !guest_path.exists() {
-            return Err(PicoError::PathNotFound(guest_path.to_path_buf()));
+        if !guest_directory.exists() {
+            return Err(PicoError::PathNotFound(guest_directory.to_path_buf()));
         }
 
         // 2. Run `cargo pico build`
         let status = Command::new("cargo")
-            .current_dir(&guest_path)
+            .current_dir(&guest_directory)
             .env("RUST_LOG", "info")
             .args(["pico", "build"])
             .status()?; // From<io::Error> → Spawn
@@ -41,7 +35,7 @@ impl Compiler for PICO_TARGET {
         }
 
         // 3. Locate the ELF file
-        let elf_path = guest_path.join("elf/riscv32im-pico-zkvm-elf");
+        let elf_path = guest_directory.join("elf/riscv32im-pico-zkvm-elf");
 
         if !elf_path.exists() {
             return Err(PicoError::ElfNotFound(elf_path));
@@ -173,7 +167,7 @@ mod tests {
         let test_guest_path = get_compile_test_guest_program_path();
         println!("Using test guest path: {}", test_guest_path.display());
 
-        match PICO_TARGET.compile(&test_guest_path, Path::new("")) {
+        match PICO_TARGET.compile(&test_guest_path) {
             Ok(elf_bytes) => {
                 assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
             }
