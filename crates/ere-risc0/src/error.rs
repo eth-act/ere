@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{io, path::PathBuf};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -9,24 +9,28 @@ pub enum Risc0Error {
 
 #[derive(Debug, Error)]
 pub enum CompileError {
-    #[error("Failed to build Docker image: {0}")]
-    DockerImageBuildFailed(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
-    #[error("Docker command failed to execute: {0}")]
-    DockerCommandFailed(#[source] std::io::Error),
-    #[error("Docker container run failed with status: {0}")]
-    DockerContainerRunFailed(std::process::ExitStatus),
-    #[error("Invalid mount path: {0}")]
-    InvalidMountPath(PathBuf),
-    #[error("Invalid guest program path: {0}")]
-    InvalidGuestPath(PathBuf),
-    #[error("Failed to create temporary directory: {0}")]
-    CreatingTempOutputDirectoryFailed(#[source] std::io::Error),
-    #[error("Failed to create temporary output path: {0}")]
-    InvalidTempOutputPath(PathBuf),
-    #[error("Failed to read compiled ELF program: {0}")]
-    ReadCompiledELFProgram(#[source] std::io::Error),
-    #[error("Failed to read image id: {0}")]
-    ReadImageId(#[source] std::io::Error),
-    #[error("Failed to compute image id: {0}")]
-    ComputeImaegIdFailed(#[source] anyhow::Error),
+    #[error("{context}: {source}")]
+    Io {
+        #[source]
+        source: io::Error,
+        context: &'static str,
+    },
+    #[error("`cargo metadata` failed: {0}")]
+    MetadataCommand(#[from] cargo_metadata::Error),
+    #[error("Could not find `[package].name` in guest Cargo.toml at {path}")]
+    MissingPackageName { path: PathBuf },
+    #[error("`risc0_build::build_package` for {crate_path} failed: {source}")]
+    Risc0BuildFailure {
+        #[source]
+        source: anyhow::Error,
+        crate_path: PathBuf,
+    },
+    #[error("`risc0_build::build_package` succeeded but failed to find guest")]
+    Risc0BuildMissingGuest,
+}
+
+impl CompileError {
+    pub fn io(e: io::Error, context: &'static str) -> Self {
+        Self::Io { source: e, context }
+    }
 }

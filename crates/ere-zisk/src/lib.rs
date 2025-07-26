@@ -30,11 +30,8 @@ impl Compiler for RV64_IMA_ZISK_ZKVM_ELF {
 
     type Program = Vec<u8>;
 
-    fn compile(
-        workspace_directory: &Path,
-        guest_relative: &Path,
-    ) -> Result<Self::Program, Self::Error> {
-        compile_zisk_program(&workspace_directory.join(guest_relative)).map_err(ZiskError::Compile)
+    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
+        compile_zisk_program(guest_directory).map_err(ZiskError::Compile)
     }
 }
 
@@ -448,7 +445,7 @@ mod execute_tests {
 
     fn get_compiled_test_zisk_elf() -> Result<Vec<u8>, ZiskError> {
         let test_guest_path = get_execute_test_guest_program_path();
-        RV64_IMA_ZISK_ZKVM_ELF::compile(&test_guest_path, Path::new(""))
+        RV64_IMA_ZISK_ZKVM_ELF.compile(&test_guest_path)
     }
 
     fn get_execute_test_guest_program_path() -> PathBuf {
@@ -514,7 +511,7 @@ mod prove_tests {
 
     fn get_compiled_test_zisk_elf_for_prove() -> Result<Vec<u8>, ZiskError> {
         let test_guest_path = get_prove_test_guest_program_path();
-        RV64_IMA_ZISK_ZKVM_ELF::compile(&test_guest_path, Path::new(""))
+        RV64_IMA_ZISK_ZKVM_ELF.compile(&test_guest_path)
     }
 
     #[test]

@@ -1,11 +1,7 @@
-use build_utils::docker;
+use crate::error::Risc0Error;
 use compile::compile_risc0_program;
-use risc0_zkvm::Receipt;
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
-use tempfile::TempDir;
+use risc0_zkvm::{ExecutorEnv, ProverOpts, Receipt, default_executor, default_prover};
+use std::{path::Path, time::Instant};
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
     zkVM, zkVMError,
@@ -14,10 +10,9 @@ use zkvm_interface::{
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 mod compile;
-pub use compile::Risc0Program;
-
 mod error;
-use error::Risc0Error;
+
+pub use compile::Risc0Program;
 
 #[allow(non_camel_case_types)]
 pub struct RV32_IM_RISC0_ZKVM_ELF;
@@ -27,11 +22,8 @@ impl Compiler for RV32_IM_RISC0_ZKVM_ELF {
 
     type Program = Risc0Program;
 
-    fn compile(
-        workspace_directory: &Path,
-        guest_relative: &Path,
-    ) -> Result<Self::Program, Self::Error> {
-        compile_risc0_program(workspace_directory, guest_relative).map_err(Risc0Error::from)
+    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
+        compile_risc0_program(guest_directory).map_err(Risc0Error::from)
     }
 }
 
@@ -71,94 +63,55 @@ pub struct EreRisc0 {
 
 impl zkVM for EreRisc0 {
     fn execute(&self, inputs: &Input) -> Result<ProgramExecutionReport, zkVMError> {
-        // Build the Docker image
-        let tag = "ere-risc0-cli:latest";
-        docker::build_image(&PathBuf::from("docker/risc0/Dockerfile"), tag)
-            .map_err(|e| zkVMError::Other(Box::new(e)))?;
-
-        // Create temporary directory for file exchange
-        let temp_dir = TempDir::new().map_err(|e| zkVMError::Other(Box::new(e)))?;
-        let elf_path = temp_dir.path().join("guest.elf");
-        let input_path = temp_dir.path().join("input");
-        let report_path = temp_dir.path().join("report");
-
-        // Write ELF file to temp directory
-        fs::write(&elf_path, &self.program.elf).map_err(|e| zkVMError::Other(Box::new(e)))?;
-        // Write input bytes to temp directory
-        fs::write(&input_path, &serialize_input(inputs)?)
-            .map_err(|e| zkVMError::Other(Box::new(e)))?;
-
-        // Run Docker command for execution
-        let status = docker::DockerRunCommand::new(tag)
-            .remove_after_run()
-            .with_volume(temp_dir.path().to_string_lossy().to_string(), "/workspace")
-            .with_command([
-                "execute",
-                "/workspace/guest.elf",
-                "/workspace/input",
-                "/workspace/report",
-            ])
-            .run()
-            .map_err(|e| zkVMError::Other(Box::new(e)))?;
-
-        if !status.success() {
-            return Err(zkVMError::Other("Docker execution command failed".into()));
+        let executor = default_executor();
+        let mut env = ExecutorEnv::builder();
+        for input in inputs.iter() {
+            match input {
+                InputItem::Object(serialize) => {
+                    env.write(serialize).unwrap();
+                }
+                InputItem::Bytes(items) => {
+                    env.write_frame(items);
+                }
+            }
         }
+        let env = env.build().map_err(|err| zkVMError::Other(err.into()))?;
 
-        // Read the execution report from the output file
-        let report: ProgramExecutionReport = bincode::deserialize(
-            &fs::read(report_path).map_err(|e| zkVMError::Other(Box::new(e)))?,
-        )
-        .map_err(|e| zkVMError::Other(Box::new(e)))?;
-
-        Ok(report)
+        let start = Instant::now();
+        let session_info = executor
+            .execute(env, &self.program.elf)
+            .map_err(|err| zkVMError::Other(err.into()))?;
+        Ok(ProgramExecutionReport {
+            total_num_cycles: session_info.cycles() as u64,
+            execution_duration: start.elapsed(),
+            ..Default::default()
+        })
     }
 
     fn prove(&self, inputs: &Input) -> Result<(Vec<u8>, ProgramProvingReport), zkVMError> {
-        // Build the Docker image
-        let tag = "ere-risc0-cli:latest";
-        docker::build_image(&PathBuf::from("docker/risc0/Dockerfile"), tag)
-            .map_err(|e| zkVMError::Other(Box::new(e)))?;
-
-        // Create temporary directory for file exchange
-        let temp_dir = TempDir::new().map_err(|e| zkVMError::Other(Box::new(e)))?;
-        let elf_path = temp_dir.path().join("guest.elf");
-        let input_path = temp_dir.path().join("input");
-        let proof_path = temp_dir.path().join("proof");
-        let report_path = temp_dir.path().join("report");
-
-        // Write ELF file to temp directory
-        fs::write(&elf_path, &self.program.elf).map_err(|e| zkVMError::Other(Box::new(e)))?;
-        // Write input bytes to temp directory
-        fs::write(&input_path, &serialize_input(inputs)?)
-            .map_err(|e| zkVMError::Other(Box::new(e)))?;
-
-        // Run Docker command for proving
-        let status = docker::DockerRunCommand::new(tag)
-            .remove_after_run()
-            .with_volume(temp_dir.path().to_string_lossy().to_string(), "/workspace")
-            .with_command([
-                "prove",
-                "/workspace/guest.elf",
-                "/workspace/input",
-                "/workspace/proof",
-                "/workspace/report",
-            ])
-            .run()
-            .map_err(|e| zkVMError::Other(Box::new(e)))?;
-
-        if !status.success() {
-            return Err(zkVMError::Other("Docker proving command failed".into()));
+        let prover = default_prover();
+        let mut env = ExecutorEnv::builder();
+        for input in inputs.iter() {
+            match input {
+                InputItem::Object(serialize) => {
+                    env.write(serialize).unwrap();
+                }
+                InputItem::Bytes(items) => {
+                    env.write_frame(items);
+                }
+            }
         }
+        let env = env.build().map_err(|err| zkVMError::Other(err.into()))?;
 
-        // Read the proof from the output file
-        let proof = fs::read(proof_path).map_err(|e| zkVMError::Other(Box::new(e)))?;
-        let report = bincode::deserialize(
-            &fs::read(report_path).map_err(|e| zkVMError::Other(Box::new(e)))?,
-        )
-        .map_err(|e| zkVMError::Other(Box::new(e)))?;
+        let now = std::time::Instant::now();
+        let prove_info = prover
+            .prove_with_opts(env, &self.program.elf, &ProverOpts::succinct())
+            .map_err(|err| zkVMError::Other(err.into()))?;
+        let proving_time = now.elapsed();
 
-        Ok((proof, report))
+        let encoded =
+            borsh::to_vec(&prove_info.receipt).map_err(|err| zkVMError::Other(Box::new(err)))?;
+        Ok((encoded, ProgramProvingReport::new(proving_time)))
     }
 
     fn verify(&self, proof: &[u8]) -> Result<(), zkVMError> {
@@ -177,25 +130,6 @@ impl zkVM for EreRisc0 {
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
     }
-}
-
-// Serialize input bytes in the same way as the `ExecutorEnvBuilder`.
-fn serialize_input(inputs: &Input) -> Result<Vec<u8>, zkVMError> {
-    let mut input_bytes = Vec::new();
-    for input in inputs.iter() {
-        match input {
-            InputItem::Object(serialize) => {
-                let vec = risc0_zkvm::serde::to_vec(serialize)
-                    .map_err(|e| zkVMError::Other(Box::new(e)))?;
-                input_bytes.extend_from_slice(bytemuck::cast_slice(&vec));
-            }
-            InputItem::Bytes(items) => {
-                input_bytes.extend_from_slice(&(items.len() as u32).to_le_bytes());
-                input_bytes.extend_from_slice(items);
-            }
-        }
-    }
-    Ok(input_bytes)
 }
 
 #[cfg(test)]
@@ -218,7 +152,7 @@ mod prove_tests {
 
     fn get_compiled_test_r0_elf_for_prove() -> Result<Risc0Program, Risc0Error> {
         let test_guest_path = get_prove_test_guest_program_path();
-        RV32_IM_RISC0_ZKVM_ELF::compile(&test_guest_path, Path::new(""))
+        RV32_IM_RISC0_ZKVM_ELF.compile(&test_guest_path)
     }
 
     #[test]
@@ -266,7 +200,7 @@ mod execute_tests {
 
     fn get_compiled_test_r0_elf() -> Result<Risc0Program, Risc0Error> {
         let test_guest_path = get_execute_test_guest_program_path();
-        RV32_IM_RISC0_ZKVM_ELF::compile(&test_guest_path, Path::new(""))
+        RV32_IM_RISC0_ZKVM_ELF.compile(&test_guest_path)
     }
 
     fn get_execute_test_guest_program_path() -> PathBuf {

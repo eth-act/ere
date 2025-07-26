@@ -19,10 +19,8 @@ pub trait Compiler {
     /// Compiles the program and returns the program
     ///
     /// # Arguments
-    /// * `mount_directory` - The base directory (workspace root)
-    /// * `guest_relative` - The relative path from mount_directory to the guest program
-    fn compile(mount_directory: &Path, guest_relative: &Path)
-    -> Result<Self::Program, Self::Error>;
+    /// * `guest_directory` - The path to the guest program directory
+    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error>;
 }
 
 /// ResourceType specifies what resource will be used to create the proofs.
