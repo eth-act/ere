@@ -17,17 +17,26 @@ pub struct Risc0Program {
     pub(crate) image_id: Digest,
 }
 
-pub fn compile_risc0_program(guest_folder: &Path) -> Result<Risc0Program, CompileError> {
-    info!("Compiling Risc0 program at {}", guest_folder.display());
+pub fn compile_risc0_program(
+    workspace_directory: &Path,
+    guest_program_relative: &Path,
+) -> Result<Risc0Program, CompileError> {
+    let program_crate_path = workspace_directory.join(guest_program_relative);
+    info!(
+        "Compiling Risc0 program at {}",
+        program_crate_path.display()
+    );
 
-    if !guest_folder.is_dir() {
-        return Err(CompileError::InvalidGuestPath(guest_folder.to_path_buf()));
+    if !program_crate_path.is_dir() {
+        return Err(CompileError::InvalidGuestPath(
+            program_crate_path.to_path_buf(),
+        ));
     }
 
-    let guest_manifest_path = guest_folder.join("Cargo.toml");
+    let guest_manifest_path = program_crate_path.join("Cargo.toml");
     if !guest_manifest_path.exists() {
         return Err(CompileError::CargoTomlMissing {
-            program_dir: guest_folder.to_path_buf(),
+            program_dir: program_crate_path.to_path_buf(),
             manifest_path: guest_manifest_path.clone(),
         });
     }
@@ -57,7 +66,7 @@ pub fn compile_risc0_program(guest_folder: &Path) -> Result<Risc0Program, Compil
     info!("Running `cargo risczero build`");
 
     let output = Command::new("cargo")
-        .current_dir(guest_folder)
+        .current_dir(workspace_directory)
         .args(["risczero", "build", "--workspace", "--package"])
         .arg(package_name)
         .output()
@@ -65,7 +74,7 @@ pub fn compile_risc0_program(guest_folder: &Path) -> Result<Risc0Program, Compil
 
     if !output.status.success() {
         return Err(CompileError::CargoRisczeroBuildFailure {
-            crate_path: guest_folder.to_path_buf(),
+            crate_path: program_crate_path.to_path_buf(),
             status: output.status,
             stdout: String::from_utf8_lossy(&output.stdout).to_string(),
             stderr: String::from_utf8_lossy(&output.stderr).to_string(),
@@ -104,7 +113,7 @@ pub fn compile_risc0_program(guest_folder: &Path) -> Result<Risc0Program, Compil
 mod tests {
     mod compile {
         use crate::compile::compile_risc0_program;
-        use std::path::PathBuf;
+        use std::path::{Path, PathBuf};
 
         fn get_test_risc0_methods_crate_path() -> PathBuf {
             let workspace_dir = env!("CARGO_WORKSPACE_DIR");
@@ -121,8 +130,8 @@ mod tests {
         fn test_compile_risc0_method() {
             let test_methods_path = get_test_risc0_methods_crate_path();
 
-            let program =
-                compile_risc0_program(&test_methods_path).expect("risc0 compilation failed");
+            let program = compile_risc0_program(&test_methods_path, Path::new(""))
+                .expect("risc0 compilation failed");
             assert!(
                 !program.elf.is_empty(),
                 "Risc0 ELF bytes should not be empty."
