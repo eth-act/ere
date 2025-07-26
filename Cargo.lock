@@ -2387,6 +2387,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "thiserror 2.0.12",
+ "toml 0.8.22",
  "tracing",
  "zkvm-interface",
 ]

@@ -24,11 +24,42 @@ pub fn compile_risc0_program(guest_folder: &Path) -> Result<Risc0Program, Compil
         return Err(CompileError::InvalidGuestPath(guest_folder.to_path_buf()));
     }
 
+    let guest_manifest_path = guest_folder.join("Cargo.toml");
+    if !guest_manifest_path.exists() {
+        return Err(CompileError::CargoTomlMissing {
+            program_dir: guest_folder.to_path_buf(),
+            manifest_path: guest_manifest_path.clone(),
+        });
+    }
+
+    // ── read + parse Cargo.toml ───────────────────────────────────────────
+    let manifest_content = fs::read_to_string(&guest_manifest_path)
+        .map_err(|e| CompileError::io(e, "Failed to read guest manifest"))?;
+
+    let manifest_toml: toml::Value =
+        manifest_content
+            .parse::<toml::Value>()
+            .map_err(|e| CompileError::ParseCargoToml {
+                path: guest_manifest_path.clone(),
+                source: e,
+            })?;
+
+    let package_name = manifest_toml
+        .get("package")
+        .and_then(|p| p.get("name"))
+        .and_then(|n| n.as_str())
+        .ok_or_else(|| CompileError::MissingPackageName {
+            path: guest_manifest_path.clone(),
+        })?;
+
+    info!("Parsed package name: {package_name}");
+
     info!("Running `cargo risczero build`");
 
     let output = Command::new("cargo")
         .current_dir(guest_folder)
-        .args(["risczero", "build"])
+        .args(["risczero", "build", "--workspace", "--package"])
+        .arg(package_name)
         .output()
         .map_err(|err| CompileError::io(err, "Failed to run `cargo risczero build`"))?;
 

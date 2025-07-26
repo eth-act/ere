@@ -18,6 +18,21 @@ pub enum CompileError {
     #[error("Guest crate path does not exist or is not a directory: {0}")]
     InvalidGuestPath(PathBuf),
     #[error(
+        "Cargo.toml not found in program directory: {program_dir}. Expected at: {manifest_path}"
+    )]
+    CargoTomlMissing {
+        program_dir: PathBuf,
+        manifest_path: PathBuf,
+    },
+    #[error("Failed to parse guest Cargo.toml at {path}: {source}")]
+    ParseCargoToml {
+        path: PathBuf,
+        #[source]
+        source: toml::de::Error,
+    },
+    #[error("Could not find `[package].name` in guest Cargo.toml at {path}")]
+    MissingPackageName { path: PathBuf },
+    #[error(
         "`cargo risczero build` for {crate_path} failed with status {status}\nstdout:\n{stdout}\nstderr:\n{stderr}"
     )]
     CargoRisczeroBuildFailure {
