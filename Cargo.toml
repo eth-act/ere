@@ -9,12 +9,12 @@ members = [
     "crates/ere-risc0",
     "crates/ere-sp1",
     "crates/ere-zisk",
+    "crates/ere-zkm",
     # zkVM interface
     "crates/zkvm-interface",
-
+    "docker/risc0",
     # Guest compilers
     "docker/sp1",
-    "docker/risc0",
 ]
 resolver = "2"
 
