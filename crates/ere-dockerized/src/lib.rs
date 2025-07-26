@@ -3,6 +3,7 @@ use std::{
     fmt::{self, Display, Formatter},
     fs, io,
     path::{Path, PathBuf},
+    str::FromStr,
 };
 use tempfile::TempDir;
 use zkvm_interface::{
@@ -96,6 +97,23 @@ impl ErezkVM {
             .run(&workspace_dir)?;
 
         Ok(())
+    }
+}
+
+impl FromStr for ErezkVM {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "jolt" => Self::Jolt,
+            "nexus" => Self::Nexus,
+            "openvm" => Self::OpenVM,
+            "pico" => Self::Pico,
+            "risc0" => Self::Risc0,
+            "sp1" => Self::SP1,
+            "zisk" => Self::Zisk,
+            _ => return Err(format!("Unsupported zkvm {s}")),
+        })
     }
 }
 
