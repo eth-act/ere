@@ -1,7 +1,6 @@
 use crate::error::Risc0Error;
 use compile::compile_risc0_program;
 use risc0_zkvm::{ExecutorEnv, ProverOpts, Receipt, default_executor, default_prover};
-use serde::Serialize;
 use std::{path::Path, time::Instant};
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
@@ -135,12 +134,6 @@ impl zkVM for EreRisc0 {
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
     }
-}
-
-pub fn serialize_object(obj: &(impl Serialize + ?Sized)) -> Result<Vec<u8>, zkVMError> {
-    risc0_zkvm::serde::to_vec(obj)
-        .map(|vec| bytemuck::cast_slice(&vec).to_vec())
-        .map_err(|e| zkVMError::Other(Box::new(e)))
 }
 
 #[cfg(test)]

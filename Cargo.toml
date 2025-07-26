@@ -10,6 +10,7 @@ members = [
     "crates/ere-sp1",
     "crates/ere-zisk",
     # Dockerized zkVMs
+    "crates/ere-cli",
     "crates/ere-dockerized",
     # zkVM interface
     "crates/zkvm-interface",
@@ -35,6 +36,8 @@ hex = "0.4.3"
 # local dependencies
 zkvm-interface = { path = "crates/zkvm-interface" }
 build-utils = { path = "crates/build-utils" }
+ere-cli = { path = "crates/ere-cli" }
+ere-dockerized = { path = "crates/ere-dockerized" }
 ere-jolt = { path = "crates/ere-jolt" }
 ere-nexus = { path = "crates/ere-nexus" }
 ere-openvm = { path = "crates/ere-openvm" }

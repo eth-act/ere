@@ -13,7 +13,6 @@ use openvm_stark_sdk::config::{
     baby_bear_poseidon2::BabyBearPoseidon2Engine,
 };
 use openvm_transpiler::elf::Elf;
-use serde::Serialize;
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
     zkVM, zkVMError,
@@ -177,11 +176,6 @@ impl zkVM for EreOpenVM {
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
     }
-}
-
-pub fn serialize_object(obj: &(impl Serialize + ?Sized)) -> Result<Vec<u8>, zkVMError> {
-    let words = openvm::serde::to_vec(obj).map_err(|err| zkVMError::Other(err.into()))?;
-    Ok(words.into_iter().flat_map(|w| w.to_le_bytes()).collect())
 }
 
 #[cfg(test)]

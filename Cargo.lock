@@ -2283,12 +2283,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "ere-dockerized"
+name = "ere-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "bincode",
  "clap",
+ "ere-dockerized",
  "ere-jolt",
  "ere-nexus",
  "ere-openvm",
@@ -2296,6 +2297,18 @@ dependencies = [
  "ere-risc0",
  "ere-sp1",
  "ere-zisk",
+ "zkvm-interface",
+]
+
+[[package]]
+name = "ere-dockerized"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bincode",
+ "bytemuck",
+ "clap",
+ "risc0-zkvm",
  "serde",
  "tempfile",
  "toml 0.8.22",

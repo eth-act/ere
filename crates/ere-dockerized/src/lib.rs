@@ -1,14 +1,3 @@
-#[cfg(not(any(
-    feature = "jolt",
-    feature = "nexus",
-    feature = "openvm",
-    feature = "pico",
-    feature = "risc0",
-    feature = "sp1",
-    feature = "zisk",
-)))]
-compile_error!("At least one zkVM feature must be enabled");
-
 use crate::docker::{DockerBuildCmd, DockerFile, DockerRunCmd};
 use std::{
     fmt::{self, Display, Formatter},
@@ -26,38 +15,24 @@ pub mod input;
 
 #[derive(Clone, Copy, Debug)]
 pub enum ErezkVM {
-    #[cfg(feature = "jolt")]
     Jolt,
-    #[cfg(feature = "nexus")]
     Nexus,
-    #[cfg(feature = "openvm")]
     OpenVM,
-    #[cfg(feature = "pico")]
     Pico,
-    #[cfg(feature = "risc0")]
     Risc0,
-    #[cfg(feature = "sp1")]
     SP1,
-    #[cfg(feature = "zisk")]
     Zisk,
 }
 
 impl ErezkVM {
     pub fn as_str(&self) -> &'static str {
         match self {
-            #[cfg(feature = "jolt")]
             Self::Jolt => "jolt",
-            #[cfg(feature = "nexus")]
             Self::Nexus => "nexus",
-            #[cfg(feature = "openvm")]
             Self::OpenVM => "openvm",
-            #[cfg(feature = "pico")]
             Self::Pico => "pico",
-            #[cfg(feature = "risc0")]
             Self::Risc0 => "risc0",
-            #[cfg(feature = "sp1")]
             Self::SP1 => "sp1",
-            #[cfg(feature = "zisk")]
             Self::Zisk => "zisk",
         }
     }
@@ -104,19 +79,15 @@ impl ErezkVM {
                 "build",
                 "--release",
                 "--package",
-                "ere-dockerized",
+                "ere-cli",
                 "--bin",
-                "ere-dockerized-cli",
+                "ere-cli",
                 "--features",
                 self.as_str(),
             ])
-            .run([
-                "cp",
-                "/ere/target/release/ere-dockerized-cli",
-                "/ere/ere-dockerized-cli",
-            ])
+            .run(["cp", "/ere/target/release/ere-cli", "/ere/ere-cli"])
             .run(["cargo", "clean"])
-            .entrypoint(["/ere/ere-dockerized-cli"])
+            .entrypoint(["/ere/ere-cli"])
             .into_tempfile()?;
 
         DockerBuildCmd::new()
@@ -157,7 +128,6 @@ impl Compiler for EreDockerizedCompiler {
             .volume(tempdir.path(), "/guest-output");
 
         cmd = match self.0 {
-            #[cfg(feature = "risc0")]
             ErezkVM::Risc0 => cmd.volume("/var/run/docker.sock", "/var/run/docker.sock"),
             _ => cmd,
         };
@@ -322,7 +292,6 @@ mod test {
     use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
 
     #[test]
-    #[cfg(feature = "sp1")]
     fn dockerized_sp1() {
         let zkvm = ErezkVM::SP1;
 
@@ -345,7 +314,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "risc0")]
     fn dockerized_risc0() {
         let zkvm = ErezkVM::Risc0;
 
@@ -367,7 +335,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "zisk")]
     fn dockerized_zisk() {
         let zkvm = ErezkVM::Zisk;
 

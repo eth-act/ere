@@ -6,23 +6,21 @@ use zkvm_interface::{Input, InputItem};
 impl ErezkVM {
     pub fn serialize_object(&self, obj: &(impl Serialize + ?Sized)) -> Result<Vec<u8>, Error> {
         match self {
-            #[cfg(feature = "jolt")]
             Self::Jolt => unimplemented!(),
-            #[cfg(feature = "nexus")]
             Self::Nexus => unimplemented!(),
-            #[cfg(feature = "openvm")]
-            Self::OpenVM => {
-                ere_openvm::serialize_object(obj).with_context(|| "Failed to serialize object")
-            }
-            #[cfg(feature = "pico")]
+            // FIXME: Instead of using `openvm::serde::to_vec`, we use Risc0's
+            //        serializer, because OpenVM uses the same one, to avoid the
+            //        duplicated extern symbol they export.
+            //        It'd be better to have each zkvm provides their
+            //        lightweight serde crate.
+            Self::OpenVM => risc0_zkvm::serde::to_vec(obj)
+                .map(|words| words.into_iter().flat_map(|w| w.to_le_bytes()).collect())
+                .with_context(|| "Failed to serialize object"),
             Self::Pico => bincode::serialize(obj).with_context(|| "Failed to serialize object"),
-            #[cfg(feature = "risc0")]
-            Self::Risc0 => {
-                ere_risc0::serialize_object(obj).with_context(|| "Failed to serialize object")
-            }
-            #[cfg(feature = "sp1")]
+            Self::Risc0 => risc0_zkvm::serde::to_vec(obj)
+                .map(|vec| bytemuck::cast_slice(&vec).to_vec())
+                .with_context(|| "Failed to serialize object"),
             Self::SP1 => bincode::serialize(obj).with_context(|| "Failed to serialize object"),
-            #[cfg(feature = "zisk")]
             Self::Zisk => bincode::serialize(obj).with_context(|| "Failed to serialize object"),
         }
     }
