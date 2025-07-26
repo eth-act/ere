@@ -1,11 +1,7 @@
 [workspace]
-members = [ 
-    "lib",
-    "app", 
-    "prover",
-]
+members = ["lib", "app", "prover"]
 resolver = "2"
 
 [workspace.dependencies]
-pico-sdk = { git = "https://github.com/brevis-network/pico" }
+pico-sdk = { git = "https://github.com/brevis-network/pico", tag = "v1.1.4" }
 serde = { version = "1.0.205", features = ["derive"] }

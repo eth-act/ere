@@ -1,8 +1,7 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use std::time::Instant;
+use std::{path::Path, time::Instant};
 
-use compile::compile_sp1_program;
 use sp1_sdk::{
     CpuProver, CudaProver, NetworkProver, Prover, ProverClient, SP1ProofWithPublicValues,
     SP1ProvingKey, SP1Stdin, SP1VerifyingKey,
@@ -12,6 +11,8 @@ use zkvm_interface::{
     Compiler, Input, InputItem, NetworkProverConfig, ProgramExecutionReport, ProgramProvingReport,
     ProverResourceType, zkVM, zkVMError,
 };
+
+include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 mod compile;
 
@@ -88,8 +89,16 @@ pub struct EreSP1 {
     pk: SP1ProvingKey,
     /// Verification key
     vk: SP1VerifyingKey,
-    /// Proof and Verification orchestrator
-    client: ProverType,
+    /// Prover resource configuration for creating clients
+    resource: ProverResourceType,
+    // FIXME: The current version of SP1 (v5.0.5) has a problem where if proving the program crashes in the
+    // Moongate container, it leaves an internal mutex poisoned, which prevents further proving attempts.
+    // This is a workaround to avoid the poisoned mutex issue by creating a new client for each prove call.
+    // We still use the `setup(...)` method to create the proving and verification keys only once, such that when
+    // later calling `prove(...)` in a fresh client, we can reuse the keys and avoiding extra work.
+    //
+    // Eventually, this should be fixed in the SP1 SDK and we can create the `client` in the `new(...)` method.
+    // For more context see: https://github.com/eth-act/zkevm-benchmark-workload/issues/54
 }
 
 impl Compiler for RV32_IM_SUCCINCT_ZKVM_ELF {
@@ -97,8 +106,11 @@ impl Compiler for RV32_IM_SUCCINCT_ZKVM_ELF {
 
     type Program = Vec<u8>;
 
-    fn compile(path_to_program: &std::path::Path) -> Result<Self::Program, Self::Error> {
-        compile_sp1_program(path_to_program).map_err(SP1Error::from)
+    fn compile(
+        workspace_directory: &Path,
+        guest_relative: &Path,
+    ) -> Result<Self::Program, Self::Error> {
+        compile::compile(workspace_directory, guest_relative).map_err(SP1Error::from)
     }
 }
 
@@ -125,24 +137,27 @@ impl EreSP1 {
         builder.build()
     }
 
+    fn create_client(resource: &ProverResourceType) -> ProverType {
+        match resource {
+            ProverResourceType::Cpu => ProverType::Cpu(ProverClient::builder().cpu().build()),
+            ProverResourceType::Gpu => ProverType::Gpu(ProverClient::builder().cuda().build()),
+            ProverResourceType::Network(config) => {
+                ProverType::Network(Self::create_network_prover(config))
+            }
+        }
+    }
+
     pub fn new(
         program: <RV32_IM_SUCCINCT_ZKVM_ELF as Compiler>::Program,
         resource: ProverResourceType,
     ) -> Self {
-        let client = match resource {
-            ProverResourceType::Cpu => ProverType::Cpu(ProverClient::builder().cpu().build()),
-            ProverResourceType::Gpu => ProverType::Gpu(ProverClient::builder().cuda().build()),
-            ProverResourceType::Network(config) => {
-                ProverType::Network(Self::create_network_prover(&config))
-            }
-        };
-        let (pk, vk) = client.setup(&program);
+        let (pk, vk) = Self::create_client(&resource).setup(&program);
 
         Self {
             program,
-            client,
             pk,
             vk,
+            resource,
         }
     }
 }
@@ -157,8 +172,9 @@ impl zkVM for EreSP1 {
             }
         }
 
+        let client = Self::create_client(&self.resource);
         let start = Instant::now();
-        let (_, exec_report) = self.client.execute(&self.program, &stdin)?;
+        let (_, exec_report) = client.execute(&self.program, &stdin)?;
         Ok(ProgramExecutionReport {
             total_num_cycles: exec_report.total_instruction_count(),
             region_cycles: exec_report.cycle_tracker.into_iter().collect(),
@@ -180,8 +196,9 @@ impl zkVM for EreSP1 {
             };
         }
 
+        let client = Self::create_client(&self.resource);
         let start = std::time::Instant::now();
-        let proof_with_inputs = self.client.prove(&self.pk, &stdin)?;
+        let proof_with_inputs = client.prove(&self.pk, &stdin)?;
         let proving_time = start.elapsed();
 
         let bytes = bincode::serialize(&proof_with_inputs)
@@ -196,9 +213,16 @@ impl zkVM for EreSP1 {
         let proof: SP1ProofWithPublicValues = bincode::deserialize(proof)
             .map_err(|err| SP1Error::Verify(VerifyError::Bincode(err)))?;
 
-        self.client
-            .verify(&proof, &self.vk)
-            .map_err(zkVMError::from)
+        let client = Self::create_client(&self.resource);
+        client.verify(&proof, &self.vk).map_err(zkVMError::from)
+    }
+
+    fn name(&self) -> &'static str {
+        NAME
+    }
+
+    fn sdk_version(&self) -> &'static str {
+        SDK_VERSION
     }
 }
 
@@ -211,7 +235,7 @@ mod execute_tests {
 
     fn get_compiled_test_sp1_elf() -> Result<Vec<u8>, SP1Error> {
         let test_guest_path = get_execute_test_guest_program_path();
-        RV32_IM_SUCCINCT_ZKVM_ELF::compile(&test_guest_path)
+        RV32_IM_SUCCINCT_ZKVM_ELF::compile(&test_guest_path, Path::new(""))
     }
 
     fn get_execute_test_guest_program_path() -> PathBuf {
@@ -240,8 +264,8 @@ mod execute_tests {
 
         let result = zkvm.execute(&input_builder);
 
-        if let Err(e) = &result {
-            panic!("Execution error: {:?}", e);
+        if let Err(err) = &result {
+            panic!("Execution error: {err}");
         }
     }
 
@@ -282,7 +306,7 @@ mod prove_tests {
 
     fn get_compiled_test_sp1_elf_for_prove() -> Result<Vec<u8>, SP1Error> {
         let test_guest_path = get_prove_test_guest_program_path();
-        RV32_IM_SUCCINCT_ZKVM_ELF::compile(&test_guest_path)
+        RV32_IM_SUCCINCT_ZKVM_ELF::compile(&test_guest_path, Path::new(""))
     }
 
     #[test]
@@ -301,7 +325,7 @@ mod prove_tests {
         let proof_bytes = match zkvm.prove(&input_builder) {
             Ok((prove_result, _)) => prove_result,
             Err(err) => {
-                panic!("Proving error in test: {:?}", err);
+                panic!("Proving error in test: {err}");
             }
         };
 
@@ -363,7 +387,7 @@ mod prove_tests {
                 prove_result
             }
             Err(err) => {
-                panic!("Network proving error: {:?}", err);
+                panic!("Network proving error: {err}");
             }
         };
 

@@ -56,14 +56,26 @@ pub enum CompileError {
         #[source]
         source: toml::de::Error,
     },
-    #[error("Failed to execute `cargo-zisk build --release` in {cwd}: {source}")]
-    CargoZiskBuild {
+    #[error("Failed to execute `RUSTUP_TOOLCHAIN=zisk rustc --print sysroot`")]
+    RustcSysroot {
+        #[source]
+        source: io::Error,
+    },
+    #[error("Failed to execute `cargo locate-project --workspace --message-format=plain`")]
+    CargoLocateProject {
+        #[source]
+        source: io::Error,
+    },
+    #[error("Failed to execute `RUSTC=$ZISK_RUSTC cargo build --release ...` in {cwd}: {source}")]
+    CargoBuild {
         cwd: PathBuf,
         #[source]
         source: io::Error,
     },
-    #[error("`cargo-zisk build --release` failed with status: {status} for program at {path}")]
-    CargoZiskBuildFailed { status: ExitStatus, path: PathBuf },
+    #[error(
+        "`RUSTC=$ZISK_RUSTC cargo build --release ...` failed with status: {status} for program at {path}"
+    )]
+    CargoBuildFailed { status: ExitStatus, path: PathBuf },
 }
 
 #[derive(Debug, Error)]

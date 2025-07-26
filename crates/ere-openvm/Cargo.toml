@@ -16,5 +16,8 @@ openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v
 
 thiserror = "2"
 
+[build-dependencies]
+build-utils = { workspace = true }
+
 [lints]
 workspace = true

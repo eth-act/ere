@@ -1,4 +1,13 @@
 ARG BASE_IMAGE_TAG=latest
+
+# Build guest-compiler binary
+FROM rust:1.85 AS builder
+RUN apt-get update && apt-get install -y build-essential libclang-dev
+WORKDIR /guest-compiler
+COPY . .
+RUN cargo build --release -p sp1-guest-compiler
+
+# Build zkVM builder image
 FROM ere-base:${BASE_IMAGE_TAG}
 
 ARG USERNAME=ere_user
@@ -18,6 +27,7 @@ RUN chmod +x /tmp/install_sp1_sdk.sh
 # The install_sp1_sdk.sh script will respect these ENV variables.
 # TODO: we are hardcoding /root which may not work for other users
 ENV SP1UP_HOME="/root/.sp1up" \
+    SP1UP_SDK_INSTALL_VERSION="v5.0.8" \
     SP1_HOME="/root/.sp1"
 
 # Run the SP1 SDK installation script
@@ -31,14 +41,9 @@ ENV PATH="${SP1UP_HOME}/bin:${SP1_HOME}/bin:$PATH"
 # Verify SP1 installation (optional here, as script does it, but good for sanity)
 RUN cargo prove --version
 
-# Copy the entire ere project context
-# The WORKDIR is /app from the base image
-WORKDIR /app
-COPY . .
-
-# Run tests
-RUN echo "Running tests for ere-sp1 library..." && \
-    cargo test --release -p ere-sp1 --lib -- --color always
+# Copy guest compiler binary
+COPY --from=builder /guest-compiler/target/release/sp1-guest-compiler /guest-compiler/guest-compiler
+WORKDIR /guest-compiler
 
 CMD ["/bin/bash"] 
 

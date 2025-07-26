@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use error::JoltError;
 use jolt_core::host::Program;
 use jolt_methods::{preprocess_prover, preprocess_verifier, prove_generic, verify_generic};
@@ -11,6 +13,7 @@ use zkvm_interface::{
     zkVMError,
 };
 
+include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 mod error;
 mod jolt_methods;
 mod utils;
@@ -23,8 +26,14 @@ impl Compiler for JOLT_TARGET {
 
     type Program = Program;
 
-    fn compile(path_to_program: &std::path::Path) -> Result<Self::Program, Self::Error> {
-        let manifest_path = path_to_program.to_path_buf().join("Cargo.toml");
+    fn compile(
+        workspace_directory: &Path,
+        guest_relative: &Path,
+    ) -> Result<Self::Program, Self::Error> {
+        let manifest_path = workspace_directory
+            .join(guest_relative)
+            .to_path_buf()
+            .join("Cargo.toml");
         let package_name = package_name_from_manifest(&manifest_path).unwrap();
         let mut program = Program::new(&package_name);
         program.set_std(true);
@@ -102,12 +111,20 @@ impl zkVM for EreJolt {
             Err(zkVMError::from(JoltError::ProofVerificationFailed))
         }
     }
+
+    fn name(&self) -> &'static str {
+        NAME
+    }
+
+    fn sdk_version(&self) -> &'static str {
+        SDK_VERSION
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::{EreJolt, JOLT_TARGET};
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
     use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
 
     // TODO: for now, we just get one test file
@@ -127,16 +144,16 @@ mod tests {
     #[test]
     fn test_compile_trait() {
         let test_guest_path = get_compile_test_guest_program_path();
-        let program = JOLT_TARGET::compile(&test_guest_path).unwrap();
+        let program = JOLT_TARGET::compile(&test_guest_path, Path::new("")).unwrap();
         assert!(program.elf.is_some(), "elf has not been compiled");
     }
 
     #[test]
     fn test_execute() {
         let test_guest_path = get_compile_test_guest_program_path();
-        let program = JOLT_TARGET::compile(&test_guest_path).unwrap();
+        let program = JOLT_TARGET::compile(&test_guest_path, Path::new("")).unwrap();
         let mut inputs = Input::new();
-        inputs.write(1 as u32);
+        inputs.write(1_u32);
 
         let zkvm = EreJolt::new(program, ProverResourceType::Cpu);
         let _execution = zkvm.execute(&inputs).unwrap();

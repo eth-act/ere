@@ -1,5 +1,0 @@
-{
-    "name": "risc0guest",
-    "elf_path": "/Users/kev/work/ere/tests/risczero/project_structure_build/target/riscv-guest/methods/risc0guest/riscv32im-risc0-zkvm-elf/release/risc0guest.bin",
-    "image_id_hex": "6a0d2e9f10ded46c571e644cdf8776e8f96be1844df36386fdee6c0a0e90084c"
-}

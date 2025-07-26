@@ -29,12 +29,14 @@ curl -L https://sp1up.succinct.xyz | bash -s -- --yes
 # and for subsequent commands if this script is sourced.
 export PATH="${SP1UP_HOME}/bin:${SP1_HOME}/bin:$PATH"
 
+export SDK_VERSION="${SP1UP_SDK_INSTALL_VERSION:-latest}"
+
 # Run sp1up to install/update the toolchain
 if ! command -v sp1up &> /dev/null; then
     echo "Error: sp1up command not found after installation script. Check PATH or installation." >&2
     exit 1
 fi
-sp1up # Installs the toolchain and cargo-prove
+sp1up -v ${SDK_VERSION} # Installs the toolchain and cargo-prove
 
 echo "Verifying SP1 installation..."
 if ! command -v cargo &> /dev/null; then

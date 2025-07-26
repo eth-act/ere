@@ -28,8 +28,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openmpi-bin \
     openmpi-common \
     libclang-dev \
-    clang \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    clang
+
+RUN wget https://developer.download.nvidia.com/compute/cuda/repos/$(. /etc/os-release && echo "${ID}${VERSION_ID}" | tr -d '.')/$(uname -i)/cuda-keyring_1.1-1_all.deb && \
+    dpkg -i cuda-keyring_1.1-1_all.deb && \
+    rm cuda-keyring_1.1-1_all.deb && \
+    apt update && \
+    apt install -y cuda-toolkit && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy the ZisK SDK installer script from the workspace context
 COPY scripts/sdk_installers/install_zisk_sdk.sh /tmp/install_zisk_sdk.sh
@@ -37,7 +43,8 @@ RUN chmod +x /tmp/install_zisk_sdk.sh
 
 # Run the ZisK SDK installation script using ziskup.
 # This script installs the 'zisk' Rust toolchain and cargo-zisk.
-RUN /tmp/install_zisk_sdk.sh && rm /tmp/install_zisk_sdk.sh # Clean up the script
+# TODO: Download the proving key if the CI runner has enough disk space.
+RUN SETUP_KEY=verify /tmp/install_zisk_sdk.sh && rm /tmp/install_zisk_sdk.sh # Clean up the script
 
 # The 'zisk' Rust toolchain is now installed.
 # cargo-zisk is installed in /root/.zisk/bin.
@@ -48,5 +55,17 @@ ENV PATH="${PATH}:${ZISK_BIN_DIR}"
 
 # Verify cargo-zisk is accessible
 RUN echo "Verifying Zisk installation in Dockerfile ..." && cargo-zisk --version
+
+# Copy the entire ere project context
+# The WORKDIR is /app from the base image
+WORKDIR /app
+COPY . .
+
+# Run only compile and execution test, because proving requires ~31 GiB disk
+# space for the provingKey.
+# TODO: Run all tests if the CI runner has enough disk space to install the proving key.
+RUN echo "Running tests for ere-zisk library..." && \
+    rm -rf ~/.zisk/provingKey && \
+    cargo test --release -p ere-zisk --lib -- --color always compile::tests execute_tests
 
 CMD ["/bin/bash"]

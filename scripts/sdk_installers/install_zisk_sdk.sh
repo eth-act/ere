@@ -31,10 +31,11 @@ ensure_tool_installed "rustup" "for managing Rust toolchains (ZisK installs its 
 ensure_tool_installed "cargo" "as cargo-zisk is a cargo subcommand"
 
 # Step 1: Download and run the script that installs the ziskup binary itself.
-# Export GH_RUNNER=true to ensure ziskup uses default non-interactive options.
-export GH_RUNNER=true
-curl https://raw.githubusercontent.com/0xPolygonHermez/zisk/main/ziskup/install.sh | bash
-unset GH_RUNNER
+# Export SETUP_KEY=proving to ensure no interactive options in `ziskup`.
+export ZISK_VERSION="0.9.0"
+export SETUP_KEY=${SETUP_KEY:=proving}
+curl "https://raw.githubusercontent.com/0xPolygonHermez/zisk/main/ziskup/install.sh" | bash
+unset SETUP_KEY
 
 # Step 2: Ensure the installed cargo-zisk binary is in PATH for this script session.
 export PATH="${PATH}:${HOME}/.zisk/bin"
@@ -47,28 +48,30 @@ if rustup toolchain list | grep -q "^zisk"; then
     echo "ZisK Rust toolchain found."
 else
     echo "Error: ZisK Rust toolchain ('zisk') not found after installation!" >&2
-    echo "       Attempting to run 'ziskup' again to ensure toolchain setup..."
-    # Sometimes ziskup might need a second run or explicit toolchain setup if path issues occurred initially
-    # However, for a script, we expect the first run to succeed. This is more of a diagnostic.
-    if command -v ziskup &> /dev/null; then ziskup; fi
-    if ! rustup toolchain list | grep -q "^zisk"; then
-      echo "Critical Error: ZisK Rust toolchain still not found!" >&2
-      exit 1
-    fi
+    exit 1
 fi
 
-echo "Checking for cargo-zisk CLI tool (using +zisk toolchain)..."
-# cargo-zisk should be callable via `cargo-zisk ...`
+echo "Checking for cargo-zisk CLI tool..."
 if cargo-zisk --version; then
     echo "cargo-zisk CLI tool verified successfully."
 else
     echo "Error: 'cargo-zisk --version' failed." >&2
-    echo "       Attempting verification with cargo-zisk directly (if in PATH from ${ZISK_BIN_DIR})..."
-    if command -v cargo-zisk &> /dev/null && cargo-zisk --version; then
-        echo "cargo-zisk found directly in PATH and verified."
-    else
-        echo "Error: cargo-zisk also not found directly or 'cargo-zisk --version' failed." >&2
-        echo "       Ensure ${ZISK_BIN_DIR} is effectively in PATH for new shells and check ziskup output." >&2
-        exit 1
-    fi
+    exit 1
+fi
+
+# Step 3: Build cargo-zisk-gpu from source with GPU features enabled
+TEMP_DIR=$(mktemp -d)
+git clone https://github.com/0xPolygonHermez/zisk.git --single-branch --branch "v$ZISK_VERSION" "$TEMP_DIR/zisk"
+cd "$TEMP_DIR/zisk"
+cargo build --release --features gpu
+cp ./target/release/cargo-zisk "${HOME}/.zisk/bin/cargo-zisk-gpu"
+cp ./target/release/libzisk_witness.so "${HOME}/.zisk/bin/libzisk_witness_gpu.so"
+rm -rf "$TEMP_DIR"
+
+echo "Checking for cargo-zisk-gpu CLI tool..."
+if cargo-zisk-gpu --version; then
+    echo "cargo-zisk-gpu CLI tool verified successfully."
+else
+    echo "Error: 'cargo-zisk-gpu --version' failed." >&2
+    exit 1
 fi

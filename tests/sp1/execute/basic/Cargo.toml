@@ -6,4 +6,4 @@ edition = "2021"
 [workspace]
 
 [dependencies]
-sp1-zkvm = { git = "https://github.com/succinctlabs/sp1.git" }
+sp1-zkvm = "5.0.5"

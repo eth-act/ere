@@ -1,0 +1,21 @@
+[package]
+name = "risc0-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+tempfile.workspace = true
+toml.workspace = true
+tracing.workspace = true
+clap.workspace = true
+anyhow.workspace = true
+hex.workspace = true
+zkvm-interface.workspace = true
+risc0-zkvm = { version = "^2.3.0", features = ["unstable"] }
+borsh = "1.5"
+bincode = "1.3"
+
+[lints]
+workspace = true

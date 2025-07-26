@@ -20,5 +20,8 @@ thiserror = "2"
 toml = "0.8"
 ark-serialize = "0.5.0"
 
+[build-dependencies]
+build-utils = { workspace = true }
+
 [lints]
 workspace = true
