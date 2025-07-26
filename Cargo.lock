@@ -2381,7 +2381,9 @@ dependencies = [
  "borsh",
  "build-utils",
  "bytemuck",
+ "cargo_metadata 0.19.2",
  "hex",
+ "risc0-build",
  "risc0-zkvm",
  "serde",
  "serde_json",
@@ -8147,7 +8149,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.4.15",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]

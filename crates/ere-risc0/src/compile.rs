@@ -1,110 +1,45 @@
 use crate::error::CompileError;
-use hex::FromHex;
+use cargo_metadata::MetadataCommand;
+use risc0_build::GuestOptions;
 use risc0_zkvm::Digest;
 use serde::{Deserialize, Serialize};
-use std::{
-    fs,
-    path::{Path, PathBuf},
-    process::Command,
-};
+use std::path::Path;
 use tracing::info;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Risc0Program {
-    // TODO: Seems like the risc0 compilation is also compiling
-    // TODO: the analogous prover and verifying key
     pub(crate) elf: Vec<u8>,
     pub(crate) image_id: Digest,
 }
 
-pub fn compile_risc0_program(
-    workspace_directory: &Path,
-    guest_program_relative: &Path,
-) -> Result<Risc0Program, CompileError> {
-    let program_crate_path = workspace_directory.join(guest_program_relative);
-    info!(
-        "Compiling Risc0 program at {}",
-        program_crate_path.display()
-    );
+pub fn compile_risc0_program(guest_dir: &Path) -> Result<Risc0Program, CompileError> {
+    info!("Compiling Risc0 program at {}", guest_dir.display());
 
-    if !program_crate_path.is_dir() {
-        return Err(CompileError::InvalidGuestPath(
-            program_crate_path.to_path_buf(),
-        ));
-    }
-
-    let guest_manifest_path = program_crate_path.join("Cargo.toml");
-    if !guest_manifest_path.exists() {
-        return Err(CompileError::CargoTomlMissing {
-            program_dir: program_crate_path.to_path_buf(),
-            manifest_path: guest_manifest_path.clone(),
-        });
-    }
-
-    // ── read + parse Cargo.toml ───────────────────────────────────────────
-    let manifest_content = fs::read_to_string(&guest_manifest_path)
-        .map_err(|e| CompileError::io(e, "Failed to read guest manifest"))?;
-
-    let manifest_toml: toml::Value =
-        manifest_content
-            .parse::<toml::Value>()
-            .map_err(|e| CompileError::ParseCargoToml {
-                path: guest_manifest_path.clone(),
-                source: e,
-            })?;
-
-    let package_name = manifest_toml
-        .get("package")
-        .and_then(|p| p.get("name"))
-        .and_then(|n| n.as_str())
+    let metadata = MetadataCommand::new()
+        .current_dir(guest_dir)
+        .manifest_path("Cargo.toml")
+        .exec()?;
+    let package = metadata
+        .root_package()
         .ok_or_else(|| CompileError::MissingPackageName {
-            path: guest_manifest_path.clone(),
+            path: guest_dir.to_path_buf(),
         })?;
 
-    info!("Parsed package name: {package_name}");
+    let guest =
+        risc0_build::build_package(package, &metadata.target_directory, GuestOptions::default())
+            .map_err(|source| CompileError::Risc0BuildFailure {
+                source,
+                crate_path: guest_dir.to_path_buf(),
+            })?
+            .into_iter()
+            .next()
+            .ok_or(CompileError::Risc0BuildMissingGuest)?;
 
-    info!("Running `cargo risczero build`");
-
-    let output = Command::new("cargo")
-        .current_dir(workspace_directory)
-        .args(["risczero", "build", "--workspace", "--package"])
-        .arg(package_name)
-        .output()
-        .map_err(|err| CompileError::io(err, "Failed to run `cargo risczero build`"))?;
-
-    if !output.status.success() {
-        return Err(CompileError::CargoRisczeroBuildFailure {
-            crate_path: program_crate_path.to_path_buf(),
-            status: output.status,
-            stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-            stderr: String::from_utf8_lossy(&output.stderr).to_string(),
-        });
-    }
-
-    let (image_id, elf_path) = {
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        let line = stdout
-            .lines()
-            .find(|line| line.starts_with("ImageID: "))
-            .ok_or(CompileError::MissingImageIdAndElfPath)?;
-        let (image_id, elf_path) = line
-            .trim_start_matches("ImageID: ")
-            .split_once(" - ")
-            .ok_or(CompileError::MissingImageIdAndElfPath)?;
-        (image_id.to_string(), PathBuf::from(elf_path))
-    };
-
-    if !elf_path.exists() {
-        return Err(CompileError::InvalidElfPath(elf_path));
-    }
-
-    let elf = fs::read(&elf_path).map_err(|err| CompileError::io(err, "Failed to read elf"))?;
+    let elf = guest.elf.to_vec();
+    let image_id = guest.image_id;
 
     info!("Risc0 program compiled OK - {} bytes", elf.len());
     info!("Image ID - {image_id}");
-
-    let image_id =
-        Digest::from_hex(&image_id).map_err(|_| CompileError::InvalidImageId(image_id))?;
 
     Ok(Risc0Program { elf, image_id })
 }
@@ -113,7 +48,7 @@ pub fn compile_risc0_program(
 mod tests {
     mod compile {
         use crate::compile::compile_risc0_program;
-        use std::path::{Path, PathBuf};
+        use std::path::PathBuf;
 
         fn get_test_risc0_methods_crate_path() -> PathBuf {
             let workspace_dir = env!("CARGO_WORKSPACE_DIR");
@@ -130,8 +65,8 @@ mod tests {
         fn test_compile_risc0_method() {
             let test_methods_path = get_test_risc0_methods_crate_path();
 
-            let program = compile_risc0_program(&test_methods_path, Path::new(""))
-                .expect("risc0 compilation failed");
+            let program =
+                compile_risc0_program(&test_methods_path).expect("risc0 compilation failed");
             assert!(
                 !program.elf.is_empty(),
                 "Risc0 ELF bytes should not be empty."
