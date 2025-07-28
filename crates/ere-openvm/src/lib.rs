@@ -65,11 +65,13 @@ impl Compiler for OPENVM_TARGET {
             toml::from_str(&toml)
                 .map_err(|err| CompileError::DeserializeConfigFailed(err.into()))?
         } else {
+            // The default `AppConfig` copied from https://github.com/openvm-org/openvm/blob/ca36de3/crates/cli/src/default.rs#L31.
             AppConfig {
                 app_fri_params: FriParameters::standard_with_100_bits_conjectured_security(
                     DEFAULT_APP_LOG_BLOWUP,
                 )
                 .into(),
+                // By default it supports RISCV32IM with IO but no precompiles.
                 app_vm_config: SdkVmConfig::builder()
                     .system(Default::default())
                     .rv32i(Default::default())
