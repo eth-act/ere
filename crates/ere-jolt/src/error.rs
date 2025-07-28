@@ -34,6 +34,8 @@ pub enum CompileError {
     },
     #[error("Failed to build guest")]
     BuildFailed,
+    #[error("Failed to read elf at {path}: {source}")]
+    ReadElfFailed { source: io::Error, path: PathBuf },
     #[error("Failed to set current directory to {path}: {source}")]
     SetCurrentDirFailed { source: io::Error, path: PathBuf },
 }

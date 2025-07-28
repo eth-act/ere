@@ -7,11 +7,8 @@ use jolt::{JoltHyperKZGProof, JoltProverPreprocessing, JoltVerifierPreprocessing
 use jolt_core::host::Program;
 use jolt_methods::{preprocess_prover, preprocess_verifier, prove_generic, verify_generic};
 use jolt_sdk::host::DEFAULT_TARGET_DIR;
-use std::{
-    env::set_current_dir,
-    io::Cursor,
-    path::{Path, PathBuf},
-};
+use std::{env::set_current_dir, fs, io::Cursor, path::Path};
+use tempfile::TempDir;
 use zkvm_interface::{
     Compiler, Input, ProgramExecutionReport, ProgramProvingReport, ProverResourceType, zkVM,
     zkVMError,
@@ -28,10 +25,7 @@ pub struct JOLT_TARGET;
 impl Compiler for JOLT_TARGET {
     type Error = JoltError;
 
-    // Note that we use `PathBuf` as `Program` because the only way to pass elf
-    // information to `jolt::host::Program` is by setting elf path, so we don't
-    // bother to read it into memory here.
-    type Program = PathBuf;
+    type Program = Vec<u8>;
 
     fn compile(
         workspace_directory: &Path,
@@ -56,7 +50,12 @@ impl Compiler for JOLT_TARGET {
         })
         .map_err(|_| CompileError::BuildFailed)?;
 
-        Ok(elf_path)
+        let elf = fs::read(&elf_path).map_err(|source| CompileError::ReadElfFailed {
+            source,
+            path: elf_path.to_path_buf(),
+        })?;
+
+        Ok(elf)
     }
 }
 
@@ -67,36 +66,35 @@ pub struct EreJoltProof {
 }
 
 pub struct EreJolt {
-    program: jolt::host::Program,
+    elf: Vec<u8>,
     prover_preprocessing: JoltProverPreprocessing<4, jolt::F, jolt::PCS, jolt::ProofTranscript>,
     verifier_preprocessing: JoltVerifierPreprocessing<4, jolt::F, jolt::PCS, jolt::ProofTranscript>,
     _resource: ProverResourceType,
 }
 
 impl EreJolt {
-    pub fn new(elf_path: PathBuf, _resource: ProverResourceType) -> Self {
-        // Set a dummy package name because we don't need to compile anymore.
-        // And once we set the `program.elf`, methods other than `Program::build`
-        // will work since they only depend on the path to elf.
-        let mut program = Program::new("");
-        program.elf = Some(elf_path);
+    pub fn new(elf: Vec<u8>, _resource: ProverResourceType) -> Result<Self, zkVMError> {
+        let (_tempdir, program) = program(&elf)?;
         let prover_preprocessing = preprocess_prover(&program);
         let verifier_preprocessing = preprocess_verifier(&program);
-        EreJolt {
-            program,
+        Ok(EreJolt {
+            elf,
             prover_preprocessing,
             verifier_preprocessing,
             _resource,
-        }
+        })
     }
 }
+
 impl zkVM for EreJolt {
     fn execute(
         &self,
         _inputs: &Input,
     ) -> Result<zkvm_interface::ProgramExecutionReport, zkVMError> {
+        let (_tempdir, program) = program(&self.elf)?;
+
         // TODO: Check how to pass private input to jolt
-        let summary = self.program.clone().trace_analyze::<jolt::F>(&[]);
+        let summary = program.clone().trace_analyze::<jolt::F>(&[]);
         let trace_len = summary.trace_len();
 
         Ok(ProgramExecutionReport::new(trace_len as u64))
@@ -106,8 +104,10 @@ impl zkVM for EreJolt {
         &self,
         inputs: &Input,
     ) -> Result<(Vec<u8>, zkvm_interface::ProgramProvingReport), zkVMError> {
+        let (_tempdir, program) = program(&self.elf)?;
+
         let now = std::time::Instant::now();
-        let proof = prove_generic(&self.program, self.prover_preprocessing.clone(), inputs);
+        let proof = prove_generic(&program, self.prover_preprocessing.clone(), inputs);
         let elapsed = now.elapsed();
 
         let mut proof_bytes = Vec::new();
@@ -136,13 +136,22 @@ impl zkVM for EreJolt {
     }
 }
 
+pub fn program(elf: &[u8]) -> Result<(TempDir, jolt::host::Program), zkVMError> {
+    let tempdir = TempDir::new().map_err(|err| zkVMError::Other(err.into()))?;
+    let elf_path = tempdir.path().join("guest.elf");
+    fs::write(&elf_path, elf).map_err(|err| zkVMError::Other(err.into()))?;
+    // Set a dummy package name because we don't need to compile anymore.
+    // And once we set the `program.elf`, methods other than `Program::build`
+    // will work since they only depend on the path to elf.
+    let mut program = Program::new("");
+    program.elf = Some(elf_path);
+    Ok((tempdir, program))
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{EreJolt, JOLT_TARGET};
-    use std::{
-        fs,
-        path::{Path, PathBuf},
-    };
+    use std::path::{Path, PathBuf};
     use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
 
     // TODO: for now, we just get one test file
@@ -161,11 +170,8 @@ mod tests {
     #[test]
     fn test_compile_trait() {
         let test_guest_path = get_compile_test_guest_program_path();
-        let elf_path = JOLT_TARGET::compile(&test_guest_path, Path::new("")).unwrap();
-        assert!(
-            fs::metadata(elf_path).unwrap().len() != 0,
-            "elf has not been compiled"
-        );
+        let elf = JOLT_TARGET::compile(&test_guest_path, Path::new("")).unwrap();
+        assert!(!elf.is_empty(), "elf has not been compiled");
     }
 
     #[test]
@@ -175,7 +181,7 @@ mod tests {
         let mut inputs = Input::new();
         inputs.write(1_u32);
 
-        let zkvm = EreJolt::new(program, ProverResourceType::Cpu);
+        let zkvm = EreJolt::new(program, ProverResourceType::Cpu).unwrap();
         zkvm.execute(&inputs).unwrap();
     }
 
@@ -186,7 +192,7 @@ mod tests {
         let mut inputs = Input::new();
         inputs.write(1_u32);
 
-        let zkvm = EreJolt::new(program, ProverResourceType::Cpu);
+        let zkvm = EreJolt::new(program, ProverResourceType::Cpu).unwrap();
         let (proof, _) = zkvm.prove(&inputs).unwrap();
         zkvm.verify(&proof).unwrap();
     }

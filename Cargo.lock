@@ -2292,6 +2292,7 @@ dependencies = [
  "jolt",
  "jolt-core",
  "jolt-sdk",
+ "tempfile",
  "thiserror 2.0.12",
  "toml 0.8.22",
  "zkvm-interface",
