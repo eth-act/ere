@@ -1,3 +1,4 @@
+use std::{io, path::PathBuf};
 use thiserror::Error;
 use zkvm_interface::zkVMError;
 
@@ -13,12 +14,44 @@ pub enum OpenVMError {
     Compile(#[from] CompileError),
 
     #[error(transparent)]
+    Execute(#[from] ExecuteError),
+
+    #[error(transparent)]
+    Prove(#[from] ProveError),
+
+    #[error(transparent)]
     Verify(#[from] VerifyError),
 }
 
 #[derive(Debug, Error)]
 pub enum CompileError {
-    #[error("OpenVM execution failed: {0}")]
+    #[error("Failed to build guest, code: {0}")]
+    BuildFailed(i32),
+    #[error("Guest building skipped (OPENVM_SKIP_BUILD is set)")]
+    BuildSkipped,
+    #[error("Missing to find unique elf: {0}")]
+    UniqueElfNotFound(Box<dyn std::error::Error + Send + Sync + 'static>),
+    #[error("Failed to read elf at {path}: {source}")]
+    ReadElfFailed { source: io::Error, path: PathBuf },
+    #[error("Failed to read OpenVM's config file at {path}: {source}")]
+    ReadConfigFailed { source: io::Error, path: PathBuf },
+    #[error("Failed to deserialize OpenVM's config file: {0}")]
+    DeserializeConfigFailed(Box<dyn std::error::Error + Send + Sync + 'static>),
+    #[error("Failed to decode elf: {0}")]
+    DecodeFailed(Box<dyn std::error::Error + Send + Sync + 'static>),
+    #[error("Failed to transpile elf: {0}")]
+    TranspileFailed(Box<dyn std::error::Error + Send + Sync + 'static>),
+}
+
+#[derive(Debug, Error)]
+pub enum ExecuteError {
+    #[error("OpenVM execute failed: {0}")]
+    Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
+}
+
+#[derive(Debug, Error)]
+pub enum ProveError {
+    #[error("OpenVM prove failed: {0}")]
     Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
 }
 
