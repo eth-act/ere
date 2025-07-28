@@ -75,6 +75,9 @@ pub struct EreJolt {
 
 impl EreJolt {
     pub fn new(elf_path: PathBuf, _resource: ProverResourceType) -> Self {
+        // Set a dummy package name because we don't need to compile anymore.
+        // And once we set the `program.elf`, methods other than `Program::build`
+        // will work since they only depend on the path to elf.
         let mut program = Program::new("");
         program.elf = Some(elf_path);
         let prover_preprocessing = preprocess_prover(&program);
