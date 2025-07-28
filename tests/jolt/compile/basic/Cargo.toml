@@ -1,25 +1,12 @@
 [package]
-name = "basic"
+name = "guest"
 version = "0.1.0"
 edition = "2021"
 
-[workspace]
-members = ["guest"]
-
-[profile.release]
-debug = 1
-codegen-units = 1
-lto = "fat"
+[features]
+guest = []
 
 [dependencies]
-jolt-sdk = { git = "https://github.com/a16z/jolt", features = ["host"] }
-guest = { path = "./guest" }
-ark-serialize = "0.5.0"
+jolt = { package = "jolt-sdk", git = "https://github.com/a16z/jolt" }
 
-[features]
-icicle = ["jolt-sdk/icicle"]
-
-[patch.crates-io]
-ark-ff = { git = "https://github.com/a16z/arkworks-algebra", branch = "v0.5.0-optimize-mul-u64" }
-ark-ec = { git = "https://github.com/a16z/arkworks-algebra", branch = "v0.5.0-optimize-mul-u64" }
-ark-serialize = { git = "https://github.com/a16z/arkworks-algebra", branch = "v0.5.0-optimize-mul-u64" }
+[workspace]

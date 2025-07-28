@@ -1,12 +1,16 @@
-use std::path::Path;
-
-use error::JoltError;
+use crate::{
+    error::{CompileError, JoltError, ProveError, VerifyError},
+    utils::package_name_from_manifest,
+};
+use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
+use jolt::{JoltHyperKZGProof, JoltProverPreprocessing, JoltVerifierPreprocessing};
 use jolt_core::host::Program;
 use jolt_methods::{preprocess_prover, preprocess_verifier, prove_generic, verify_generic};
 use jolt_sdk::host::DEFAULT_TARGET_DIR;
-use utils::{
-    deserialize_public_input_with_proof, package_name_from_manifest,
-    serialize_public_input_with_proof,
+use std::{
+    env::set_current_dir,
+    io::Cursor,
+    path::{Path, PathBuf},
 };
 use zkvm_interface::{
     Compiler, Input, ProgramExecutionReport, ProgramProvingReport, ProverResourceType, zkVM,
@@ -24,38 +28,63 @@ pub struct JOLT_TARGET;
 impl Compiler for JOLT_TARGET {
     type Error = JoltError;
 
-    type Program = Program;
+    // Note that we use `PathBuf` as `Program` because the only way to pass elf
+    // information to `jolt::host::Program` is by setting elf path, so we don't
+    // bother to read it into memory here.
+    type Program = PathBuf;
 
     fn compile(
         workspace_directory: &Path,
         guest_relative: &Path,
     ) -> Result<Self::Program, Self::Error> {
-        let manifest_path = workspace_directory
-            .join(guest_relative)
-            .to_path_buf()
-            .join("Cargo.toml");
-        let package_name = package_name_from_manifest(&manifest_path).unwrap();
-        let mut program = Program::new(&package_name);
-        program.set_std(true);
-        program.set_manifest_path(manifest_path);
+        let guest_dir = workspace_directory.join(guest_relative);
 
-        // TODO: Note that if this fails, it will panic which is why it doesn't return a Result.
-        program.build(DEFAULT_TARGET_DIR);
+        // Change current directory for `Program::build` to build guest program.
+        set_current_dir(&guest_dir).map_err(|source| CompileError::SetCurrentDirFailed {
+            source,
+            path: guest_dir.to_path_buf(),
+        })?;
 
-        Ok(program)
+        let package_name = package_name_from_manifest(Path::new("Cargo.toml"))?;
+
+        // Note that if this fails, it will panic, hence we need to catch it.
+        let elf_path = std::panic::catch_unwind(|| {
+            let mut program = Program::new(&package_name);
+            program.set_std(true);
+            program.build(DEFAULT_TARGET_DIR);
+            program.elf.unwrap()
+        })
+        .map_err(|_| CompileError::BuildFailed)?;
+
+        Ok(elf_path)
     }
 }
 
+#[derive(CanonicalSerialize, CanonicalDeserialize)]
+pub struct EreJoltProof {
+    proof: JoltHyperKZGProof,
+    public_outputs: Vec<u8>,
+}
+
 pub struct EreJolt {
-    program: <JOLT_TARGET as Compiler>::Program,
+    program: jolt::host::Program,
+    prover_preprocessing: JoltProverPreprocessing<4, jolt::F, jolt::PCS, jolt::ProofTranscript>,
+    verifier_preprocessing: JoltVerifierPreprocessing<4, jolt::F, jolt::PCS, jolt::ProofTranscript>,
+    _resource: ProverResourceType,
 }
 
 impl EreJolt {
-    pub fn new(
-        program: <JOLT_TARGET as Compiler>::Program,
-        _resource_type: ProverResourceType,
-    ) -> Self {
-        EreJolt { program }
+    pub fn new(elf_path: PathBuf, _resource: ProverResourceType) -> Self {
+        let mut program = Program::new("");
+        program.elf = Some(elf_path);
+        let prover_preprocessing = preprocess_prover(&program);
+        let verifier_preprocessing = preprocess_verifier(&program);
+        EreJolt {
+            program,
+            prover_preprocessing,
+            verifier_preprocessing,
+            _resource,
+        }
     }
 }
 impl zkVM for EreJolt {
@@ -63,14 +92,9 @@ impl zkVM for EreJolt {
         &self,
         _inputs: &Input,
     ) -> Result<zkvm_interface::ProgramExecutionReport, zkVMError> {
-        // TODO: check ProgramSummary
-        // TODO: FIXME
-        // let summary = self
-        //     .program
-        //     .clone()
-        //     .trace_analyze::<jolt::F>(inputs.bytes());
-        // let trace_len = summary.trace_len();
-        let trace_len = 0;
+        // TODO: Check how to pass private input to jolt
+        let summary = self.program.clone().trace_analyze::<jolt::F>(&[]);
+        let trace_len = summary.trace_len();
 
         Ok(ProgramExecutionReport::new(trace_len as u64))
     }
@@ -79,37 +103,25 @@ impl zkVM for EreJolt {
         &self,
         inputs: &Input,
     ) -> Result<(Vec<u8>, zkvm_interface::ProgramProvingReport), zkVMError> {
-        // TODO: make this stateful and do in setup since its expensive and should be done once per program;
-        let preprocessed_key = preprocess_prover(&self.program);
-
         let now = std::time::Instant::now();
-        let (output_bytes, proof) = prove_generic(&self.program, preprocessed_key, inputs);
+        let proof = prove_generic(&self.program, self.prover_preprocessing.clone(), inputs);
         let elapsed = now.elapsed();
 
-        let proof_with_public_inputs =
-            serialize_public_input_with_proof(&output_bytes, &proof).unwrap();
+        let mut proof_bytes = Vec::new();
+        proof
+            .serialize_compressed(&mut proof_bytes)
+            .map_err(|err| JoltError::Prove(ProveError::Serialization(err)))?;
 
-        Ok((proof_with_public_inputs, ProgramProvingReport::new(elapsed)))
+        Ok((proof_bytes, ProgramProvingReport::new(elapsed)))
     }
 
-    fn verify(&self, proof_with_public_inputs: &[u8]) -> Result<(), zkVMError> {
-        let preprocessed_verifier = preprocess_verifier(&self.program);
-        let (public_inputs, proof) =
-            deserialize_public_input_with_proof(proof_with_public_inputs).unwrap();
+    fn verify(&self, proof_bytes: &[u8]) -> Result<(), zkVMError> {
+        let proof = EreJoltProof::deserialize_compressed(&mut Cursor::new(proof_bytes))
+            .map_err(|err| JoltError::Verify(VerifyError::Serialization(err)))?;
 
-        let mut outputs = Input::new();
-        assert!(public_inputs.is_empty());
-        outputs.write(public_inputs);
+        verify_generic(proof, self.verifier_preprocessing.clone()).map_err(JoltError::Verify)?;
 
-        // TODO: I don't think we should require the inputs when verifying
-        let inputs = Input::new();
-
-        let valid = verify_generic(proof, inputs, outputs, preprocessed_verifier);
-        if valid {
-            Ok(())
-        } else {
-            Err(zkVMError::from(JoltError::ProofVerificationFailed))
-        }
+        Ok(())
     }
 
     fn name(&self) -> &'static str {
@@ -124,7 +136,10 @@ impl zkVM for EreJolt {
 #[cfg(test)]
 mod tests {
     use crate::{EreJolt, JOLT_TARGET};
-    use std::path::{Path, PathBuf};
+    use std::{
+        fs,
+        path::{Path, PathBuf},
+    };
     use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
 
     // TODO: for now, we just get one test file
@@ -136,7 +151,6 @@ mod tests {
             .join("jolt")
             .join("compile")
             .join("basic")
-            .join("guest")
             .canonicalize()
             .expect("Failed to find or canonicalize test guest program at <CARGO_WORKSPACE_DIR>/tests/compile/jolt")
     }
@@ -144,8 +158,11 @@ mod tests {
     #[test]
     fn test_compile_trait() {
         let test_guest_path = get_compile_test_guest_program_path();
-        let program = JOLT_TARGET::compile(&test_guest_path, Path::new("")).unwrap();
-        assert!(program.elf.is_some(), "elf has not been compiled");
+        let elf_path = JOLT_TARGET::compile(&test_guest_path, Path::new("")).unwrap();
+        assert!(
+            fs::metadata(elf_path).unwrap().len() != 0,
+            "elf has not been compiled"
+        );
     }
 
     #[test]
@@ -156,17 +173,18 @@ mod tests {
         inputs.write(1_u32);
 
         let zkvm = EreJolt::new(program, ProverResourceType::Cpu);
-        let _execution = zkvm.execute(&inputs).unwrap();
+        zkvm.execute(&inputs).unwrap();
     }
-    // #[test]
-    // fn test_prove_verify() {
-    //     let test_guest_path = get_compile_test_guest_program_path();
-    //     let program = JOLT_TARGET::compile(&test_guest_path).unwrap();
 
-    //     // TODO: I don't think we should require the inputs when verifying
-    //     let inputs = Input::new();
+    #[test]
+    fn test_prove_verify() {
+        let test_guest_path = get_compile_test_guest_program_path();
+        let program = JOLT_TARGET::compile(&test_guest_path, Path::new("")).unwrap();
+        let mut inputs = Input::new();
+        inputs.write(1_u32);
 
-    //     let (proof, _) = EreJolt::prove(&program, &inputs).unwrap();
-    //     EreJolt::verify(&program, &proof).unwrap();
-    // }
+        let zkvm = EreJolt::new(program, ProverResourceType::Cpu);
+        let (proof, _) = zkvm.prove(&inputs).unwrap();
+        zkvm.verify(&proof).unwrap();
+    }
 }

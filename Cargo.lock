@@ -1334,7 +1334,7 @@ checksum = "5b63caa9aa9397e2d9480a9b13673856c78d8ac123288526c37d7839f2a86990"
 [[package]]
 name = "common"
 version = "0.2.0"
-source = "git+https://github.com/kevaundray/jolt?branch=kw%2Fere-fork#831dd937303b1055f995d3836d0dd61a818969fe"
+source = "git+https://github.com/a16z/jolt?rev=55b9830#55b9830a3944dde55d33a55c42522b81dd49f87a"
 dependencies = [
  "ark-serialize 0.5.0",
  "serde",
@@ -2288,6 +2288,7 @@ version = "0.1.0"
 dependencies = [
  "ark-serialize 0.5.0",
  "build-utils",
+ "common",
  "jolt",
  "jolt-core",
  "jolt-sdk",
@@ -3648,7 +3649,7 @@ dependencies = [
 [[package]]
 name = "jolt"
 version = "0.1.0"
-source = "git+https://github.com/kevaundray/jolt?branch=kw%2Fere-fork#831dd937303b1055f995d3836d0dd61a818969fe"
+source = "git+https://github.com/a16z/jolt?rev=55b9830#55b9830a3944dde55d33a55c42522b81dd49f87a"
 dependencies = [
  "clap",
  "common",
@@ -3666,7 +3667,7 @@ dependencies = [
 [[package]]
 name = "jolt-core"
 version = "0.1.0"
-source = "git+https://github.com/kevaundray/jolt?branch=kw%2Fere-fork#831dd937303b1055f995d3836d0dd61a818969fe"
+source = "git+https://github.com/a16z/jolt?rev=55b9830#55b9830a3944dde55d33a55c42522b81dd49f87a"
 dependencies = [
  "alloy-primitives 0.7.7",
  "alloy-sol-types",
@@ -3688,6 +3689,7 @@ dependencies = [
  "getrandom 0.2.16",
  "indicatif",
  "itertools 0.10.5",
+ "lazy_static",
  "memory-stats",
  "num",
  "num-derive",
@@ -3719,7 +3721,7 @@ dependencies = [
 [[package]]
 name = "jolt-sdk"
 version = "0.1.0"
-source = "git+https://github.com/kevaundray/jolt?branch=kw%2Fere-fork#831dd937303b1055f995d3836d0dd61a818969fe"
+source = "git+https://github.com/a16z/jolt?rev=55b9830#55b9830a3944dde55d33a55c42522b81dd49f87a"
 dependencies = [
  "ark-bn254",
  "ark-ec",
@@ -3733,7 +3735,7 @@ dependencies = [
 [[package]]
 name = "jolt-sdk-macros"
 version = "0.1.0"
-source = "git+https://github.com/kevaundray/jolt?branch=kw%2Fere-fork#831dd937303b1055f995d3836d0dd61a818969fe"
+source = "git+https://github.com/a16z/jolt?rev=55b9830#55b9830a3944dde55d33a55c42522b81dd49f87a"
 dependencies = [
  "common",
  "proc-macro2",
@@ -4622,24 +4624,13 @@ dependencies = [
 
 [[package]]
 name = "object"
-version = "0.32.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a6a622008b6e321afc04970976f62ee297fdbaa6f95318ca343e3eebb9648441"
-dependencies = [
- "flate2",
- "memchr",
- "ruzstd 0.5.0",
-]
-
-[[package]]
-name = "object"
 version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b8ec7ab813848ba4522158d5517a6093db1ded27575b070f4177b8d12b41db5e"
 dependencies = [
  "flate2",
  "memchr",
- "ruzstd 0.6.0",
+ "ruzstd",
 ]
 
 [[package]]
@@ -4648,6 +4639,9 @@ version = "0.36.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62948e14d923ea95ea2c7c86c71013138b66525b86bdc08d2dcc262bdb497b87"
 dependencies = [
+ "crc32fast",
+ "hashbrown 0.15.3",
+ "indexmap 2.9.0",
  "memchr",
 ]
 
@@ -8217,17 +8211,6 @@ dependencies = [
 
 [[package]]
 name = "ruzstd"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58c4eb8a81997cf040a091d1f7e1938aeab6749d3a0dfa73af43cdc32393483d"
-dependencies = [
- "byteorder",
- "derive_more 0.99.20",
- "twox-hash",
-]
-
-[[package]]
-name = "ruzstd"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5174a470eeb535a721ae9fdd6e291c2411a906b96592182d05217591d5c5cf7b"
@@ -9926,12 +9909,14 @@ checksum = "8df9b6e13f2d32c91b9bd719c00d1958837bc7dec474d94952798cc8e69eeec3"
 [[package]]
 name = "tracer"
 version = "0.2.0"
-source = "git+https://github.com/kevaundray/jolt?branch=kw%2Fere-fork#831dd937303b1055f995d3836d0dd61a818969fe"
+source = "git+https://github.com/a16z/jolt?rev=55b9830#55b9830a3944dde55d33a55c42522b81dd49f87a"
 dependencies = [
+ "clap",
  "common",
  "fnv",
- "object 0.32.2",
+ "object 0.36.7",
  "tracing",
+ "tracing-subscriber 0.3.19",
 ]
 
 [[package]]
