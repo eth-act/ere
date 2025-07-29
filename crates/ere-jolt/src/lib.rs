@@ -93,7 +93,8 @@ impl zkVM for EreJolt {
     ) -> Result<zkvm_interface::ProgramExecutionReport, zkVMError> {
         let (_tempdir, program) = program(&self.elf)?;
 
-        // TODO: Check how to pass private input to jolt
+        // TODO: Check how to pass private input to jolt, issue for tracking:
+        //       https://github.com/a16z/jolt/issues/371.
         let summary = program.clone().trace_analyze::<jolt::F>(&[]);
         let trace_len = summary.trace_len();
 

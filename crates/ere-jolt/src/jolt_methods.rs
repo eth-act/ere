@@ -47,7 +47,8 @@ pub fn prove_generic(
 ) -> EreJoltProof {
     let mut program = program.clone();
 
-    // TODO: Check how to pass private input to jolt
+    // TODO: Check how to pass private input to jolt, issue for tracking:
+    //       https://github.com/a16z/jolt/issues/371.
     let input_bytes = Vec::new();
 
     let (io_device, trace) = program.trace(&input_bytes);
