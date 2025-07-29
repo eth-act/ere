@@ -27,7 +27,7 @@ RUN chmod +x /tmp/install_sp1_sdk.sh
 # The install_sp1_sdk.sh script will respect these ENV variables.
 # TODO: we are hardcoding /root which may not work for other users
 ENV SP1UP_HOME="/root/.sp1up" \
-    SP1UP_SDK_INSTALL_VERSION="v5.0.8" \
+    SP1UP_SDK_INSTALL_VERSION="v5.1.0" \
     SP1_HOME="/root/.sp1"
 
 # Run the SP1 SDK installation script
