@@ -136,13 +136,14 @@ impl zkVM for EreJolt {
     }
 }
 
+/// Create `jolt::host::Program` by storing the compiled `elf` to a temporary
+/// file, and set the elf path for `program`, so methods like `decode`, `trace`
+/// and `trace_analyze` that depend on elf path will work.
 pub fn program(elf: &[u8]) -> Result<(TempDir, jolt::host::Program), zkVMError> {
     let tempdir = TempDir::new().map_err(|err| zkVMError::Other(err.into()))?;
     let elf_path = tempdir.path().join("guest.elf");
     fs::write(&elf_path, elf).map_err(|err| zkVMError::Other(err.into()))?;
     // Set a dummy package name because we don't need to compile anymore.
-    // And once we set the `program.elf`, methods other than `Program::build`
-    // will work since they only depend on the path to elf.
     let mut program = Program::new("");
     program.elf = Some(elf_path);
     Ok((tempdir, program))
