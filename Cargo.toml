@@ -37,6 +37,14 @@ hex = "0.4.3"
 # local dependencies
 zkvm-interface = { path = "crates/zkvm-interface" }
 build-utils = { path = "crates/build-utils" }
+ere-cli = { path = "crates/ere-cli" }
+ere-jolt = { path = "crates/ere-jolt" }
+ere-nexus = { path = "crates/ere-nexus" }
+ere-openvm = { path = "crates/ere-openvm" }
+ere-pico = { path = "crates/ere-pico" }
+ere-risc0 = { path = "crates/ere-risc0" }
+ere-sp1 = { path = "crates/ere-sp1" }
+ere-zisk = { path = "crates/ere-zisk" }
 
 [patch.crates-io]
 # These patches are only needed by Jolt
