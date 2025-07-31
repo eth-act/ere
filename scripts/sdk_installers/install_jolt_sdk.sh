@@ -34,6 +34,9 @@ ensure_tool_installed "cargo" "to build and install Rust packages"
 echo "Installing Jolt CLI from GitHub repository (a16z/jolt)..."
 cargo +nightly install --git https://github.com/a16z/jolt --force --bins jolt
 
+# Install Jolt's toolchain
+jolt install-toolchain
+
 # Verify Jolt installation
 echo "Verifying Jolt CLI installation..."
 if jolt --version; then
