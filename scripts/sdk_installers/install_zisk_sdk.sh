@@ -75,3 +75,11 @@ else
     echo "Error: 'cargo-zisk-gpu --version' failed." >&2
     exit 1
 fi
+
+# Step 4: Make sure `lib-c`'s build script is ran.
+TEMP_DIR=$(mktemp -d)
+cd "$TEMP_DIR"
+cargo init . --name build-lib-c
+cargo add lib-c --git https://github.com/0xPolygonHermez/zisk.git --tag "v${ZISK_VERSION}"
+cargo build
+rm -rf "$TEMP_DIR"
