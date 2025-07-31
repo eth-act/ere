@@ -1,0 +1,36 @@
+[package]
+name = "ere-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+bincode = "1.3"
+serde = { version = "1.0", features = ["derive"] }
+
+ere-jolt = { workspace = true, optional = true }
+ere-nexus = { workspace = true, optional = true }
+ere-openvm = { workspace = true, optional = true }
+ere-pico = { workspace = true, optional = true }
+ere-risc0 = { workspace = true, optional = true }
+ere-sp1 = { workspace = true, optional = true }
+ere-zisk = { workspace = true, optional = true }
+zkvm-interface = { workspace = true, features = ["clap"] }
+
+[dev-dependencies]
+
+[lints]
+workspace = true
+
+[features]
+default = []
+jolt = ["dep:ere-jolt"]
+nexus = ["dep:ere-nexus"]
+openvm = ["dep:ere-openvm"]
+pico = ["dep:ere-pico"]
+risc0 = ["dep:ere-risc0"]
+sp1 = ["dep:ere-sp1"]
+zisk = ["dep:ere-zisk"]

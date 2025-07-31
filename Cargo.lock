@@ -2342,6 +2342,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "ere-cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bincode",
+ "clap",
+ "ere-jolt",
+ "ere-nexus",
+ "ere-openvm",
+ "ere-pico",
+ "ere-risc0",
+ "ere-sp1",
+ "ere-zisk",
+ "serde",
+ "zkvm-interface",
+]
+
+[[package]]
 name = "ere-jolt"
 version = "0.1.0"
 dependencies = [
@@ -11129,6 +11147,7 @@ dependencies = [
  "anyhow",
  "auto_impl",
  "bincode",
+ "clap",
  "erased-serde",
  "humantime-serde",
  "indexmap 2.9.0",

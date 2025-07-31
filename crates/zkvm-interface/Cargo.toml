@@ -14,9 +14,14 @@ thiserror = "2"
 auto_impl = "1.0"
 erased-serde = "0.4.6"
 humantime-serde = "1.1"
+clap = { version = "4.5", features = ["derive"], optional = true }
 
 [dev-dependencies]
 serde_json = "1"
 
 [lints]
 workspace = true
+
+[features]
+default = []
+clap = ["dep:clap"]

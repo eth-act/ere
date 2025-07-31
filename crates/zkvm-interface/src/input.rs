@@ -66,6 +66,12 @@ impl Input {
     }
 }
 
+impl From<Vec<InputItem>> for Input {
+    fn from(items: Vec<InputItem>) -> Self {
+        Self { items }
+    }
+}
+
 // Optional: Implement methods to work with the enum
 impl InputItem {
     /// Serialize this item to bytes using the specified serializer

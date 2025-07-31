@@ -1,3 +1,4 @@
+use serde::{Serialize, de::DeserializeOwned};
 use std::path::Path;
 use thiserror::Error;
 
@@ -14,7 +15,7 @@ pub use network::NetworkProverConfig;
 /// Compiler trait for compiling programs into an opaque sequence of bytes.
 pub trait Compiler {
     type Error: std::error::Error + Send + Sync + 'static;
-    type Program: Clone + Send + Sync;
+    type Program: Clone + Send + Sync + Serialize + DeserializeOwned;
 
     /// Compiles the program and returns the program
     ///
@@ -27,6 +28,7 @@ pub trait Compiler {
 
 /// ResourceType specifies what resource will be used to create the proofs.
 #[derive(Debug, Clone, Default)]
+#[cfg_attr(feature = "clap", derive(clap::Subcommand))]
 pub enum ProverResourceType {
     #[default]
     Cpu,

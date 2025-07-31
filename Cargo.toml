@@ -11,7 +11,8 @@ members = [
     "crates/ere-zisk",
     # zkVM interface
     "crates/zkvm-interface",
-
+    # CLI
+    "crates/ere-cli",
     # Guest compilers
     "docker/sp1",
     "docker/risc0",
@@ -30,7 +31,7 @@ license = "MIT OR Apache-2.0"
 tracing = "0.1.41"
 tempfile = "3.3"
 toml = "0.8"
-clap = { version = "4.5.41", features = ["derive"] }
+clap = { version = "4.5", features = ["derive"] }
 anyhow = "1.0"
 hex = "0.4.3"
 
