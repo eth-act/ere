@@ -2,12 +2,12 @@ use build_utils::{detect_sdk_version, detect_self_crate_version};
 use std::{env, fs, path::Path};
 
 fn main() {
-    generate_ere_version();
+    generate_crate_version();
     generate_zkvm_sdk_version_impl();
     println!("cargo:rerun-if-changed=Cargo.lock");
 }
 
-fn generate_ere_version() {
+fn generate_crate_version() {
     let crate_version = format!(
         "const CRATE_VERSION: &str = \"{}\";",
         detect_self_crate_version()
