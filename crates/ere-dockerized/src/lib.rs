@@ -15,8 +15,8 @@
 //! use std::path::Path;
 //!
 //! // Compile a guest program
-//! let compiler = EreDockerizedCompiler(ErezkVM::SP1);
-//! let guest_path = Path::new("path/to/guest/program");
+//! let compiler = EreDockerizedCompiler::new(ErezkVM::SP1, "mounting/directory");
+//! let guest_path = Path::new("relative/path/to/guest/program");
 //! let program = compiler.compile(&guest_path)?;
 //!
 //! // Create zkVM instance
@@ -52,7 +52,6 @@ use crate::{
     docker::{DockerBuildCmd, DockerRunCmd, docker_image_exists},
     error::{CommonError, CompileError, DockerizedError, ExecuteError, ProveError, VerifyError},
 };
-use cargo_metadata::MetadataCommand;
 use serde::{Deserialize, Serialize};
 use std::{
     env,
@@ -192,7 +191,19 @@ impl Display for ErezkVM {
     }
 }
 
-pub struct EreDockerizedCompiler(pub ErezkVM);
+pub struct EreDockerizedCompiler {
+    zkvm: ErezkVM,
+    mount_directory: PathBuf,
+}
+
+impl EreDockerizedCompiler {
+    pub fn new(zkvm: ErezkVM, mount_directory: impl AsRef<Path>) -> Self {
+        Self {
+            zkvm,
+            mount_directory: mount_directory.as_ref().to_path_buf(),
+        }
+    }
+}
 
 /// Wrapper for serialized program.
 #[derive(Clone, Serialize, Deserialize)]
@@ -203,20 +214,22 @@ impl Compiler for EreDockerizedCompiler {
     type Program = SerializedProgram;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        self.0.build_docker_image()?;
+        self.zkvm.build_docker_image()?;
 
-        let metadata = MetadataCommand::new().current_dir(guest_directory).exec()?;
         let guest_relative_path = guest_directory
-            .strip_prefix(&metadata.workspace_root)
-            .map_err(|_| CompileError::GuestNotInWorkspace)?;
+            .strip_prefix(&self.mount_directory)
+            .map_err(|_| CompileError::GuestNotInMountingDirecty {
+                mounting_directory: self.mount_directory.to_path_buf(),
+                guest_directory: guest_directory.to_path_buf(),
+            })?;
         let guest_path_in_docker = PathBuf::from("/guest").join(guest_relative_path);
 
         let tempdir = TempDir::new()
             .map_err(|err| CommonError::io(err, "Failed to create temporary directory"))?;
 
-        DockerRunCmd::new(self.0.cli_zkvm_tag(CRATE_VERSION))
+        DockerRunCmd::new(self.zkvm.cli_zkvm_tag(CRATE_VERSION))
             .rm()
-            .volume(&metadata.workspace_root, "/guest")
+            .volume(&self.mount_directory, "/guest")
             .volume(tempdir.path(), "/guest-output")
             .exec([
                 "compile",
@@ -429,7 +442,7 @@ mod test {
         let zkvm = ErezkVM::OpenVM;
 
         let guest_directory = workspace_dir().join(format!("tests/{zkvm}/compile/basic"));
-        let program = EreDockerizedCompiler(zkvm)
+        let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
             .compile(&guest_directory)
             .unwrap();
 
@@ -450,7 +463,7 @@ mod test {
         let zkvm = ErezkVM::Risc0;
 
         let guest_directory = workspace_dir().join(format!("tests/{zkvm}/compile/basic"));
-        let program = EreDockerizedCompiler(zkvm)
+        let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
             .compile(&guest_directory)
             .unwrap();
 
@@ -471,7 +484,7 @@ mod test {
         let zkvm = ErezkVM::SP1;
 
         let guest_directory = workspace_dir().join(format!("tests/{zkvm}/prove/basic"));
-        let program = EreDockerizedCompiler(zkvm)
+        let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
             .compile(&guest_directory)
             .unwrap();
 
@@ -493,7 +506,7 @@ mod test {
         let zkvm = ErezkVM::Zisk;
 
         let guest_directory = workspace_dir().join(format!("tests/{zkvm}/prove/basic"));
-        let program = EreDockerizedCompiler(zkvm)
+        let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
             .compile(&guest_directory)
             .unwrap();
 

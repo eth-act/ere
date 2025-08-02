@@ -1,4 +1,4 @@
-use std::io;
+use std::{io, path::PathBuf};
 use thiserror::Error;
 use zkvm_interface::zkVMError;
 
@@ -31,10 +31,13 @@ pub enum DockerizedError {
 
 #[derive(Debug, Error)]
 pub enum CompileError {
-    #[error("Failed to execute `cargo metadata`: {0}")]
-    CargoMetadata(#[from] cargo_metadata::Error),
-    #[error("Guest directory must be in workspace to be mounted")]
-    GuestNotInWorkspace,
+    #[error(
+        "Guest directory must be in mounting directory, mounting_directory: {mounting_directory}, guest_directory: {guest_directory}"
+    )]
+    GuestNotInMountingDirecty {
+        mounting_directory: PathBuf,
+        guest_directory: PathBuf,
+    },
     #[error(transparent)]
     Common(#[from] CommonError),
 }

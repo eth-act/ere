@@ -2366,7 +2366,6 @@ dependencies = [
  "bincode",
  "build-utils",
  "bytemuck",
- "cargo_metadata 0.19.2",
  "risc0-zkvm",
  "serde",
  "tempfile",
