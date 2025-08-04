@@ -17,10 +17,8 @@
 * [Supported zkVMs](#supported-zkvms)
 * [Quick Start](#quick-start)
 
-  * [1. Install SDKs](#1-install-sdks)
-  * [2. Add Dependencies](#2-add-dependencies)
-  * [3. Compile & Prove Example](#3-compile--prove-example)
-  * [4. Run the Test Suite](#4-run-the-test-suite)
+  * [Option 1: With SDK Installation](#option-1-with-sdk-installation)
+  * [Option 2: Docker-Only Setup](#option-2-docker-only-setup)
 * [Directory Layout](#directory-layout)
 * [Architecture](#architecture)
 
@@ -51,49 +49,107 @@
 ## Quick Start
 
 This guide assumes you have Rust and Cargo installed. If not, please refer to the [Rust installation guide](https://www.rust-lang.org/tools/install).
-Also, you must have Docker installed since some of the SDKs require it.
+Choose your setup approach:
 
-### 1. Install SDKs (if required)
+### Option 1: With SDK Installation
 
-All zkVMs but SP1 require you to install their SDKs, for example:
+Install the required zkVM SDKs locally for better performance and debugging.
+
+#### 1. Install SDKs
+
 ```bash
-bash scripts/sdk_installers/install_jolt_sdk.sh
+bash scripts/sdk_installers/install_sp1_sdk.sh
 ```
 
-For SP1, guest program compilation uses Docker. With time more zkVMs will follow this patterns so installing SDKs
-in the host machine isn't necessary.
-
-### 2. Add Dependencies
+#### 2. Add Dependencies
 
 ```toml
 # Cargo.toml
 [dependencies]
-zkvm-interface = { path = "crates/zkvm-interface" }
-ere-sp1        = { path = "crates/ere-sp1" }
+zkvm-interface = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.11" }
+ere-sp1        = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.11" }
 ```
 
-### 3. Compile & Prove Example
+#### 3. Compile & Prove Example
 
 ```rust
-use zkvm_interface::{Compiler, zkVM, Input, ProverResourceType};
+// main.rs
 use ere_sp1::{EreSP1, RV32_IM_SUCCINCT_ZKVM_ELF};
+use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
 
-let guest_directory = std::path::Path::new("guest/hello");
-let elf = RV32_IM_SUCCINCT_ZKVM_ELF.compile(guest_directory)?; // compile
-let mut io = Input::new();
-io.write(&42u32)?;
-let zkvm = EreSP1::new(elf, ProverResourceType::Cpu);      // create zkVM instance
-let (proof, _report) = zkvm.prove(&io)?;                   // prove
-zkvm.verify(&proof)?;                                      // verify
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let guest_directory = std::path::Path::new("workspace/guest");
+
+    // Compile guest
+    let compiler = RV32_IM_SUCCINCT_ZKVM_ELF;
+    let program = compiler.compile(guest_directory)?;
+
+    // Create zkVM instance
+    let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
+
+    // Prepare inputs
+    let mut io = Input::new();
+    io.write(42u32);
+
+    // Execute
+    let _report = zkvm.execute(&io)?;
+
+    // Prove
+    let (proof, _report) = zkvm.prove(&io)?;
+
+    // Verify
+    zkvm.verify(&proof)?;
+
+    Ok(())
+}
 ```
 
-### 4. Run the Test Suite
+### Option 2: Docker-Only Setup
 
-```bash
-cargo test --workspace
+Use Docker for zkVM operations without installing SDKs locally. Only requires Docker to be installed.
+
+#### 1. Add Dependencies
+
+```toml
+# Cargo.toml
+[dependencies]
+zkvm-interface = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.11" }
+ere-dockerized = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.11" }
 ```
 
-> **Tip** Use the provided Dockerfiles for a ready‑made toolchain.
+#### 2. Compile & Prove Example
+
+```rust
+// main.rs
+use ere_dockerized::{EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM};
+use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let guest_directory = std::path::Path::new("workspace/guest");
+
+    // Compile guest
+    let compiler = EreDockerizedCompiler::new(ErezkVM::SP1, std::path::Path::new("workspace"));
+    let program = compiler.compile(guest_directory)?;
+
+    // Create zkVM instance
+    let zkvm = EreDockerizedzkVM::new(ErezkVM::SP1, program, ProverResourceType::Cpu)?;
+
+    // Prepare inputs
+    let mut io = Input::new();
+    io.write(42u32);
+
+    // Execute
+    let _report = zkvm.execute(&io)?;
+
+    // Prove
+    let (proof, _report) = zkvm.prove(&io)?;
+
+    // Verify
+    zkvm.verify(&proof)?;
+
+    Ok(())
+}
+```
 
 ## Directory Layout
 
