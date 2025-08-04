@@ -1,3 +1,5 @@
+#![cfg_attr(not(test), warn(unused_crate_dependencies))]
+
 use pico_sdk::client::DefaultProverClient;
 use std::{path::Path, process::Command, time::Instant};
 use zkvm_interface::{

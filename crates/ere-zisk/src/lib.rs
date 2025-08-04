@@ -1,3 +1,5 @@
+#![cfg_attr(not(test), warn(unused_crate_dependencies))]
+
 use crate::{
     compile::compile_zisk_program,
     error::{ExecuteError, ProveError, VerifyError, ZiskError},

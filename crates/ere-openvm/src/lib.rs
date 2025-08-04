@@ -1,3 +1,5 @@
+#![cfg_attr(not(test), warn(unused_crate_dependencies))]
+
 use crate::error::{CompileError, ExecuteError, OpenVMError, VerifyError};
 use openvm_build::GuestOptions;
 use openvm_circuit::{

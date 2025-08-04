@@ -1,3 +1,5 @@
+#![cfg_attr(not(test), warn(unused_crate_dependencies))]
+
 use crate::{
     error::{CompileError, JoltError, ProveError, VerifyError},
     utils::package_name_from_manifest,

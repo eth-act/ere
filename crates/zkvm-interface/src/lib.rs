@@ -1,3 +1,5 @@
+#![cfg_attr(not(test), warn(unused_crate_dependencies))]
+
 use serde::{Serialize, de::DeserializeOwned};
 use std::path::Path;
 use thiserror::Error;
