@@ -36,7 +36,7 @@ fn generate_zkvm_sdk_version_impl() {
     ]
     .map(detect_sdk_version);
 
-    // FIXME: ZisK doens't depend on SDK yet, so we hardcode the version here,
+    // FIXME: ZisK doesn't depend on SDK yet, so we hardcode the version here,
     //        same as the one in `scripts/sdk_installers/install_zisk_sdk.sh`.
     //        Once ZisK's SDK is ready, we should update this to detect the SDK
     //        version.
