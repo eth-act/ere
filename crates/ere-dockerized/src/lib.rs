@@ -6,6 +6,16 @@
 //! `zkVM` implementation of other zkVM crates `ere-{zkvm}`, it requires only
 //! `docker` to be installed, but no zkVM specific SDK.
 //!
+//! ## Docker image building
+//!
+//! It builds 3 Docker images in sequence if they don't exist:
+//! 1. `ere-base:{version}` - Base image with common dependencies
+//! 2. `ere-base-{zkvm}:{version}` - zkVM-specific base image with the zkVM SDK
+//! 3. `ere-cli-{zkvm}:{version}` - CLI image with the `ere-cli` binary built
+//!     with the selected zkVM feature
+//!
+//! To force rebuild all images, set the environment variable `ERE_FORCE_REBUILD_DOCKER_IMAGE=true`.
+//!
 //! ## Example
 //!
 //! ```rust,no_run
