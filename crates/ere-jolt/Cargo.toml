@@ -6,18 +6,22 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-zkvm-interface = { workspace = true }
-jolt-sdk = { git = "https://github.com/a16z/jolt", rev = "55b9830", features = ["host"] }
-jolt-core = { git = "https://github.com/a16z/jolt", rev = "55b9830", features = ["host"] }
-jolt = { git = "https://github.com/a16z/jolt", rev = "55b9830", features = ["host"] }
-common = { git = "https://github.com/a16z/jolt", rev = "55b9830" }
-thiserror = "2"
-toml = "0.8"
-ark-serialize = { version = "0.5.0", features = ["derive"] }
-tempfile = "3.3"
+tempfile.workspace = true
+thiserror.workspace = true
+toml.workspace = true
+
+# Jolt dependencies
+ark-serialize = { workspace = true, features = ["derive"] }
+common.workspace = true
+jolt = { workspace = true, features = ["host"] }
+jolt-core = { workspace = true, features = ["host"] }
+jolt-sdk = { workspace = true, features = ["host"] }
+
+# Local dependencies
+zkvm-interface.workspace = true
 
 [build-dependencies]
-build-utils = { workspace = true }
+build-utils.workspace = true
 
 [lints]
 workspace = true

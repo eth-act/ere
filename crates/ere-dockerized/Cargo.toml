@@ -6,21 +6,22 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-bincode = "1.3"
-serde = { version = "1.0", features = ["derive"] }
-tempfile = "3.3"
-thiserror = "2"
-
-zkvm-interface = { workspace = true, features = ["clap"] }
+bincode.workspace = true
+serde = { workspace = true, features = ["derive"] }
+tempfile.workspace = true
+thiserror.workspace = true
 
 # Needed for Risc0 and OpenVM input serialization.
-bytemuck = "1.13"
-risc0-zkvm = { version = "^2.3.0", default-features = false }
+bytemuck.workspace = true
+risc0-zkvm.workspace = true
+
+# Local dependencies
+zkvm-interface = { workspace = true, features = ["clap"] }
 
 [dev-dependencies]
 
 [build-dependencies]
-build-utils = { workspace = true }
+build-utils.workspace = true
 
 [lints]
 workspace = true

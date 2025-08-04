@@ -6,13 +6,17 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-zkvm-interface = { workspace = true }
-sp1-sdk = "5.1.0"
-tempfile = "3.3"
-bincode = "1.3"
-thiserror = "2"
-tracing = "0.1"
+bincode.workspace = true
+tempfile.workspace = true
+thiserror.workspace = true
 toml.workspace = true
+tracing.workspace = true
+
+# SP1 dependencies
+sp1-sdk.workspace = true
+
+# Local dependencies
+zkvm-interface.workspace = true
 
 [build-dependencies]
 build-utils.workspace = true

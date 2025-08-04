@@ -6,20 +6,22 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-zkvm-interface = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+thiserror.workspace = true
+toml.workspace = true
 
-openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.0", default-features = false }
-openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.0", default-features = false }
-openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.1.0" }
-openvm-build = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.0", default-features = false }
-openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.0", default-features = false }
+# OpenVM dependencies
+openvm-build.workspace = true
+openvm-circuit.workspace = true
+openvm-sdk.workspace = true
+openvm-stark-sdk.workspace = true
+openvm-transpiler.workspace = true
 
-toml = "0.8"
-thiserror = "2"
-serde = { version = "1.0", features = ["derive"] }
+# Local dependencies
+zkvm-interface.workspace = true
 
 [build-dependencies]
-build-utils = { workspace = true }
+build-utils.workspace = true
 
 [lints]
 workspace = true

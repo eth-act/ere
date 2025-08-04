@@ -6,13 +6,17 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-zkvm-interface = { workspace = true }
-thiserror = "2"
-pico-sdk = { git = "https://github.com/brevis-network/pico", tag = "v1.1.4" }
-bincode = "1.3.3"
+bincode.workspace = true
+thiserror.workspace = true
+
+# Pico dependencies
+pico-sdk.workspace = true
+
+# Local dependencies
+zkvm-interface.workspace = true
 
 [build-dependencies]
-build-utils = { workspace = true }
+build-utils.workspace = true
 
 [lints]
 workspace = true
