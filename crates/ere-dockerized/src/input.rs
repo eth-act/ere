@@ -17,6 +17,7 @@ impl ErezkVM {
             //        duplicated extern symbol they export.
             //        It'd be better to have each zkvm provides their
             //        lightweight serde crate.
+            //        The issue for tracking https://github.com/eth-act/ere/issues/76.
             Self::OpenVM => risc0_zkvm::serde::to_vec(obj)
                 .map(|words| words.into_iter().flat_map(|w| w.to_le_bytes()).collect())
                 .map_err(|err| {
