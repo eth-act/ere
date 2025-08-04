@@ -22,6 +22,8 @@ pub fn compile_risc0_program(guest_directory: &Path) -> Result<Risc0Program, Com
             path: guest_directory.to_path_buf(),
         })?;
 
+    // Use `risc0_build::build_package` to build package instead of calling
+    // `cargo-risczero build` for the `unstable` features.
     let guest =
         risc0_build::build_package(package, &metadata.target_directory, GuestOptions::default())
             .map_err(|source| CompileError::Risc0BuildFailure {
