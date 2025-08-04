@@ -190,7 +190,7 @@ fn construct_zkvm(program_path: PathBuf, resource: ProverResourceType) -> Result
     let zkvm = Ok::<_, Error>(ere_pico::ErePico::new(program, resource));
 
     #[cfg(feature = "risc0")]
-    let zkvm = Ok::<_, Error>(ere_risc0::EreRisc0::new(program, resource));
+    let zkvm = ere_risc0::EreRisc0::new(program, resource);
 
     #[cfg(feature = "sp1")]
     let zkvm = Ok::<_, Error>(ere_sp1::EreSP1::new(program, resource));

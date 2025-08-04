@@ -1,10 +1,7 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use crate::error::Risc0Error;
-use compile::compile_risc0_program;
-use risc0_zkvm::{
-    ExecutorEnv, ExecutorEnvBuilder, ProverOpts, Receipt, default_executor, default_prover,
-};
+use crate::{compile::compile_risc0_program, error::Risc0Error};
+use risc0_zkvm::{ExecutorEnv, ExecutorEnvBuilder, Receipt, default_executor};
 use std::{path::Path, time::Instant};
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
@@ -15,6 +12,7 @@ include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 mod compile;
 mod error;
+mod prove;
 
 pub use compile::Risc0Program;
 
@@ -31,38 +29,37 @@ impl Compiler for RV32_IM_RISC0_ZKVM_ELF {
     }
 }
 
+pub struct EreRisc0 {
+    program: <RV32_IM_RISC0_ZKVM_ELF as Compiler>::Program,
+    resource: ProverResourceType,
+}
+
 impl EreRisc0 {
     pub fn new(
         program: <RV32_IM_RISC0_ZKVM_ELF as Compiler>::Program,
-        resource_type: ProverResourceType,
-    ) -> Self {
-        match resource_type {
-            ProverResourceType::Cpu => {
-                #[cfg(any(feature = "cuda", feature = "metal"))]
-                panic!("CPU mode requires both 'cuda' and 'metal' features to be disabled");
-            }
+        resource: ProverResourceType,
+    ) -> Result<Self, zkVMError> {
+        match resource {
             ProverResourceType::Gpu => {
-                #[cfg(not(any(feature = "cuda", feature = "metal")))]
-                panic!("GPU selected but neither 'cuda' nor 'metal' feature is enabled");
+                // If not using Metal, we use the bento stack which requires
+                // Docker to spin up the proving services that use Cuda.
+                if !cfg!(feature = "metal") {
+                    prove::bento::build_bento_images()
+                        .map_err(|err| zkVMError::Other(Box::new(err)))?;
+                    prove::bento::docker_compose_bento_up()
+                        .map_err(|err| zkVMError::Other(Box::new(err)))?;
+                }
             }
             ProverResourceType::Network(_) => {
                 panic!(
                     "Network proving not yet implemented for RISC Zero. Use CPU or GPU resource type."
                 );
             }
+            _ => {}
         }
 
-        Self {
-            program,
-            resource_type,
-        }
+        Ok(Self { program, resource })
     }
-}
-
-pub struct EreRisc0 {
-    program: <RV32_IM_RISC0_ZKVM_ELF as Compiler>::Program,
-    #[allow(dead_code)]
-    resource_type: ProverResourceType,
 }
 
 impl zkVM for EreRisc0 {
@@ -84,19 +81,23 @@ impl zkVM for EreRisc0 {
     }
 
     fn prove(&self, inputs: &Input) -> Result<(Vec<u8>, ProgramProvingReport), zkVMError> {
-        let prover = default_prover();
-        let mut env = ExecutorEnv::builder();
-        serialize_inputs(&mut env, inputs).map_err(|err| zkVMError::Other(err.into()))?;
-        let env = env.build().map_err(|err| zkVMError::Other(err.into()))?;
+        let (receipt, proving_time) = match self.resource {
+            ProverResourceType::Cpu => prove::default::prove(&self.program, inputs)?,
+            ProverResourceType::Gpu => {
+                if cfg!(feature = "metal") {
+                    // The default prover selects the prover depends on the
+                    // feature flag, if non enabled, it executes the pre-installed
+                    // binary to generate the proof; if `metal` is enabled, it
+                    // uses the local built binary.
+                    prove::default::prove(&self.program, inputs)?
+                } else {
+                    prove::bento::prove(&self.program, inputs)?
+                }
+            }
+            ProverResourceType::Network(_) => unreachable!(),
+        };
 
-        let now = std::time::Instant::now();
-        let prove_info = prover
-            .prove_with_opts(env, &self.program.elf, &ProverOpts::succinct())
-            .map_err(|err| zkVMError::Other(err.into()))?;
-        let proving_time = now.elapsed();
-
-        let encoded =
-            borsh::to_vec(&prove_info.receipt).map_err(|err| zkVMError::Other(Box::new(err)))?;
+        let encoded = borsh::to_vec(&receipt).map_err(|err| zkVMError::Other(Box::new(err)))?;
         Ok((encoded, ProgramProvingReport::new(proving_time)))
     }
 
@@ -115,6 +116,14 @@ impl zkVM for EreRisc0 {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
+    }
+}
+
+impl Drop for EreRisc0 {
+    fn drop(&mut self) {
+        if matches!(self.resource, ProverResourceType::Gpu) && !cfg!(feature = "metal") {
+            prove::bento::docker_compose_bento_down().unwrap_or_else(|err| eprintln!("{err}"))
+        }
     }
 }
 
@@ -171,7 +180,7 @@ mod prove_tests {
         input_builder.write(n);
         input_builder.write(a);
 
-        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu);
+        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
         let (proof_bytes, _) = zkvm
             .prove(&input_builder)
@@ -191,9 +200,33 @@ mod prove_tests {
 
         let empty_input = Input::new();
 
-        let zkvm = EreRisc0::new(elf_bytes, ProverResourceType::Cpu);
+        let zkvm = EreRisc0::new(elf_bytes, ProverResourceType::Cpu).unwrap();
         let prove_result = zkvm.prove(&empty_input);
         assert!(prove_result.is_err());
+    }
+
+    #[test]
+    #[ignore = "Requires Nvidia GPU to run"]
+    #[cfg(not(feature = "metal"))]
+    fn test_prove_r0_dummy_input_bento() {
+        let program = get_compiled_test_r0_elf_for_prove().unwrap();
+
+        let mut input_builder = Input::new();
+        let n: u32 = 42;
+        let a: u16 = 42;
+        input_builder.write(n);
+        input_builder.write(a);
+
+        let zkvm = EreRisc0::new(program, ProverResourceType::Gpu).unwrap();
+
+        let (proof_bytes, _) = zkvm
+            .prove(&input_builder)
+            .unwrap_or_else(|err| panic!("Proving error in test: {err:?}"));
+
+        assert!(!proof_bytes.is_empty(), "Proof bytes should not be empty.");
+
+        let verify_results = zkvm.verify(&proof_bytes).is_ok();
+        assert!(verify_results);
     }
 }
 
@@ -230,7 +263,7 @@ mod execute_tests {
         input_builder.write(n);
         input_builder.write(a);
 
-        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu);
+        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
         zkvm.execute(&input_builder)
             .unwrap_or_else(|err| panic!("Execution error: {err:?}"));
@@ -242,7 +275,7 @@ mod execute_tests {
 
         let empty_input = Input::new();
 
-        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu);
+        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
         let result = zkvm.execute(&empty_input);
 
         assert!(
