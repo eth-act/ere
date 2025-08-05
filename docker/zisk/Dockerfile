@@ -35,7 +35,7 @@ RUN wget https://developer.download.nvidia.com/compute/cuda/repos/$(. /etc/os-re
     dpkg -i cuda-keyring_1.1-1_all.deb && \
     rm cuda-keyring_1.1-1_all.deb && \
     apt update && \
-    apt install -y cuda-toolkit && \
+    apt install -y cuda-toolkit-12-9 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # If current environment is in CI or not.
