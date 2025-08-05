@@ -3,6 +3,7 @@
 use anyhow::{Context, Error};
 use clap::{Parser, Subcommand};
 use std::{fs, path::PathBuf};
+use tracing_subscriber::EnvFilter;
 use zkvm_interface::{Compiler, ProverResourceType, zkVM};
 
 mod serde;
@@ -85,6 +86,10 @@ enum Commands {
 }
 
 fn main() -> Result<(), Error> {
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .init();
+
     let args = Cli::parse();
 
     match args.command {

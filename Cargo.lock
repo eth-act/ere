@@ -2316,6 +2316,7 @@ dependencies = [
  "ere-sp1",
  "ere-zisk",
  "serde",
+ "tracing-subscriber 0.3.19",
  "zkvm-interface",
 ]
 
