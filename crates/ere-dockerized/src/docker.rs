@@ -1,5 +1,6 @@
 use crate::error::CommonError;
 use std::{
+    env,
     fmt::{self, Display, Formatter},
     io,
     path::Path,
@@ -113,6 +114,16 @@ impl DockerRunCmd {
 
     pub fn gpus(mut self, devices: impl AsRef<str>) -> Self {
         self.options.push(CmdOption::new("gpus", devices));
+        self
+    }
+
+    /// Inherit environment variable `key` if it's set and valid.
+    pub fn inherit_env(mut self, key: impl AsRef<str>) -> Self {
+        let key = key.as_ref();
+        if let Ok(val) = env::var(key) {
+            self.options
+                .push(CmdOption::new("env", format!("{key}={val}")));
+        }
         self
     }
 

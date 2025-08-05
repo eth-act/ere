@@ -239,6 +239,7 @@ impl Compiler for EreDockerizedCompiler {
 
         DockerRunCmd::new(self.zkvm.cli_zkvm_tag(CRATE_VERSION))
             .rm()
+            .inherit_env("RUST_LOG")
             .volume(&self.mount_directory, "/guest")
             .volume(tempdir.path(), "/guest-output")
             .exec([
@@ -306,6 +307,7 @@ impl zkVM for EreDockerizedzkVM {
 
         let mut cmd = DockerRunCmd::new(self.zkvm.cli_zkvm_tag(CRATE_VERSION))
             .rm()
+            .inherit_env("RUST_LOG")
             .volume(tempdir.path(), "/workspace");
 
         if matches!(self.resource, ProverResourceType::Gpu) {
@@ -357,6 +359,7 @@ impl zkVM for EreDockerizedzkVM {
 
         let mut cmd = DockerRunCmd::new(self.zkvm.cli_zkvm_tag(CRATE_VERSION))
             .rm()
+            .inherit_env("RUST_LOG")
             .volume(tempdir.path(), "/workspace");
 
         if matches!(self.resource, ProverResourceType::Gpu) {
@@ -407,6 +410,7 @@ impl zkVM for EreDockerizedzkVM {
 
         DockerRunCmd::new(self.zkvm.cli_zkvm_tag(CRATE_VERSION))
             .rm()
+            .inherit_env("RUST_LOG")
             .volume(tempdir.path(), "/workspace")
             .exec([
                 "verify",
