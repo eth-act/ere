@@ -7,6 +7,8 @@ use std::{
     process::Command,
 };
 
+pub const DOCKER_SOCKET: &str = "/var/run/docker.sock";
+
 #[derive(Clone)]
 pub struct CmdOption(String, Option<String>);
 
@@ -70,8 +72,8 @@ impl DockerBuildCmd {
     pub fn exec(self, context: impl AsRef<Path>) -> Result<(), io::Error> {
         let mut cmd = Command::new("docker");
         cmd.arg("build");
-        for flag in self.options {
-            cmd.args(flag.to_args());
+        for option in self.options {
+            cmd.args(option.to_args());
         }
         cmd.arg(context.as_ref().to_string_lossy().to_string());
 
@@ -112,8 +114,18 @@ impl DockerRunCmd {
         self
     }
 
+    /// Mounts `/var/run/docker.sock` to allow Docker-out-of-Docker (DooD).
+    pub fn mount_docker_socket(self) -> Self {
+        self.volume(DOCKER_SOCKET, DOCKER_SOCKET)
+    }
+
     pub fn gpus(mut self, devices: impl AsRef<str>) -> Self {
         self.options.push(CmdOption::new("gpus", devices));
+        self
+    }
+
+    pub fn network(mut self, name: impl AsRef<str>) -> Self {
+        self.options.push(CmdOption::new("network", name));
         self
     }
 
@@ -135,8 +147,8 @@ impl DockerRunCmd {
     pub fn exec(self, commands: impl IntoIterator<Item: AsRef<str>>) -> Result<(), io::Error> {
         let mut cmd = Command::new("docker");
         cmd.arg("run");
-        for flag in self.options {
-            cmd.args(flag.to_args());
+        for option in self.options {
+            cmd.args(option.to_args());
         }
         cmd.arg(self.image);
         for command in commands {

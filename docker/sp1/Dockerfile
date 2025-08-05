@@ -27,6 +27,8 @@ ENV PATH="${SP1UP_HOME}/bin:${SP1_HOME}/bin:$PATH"
 # Verify SP1 installation (optional here, as script does it, but good for sanity)
 RUN cargo prove --version
 
+COPY --from=docker:cli /usr/local/bin/docker /usr/local/bin/docker
+
 CMD ["/bin/bash"]
 
 # TODO:  Maybe we use root to install it in ere_user and then switch back to ere_user for security
