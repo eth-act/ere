@@ -44,5 +44,13 @@ pub fn detect_self_crate_version() -> String {
         .expect("Failed to get cargo metadata");
 
     // `root_package` returns the crate of the `build.rs` that being ran.
-    meta.root_package().unwrap().version.to_string()
+    let version = meta.root_package().unwrap().version.to_string();
+
+    let output = std::process::Command::new("git")
+        .args(["rev-parse", "--short=7", "HEAD"])
+        .output()
+        .expect("Failed to get git revision");
+    let rev = String::from_utf8_lossy(&output.stdout).trim().to_string();
+
+    format!("{version}-{rev}")
 }
