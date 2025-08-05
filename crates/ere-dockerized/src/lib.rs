@@ -305,30 +305,21 @@ impl zkVM for EreDockerizedzkVM {
         .map_err(|err| CommonError::io(err, "Failed to write input"))
         .map_err(|err| DockerizedError::Execute(ExecuteError::Common(err)))?;
 
-        let mut cmd = DockerRunCmd::new(self.zkvm.cli_zkvm_tag(CRATE_VERSION))
+        DockerRunCmd::new(self.zkvm.cli_zkvm_tag(CRATE_VERSION))
             .rm()
             .inherit_env("RUST_LOG")
-            .volume(tempdir.path(), "/workspace");
-
-        if matches!(self.resource, ProverResourceType::Gpu) {
-            cmd = cmd.gpus("all")
-        }
-
-        cmd.exec(
-            iter::empty()
-                .chain([
-                    "execute",
-                    "--program-path",
-                    "/workspace/program",
-                    "--input-path",
-                    "/workspace/input",
-                    "--report-path",
-                    "/workspace/report",
-                ])
-                .chain(self.resource.to_args()),
-        )
-        .map_err(CommonError::DockerRunCmd)
-        .map_err(|err| DockerizedError::Execute(ExecuteError::Common(err)))?;
+            .volume(tempdir.path(), "/workspace")
+            .exec([
+                "execute",
+                "--program-path",
+                "/workspace/program",
+                "--input-path",
+                "/workspace/input",
+                "--report-path",
+                "/workspace/report",
+            ])
+            .map_err(CommonError::DockerRunCmd)
+            .map_err(|err| DockerizedError::Execute(ExecuteError::Common(err)))?;
 
         let report_bytes = fs::read(tempdir.path().join("report"))
             .map_err(|err| CommonError::io(err, "Failed to read report"))
