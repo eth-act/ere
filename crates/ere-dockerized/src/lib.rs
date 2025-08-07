@@ -356,11 +356,18 @@ impl zkVM for EreDockerizedzkVM {
         if matches!(self.resource, ProverResourceType::Gpu) {
             cmd = cmd.gpus("all");
 
-            // SP1's GPU proving requires Docker to start GPU prover service, to
-            // give the client access to the prover service, we need to use the
-            // host networking driver.
+            // SP1's and Risc0's GPU proving requires Docker to start GPU prover
+            // service, to give the client access to the prover service, we need
+            // to use the host networking driver.
             match self.zkvm {
-                ErezkVM::SP1 | ErezkVM::Risc0 => cmd = cmd.mount_docker_socket().network("host"),
+                ErezkVM::SP1 => cmd = cmd.mount_docker_socket().network("host"),
+                ErezkVM::Risc0 => {
+                    cmd = cmd
+                        .mount_docker_socket()
+                        .network("host")
+                        .inherit_env("SEGMENT_SIZE")
+                        .inherit_env("RISC0_KECCAK_PO2")
+                }
                 _ => {}
             }
         }
