@@ -354,8 +354,6 @@ impl zkVM for EreDockerizedzkVM {
             .volume(tempdir.path(), "/workspace");
 
         if matches!(self.resource, ProverResourceType::Gpu) {
-            cmd = cmd.gpus("all");
-
             // SP1's and Risc0's GPU proving requires Docker to start GPU prover
             // service, to give the client access to the prover service, we need
             // to use the host networking driver.
