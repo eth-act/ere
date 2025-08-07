@@ -365,6 +365,7 @@ impl zkVM for EreDockerizedzkVM {
                     cmd = cmd
                         .mount_docker_socket()
                         .network("host")
+                        .inherit_env("CUDA_VISIBLE_DEVICES")
                         .inherit_env("SEGMENT_SIZE")
                         .inherit_env("RISC0_KECCAK_PO2")
                 }
