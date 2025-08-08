@@ -162,12 +162,7 @@ impl EreSP1 {
 impl zkVM for EreSP1 {
     fn execute(&self, inputs: &Input) -> Result<zkvm_interface::ProgramExecutionReport, zkVMError> {
         let mut stdin = SP1Stdin::new();
-        for input in inputs.iter() {
-            match input {
-                InputItem::Object(serialize) => stdin.write(serialize),
-                InputItem::Bytes(items) => stdin.write_slice(items),
-            }
-        }
+        serialize_inputs(&mut stdin, inputs);
 
         let client = Self::create_client(&self.resource);
         let start = Instant::now();
@@ -186,12 +181,7 @@ impl zkVM for EreSP1 {
         info!("Generating proof…");
 
         let mut stdin = SP1Stdin::new();
-        for input in inputs.iter() {
-            match input {
-                InputItem::Object(serialize) => stdin.write(serialize),
-                InputItem::Bytes(items) => stdin.write_slice(items),
-            };
-        }
+        serialize_inputs(&mut stdin, inputs);
 
         let client = Self::create_client(&self.resource);
         let start = std::time::Instant::now();
@@ -220,6 +210,17 @@ impl zkVM for EreSP1 {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
+    }
+}
+
+fn serialize_inputs(stdin: &mut SP1Stdin, inputs: &Input) {
+    for input in inputs.iter() {
+        match input {
+            InputItem::Object(obj) => stdin.write(obj),
+            InputItem::SerializedObject(bytes) | InputItem::Bytes(bytes) => {
+                stdin.write_slice(bytes)
+            }
+        }
     }
 }
 
