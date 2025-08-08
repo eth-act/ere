@@ -15,8 +15,8 @@ use std::{
 };
 use tempfile::{TempDir, tempdir};
 use zkvm_interface::{
-    Compiler, Input, ProgramExecutionReport, ProgramProvingReport, ProverResourceType, zkVM,
-    zkVMError,
+    Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
+    zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -56,18 +56,12 @@ impl EreZisk {
     }
 }
 
-impl EreZisk {}
-
 impl zkVM for EreZisk {
-    fn execute(&self, input: &Input) -> Result<ProgramExecutionReport, zkVMError> {
+    fn execute(&self, inputs: &Input) -> Result<ProgramExecutionReport, zkVMError> {
         // Write ELF and serialized input to file.
 
-        let input_bytes = input
-            .iter()
-            .try_fold(Vec::new(), |mut acc, item| {
-                acc.extend(item.as_bytes().map_err(ExecuteError::SerializeInput)?);
-                Ok(acc)
-            })
+        let input_bytes = serialize_inputs(inputs)
+            .map_err(|err| ExecuteError::SerializeInput(err.into()))
             .map_err(ZiskError::Execute)?;
 
         let mut tempdir =
@@ -119,15 +113,11 @@ impl zkVM for EreZisk {
         })
     }
 
-    fn prove(&self, input: &Input) -> Result<(Vec<u8>, ProgramProvingReport), zkVMError> {
+    fn prove(&self, inputs: &Input) -> Result<(Vec<u8>, ProgramProvingReport), zkVMError> {
         // Write ELF and serialized input to file.
 
-        let input_bytes = input
-            .iter()
-            .try_fold(Vec::new(), |mut acc, item| {
-                acc.extend(item.as_bytes().map_err(ProveError::SerializeInput)?);
-                Ok(acc)
-            })
+        let input_bytes = serialize_inputs(inputs)
+            .map_err(|err| ProveError::SerializeInput(err.into()))
             .map_err(ZiskError::Prove)?;
 
         let mut tempdir =
@@ -292,6 +282,18 @@ impl zkVM for EreZisk {
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
     }
+}
+
+fn serialize_inputs(inputs: &Input) -> Result<Vec<u8>, bincode::Error> {
+    inputs.iter().try_fold(Vec::new(), |mut acc, item| {
+        match item {
+            InputItem::Object(obj) => {
+                bincode::serialize_into(&mut acc, obj)?;
+            }
+            InputItem::SerializedObject(bytes) | InputItem::Bytes(bytes) => acc.extend(bytes),
+        };
+        Ok(acc)
+    })
 }
 
 fn dot_zisk_dir_path() -> PathBuf {
