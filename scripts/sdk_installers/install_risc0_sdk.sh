@@ -62,7 +62,17 @@ fi
 
 # Now that rzup is confirmed to be in PATH for this script, install the Risc0 toolchain
 echo "Running 'rzup install' to install/update Risc0 toolchain..."
-rzup install
+
+if [[ -n "$RISC0_CLI_VERSION" && -n "$RISC0_CPP_VERSION" && -n "$RISC0_R0VM_VERSION" && -n "$RISC0_RUST_VERSION" ]]; then
+    # If versions are specified, install each component by their version
+    rzup install cargo-risczero $RISC0_CLI_VERSION
+    rzup install cpp $RISC0_CPP_VERSION
+    rzup install r0vm $RISC0_R0VM_VERSION
+    rzup install rust $RISC0_RUST_VERSION
+else
+    # Otherwise just install all components with by their latest version
+    rzup install
+fi
 
 # Verify Risc0 installation
 echo "Verifying Risc0 installation..."
