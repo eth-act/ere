@@ -133,12 +133,7 @@ impl zkVM for EreOpenVM {
         let sdk = Sdk::new();
 
         let mut stdin = StdIn::default();
-        for input in inputs.iter() {
-            match input {
-                InputItem::Object(serialize) => stdin.write(serialize),
-                InputItem::Bytes(items) => stdin.write_bytes(items),
-            }
-        }
+        serialize_inputs(&mut stdin, inputs);
 
         let start = Instant::now();
         let _outputs = sdk
@@ -162,12 +157,7 @@ impl zkVM for EreOpenVM {
         let sdk = Sdk::new();
 
         let mut stdin = StdIn::default();
-        for input in inputs.iter() {
-            match input {
-                InputItem::Object(serialize) => stdin.write(serialize),
-                InputItem::Bytes(items) => stdin.write_bytes(items),
-            }
-        }
+        serialize_inputs(&mut stdin, inputs);
 
         let now = std::time::Instant::now();
         let proof = sdk
@@ -198,6 +188,17 @@ impl zkVM for EreOpenVM {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
+    }
+}
+
+fn serialize_inputs(stdin: &mut StdIn, inputs: &Input) {
+    for input in inputs.iter() {
+        match input {
+            InputItem::Object(obj) => stdin.write(obj),
+            InputItem::SerializedObject(bytes) | InputItem::Bytes(bytes) => {
+                stdin.write_bytes(bytes)
+            }
+        }
     }
 }
 
