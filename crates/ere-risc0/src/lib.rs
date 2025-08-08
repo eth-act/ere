@@ -206,8 +206,7 @@ mod prove_tests {
     }
 
     #[test]
-    #[ignore = "Requires Nvidia GPU to run"]
-    #[cfg(not(feature = "metal"))]
+    #[ignore = "Requires GPU to run"]
     fn test_prove_r0_dummy_input_bento() {
         let program = get_compiled_test_r0_elf_for_prove().unwrap();
 
