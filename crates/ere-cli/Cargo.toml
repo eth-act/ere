@@ -8,9 +8,9 @@ license.workspace = true
 [dependencies]
 anyhow.workspace = true
 bincode.workspace = true
-clap.workspace = true
+clap = { workspace = true, optional = true }
 serde = { workspace = true, features = ["derive"] }
-tracing-subscriber = { workspace = true, features = ["env-filter"] }
+tracing-subscriber = { workspace = true, features = ["env-filter"], optional = true }
 
 # Local dependencies
 ere-jolt = { workspace = true, optional = true }
@@ -29,6 +29,7 @@ workspace = true
 
 [features]
 default = []
+cli = ["dep:clap", "dep:tracing-subscriber"]
 jolt = ["dep:ere-jolt"]
 nexus = ["dep:ere-nexus"]
 openvm = ["dep:ere-openvm"]

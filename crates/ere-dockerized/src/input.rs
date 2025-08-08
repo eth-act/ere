@@ -1,4 +1,5 @@
 use crate::{ErezkVM, error::CommonError};
+use ere_cli::serde::SerializableInputItem;
 use serde::Serialize;
 use zkvm_interface::{Input, InputItem};
 
@@ -52,14 +53,22 @@ impl ErezkVM {
                 .iter()
                 .map(|input| {
                     Ok(match input {
-                        InputItem::Object(obj) => self.serialize_object(&**obj)?,
-                        InputItem::Bytes(bytes) => bytes.clone(),
+                        InputItem::Object(obj) => {
+                            SerializableInputItem::SerializedObject(self.serialize_object(&**obj)?)
+                        }
+                        InputItem::SerializedObject(bytes) => {
+                            SerializableInputItem::SerializedObject(bytes.clone())
+                        }
+                        InputItem::Bytes(bytes) => SerializableInputItem::Bytes(bytes.clone()),
                     })
                 })
-                .collect::<Result<Vec<Vec<u8>>, CommonError>>()?,
+                .collect::<Result<Vec<SerializableInputItem>, CommonError>>()?,
         )
         .map_err(|err| {
-            CommonError::serilization(err, "Failed to serialize sequence of bytes with `bincode`")
+            CommonError::serilization(
+                err,
+                "Failed to serialize `Vec<SerializableInputItem>` with `bincode`",
+            )
         })
     }
 }

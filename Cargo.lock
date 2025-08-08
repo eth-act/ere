@@ -2327,6 +2327,7 @@ dependencies = [
  "bincode",
  "build-utils",
  "bytemuck",
+ "ere-cli",
  "risc0-zkvm",
  "serde",
  "tempfile",
@@ -2387,6 +2388,7 @@ dependencies = [
  "bincode",
  "build-utils",
  "pico-sdk",
+ "pico-vm",
  "thiserror 2.0.12",
  "zkvm-interface",
 ]
