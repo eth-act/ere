@@ -1,15 +1,30 @@
 use anyhow::{Context, Error};
-use serde::{Serialize, de::DeserializeOwned};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::{fs, path::Path};
 use zkvm_interface::{Input, InputItem};
+
+#[derive(Serialize, Deserialize)]
+pub enum SerializableInputItem {
+    SerializedObject(Vec<u8>),
+    Bytes(Vec<u8>),
+}
+
+impl From<SerializableInputItem> for InputItem {
+    fn from(value: SerializableInputItem) -> Self {
+        match value {
+            SerializableInputItem::SerializedObject(bytes) => Self::SerializedObject(bytes),
+            SerializableInputItem::Bytes(bytes) => Self::Bytes(bytes),
+        }
+    }
+}
 
 /// Read `Input` from `input_path`.
 ///
 /// `Input` is assumed to be serialized into sequence of bytes, and each bytes
 /// in the sequence is serialized in the specific way the zkvm does.
 pub fn read_input(input_path: &Path) -> Result<Input, Error> {
-    read::<Vec<Vec<u8>>>(input_path, "input")
-        .map(|seq| Input::from(Vec::from_iter(seq.into_iter().map(InputItem::Bytes))))
+    read::<Vec<SerializableInputItem>>(input_path, "input")
+        .map(|seq| Input::from(Vec::from_iter(seq.into_iter().map(Into::into))))
 }
 
 /// Serialize `value` with [`bincode`] and write to `path`.

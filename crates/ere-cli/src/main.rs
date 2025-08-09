@@ -1,26 +1,25 @@
-#![cfg_attr(not(test), warn(unused_crate_dependencies))]
-
 use anyhow::{Context, Error};
 use clap::{Parser, Subcommand};
+use ere_cli::serde;
 use std::{fs, path::PathBuf};
 use tracing_subscriber::EnvFilter;
 use zkvm_interface::{Compiler, ProverResourceType, zkVM};
 
-mod serde;
-
 // Compile-time check to ensure exactly one backend feature is enabled
 const _: () = {
-    assert!(
-        (cfg!(feature = "jolt") as u8
-            + cfg!(feature = "nexus") as u8
-            + cfg!(feature = "openvm") as u8
-            + cfg!(feature = "pico") as u8
-            + cfg!(feature = "risc0") as u8
-            + cfg!(feature = "sp1") as u8
-            + cfg!(feature = "zisk") as u8)
-            == 1,
-        "Exactly one zkVM backend feature must be enabled"
-    );
+    if cfg!(feature = "cli") {
+        assert!(
+            (cfg!(feature = "jolt") as u8
+                + cfg!(feature = "nexus") as u8
+                + cfg!(feature = "openvm") as u8
+                + cfg!(feature = "pico") as u8
+                + cfg!(feature = "risc0") as u8
+                + cfg!(feature = "sp1") as u8
+                + cfg!(feature = "zisk") as u8)
+                == 1,
+            "Exactly one zkVM backend feature must be enabled"
+        );
+    }
 };
 
 #[derive(Parser)]

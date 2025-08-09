@@ -2,7 +2,9 @@
 
 use crate::error::Risc0Error;
 use compile::compile_risc0_program;
-use risc0_zkvm::{ExecutorEnv, ProverOpts, Receipt, default_executor, default_prover};
+use risc0_zkvm::{
+    ExecutorEnv, ExecutorEnvBuilder, ProverOpts, Receipt, default_executor, default_prover,
+};
 use std::{path::Path, time::Instant};
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
@@ -67,16 +69,7 @@ impl zkVM for EreRisc0 {
     fn execute(&self, inputs: &Input) -> Result<ProgramExecutionReport, zkVMError> {
         let executor = default_executor();
         let mut env = ExecutorEnv::builder();
-        for input in inputs.iter() {
-            match input {
-                InputItem::Object(serialize) => {
-                    env.write(serialize).unwrap();
-                }
-                InputItem::Bytes(items) => {
-                    env.write_frame(items);
-                }
-            }
-        }
+        serialize_inputs(&mut env, inputs).map_err(|err| zkVMError::Other(err.into()))?;
         let env = env.build().map_err(|err| zkVMError::Other(err.into()))?;
 
         let start = Instant::now();
@@ -93,16 +86,7 @@ impl zkVM for EreRisc0 {
     fn prove(&self, inputs: &Input) -> Result<(Vec<u8>, ProgramProvingReport), zkVMError> {
         let prover = default_prover();
         let mut env = ExecutorEnv::builder();
-        for input in inputs.iter() {
-            match input {
-                InputItem::Object(serialize) => {
-                    env.write(serialize).unwrap();
-                }
-                InputItem::Bytes(items) => {
-                    env.write_frame(items);
-                }
-            }
-        }
+        serialize_inputs(&mut env, inputs).map_err(|err| zkVMError::Other(err.into()))?;
         let env = env.build().map_err(|err| zkVMError::Other(err.into()))?;
 
         let now = std::time::Instant::now();
@@ -132,6 +116,26 @@ impl zkVM for EreRisc0 {
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
     }
+}
+
+fn serialize_inputs(env: &mut ExecutorEnvBuilder, inputs: &Input) -> Result<(), anyhow::Error> {
+    for input in inputs.iter() {
+        match input {
+            // Corresponding to `env.read::<T>()`.
+            InputItem::Object(obj) => env.write(obj)?,
+            // Corresponding to `env.read::<T>()`.
+            //
+            // Note that we call `write_slice` to append the bytes to the inputs
+            // directly, to avoid double serailization.
+            InputItem::SerializedObject(bytes) => env.write_slice(bytes),
+            // Corresponding to `env.read_frame()`.
+            //
+            // Note that `write_frame` is different from `write_slice`, it
+            // prepends the `bytes.len().to_le_bytes()`.
+            InputItem::Bytes(bytes) => env.write_frame(bytes),
+        };
+    }
+    Ok(())
 }
 
 #[cfg(test)]

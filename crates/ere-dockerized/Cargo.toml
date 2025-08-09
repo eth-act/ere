@@ -17,6 +17,7 @@ risc0-zkvm.workspace = true
 
 # Local dependencies
 zkvm-interface = { workspace = true, features = ["clap"] }
+ere-cli.workspace = true
 
 [dev-dependencies]
 

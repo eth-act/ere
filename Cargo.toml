@@ -62,6 +62,7 @@ openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", ta
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.0", default-features = false }
 
 # Pico dependencies
+pico-vm = { git = "https://github.com/brevis-network/pico.git", tag = "v1.1.4" }
 pico-sdk = { git = "https://github.com/brevis-network/pico.git", tag = "v1.1.4" }
 
 # Risc0 dependencies
@@ -74,7 +75,7 @@ sp1-sdk = "5.1.0"
 # Local dependencies
 zkvm-interface = { path = "crates/zkvm-interface" }
 build-utils = { path = "crates/build-utils" }
-ere-cli = { path = "crates/ere-cli" }
+ere-cli = { path = "crates/ere-cli", default-features = false }
 ere-dockerized = { path = "crates/ere-dockerized" }
 ere-jolt = { path = "crates/ere-jolt" }
 ere-nexus = { path = "crates/ere-nexus" }

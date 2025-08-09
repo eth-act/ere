@@ -1,6 +1,7 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 use pico_sdk::client::DefaultProverClient;
+use pico_vm::emulator::stdin::EmulatorStdinBuilder;
 use std::{path::Path, process::Command, time::Instant};
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
@@ -72,12 +73,7 @@ impl zkVM for ErePico {
         let client = DefaultProverClient::new(&self.program);
 
         let mut stdin = client.new_stdin_builder();
-        for input in inputs.iter() {
-            match input {
-                InputItem::Object(serialize) => stdin.write(serialize),
-                InputItem::Bytes(items) => stdin.write_slice(items),
-            }
-        }
+        serialize_inputs(&mut stdin, inputs);
 
         let start = Instant::now();
         let emulation_result = client.emulate(stdin);
@@ -96,12 +92,8 @@ impl zkVM for ErePico {
         let client = DefaultProverClient::new(&self.program);
 
         let mut stdin = client.new_stdin_builder();
-        for input in inputs.iter() {
-            match input {
-                InputItem::Object(serialize) => stdin.write(serialize),
-                InputItem::Bytes(items) => stdin.write_slice(items),
-            }
-        }
+        serialize_inputs(&mut stdin, inputs);
+
         let now = std::time::Instant::now();
         let meta_proof = client.prove(stdin).expect("Failed to generate proof");
         let elapsed = now.elapsed();
@@ -136,6 +128,17 @@ impl zkVM for ErePico {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
+    }
+}
+
+fn serialize_inputs(stdin: &mut EmulatorStdinBuilder<Vec<u8>>, inputs: &Input) {
+    for input in inputs.iter() {
+        match input {
+            InputItem::Object(serialize) => stdin.write(serialize),
+            InputItem::SerializedObject(items) | InputItem::Bytes(items) => {
+                stdin.write_slice(items)
+            }
+        }
     }
 }
 
