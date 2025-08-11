@@ -65,6 +65,15 @@ pub fn prove(program: &Risc0Program, inputs: &Input) -> Result<(Receipt, Duratio
                     .map_err(|err| zkVMError::Other(err.into()))?;
                 break Ok((bincode::deserialize(&receipt_bytes).unwrap(), now.elapsed()));
             }
+            "FAILED" => {
+                return Err(zkVMError::Other(
+                    format!(
+                        "Job failed with error message: {}",
+                        res.error_msg.unwrap_or_default()
+                    )
+                    .into(),
+                ));
+            }
             _ => {
                 return Err(zkVMError::Other(
                     format!("Unexpected proving status: {}", res.status).into(),
@@ -148,7 +157,8 @@ pub fn build_bento_images() -> Result<(), io::Error> {
     Ok(())
 }
 
-const BENTO_COMPOSE_TEMPLATE: &str = include_str!("../../compose.yml");
+const BENTO_ENV: &str = include_str!("../../sample.env");
+const BENTO_COMPOSE: &str = include_str!("../../compose.yml");
 const BENTO_GPU_PROVER_AGENT_TEMPLATE: &str = include_str!("../../gpu_prover_agent.yml");
 
 fn bento_compose_file() -> String {
@@ -158,22 +168,30 @@ fn bento_compose_file() -> String {
         .flat_map(|device_id| device_id.parse::<usize>().ok())
         .collect::<Vec<_>>();
 
-    let mut compose: serde_yaml::Mapping = serde_yaml::from_str(BENTO_COMPOSE_TEMPLATE).unwrap();
+    let mut compose: serde_yaml::Mapping = serde_yaml::from_str(BENTO_COMPOSE).unwrap();
     let gpu_prover_agent: serde_yaml::Mapping =
         serde_yaml::from_str(BENTO_GPU_PROVER_AGENT_TEMPLATE).unwrap();
 
     if cuda_visible_devices.is_empty() {
+        // If env `CUDA_VISIBLE_DEVICES` is not specified, only spin up single prover with all GPUs.
         let mut gpu_prover_agent = gpu_prover_agent.clone();
-        gpu_prover_agent.remove("deploy").unwrap();
+        let device = gpu_prover_agent["deploy"]["resources"]["reservations"]["devices"][0]
+            .as_mapping_mut()
+            .unwrap();
+        device.remove("device_ids").unwrap();
+        device.insert("count".into(), "all".into());
         compose["services"]
             .as_mapping_mut()
             .unwrap()
             .insert("gpu_prove_agent0".into(), gpu_prover_agent.into());
     } else {
+        // Otherwise spin up provers with each having 1 GPU.
         for idx in cuda_visible_devices {
             let mut gpu_prover_agent = gpu_prover_agent.clone();
-            gpu_prover_agent["deploy"]["resources"]["reservations"]["devices"][0]["device_ids"]
-                [0] = idx.to_string().into();
+            let device = gpu_prover_agent["deploy"]["resources"]["reservations"]["devices"][0]
+                .as_mapping_mut()
+                .unwrap();
+            device["device_ids"][0] = idx.to_string().into();
             compose["services"].as_mapping_mut().unwrap().insert(
                 format!("gpu_prove_agent{idx}").into(),
                 gpu_prover_agent.into(),
@@ -190,15 +208,17 @@ where
     I: Clone + IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
-    let rust_log = env::var("RUST_LOG").unwrap_or_else(|_| "info".to_string());
-    let segment_size = env::var("SEGMENT_SIZE").unwrap_or_else(|_| "21".to_string());
-    let risc0_keccak_po2 = env::var("RISC0_KECCAK_PO2").unwrap_or_else(|_| "17".to_string());
+    let envs = BENTO_ENV
+        .lines()
+        .flat_map(|line| {
+            line.split_once("=")
+                .map(|(key, val)| (key, env::var(key).unwrap_or_else(|_| val.to_string())))
+        })
+        .collect::<Vec<_>>();
 
     let mut child = Command::new("docker")
-        .env("RUST_LOG", rust_log)
+        .envs(envs)
         .env("RISC0_VERSION", SDK_VERSION)
-        .env("SEGMENT_SIZE", segment_size)
-        .env("RISC0_KECCAK_PO2", risc0_keccak_po2)
         .args(["compose", "--file", "-"]) // Compose file from stdin.
         .args(command.clone())
         .stdin(Stdio::piped())
