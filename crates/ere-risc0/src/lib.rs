@@ -40,6 +40,7 @@ impl EreRisc0 {
         resource: ProverResourceType,
     ) -> Result<Self, zkVMError> {
         match resource {
+            ProverResourceType::Cpu => {}
             ProverResourceType::Gpu => {
                 // If not using Metal, we use the bento stack which requires
                 // Docker to spin up the proving services that use Cuda.
@@ -55,7 +56,6 @@ impl EreRisc0 {
                     "Network proving not yet implemented for RISC Zero. Use CPU or GPU resource type."
                 );
             }
-            _ => {}
         }
 
         Ok(Self { program, resource })
@@ -85,7 +85,7 @@ impl zkVM for EreRisc0 {
             ProverResourceType::Cpu => prove::default::prove(&self.program, inputs)?,
             ProverResourceType::Gpu => {
                 if cfg!(feature = "metal") {
-                    // The default prover selects the prover depends on the
+                    // The default prover selects the prover depending on the
                     // feature flag, if non enabled, it executes the pre-installed
                     // binary to generate the proof; if `metal` is enabled, it
                     // uses the local built binary.
@@ -94,7 +94,11 @@ impl zkVM for EreRisc0 {
                     prove::bento::prove(&self.program, inputs)?
                 }
             }
-            ProverResourceType::Network(_) => unreachable!(),
+            ProverResourceType::Network(_) => {
+                panic!(
+                    "Network proving not yet implemented for RISC Zero. Use CPU or GPU resource type."
+                );
+            }
         };
 
         let encoded = borsh::to_vec(&receipt).map_err(|err| zkVMError::Other(Box::new(err)))?;
@@ -122,7 +126,9 @@ impl zkVM for EreRisc0 {
 impl Drop for EreRisc0 {
     fn drop(&mut self) {
         if matches!(self.resource, ProverResourceType::Gpu) && !cfg!(feature = "metal") {
-            prove::bento::docker_compose_bento_down().unwrap_or_else(|err| eprintln!("{err}"))
+            prove::bento::docker_compose_bento_down().unwrap_or_else(|err| {
+                tracing::error!("Failed to shutdown bento docker compose sevices\n{err}")
+            })
         }
     }
 }

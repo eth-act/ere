@@ -123,7 +123,8 @@ pub fn build_bento_images() -> Result<(), io::Error> {
         Command::new("git")
             .args([
                 "clone",
-                "--single-branch",
+                "--depth",
+                "1",
                 "--branch",
                 &format!("v{SDK_VERSION}"),
                 "https://github.com/risc0/risc0.git",
