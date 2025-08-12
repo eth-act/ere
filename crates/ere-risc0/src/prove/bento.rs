@@ -50,13 +50,24 @@ pub fn prove(program: &Risc0Program, inputs: &Input) -> Result<(Receipt, Duratio
         .map_err(|err| zkVMError::Other(err.into()))?;
 
     loop {
+        // By interval check if the proving is still running or already succeeded.
+        // FIXME: The response `SessionStatusRes` has a field `elapsed_time` but
+        //        currently always set to `None` because it's not implemented.
+        //        So we setting 200ms to not make the proving time measurement too
+        //        inaccurate, but if `RUST_LOG=debug` is set, we should be able to do
+        //        `docker log {container} --since` and grep the following pattern:
+        //        ```
+        //        {timestamp} DEBUG workflow::tasks::resolve: Resolve complete for job_id: {session.uuid}.
+        //        ```
+        const INTERVAL_MILLIS: u64 = 200;
+
         let res = session
             .status(&client)
             .map_err(|err| zkVMError::Other(err.into()))?;
 
         match res.status.as_ref() {
             "RUNNING" => {
-                std::thread::sleep(Duration::from_millis(200));
+                std::thread::sleep(Duration::from_millis(INTERVAL_MILLIS));
                 continue;
             }
             "SUCCEEDED" => {
