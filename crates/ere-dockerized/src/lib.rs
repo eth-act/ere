@@ -239,6 +239,7 @@ impl Compiler for EreDockerizedCompiler {
 
         DockerRunCmd::new(self.zkvm.cli_zkvm_tag(CRATE_VERSION))
             .rm()
+            .inherit_env("GITHUB_TOKEN")
             .inherit_env("RUST_LOG")
             .inherit_env("NO_COLOR")
             .volume(&self.mount_directory, "/guest")
@@ -308,6 +309,7 @@ impl zkVM for EreDockerizedzkVM {
 
         DockerRunCmd::new(self.zkvm.cli_zkvm_tag(CRATE_VERSION))
             .rm()
+            .inherit_env("GITHUB_TOKEN")
             .inherit_env("RUST_LOG")
             .inherit_env("NO_COLOR")
             .volume(tempdir.path(), "/workspace")
@@ -352,6 +354,7 @@ impl zkVM for EreDockerizedzkVM {
 
         let mut cmd = DockerRunCmd::new(self.zkvm.cli_zkvm_tag(CRATE_VERSION))
             .rm()
+            .inherit_env("GITHUB_TOKEN")
             .inherit_env("RUST_LOG")
             .inherit_env("NO_COLOR")
             .volume(tempdir.path(), "/workspace");
@@ -418,6 +421,7 @@ impl zkVM for EreDockerizedzkVM {
 
         DockerRunCmd::new(self.zkvm.cli_zkvm_tag(CRATE_VERSION))
             .rm()
+            .inherit_env("GITHUB_TOKEN")
             .inherit_env("RUST_LOG")
             .inherit_env("NO_COLOR")
             .volume(tempdir.path(), "/workspace")
