@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/build-utils",
+    "crates/test-utils",
     # zkVMs
     "crates/ere-jolt",
     "crates/ere-nexus",
@@ -77,6 +78,7 @@ sp1-sdk = "5.1.0"
 # Local dependencies
 zkvm-interface = { path = "crates/zkvm-interface" }
 build-utils = { path = "crates/build-utils" }
+test-utils = { path = "crates/test-utils" }
 ere-cli = { path = "crates/ere-cli", default-features = false }
 ere-dockerized = { path = "crates/ere-dockerized" }
 ere-jolt = { path = "crates/ere-jolt" }
