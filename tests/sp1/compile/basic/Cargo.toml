@@ -6,4 +6,4 @@ edition = "2021"
 [workspace]
 
 [dependencies]
-sp1-zkvm = "5.0.5"
+sp1-zkvm = "5.1.0"

@@ -30,4 +30,5 @@ jobs:
         run: |
           docker build \
             --tag ere-builder-zisk:latest \
-            --file docker/zisk/Dockerfile .
+            --file docker/zisk/Dockerfile \
+            --build-arg CI=1 .

@@ -30,25 +30,31 @@ echo "Installing Nexus Toolchain and SDK using Nexus (prebuilt binaries)..."
 ensure_tool_installed "rustup" "for managing Rust toolchains"
 ensure_tool_installed "cargo" "as cargo-nexus is a cargo subcommand"
 
-# Step 1: Download and run the toolchain.
+NEXUS_TOOLCHAIN_VERSION="nightly-2025-04-06"
+NEXUS_CLI_VERSION_TAG="v0.3.4"
+
+# Install the Nexus CLI
+echo "Installing Nexus CLI from GitHub repository..."
+cargo "+${NEXUS_TOOLCHAIN_VERSION}" install --git https://github.com/nexus-xyz/nexus-zkvm cargo-nexus --tag "$NEXUS_CLI_VERSION_TAG"
+
+# Install Nexus's target
+rustup target add riscv32i-unknown-none-elf
 
 # Verify Nexus installation
-echo "Verifying Nexus installation..."
-
-echo "Checking for RISC-V target..."
-if rustup target list | grep -q "riscv32i-unknown-none-elf"; then
-    echo "RISC-V target 'riscv32i-unknown-none-elf' not found."
+echo "Verifying Nexus CLI installation..."
+if cargo-nexus --version; then
+    echo "Nexus CLI installation verified successfully."
 else
-    echo "RISC-V 'riscv32i-unknown-none-elf' not found after installation!" >&2
-    echo "Install the RISC-V target:"
-    rustup target add riscv32i-unknown-none-elf
+    echo "Error: 'cargo-nexus --version' failed. Nexus CLI might not have installed correctly." >&2
+    echo "       Ensure ${HOME}/.cargo/bin is in your PATH for new shells." >&2
+    exit 1
 fi
 
-echo "Checking for cargo-nexus..."
-if cargo --list | grep "nexus"; then
-    echo "cargo-nexus found."
+echo "Verifying Nexus's target installation..."
+if rustup target list --installed | grep -q "riscv32i-unknown-none-elf"; then
+    echo "Target 'riscv32i-unknown-none-elf' installation verified successfully."
 else
-    echo "cargo-nexus not found after installation!" >&2
-    echo "Install the cargo-nexus:"
-    cargo install --git https://github.com/nexus-xyz/nexus-zkvm cargo-nexus --tag 'v0.3.4'
+    echo "Target 'riscv32i-unknown-none-elf' not installed correctly." >&2
+    echo "       Ensure ${HOME}/.cargo/bin is in your PATH for new shells." >&2
+    exit 1
 fi

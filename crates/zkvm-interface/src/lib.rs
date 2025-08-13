@@ -1,3 +1,6 @@
+#![cfg_attr(not(test), warn(unused_crate_dependencies))]
+
+use serde::{Serialize, de::DeserializeOwned};
 use std::path::Path;
 use thiserror::Error;
 
@@ -14,25 +17,37 @@ pub use network::NetworkProverConfig;
 /// Compiler trait for compiling programs into an opaque sequence of bytes.
 pub trait Compiler {
     type Error: std::error::Error + Send + Sync + 'static;
-    type Program: Clone + Send + Sync;
+    type Program: Clone + Send + Sync + Serialize + DeserializeOwned;
 
     /// Compiles the program and returns the program
     ///
     /// # Arguments
-    /// * `mount_directory` - The base directory (workspace root)
-    /// * `guest_relative` - The relative path from mount_directory to the guest program
-    fn compile(mount_directory: &Path, guest_relative: &Path)
-    -> Result<Self::Program, Self::Error>;
+    /// * `guest_directory` - The path to the guest program directory
+    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error>;
 }
 
 /// ResourceType specifies what resource will be used to create the proofs.
 #[derive(Debug, Clone, Default)]
+#[cfg_attr(feature = "clap", derive(clap::Subcommand))]
 pub enum ProverResourceType {
     #[default]
     Cpu,
     Gpu,
     /// Use a remote prover network
     Network(NetworkProverConfig),
+}
+
+#[cfg(feature = "clap")]
+impl ProverResourceType {
+    pub fn to_args(&self) -> Vec<&str> {
+        match self {
+            Self::Cpu => vec!["cpu"],
+            Self::Gpu => vec!["gpu"],
+            Self::Network(config) => core::iter::once("network")
+                .chain(config.to_args())
+                .collect(),
+        }
+    }
 }
 
 /// An error that can occur during prove, execute or verification

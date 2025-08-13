@@ -1,4 +1,6 @@
+#![cfg_attr(not(test), warn(unused_crate_dependencies))]
 #![allow(clippy::uninlined_format_args)]
+
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
@@ -29,19 +31,14 @@ impl Compiler for NEXUS_TARGET {
 
     type Program = PathBuf;
 
-    fn compile(
-        workspace_directory: &Path,
-        guest_relative: &Path,
-    ) -> Result<Self::Program, Self::Error> {
-        let guest_path = workspace_directory.join(guest_relative);
-
+    fn compile(&self, guest_path: &Path) -> Result<Self::Program, Self::Error> {
         // 1. Check guest path
         if !guest_path.exists() {
             return Err(NexusError::PathNotFound(guest_path.to_path_buf()));
         }
-        std::env::set_current_dir(&guest_path).map_err(|e| CompileError::Client(e.into()))?;
+        std::env::set_current_dir(guest_path).map_err(|e| CompileError::Client(e.into()))?;
 
-        let package_name = get_cargo_package_name(&guest_path)
+        let package_name = get_cargo_package_name(guest_path)
             .ok_or(CompileError::Client(Box::from(format!(
                 "Failed to get guest package name, where guest path: {:?}",
                 guest_path
@@ -69,52 +66,32 @@ impl EreNexus {
     }
 }
 impl zkVM for EreNexus {
-    fn execute(&self, inputs: &Input) -> Result<zkvm_interface::ProgramExecutionReport, zkVMError> {
-        let start = Instant::now();
+    fn execute(
+        &self,
+        _inputs: &Input,
+    ) -> Result<zkvm_interface::ProgramExecutionReport, zkVMError> {
+        // TODO: Serialize inputs by `postcard` and make sure there is no double serailization.
+        // Issue for tracking: https://github.com/eth-act/ere/issues/63.
 
-        // let mut public_input = vec![];
-        let mut private_input = vec![];
-        for input in inputs.iter() {
-            private_input.extend(
-                input
-                    .as_bytes()
-                    .map_err(|err| NexusError::Prove(ProveError::Client(err)))
-                    .map_err(zkVMError::from)?,
-            );
-        }
-        // TODO: Doesn't catch execute for guest in nexus. so only left some dummy code(parse input) here.
-        //      Besides, public input is not supported yet, so we just pass an empty tuple
+        // TODO: Execute and get cycle count
 
-        Ok(ProgramExecutionReport {
-            execution_duration: start.elapsed(),
-            ..Default::default()
-        })
+        Ok(ProgramExecutionReport::default())
     }
 
     fn prove(
         &self,
-        inputs: &Input,
+        _inputs: &Input,
     ) -> Result<(Vec<u8>, zkvm_interface::ProgramProvingReport), zkVMError> {
         let prover: Stwo<Local> = Stwo::new_from_file(&self.program.to_string_lossy().to_string())
             .map_err(|e| NexusError::Prove(ProveError::Client(e.into())))
             .map_err(zkVMError::from)?;
 
-        // One convention that may be useful for simplifying the design is that all inputs to the vm are private and all outputs are public.
-        // If an input should be public, then it could just be returned from the function.
-        // let mut public_input = vec![];
-        let mut private_input = vec![];
-        for input in inputs.iter() {
-            private_input.extend(
-                input
-                    .as_bytes()
-                    .map_err(|err| NexusError::Prove(ProveError::Client(err)))
-                    .map_err(zkVMError::from)?,
-            );
-        }
+        // TODO: Serialize inputs by `postcard` and make sure there is no double serailization.
+        // Issue for tracking: https://github.com/eth-act/ere/issues/63.
 
         let now = Instant::now();
         let (_view, proof) = prover
-            .prove_with_input(&private_input, &())
+            .prove_with_input(&(), &())
             .map_err(|e| NexusError::Prove(ProveError::Client(e.into())))
             .map_err(zkVMError::from)?;
         let elapsed = now.elapsed();
@@ -182,7 +159,7 @@ mod tests {
     #[test]
     fn test_compile() -> anyhow::Result<()> {
         let test_guest_path = get_test_guest_program_path();
-        let elf_path = NEXUS_TARGET::compile(&test_guest_path, Path::new(""))?;
+        let elf_path = NEXUS_TARGET.compile(&test_guest_path)?;
         let prover: Stwo<Local> = Stwo::new_from_file(&elf_path.to_string_lossy().to_string())?;
         let elf = prover.elf.clone();
         assert!(
@@ -195,8 +172,9 @@ mod tests {
     #[test]
     fn test_execute() {
         let test_guest_path = get_test_guest_program_path();
-        let elf =
-            NEXUS_TARGET::compile(&test_guest_path, Path::new("")).expect("compilation failed");
+        let elf = NEXUS_TARGET
+            .compile(&test_guest_path)
+            .expect("compilation failed");
         let mut input = Input::new();
         input.write(10u64);
 
@@ -207,7 +185,7 @@ mod tests {
     #[test]
     fn test_prove_verify() -> anyhow::Result<()> {
         let test_guest_path = get_test_guest_program_path();
-        let elf = NEXUS_TARGET::compile(&test_guest_path, Path::new(""))?;
+        let elf = NEXUS_TARGET.compile(&test_guest_path)?;
         let mut input = Input::new();
         input.write(10u64);
 

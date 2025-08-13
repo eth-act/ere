@@ -1,9 +1,13 @@
-# TODO: change to 24?
-ARG UBUNTU_VERSION=22.04
+ARG UBUNTU_VERSION=24.04
 FROM ubuntu:${UBUNTU_VERSION}
 
-# Set DEBIAN_FRONTEND to noninteractive to avoid prompts during package installation
-ENV DEBIAN_FRONTEND=noninteractive
+# Free uid 1000 for later usage, see https://bugs.launchpad.net/cloud-images/+bug/2005129
+# for more details.
+RUN userdel -r ubuntu
+
+# Set DEBIAN_FRONTEND to noninteractive to avoid prompts during package
+# installation when building the image.
+ARG DEBIAN_FRONTEND=noninteractive
 
 # Install common dependencies and build tools
 RUN apt-get update && \

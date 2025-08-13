@@ -1,11 +1,8 @@
-use build_utils::docker;
-use compile::compile_risc0_program;
-use risc0_zkvm::Receipt;
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
-use tempfile::TempDir;
+#![cfg_attr(not(test), warn(unused_crate_dependencies))]
+
+use crate::{compile::compile_risc0_program, error::Risc0Error};
+use risc0_zkvm::{ExecutorEnv, ExecutorEnvBuilder, Receipt, default_executor};
+use std::{path::Path, time::Instant};
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
     zkVM, zkVMError,
@@ -14,10 +11,10 @@ use zkvm_interface::{
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 mod compile;
-pub use compile::Risc0Program;
-
 mod error;
-use error::Risc0Error;
+mod prove;
+
+pub use compile::Risc0Program;
 
 #[allow(non_camel_case_types)]
 pub struct RV32_IM_RISC0_ZKVM_ELF;
@@ -27,27 +24,32 @@ impl Compiler for RV32_IM_RISC0_ZKVM_ELF {
 
     type Program = Risc0Program;
 
-    fn compile(
-        workspace_directory: &Path,
-        guest_relative: &Path,
-    ) -> Result<Self::Program, Self::Error> {
-        compile_risc0_program(workspace_directory, guest_relative).map_err(Risc0Error::from)
+    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
+        compile_risc0_program(guest_directory).map_err(Risc0Error::from)
     }
+}
+
+pub struct EreRisc0 {
+    program: <RV32_IM_RISC0_ZKVM_ELF as Compiler>::Program,
+    resource: ProverResourceType,
 }
 
 impl EreRisc0 {
     pub fn new(
         program: <RV32_IM_RISC0_ZKVM_ELF as Compiler>::Program,
-        resource_type: ProverResourceType,
-    ) -> Self {
-        match resource_type {
-            ProverResourceType::Cpu => {
-                #[cfg(any(feature = "cuda", feature = "metal"))]
-                panic!("CPU mode requires both 'cuda' and 'metal' features to be disabled");
-            }
+        resource: ProverResourceType,
+    ) -> Result<Self, zkVMError> {
+        match resource {
+            ProverResourceType::Cpu => {}
             ProverResourceType::Gpu => {
-                #[cfg(not(any(feature = "cuda", feature = "metal")))]
-                panic!("GPU selected but neither 'cuda' nor 'metal' feature is enabled");
+                // If not using Metal, we use the bento stack which requires
+                // Docker to spin up the proving services that use Cuda.
+                if !cfg!(feature = "metal") {
+                    prove::bento::build_bento_images()
+                        .map_err(|err| zkVMError::Other(Box::new(err)))?;
+                    prove::bento::docker_compose_bento_up()
+                        .map_err(|err| zkVMError::Other(Box::new(err)))?;
+                }
             }
             ProverResourceType::Network(_) => {
                 panic!(
@@ -56,109 +58,51 @@ impl EreRisc0 {
             }
         }
 
-        Self {
-            program,
-            resource_type,
-        }
+        Ok(Self { program, resource })
     }
-}
-
-pub struct EreRisc0 {
-    program: <RV32_IM_RISC0_ZKVM_ELF as Compiler>::Program,
-    #[allow(dead_code)]
-    resource_type: ProverResourceType,
 }
 
 impl zkVM for EreRisc0 {
     fn execute(&self, inputs: &Input) -> Result<ProgramExecutionReport, zkVMError> {
-        // Build the Docker image
-        let tag = "ere-risc0-cli:latest";
-        docker::build_image(&PathBuf::from("docker/risc0/Dockerfile"), tag)
-            .map_err(|e| zkVMError::Other(Box::new(e)))?;
+        let executor = default_executor();
+        let mut env = ExecutorEnv::builder();
+        serialize_inputs(&mut env, inputs).map_err(|err| zkVMError::Other(err.into()))?;
+        let env = env.build().map_err(|err| zkVMError::Other(err.into()))?;
 
-        // Create temporary directory for file exchange
-        let temp_dir = TempDir::new().map_err(|e| zkVMError::Other(Box::new(e)))?;
-        let elf_path = temp_dir.path().join("guest.elf");
-        let input_path = temp_dir.path().join("input");
-        let report_path = temp_dir.path().join("report");
-
-        // Write ELF file to temp directory
-        fs::write(&elf_path, &self.program.elf).map_err(|e| zkVMError::Other(Box::new(e)))?;
-        // Write input bytes to temp directory
-        fs::write(&input_path, &serialize_input(inputs)?)
-            .map_err(|e| zkVMError::Other(Box::new(e)))?;
-
-        // Run Docker command for execution
-        let status = docker::DockerRunCommand::new(tag)
-            .remove_after_run()
-            .with_volume(temp_dir.path().to_string_lossy().to_string(), "/workspace")
-            .with_command([
-                "execute",
-                "/workspace/guest.elf",
-                "/workspace/input",
-                "/workspace/report",
-            ])
-            .run()
-            .map_err(|e| zkVMError::Other(Box::new(e)))?;
-
-        if !status.success() {
-            return Err(zkVMError::Other("Docker execution command failed".into()));
-        }
-
-        // Read the execution report from the output file
-        let report: ProgramExecutionReport = bincode::deserialize(
-            &fs::read(report_path).map_err(|e| zkVMError::Other(Box::new(e)))?,
-        )
-        .map_err(|e| zkVMError::Other(Box::new(e)))?;
-
-        Ok(report)
+        let start = Instant::now();
+        let session_info = executor
+            .execute(env, &self.program.elf)
+            .map_err(|err| zkVMError::Other(err.into()))?;
+        Ok(ProgramExecutionReport {
+            total_num_cycles: session_info.cycles() as u64,
+            execution_duration: start.elapsed(),
+            ..Default::default()
+        })
     }
 
     fn prove(&self, inputs: &Input) -> Result<(Vec<u8>, ProgramProvingReport), zkVMError> {
-        // Build the Docker image
-        let tag = "ere-risc0-cli:latest";
-        docker::build_image(&PathBuf::from("docker/risc0/Dockerfile"), tag)
-            .map_err(|e| zkVMError::Other(Box::new(e)))?;
+        let (receipt, proving_time) = match self.resource {
+            ProverResourceType::Cpu => prove::default::prove(&self.program, inputs)?,
+            ProverResourceType::Gpu => {
+                if cfg!(feature = "metal") {
+                    // The default prover selects the prover depending on the
+                    // feature flag, if non enabled, it executes the pre-installed
+                    // binary to generate the proof; if `metal` is enabled, it
+                    // uses the local built binary.
+                    prove::default::prove(&self.program, inputs)?
+                } else {
+                    prove::bento::prove(&self.program, inputs)?
+                }
+            }
+            ProverResourceType::Network(_) => {
+                panic!(
+                    "Network proving not yet implemented for RISC Zero. Use CPU or GPU resource type."
+                );
+            }
+        };
 
-        // Create temporary directory for file exchange
-        let temp_dir = TempDir::new().map_err(|e| zkVMError::Other(Box::new(e)))?;
-        let elf_path = temp_dir.path().join("guest.elf");
-        let input_path = temp_dir.path().join("input");
-        let proof_path = temp_dir.path().join("proof");
-        let report_path = temp_dir.path().join("report");
-
-        // Write ELF file to temp directory
-        fs::write(&elf_path, &self.program.elf).map_err(|e| zkVMError::Other(Box::new(e)))?;
-        // Write input bytes to temp directory
-        fs::write(&input_path, &serialize_input(inputs)?)
-            .map_err(|e| zkVMError::Other(Box::new(e)))?;
-
-        // Run Docker command for proving
-        let status = docker::DockerRunCommand::new(tag)
-            .remove_after_run()
-            .with_volume(temp_dir.path().to_string_lossy().to_string(), "/workspace")
-            .with_command([
-                "prove",
-                "/workspace/guest.elf",
-                "/workspace/input",
-                "/workspace/proof",
-                "/workspace/report",
-            ])
-            .run()
-            .map_err(|e| zkVMError::Other(Box::new(e)))?;
-
-        if !status.success() {
-            return Err(zkVMError::Other("Docker proving command failed".into()));
-        }
-
-        // Read the proof from the output file
-        let proof = fs::read(proof_path).map_err(|e| zkVMError::Other(Box::new(e)))?;
-        let report = bincode::deserialize(
-            &fs::read(report_path).map_err(|e| zkVMError::Other(Box::new(e)))?,
-        )
-        .map_err(|e| zkVMError::Other(Box::new(e)))?;
-
-        Ok((proof, report))
+        let encoded = borsh::to_vec(&receipt).map_err(|err| zkVMError::Other(Box::new(err)))?;
+        Ok((encoded, ProgramProvingReport::new(proving_time)))
     }
 
     fn verify(&self, proof: &[u8]) -> Result<(), zkVMError> {
@@ -179,23 +123,34 @@ impl zkVM for EreRisc0 {
     }
 }
 
-// Serialize input bytes in the same way as the `ExecutorEnvBuilder`.
-fn serialize_input(inputs: &Input) -> Result<Vec<u8>, zkVMError> {
-    let mut input_bytes = Vec::new();
-    for input in inputs.iter() {
-        match input {
-            InputItem::Object(serialize) => {
-                let vec = risc0_zkvm::serde::to_vec(serialize)
-                    .map_err(|e| zkVMError::Other(Box::new(e)))?;
-                input_bytes.extend_from_slice(bytemuck::cast_slice(&vec));
-            }
-            InputItem::Bytes(items) => {
-                input_bytes.extend_from_slice(&(items.len() as u32).to_le_bytes());
-                input_bytes.extend_from_slice(items);
-            }
+impl Drop for EreRisc0 {
+    fn drop(&mut self) {
+        if matches!(self.resource, ProverResourceType::Gpu) && !cfg!(feature = "metal") {
+            prove::bento::docker_compose_bento_down().unwrap_or_else(|err| {
+                tracing::error!("Failed to shutdown bento docker compose sevices\n{err}")
+            })
         }
     }
-    Ok(input_bytes)
+}
+
+fn serialize_inputs(env: &mut ExecutorEnvBuilder, inputs: &Input) -> Result<(), anyhow::Error> {
+    for input in inputs.iter() {
+        match input {
+            // Corresponding to `env.read::<T>()`.
+            InputItem::Object(obj) => env.write(obj)?,
+            // Corresponding to `env.read::<T>()`.
+            //
+            // Note that we call `write_slice` to append the bytes to the inputs
+            // directly, to avoid double serailization.
+            InputItem::SerializedObject(bytes) => env.write_slice(bytes),
+            // Corresponding to `env.read_frame()`.
+            //
+            // Note that `write_frame` is different from `write_slice`, it
+            // prepends the `bytes.len().to_le_bytes()`.
+            InputItem::Bytes(bytes) => env.write_frame(bytes),
+        };
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -218,7 +173,7 @@ mod prove_tests {
 
     fn get_compiled_test_r0_elf_for_prove() -> Result<Risc0Program, Risc0Error> {
         let test_guest_path = get_prove_test_guest_program_path();
-        RV32_IM_RISC0_ZKVM_ELF::compile(&test_guest_path, Path::new(""))
+        RV32_IM_RISC0_ZKVM_ELF.compile(&test_guest_path)
     }
 
     #[test]
@@ -231,7 +186,7 @@ mod prove_tests {
         input_builder.write(n);
         input_builder.write(a);
 
-        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu);
+        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
         let (proof_bytes, _) = zkvm
             .prove(&input_builder)
@@ -251,9 +206,32 @@ mod prove_tests {
 
         let empty_input = Input::new();
 
-        let zkvm = EreRisc0::new(elf_bytes, ProverResourceType::Cpu);
+        let zkvm = EreRisc0::new(elf_bytes, ProverResourceType::Cpu).unwrap();
         let prove_result = zkvm.prove(&empty_input);
         assert!(prove_result.is_err());
+    }
+
+    #[test]
+    #[ignore = "Requires GPU to run"]
+    fn test_prove_r0_dummy_input_bento() {
+        let program = get_compiled_test_r0_elf_for_prove().unwrap();
+
+        let mut input_builder = Input::new();
+        let n: u32 = 42;
+        let a: u16 = 42;
+        input_builder.write(n);
+        input_builder.write(a);
+
+        let zkvm = EreRisc0::new(program, ProverResourceType::Gpu).unwrap();
+
+        let (proof_bytes, _) = zkvm
+            .prove(&input_builder)
+            .unwrap_or_else(|err| panic!("Proving error in test: {err:?}"));
+
+        assert!(!proof_bytes.is_empty(), "Proof bytes should not be empty.");
+
+        let verify_results = zkvm.verify(&proof_bytes).is_ok();
+        assert!(verify_results);
     }
 }
 
@@ -266,7 +244,7 @@ mod execute_tests {
 
     fn get_compiled_test_r0_elf() -> Result<Risc0Program, Risc0Error> {
         let test_guest_path = get_execute_test_guest_program_path();
-        RV32_IM_RISC0_ZKVM_ELF::compile(&test_guest_path, Path::new(""))
+        RV32_IM_RISC0_ZKVM_ELF.compile(&test_guest_path)
     }
 
     fn get_execute_test_guest_program_path() -> PathBuf {
@@ -290,7 +268,7 @@ mod execute_tests {
         input_builder.write(n);
         input_builder.write(a);
 
-        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu);
+        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
         zkvm.execute(&input_builder)
             .unwrap_or_else(|err| panic!("Execution error: {err:?}"));
@@ -302,7 +280,7 @@ mod execute_tests {
 
         let empty_input = Input::new();
 
-        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu);
+        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
         let result = zkvm.execute(&empty_input);
 
         assert!(

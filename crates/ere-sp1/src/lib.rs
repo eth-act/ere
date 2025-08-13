@@ -106,11 +106,8 @@ impl Compiler for RV32_IM_SUCCINCT_ZKVM_ELF {
 
     type Program = Vec<u8>;
 
-    fn compile(
-        workspace_directory: &Path,
-        guest_relative: &Path,
-    ) -> Result<Self::Program, Self::Error> {
-        compile::compile(workspace_directory, guest_relative).map_err(SP1Error::from)
+    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
+        compile::compile(guest_directory).map_err(SP1Error::from)
     }
 }
 
@@ -165,12 +162,7 @@ impl EreSP1 {
 impl zkVM for EreSP1 {
     fn execute(&self, inputs: &Input) -> Result<zkvm_interface::ProgramExecutionReport, zkVMError> {
         let mut stdin = SP1Stdin::new();
-        for input in inputs.iter() {
-            match input {
-                InputItem::Object(serialize) => stdin.write(serialize),
-                InputItem::Bytes(items) => stdin.write_slice(items),
-            }
-        }
+        serialize_inputs(&mut stdin, inputs);
 
         let client = Self::create_client(&self.resource);
         let start = Instant::now();
@@ -189,12 +181,7 @@ impl zkVM for EreSP1 {
         info!("Generating proof…");
 
         let mut stdin = SP1Stdin::new();
-        for input in inputs.iter() {
-            match input {
-                InputItem::Object(serialize) => stdin.write(serialize),
-                InputItem::Bytes(items) => stdin.write_slice(items),
-            };
-        }
+        serialize_inputs(&mut stdin, inputs);
 
         let client = Self::create_client(&self.resource);
         let start = std::time::Instant::now();
@@ -226,6 +213,17 @@ impl zkVM for EreSP1 {
     }
 }
 
+fn serialize_inputs(stdin: &mut SP1Stdin, inputs: &Input) {
+    for input in inputs.iter() {
+        match input {
+            InputItem::Object(obj) => stdin.write(obj),
+            InputItem::SerializedObject(bytes) | InputItem::Bytes(bytes) => {
+                stdin.write_slice(bytes)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod execute_tests {
     use std::path::PathBuf;
@@ -235,7 +233,7 @@ mod execute_tests {
 
     fn get_compiled_test_sp1_elf() -> Result<Vec<u8>, SP1Error> {
         let test_guest_path = get_execute_test_guest_program_path();
-        RV32_IM_SUCCINCT_ZKVM_ELF::compile(&test_guest_path, Path::new(""))
+        RV32_IM_SUCCINCT_ZKVM_ELF.compile(&test_guest_path)
     }
 
     fn get_execute_test_guest_program_path() -> PathBuf {
@@ -306,7 +304,7 @@ mod prove_tests {
 
     fn get_compiled_test_sp1_elf_for_prove() -> Result<Vec<u8>, SP1Error> {
         let test_guest_path = get_prove_test_guest_program_path();
-        RV32_IM_SUCCINCT_ZKVM_ELF::compile(&test_guest_path, Path::new(""))
+        RV32_IM_SUCCINCT_ZKVM_ELF.compile(&test_guest_path)
     }
 
     #[test]

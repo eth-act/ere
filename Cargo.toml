@@ -12,14 +12,14 @@ members = [
     "crates/ere-zkm",
     # zkVM interface
     "crates/zkvm-interface",
-    "docker/risc0",
-    # Guest compilers
-    "docker/sp1",
+    # CLI and dockerized zkVM
+    "crates/ere-cli",
+    "crates/ere-dockerized",
 ]
 resolver = "2"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.0.11"
 edition = "2024"
 rust-version = "1.85"
 license = "MIT OR Apache-2.0"
@@ -27,16 +27,66 @@ license = "MIT OR Apache-2.0"
 [workspace.lints]
 
 [workspace.dependencies]
+anyhow = "1.0.98"
+auto_impl = "1.3.0"
+bincode = "1.3.3"
+blake3 = "1.8.2"
+borsh = "1.5.7"
+bytemuck = "1.23.1"
+cargo_metadata = "0.19.0"
+clap = "4.5.42"
+erased-serde = "0.4.6"
+indexmap = "2.10.0"
+serde = "1.0.219"
+serde_json = "1.0.142"
+serde_yaml = "0.9.34"
+tempfile = "3.20.0"
+thiserror = "2.0.12"
+toml = "0.8.23"
 tracing = "0.1.41"
-tempfile = "3.3"
-toml = "0.8"
-clap = { version = "4.5.41", features = ["derive"] }
-anyhow = "1.0"
-hex = "0.4.3"
+tracing-subscriber = "0.3.19"
 
-# local dependencies
+# Jolt dependencies
+ark-serialize = "0.5.0"
+common = { git = "https://github.com/a16z/jolt.git", rev = "55b9830a3944dde55d33a55c42522b81dd49f87a" }
+jolt = { git = "https://github.com/a16z/jolt.git", rev = "55b9830a3944dde55d33a55c42522b81dd49f87a" }
+jolt-core = { git = "https://github.com/a16z/jolt.git", rev = "55b9830a3944dde55d33a55c42522b81dd49f87a" }
+jolt-sdk = { git = "https://github.com/a16z/jolt.git", rev = "55b9830a3944dde55d33a55c42522b81dd49f87a" }
+
+# Nexus dependencies
+nexus-sdk = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.4" }
+
+# OpenVM dependencies
+openvm-build = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.0", default-features = false }
+openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.0", default-features = false }
+openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.0", default-features = false }
+openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.1.0" }
+openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.0", default-features = false }
+
+# Pico dependencies
+pico-vm = { git = "https://github.com/brevis-network/pico.git", tag = "v1.1.4" }
+pico-sdk = { git = "https://github.com/brevis-network/pico.git", tag = "v1.1.4" }
+
+# Risc0 dependencies
+risc0-build = "2.3.1"
+risc0-zkvm = { version = "2.3.1", default-features = false }
+bonsai-sdk = { version = "1.4.0" }
+
+# SP1 dependencies
+sp1-sdk = "5.1.0"
+
+# Local dependencies
 zkvm-interface = { path = "crates/zkvm-interface" }
 build-utils = { path = "crates/build-utils" }
+ere-cli = { path = "crates/ere-cli", default-features = false }
+ere-dockerized = { path = "crates/ere-dockerized" }
+ere-jolt = { path = "crates/ere-jolt" }
+ere-nexus = { path = "crates/ere-nexus" }
+ere-openvm = { path = "crates/ere-openvm" }
+ere-pico = { path = "crates/ere-pico" }
+ere-risc0 = { path = "crates/ere-risc0" }
+ere-sp1 = { path = "crates/ere-sp1" }
+ere-zisk = { path = "crates/ere-zisk" }
 
 [patch.crates-io]
 # These patches are only needed by Jolt

@@ -1,93 +1,89 @@
+use crate::{EreJoltProof, error::VerifyError};
+use common::constants::{DEFAULT_MAX_BYTECODE_SIZE, DEFAULT_MAX_TRACE_LENGTH, DEFAULT_MEMORY_SIZE};
+use jolt::{
+    Jolt, JoltHyperKZGProof, JoltProverPreprocessing, JoltVerifierPreprocessing, MemoryConfig,
+    MemoryLayout, RV32IJoltVM, tracer::JoltDevice,
+};
 use zkvm_interface::Input;
 
 pub fn preprocess_prover(
     program: &jolt::host::Program,
-) -> jolt::JoltProverPreprocessing<4, jolt::F, jolt::PCS, jolt::ProofTranscript> {
-    use jolt::{Jolt, JoltProverPreprocessing, MemoryLayout, RV32IJoltVM};
+) -> JoltProverPreprocessing<4, jolt::F, jolt::PCS, jolt::ProofTranscript> {
     let (bytecode, memory_init) = program.decode();
-    let memory_layout = MemoryLayout::new(4096, 4096);
+    let memory_layout = MemoryLayout::new(&MemoryConfig::default());
     let preprocessing: JoltProverPreprocessing<4, jolt::F, jolt::PCS, jolt::ProofTranscript> =
         RV32IJoltVM::prover_preprocess(
             bytecode,
             memory_layout,
             memory_init,
-            1 << 20,
-            1 << 20,
-            1 << 24,
+            DEFAULT_MAX_BYTECODE_SIZE as usize,
+            DEFAULT_MEMORY_SIZE as usize,
+            DEFAULT_MAX_TRACE_LENGTH as usize,
         );
     preprocessing
 }
 
 pub fn preprocess_verifier(
     program: &jolt::host::Program,
-) -> jolt::JoltVerifierPreprocessing<4, jolt::F, jolt::PCS, jolt::ProofTranscript> {
-    use jolt::{Jolt, JoltVerifierPreprocessing, MemoryLayout, RV32IJoltVM};
-
+) -> JoltVerifierPreprocessing<4, jolt::F, jolt::PCS, jolt::ProofTranscript> {
     let (bytecode, memory_init) = program.decode();
-    let memory_layout = MemoryLayout::new(4096, 4096);
+    let memory_layout = MemoryLayout::new(&MemoryConfig::default());
     let preprocessing: JoltVerifierPreprocessing<4, jolt::F, jolt::PCS, jolt::ProofTranscript> =
         RV32IJoltVM::verifier_preprocess(
             bytecode,
             memory_layout,
             memory_init,
-            1 << 20,
-            1 << 20,
-            1 << 24,
+            DEFAULT_MAX_BYTECODE_SIZE as usize,
+            DEFAULT_MEMORY_SIZE as usize,
+            DEFAULT_MAX_TRACE_LENGTH as usize,
         );
     preprocessing
 }
 
-pub fn verify_generic(
-    proof: jolt::JoltHyperKZGProof,
-    // TODO: input should be private input
-    _inputs: Input,
-    _outputs: Input,
-    preprocessing: jolt::JoltVerifierPreprocessing<4, jolt::F, jolt::PCS, jolt::ProofTranscript>,
-) -> bool {
-    use jolt::{Jolt, RV32IJoltVM, tracer};
-
-    let preprocessing = std::sync::Arc::new(preprocessing);
-    let preprocessing = (*preprocessing).clone();
-    let io_device = tracer::JoltDevice::new(
-        preprocessing.memory_layout.max_input_size,
-        preprocessing.memory_layout.max_output_size,
-    );
-
-    // TODO: FIXME
-    // io_device.inputs = inputs.bytes().to_vec();
-    // io_device.outputs = outputs.bytes().to_vec();
-
-    RV32IJoltVM::verify(
-        preprocessing,
-        proof.proof,
-        proof.commitments,
-        io_device,
-        None,
-    )
-    .is_ok()
-}
-
 pub fn prove_generic(
     program: &jolt::host::Program,
-    preprocessing: jolt::JoltProverPreprocessing<4, jolt::F, jolt::PCS, jolt::ProofTranscript>,
+    preprocessing: JoltProverPreprocessing<4, jolt::F, jolt::PCS, jolt::ProofTranscript>,
     _inputs: &Input,
-) -> (Vec<u8>, jolt::JoltHyperKZGProof) {
-    use jolt::{Jolt, RV32IJoltVM};
-
+) -> EreJoltProof {
     let mut program = program.clone();
 
-    // Convert inputs to a flat vector
-    // TODO: FIXME
+    // TODO: Check how to pass private input to jolt, issue for tracking:
+    //       https://github.com/a16z/jolt/issues/371.
     let input_bytes = Vec::new();
 
     let (io_device, trace) = program.trace(&input_bytes);
 
-    let (jolt_proof, jolt_commitments, output_io_device, _) =
+    let (jolt_proof, jolt_commitments, io_device, _) =
         RV32IJoltVM::prove(io_device, trace, preprocessing);
 
-    let proof = jolt::JoltHyperKZGProof {
-        proof: jolt_proof,
-        commitments: jolt_commitments,
-    };
-    (output_io_device.outputs.clone(), proof)
+    EreJoltProof {
+        proof: JoltHyperKZGProof {
+            proof: jolt_proof,
+            commitments: jolt_commitments,
+        },
+        public_outputs: io_device.outputs,
+    }
+}
+
+pub fn verify_generic(
+    proof: EreJoltProof,
+    preprocessing: JoltVerifierPreprocessing<4, jolt::F, jolt::PCS, jolt::ProofTranscript>,
+) -> Result<(), VerifyError> {
+    let mut io_device = JoltDevice::new(&MemoryConfig {
+        max_input_size: preprocessing.memory_layout.max_input_size,
+        max_output_size: preprocessing.memory_layout.max_output_size,
+        stack_size: preprocessing.memory_layout.stack_size,
+        memory_size: preprocessing.memory_layout.memory_size,
+    });
+    io_device.outputs = proof.public_outputs;
+
+    RV32IJoltVM::verify(
+        preprocessing,
+        proof.proof.proof,
+        proof.proof.commitments,
+        io_device,
+        None,
+    )?;
+
+    Ok(())
 }

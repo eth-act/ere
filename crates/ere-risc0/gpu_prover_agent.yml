@@ -1,0 +1,39 @@
+# Copied and modified from https://github.com/risc0/risc0/blob/v2.3.1/compose.yml.
+# In runtime, `ere-risc0` will check env `CUDA_VISIBLE_DEVICES`:
+# If it's not set, it will spin up a container of the following service with all
+# GPUs access
+# If it's set to some device ids, it will spin up containers and each will have
+# 1 GPU access.
+
+# MODIFIED: Rename to local image with namespace and version tag.
+image: ere-risc0/agent:${RISC0_VERSION}
+runtime: nvidia
+pull_policy: never
+restart: always
+depends_on:
+  - postgres
+  - redis
+  - minio
+mem_limit: 4G
+cpu_count: 4
+environment:
+  DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+  REDIS_URL: redis://${REDIS_HOST}:6379
+  S3_URL: http://${MINIO_HOST}:9000
+  S3_BUCKET: ${MINIO_BUCKET}
+  S3_ACCESS_KEY: ${MINIO_ROOT_USER}
+  S3_SECRET_KEY: ${MINIO_ROOT_PASS}
+  RUST_LOG: ${RUST_LOG}
+  # MODIFIED: Added to set log color
+  NO_COLOR: ${NO_COLOR}
+  RUST_BACKTRACE: 1
+entrypoint: /app/agent -t prove
+# comment-out if running in CPU proving mode
+deploy:
+  resources:
+    reservations:
+      devices:
+        - driver: nvidia
+          # TODO: how to scale this with N gpus?
+          device_ids: ['0']
+          capabilities: [gpu]

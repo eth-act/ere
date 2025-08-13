@@ -1,4 +1,7 @@
+#![cfg_attr(not(test), warn(unused_crate_dependencies))]
+
 use pico_sdk::client::DefaultProverClient;
+use pico_vm::emulator::stdin::EmulatorStdinBuilder;
 use std::{path::Path, process::Command, time::Instant};
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
@@ -17,12 +20,7 @@ impl Compiler for PICO_TARGET {
 
     type Program = Vec<u8>;
 
-    fn compile(
-        workspace_directory: &Path,
-        guest_relative: &Path,
-    ) -> Result<Self::Program, Self::Error> {
-        let guest_path = workspace_directory.join(guest_relative);
-
+    fn compile(&self, guest_path: &Path) -> Result<Self::Program, Self::Error> {
         // 1. Check guest path
         if !guest_path.exists() {
             return Err(PicoError::PathNotFound(guest_path.to_path_buf()));
@@ -30,7 +28,7 @@ impl Compiler for PICO_TARGET {
 
         // 2. Run `cargo pico build`
         let status = Command::new("cargo")
-            .current_dir(&guest_path)
+            .current_dir(guest_path)
             .env("RUST_LOG", "info")
             .args(["pico", "build"])
             .status()?; // From<io::Error> → Spawn
@@ -75,12 +73,7 @@ impl zkVM for ErePico {
         let client = DefaultProverClient::new(&self.program);
 
         let mut stdin = client.new_stdin_builder();
-        for input in inputs.iter() {
-            match input {
-                InputItem::Object(serialize) => stdin.write(serialize),
-                InputItem::Bytes(items) => stdin.write_slice(items),
-            }
-        }
+        serialize_inputs(&mut stdin, inputs);
 
         let start = Instant::now();
         let emulation_result = client.emulate(stdin);
@@ -99,12 +92,8 @@ impl zkVM for ErePico {
         let client = DefaultProverClient::new(&self.program);
 
         let mut stdin = client.new_stdin_builder();
-        for input in inputs.iter() {
-            match input {
-                InputItem::Object(serialize) => stdin.write(serialize),
-                InputItem::Bytes(items) => stdin.write_slice(items),
-            }
-        }
+        serialize_inputs(&mut stdin, inputs);
+
         let now = std::time::Instant::now();
         let meta_proof = client.prove(stdin).expect("Failed to generate proof");
         let elapsed = now.elapsed();
@@ -142,10 +131,21 @@ impl zkVM for ErePico {
     }
 }
 
+fn serialize_inputs(stdin: &mut EmulatorStdinBuilder<Vec<u8>>, inputs: &Input) {
+    for input in inputs.iter() {
+        match input {
+            InputItem::Object(serialize) => stdin.write(serialize),
+            InputItem::SerializedObject(items) | InputItem::Bytes(items) => {
+                stdin.write_slice(items)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::PICO_TARGET;
-    use std::{path::Path, path::PathBuf};
+    use std::path::PathBuf;
     use zkvm_interface::Compiler;
 
     fn get_compile_test_guest_program_path() -> PathBuf {
@@ -172,7 +172,7 @@ mod tests {
         let test_guest_path = get_compile_test_guest_program_path();
         println!("Using test guest path: {}", test_guest_path.display());
 
-        match PICO_TARGET::compile(&test_guest_path, Path::new("")) {
+        match PICO_TARGET.compile(&test_guest_path) {
             Ok(elf_bytes) => {
                 assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
             }

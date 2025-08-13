@@ -1,5 +1,6 @@
-ARG BASE_IMAGE_TAG=latest
-FROM ere-base:${BASE_IMAGE_TAG}
+ARG BASE_IMAGE_TAG=ere-base:latest
+
+FROM ${BASE_IMAGE_TAG}
 
 # The ere-base image provides Rust, Cargo, and common tools.
 # We operate as root for SDK installation.
@@ -20,13 +21,4 @@ ENV OPENVM_TOOLCHAIN_VERSION="nightly-2025-02-14"
 # Verify cargo-openvm is accessible with the correct toolchain
 RUN cargo "+${OPENVM_TOOLCHAIN_VERSION}" openvm --version
 
-# Copy the entire ere project context
-# The WORKDIR is /app from the base image
-WORKDIR /app
-COPY . .
-
-# Run tests
-RUN echo "Running tests for ere-openvm library..." && \
-    cargo test --release -p ere-openvm --lib -- --color always
-
-CMD ["/bin/bash"] 
+CMD ["/bin/bash"]

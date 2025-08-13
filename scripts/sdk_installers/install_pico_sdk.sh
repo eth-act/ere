@@ -29,6 +29,7 @@ ensure_tool_installed "git" "to install pico-cli from a git repository"
 ensure_tool_installed "cargo" "to build and install Rust packages"
 
 PICO_TOOLCHAIN_VERSION="nightly-2024-11-27"
+PICO_CLI_VERSION_TAG="v1.1.4"
 
 # Install the specific nightly toolchain for Pico
 echo "Installing Pico-specific Rust toolchain: ${PICO_TOOLCHAIN_VERSION}..."
@@ -38,7 +39,7 @@ rustup component add rust-src --toolchain "${PICO_TOOLCHAIN_VERSION}"
 # Install pico-cli using the specified toolchain
 # cargo-pico is a cargo subcommand, typically installed to $HOME/.cargo/bin
 echo "Installing pico-cli from GitHub repository (brevis-network/pico)..."
-cargo "+${PICO_TOOLCHAIN_VERSION}" install --git https://github.com/brevis-network/pico pico-cli
+cargo "+${PICO_TOOLCHAIN_VERSION}" install --git https://github.com/brevis-network/pico pico-cli --tag "$PICO_CLI_VERSION_TAG"
 
 # Verify pico-cli installation
 echo "Verifying pico-cli installation..."

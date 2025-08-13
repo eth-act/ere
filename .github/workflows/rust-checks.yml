@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        crate: [ere-sp1, ere-risc0]
+        zkvm: [sp1, risc0]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -53,7 +53,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Check clippy
-        run: cargo clippy --bins --lib --examples --tests --benches -p ${{ matrix.crate }}
+        run: cargo clippy --bins --lib --examples --tests --benches -p ere-${{ matrix.zkvm }}
 
       - name: Run tests
-        run: cargo test --release -p ${{ matrix.crate }}
+        run: cargo test --release -p ere-dockerized -- ${{ matrix.zkvm }}
