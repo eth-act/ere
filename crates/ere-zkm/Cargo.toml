@@ -6,7 +6,7 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-zkm-sdk = { git = "https://github.com/zkMIPS/zkMIPS.git", tag = "v1.1.0" }
+zkm-sdk = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.1.2" }
 zkvm-interface = { workspace = true }
 toml = "0.8"
 tempfile = "3.3"
@@ -14,6 +14,9 @@ bincode = "1.3"
 thiserror = "2"
 tracing = "0.1"
 indexmap = { version = "2.9.0", features = ["serde"] }
+
+[build-dependencies]
+build-utils.workspace = true
 
 
 [lints]

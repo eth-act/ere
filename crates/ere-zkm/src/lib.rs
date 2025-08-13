@@ -1,11 +1,14 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
+include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
+
+use std::path::Path;
 use std::time::Instant;
 
 use compile::compile_zkm_program;
 use tracing::info;
 use zkm_sdk::{
-    CpuProver, Prover, ProverClient, ZKMProofWithPublicValues, ZKMProvingKey, ZKMStdin,
+    CpuProver, Prover, ProverClient, ZKMProof, ZKMProofWithPublicValues, ZKMProvingKey, ZKMStdin,
     ZKMVerifyingKey,
 };
 use zkvm_interface::{
@@ -52,7 +55,7 @@ impl ProverType {
         input: &ZKMStdin,
     ) -> Result<ZKMProofWithPublicValues, ZKMError> {
         match self {
-            ProverType::Cpu(cpu_prover) => cpu_prover.prove(pk, input).core().run(),
+            ProverType::Cpu(cpu_prover) => cpu_prover.prove(pk, input, ZKMProof::Core()),
             _ => unimplemented!(),
         }
         .map_err(|e| ZKMError::Prove(ProveError::Client(e.into())))
@@ -88,8 +91,8 @@ impl Compiler for RV32_IM_ZKM_ZKVM_ELF {
 
     type Program = Vec<u8>;
 
-    fn compile(path_to_program: &std::path::Path) -> Result<Self::Program, Self::Error> {
-        compile_zkm_program(path_to_program).map_err(ZKMError::from)
+    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error>{
+        compile_zkm_program(guest_directory).map_err(ZKMError::from)
     }
 }
 
@@ -117,10 +120,10 @@ impl zkVM for EreZKM {
     fn execute(&self, inputs: &Input) -> Result<zkvm_interface::ProgramExecutionReport, zkVMError> {
         let mut stdin = ZKMStdin::new();
         for input in inputs.iter() {
-            match input {
-                InputItem::Object(serialize) => stdin.write(serialize),
-                InputItem::Bytes(items) => stdin.write_slice(items),
-            }
+            // match input {
+            //     InputItem::Object(serialize) => stdin.write(serialize),
+            //     InputItem::Bytes(items) => stdin.write_slice(items),
+            // }
         }
 
         let start = Instant::now();
@@ -140,10 +143,10 @@ impl zkVM for EreZKM {
 
         let mut stdin = ZKMStdin::new();
         for input in inputs.iter() {
-            match input {
-                InputItem::Object(serialize) => stdin.write(serialize),
-                InputItem::Bytes(items) => stdin.write_slice(items),
-            };
+            // match input {
+            //     InputItem::Object(serialize) => stdin.write(serialize),
+            //     InputItem::Bytes(items) => stdin.write_slice(items),
+            // };
         }
 
         let start = std::time::Instant::now();
@@ -165,6 +168,14 @@ impl zkVM for EreZKM {
         self.client
             .verify(&proof, &self.vk)
             .map_err(zkVMError::from)
+    }
+
+    fn name(&self) -> &'static str {
+        NAME
+    }
+
+    fn sdk_version(&self) -> &'static str {
+        SDK_VERSION
     }
 }
 

@@ -6,4 +6,4 @@ edition = "2021"
 [workspace]
 
 [dependencies]
-zkm-zkvm = { git = "https://github.com/zkMIPS/zkMIPS.git", tag = "v1.1.0" }
+zkm-zkvm = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.1.2" }
