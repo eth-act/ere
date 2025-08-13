@@ -2276,6 +2276,7 @@ dependencies = [
  "risc0-zkvm",
  "serde",
  "tempfile",
+ "test-utils",
  "thiserror 2.0.12",
  "zkvm-interface",
 ]

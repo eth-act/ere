@@ -20,6 +20,7 @@ zkvm-interface = { workspace = true, features = ["clap"] }
 ere-cli.workspace = true
 
 [dev-dependencies]
+test-utils = { workspace = true, features = ["host"] }
 
 [build-dependencies]
 build-utils.workspace = true
