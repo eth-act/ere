@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 use core::iter;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Default, Serialize, Deserialize)]
 pub struct BasicStruct {
     pub a: u8,
     pub b: u16,

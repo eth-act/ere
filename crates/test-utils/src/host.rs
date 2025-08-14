@@ -21,11 +21,6 @@ pub fn run_zkvm_execute(zkvm: &impl zkVM, inputs: &Input) {
     // TODO: Check output are expected.
 }
 
-pub fn run_zkvm_execute_invalid_inputs(zkvm: &impl zkVM, inputs: &Input) {
-    zkvm.execute(inputs)
-        .expect_err("execute should fail with invalid input");
-}
-
 pub fn run_zkvm_prove(zkvm: &impl zkVM, inputs: &Input) {
     let (proof, _report) = zkvm
         .prove(inputs)
@@ -37,20 +32,42 @@ pub fn run_zkvm_prove(zkvm: &impl zkVM, inputs: &Input) {
     // TODO: Check output are expected.
 }
 
-pub fn run_zkvm_prove_invalid_inputs(zkvm: &impl zkVM, inputs: &Input) {
-    zkvm.prove(inputs)
-        .expect_err("prove should fail with invalid input");
-}
+/// The basic program takes 2 inputs:
+/// - `Vec<u8>` that supposed to be "Hello world"
+/// - `BasicStruct`
+///
+/// Outputs `[u8; 32]` which computed by xoring fields of `BasicStruct`.
+pub struct BasicProgramInputGen;
 
-pub fn basic_inputs() -> Input {
-    let mut inputs = Input::new();
-    inputs.write_bytes("Hello world".as_bytes().to_vec());
-    inputs.write(BasicStruct {
-        a: 0xff,
-        b: 0x7777,
-        c: 0xffffffff,
-        d: 0x7777777777777777,
-        e: (0..u8::MAX).collect(),
-    });
-    inputs
+impl BasicProgramInputGen {
+    pub fn valid() -> Input {
+        let mut inputs = Input::new();
+        inputs.write_bytes("Hello world".as_bytes().to_vec());
+        inputs.write(BasicStruct {
+            a: 0xff,
+            b: 0x7777,
+            c: 0xffffffff,
+            d: 0x7777777777777777,
+            e: (0..u8::MAX).collect(),
+        });
+        inputs
+    }
+
+    pub fn invalid_string() -> Input {
+        let mut inputs = Input::new();
+        inputs.write_bytes("Unexpected string".as_bytes().to_vec());
+        inputs.write(BasicStruct::default());
+        inputs
+    }
+
+    pub fn invalid_type() -> Input {
+        let mut inputs = Input::new();
+        inputs.write(BasicStruct::default());
+        inputs.write_bytes("Hello world".as_bytes().to_vec());
+        inputs
+    }
+
+    pub fn empty() -> Input {
+        Input::new()
+    }
 }

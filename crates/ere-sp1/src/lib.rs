@@ -227,12 +227,10 @@ fn serialize_inputs(stdin: &mut SP1Stdin, inputs: &Input) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::OnceLock;
+    use std::{panic, sync::OnceLock};
     use test_utils::host::{
-        basic_inputs, run_zkvm_execute, run_zkvm_execute_invalid_inputs, run_zkvm_prove,
-        run_zkvm_prove_invalid_inputs, testing_guest_directory,
+        BasicProgramInputGen, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
-    use zkvm_interface::Input;
 
     static BASIC_PRORGAM: OnceLock<Vec<u8>> = OnceLock::new();
 
@@ -250,37 +248,51 @@ mod tests {
     fn test_execute() {
         let program = basic_program();
         let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
-        let inputs = basic_inputs();
 
+        let inputs = BasicProgramInputGen::valid();
         run_zkvm_execute(&zkvm, &inputs);
     }
 
     #[test]
-    fn test_execute_empty_inputs() {
+    fn test_execute_invalid_inputs() {
         let program = basic_program();
         let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
-        let empty_inputs = Input::new();
 
-        run_zkvm_execute_invalid_inputs(&zkvm, &empty_inputs);
+        for inputs in [
+            BasicProgramInputGen::empty(),
+            BasicProgramInputGen::invalid_string(),
+            BasicProgramInputGen::invalid_type(),
+        ] {
+            zkvm.execute(&inputs).unwrap_err();
+        }
     }
 
     #[test]
     fn test_prove() {
         let program = basic_program();
         let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
-        let inputs = basic_inputs();
 
+        let inputs = BasicProgramInputGen::valid();
         run_zkvm_prove(&zkvm, &inputs);
     }
 
     #[test]
-    #[should_panic]
-    fn test_prove_empty_inputs() {
+    fn test_prove_invalid_inputs() {
         let program = basic_program();
         let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
-        let empty_inputs = Input::new();
 
-        run_zkvm_prove_invalid_inputs(&zkvm, &empty_inputs);
+        // On invalid inputs SP1 prove will panics, the issue for tracking:
+        // https://github.com/eth-act/ere/issues/16.
+        //
+        // Note that we iterate on methods because `InputItem::Object` doesn't
+        // implement `RefUnwindSafe`.
+        for inputs_gen in [
+            BasicProgramInputGen::empty,
+            BasicProgramInputGen::invalid_string,
+            BasicProgramInputGen::invalid_type,
+        ] {
+            panic::catch_unwind(|| zkvm.prove(&inputs_gen())).unwrap_err();
+        }
     }
 
     #[test]
@@ -299,8 +311,8 @@ mod tests {
         };
         let program = basic_program();
         let zkvm = EreSP1::new(program, ProverResourceType::Network(network_config));
-        let inputs = basic_inputs();
 
+        let inputs = BasicProgramInputGen::valid();
         run_zkvm_prove(&zkvm, &inputs);
     }
 }

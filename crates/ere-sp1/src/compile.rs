@@ -95,16 +95,9 @@ pub fn compile(guest_directory: &Path) -> Result<Vec<u8>, CompileError> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{RV32_IM_SUCCINCT_ZKVM_ELF, compile::compile};
+    use crate::RV32_IM_SUCCINCT_ZKVM_ELF;
     use test_utils::host::testing_guest_directory;
     use zkvm_interface::Compiler;
-
-    #[test]
-    fn test_compile() {
-        let guest_directory = testing_guest_directory("sp1", "basic");
-        let elf_bytes = compile(&guest_directory).unwrap();
-        assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
-    }
 
     #[test]
     fn test_compiler_impl() {
