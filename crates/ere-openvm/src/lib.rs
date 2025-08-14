@@ -204,65 +204,73 @@ fn serialize_inputs(stdin: &mut StdIn, inputs: &Input) {
 
 #[cfg(test)]
 mod tests {
-    use zkvm_interface::Compiler;
-
-    use crate::OPENVM_TARGET;
-
     use super::*;
-    use std::path::PathBuf;
+    use std::{panic, sync::OnceLock};
+    use test_utils::host::{
+        BasicProgramInputGen, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+    };
 
-    // TODO: for now, we just get one test file
-    // TODO: but this should get the whole directory and compile each test
-    fn get_compile_test_guest_program_path() -> PathBuf {
-        let workspace_dir = env!("CARGO_WORKSPACE_DIR");
-        PathBuf::from(workspace_dir)
-            .join("tests")
-            .join("openvm")
-            .join("compile")
-            .join("basic")
-            .canonicalize()
-            .expect("Failed to find or canonicalize test guest program at <CARGO_WORKSPACE_DIR>/tests/compile/openvm")
+    static BASIC_PRORGAM: OnceLock<OpenVMProgram> = OnceLock::new();
+
+    fn basic_program() -> OpenVMProgram {
+        BASIC_PRORGAM
+            .get_or_init(|| {
+                OPENVM_TARGET
+                    .compile(&testing_guest_directory("openvm", "basic"))
+                    .unwrap()
+            })
+            .clone()
     }
 
     #[test]
-    fn test_compile() {
-        let test_guest_path = get_compile_test_guest_program_path();
-        let program = OPENVM_TARGET.compile(&test_guest_path).unwrap();
+    fn test_compiler_impl() {
+        let program = basic_program();
         assert!(!program.elf.is_empty(), "ELF bytes should not be empty.");
     }
 
     #[test]
-    #[should_panic]
-    fn test_execute_empty_input_panic() {
-        // Panics because the program expects input arguments, but we supply none
-        let test_guest_path = get_compile_test_guest_program_path();
-        let program = OPENVM_TARGET.compile(&test_guest_path).unwrap();
-        let empty_input = Input::new();
-        let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
-
-        zkvm.execute(&empty_input).unwrap();
-    }
-
-    #[test]
     fn test_execute() {
-        let test_guest_path = get_compile_test_guest_program_path();
-        let program = OPENVM_TARGET.compile(&test_guest_path).unwrap();
-        let mut input = Input::new();
-        input.write(10u64);
-
+        let program = basic_program();
         let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
-        zkvm.execute(&input).unwrap();
+
+        let inputs = BasicProgramInputGen::valid();
+        run_zkvm_execute(&zkvm, &inputs);
     }
 
     #[test]
-    fn test_prove_verify() {
-        let test_guest_path = get_compile_test_guest_program_path();
-        let program = OPENVM_TARGET.compile(&test_guest_path).unwrap();
-        let mut input = Input::new();
-        input.write(10u64);
-
+    fn test_execute_invalid_inputs() {
+        let program = basic_program();
         let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
-        let (proof, _) = zkvm.prove(&input).unwrap();
-        zkvm.verify(&proof).expect("proof should verify");
+
+        for inputs in [
+            BasicProgramInputGen::empty(),
+            BasicProgramInputGen::invalid_string(),
+            BasicProgramInputGen::invalid_type(),
+        ] {
+            zkvm.execute(&inputs).unwrap_err();
+        }
+    }
+
+    #[test]
+    fn test_prove() {
+        let program = basic_program();
+        let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
+
+        let inputs = BasicProgramInputGen::valid();
+        run_zkvm_prove(&zkvm, &inputs);
+    }
+
+    #[test]
+    fn test_prove_invalid_inputs() {
+        let program = basic_program();
+        let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
+
+        for inputs_gen in [
+            BasicProgramInputGen::empty,
+            BasicProgramInputGen::invalid_string,
+            BasicProgramInputGen::invalid_type,
+        ] {
+            panic::catch_unwind(|| zkvm.prove(&inputs_gen()).unwrap_err()).unwrap_err();
+        }
     }
 }

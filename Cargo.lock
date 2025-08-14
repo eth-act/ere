@@ -2322,6 +2322,7 @@ dependencies = [
  "openvm-stark-sdk",
  "openvm-transpiler",
  "serde",
+ "test-utils",
  "thiserror 2.0.12",
  "toml",
  "zkvm-interface",
