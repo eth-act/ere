@@ -72,6 +72,9 @@ echo "Verifying zkm installation..."
 ensure_tool_installed "cargo"
 zkmup list-available || (echo "Error: zkmup list-available command failed!" >&2 && exit 1)
 
+# Export the zkm toolchain environment variables
+source ~/.zkm-toolchain/env
+
 echo "zkm Toolchain installation (latest release) successful."
 echo "The zkmup installer might have updated your shell configuration files (e.g., ~/.bashrc, ~/.zshrc)."
 echo "To ensure zkmup and zkm tools are available in your current shell session if this was a new installation,"
