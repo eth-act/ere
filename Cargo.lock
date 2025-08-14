@@ -2336,6 +2336,7 @@ dependencies = [
  "build-utils",
  "pico-sdk",
  "pico-vm",
+ "test-utils",
  "thiserror 2.0.12",
  "zkvm-interface",
 ]
