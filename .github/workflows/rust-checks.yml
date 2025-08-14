@@ -27,6 +27,46 @@ jobs:
       - name: Check formatting
         run: cargo fmt --check --all
 
+  check-clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - zkvm: jolt
+            toolchain: 1.85.0
+          - zkvm: nexus
+            toolchain: nightly-2025-06-05
+          - zkvm: openvm
+            toolchain: 1.85.0
+          - zkvm: pico
+            toolchain: nightly-2024-11-27
+          - zkvm: risc0
+            toolchain: 1.85.0
+          - zkvm: sp1
+            toolchain: 1.85.0
+          - zkvm: zisk
+            toolchain: 1.85.0
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          components: clippy
+      
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check clippy ere-${{ matrix.zkvm }}
+        run: cargo +${{ matrix.toolchain }} clippy --bins --lib --examples --tests --benches -p ere-${{ matrix.zkvm }}
+
+      - name: Check clippy ere-cli with feature ${{ matrix.zkvm }}
+        run: cargo +${{ matrix.toolchain }} clippy --bins --lib --examples --tests --benches -p ere-cli --features cli,${{ matrix.zkvm }}
+
   check-tests:
     name: Tests
     runs-on: ubuntu-latest
@@ -46,14 +86,9 @@ jobs:
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@nightly
-        with:
-          components: clippy
       
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
-
-      - name: Check clippy
-        run: cargo clippy --bins --lib --examples --tests --benches -p ere-${{ matrix.zkvm }}
 
       - name: Run tests
         run: cargo test --release -p ere-dockerized -- ${{ matrix.zkvm }}
