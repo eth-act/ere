@@ -61,7 +61,18 @@ impl DockerBuildCmd {
         self
     }
 
-    pub fn bulid_arg(mut self, key: impl AsRef<str>, value: impl AsRef<str>) -> Self {
+    pub fn inherit_env(mut self, key: impl AsRef<str>) -> Self {
+        let key = key.as_ref();
+        if env::var(key).is_ok() {
+            self.options.push(CmdOption::new(
+                "secret",
+                format!("id={},env={}", to_string(key), to_string(key)),
+            ));
+        }
+        self
+    }
+
+    pub fn build_arg(mut self, key: impl AsRef<str>, value: impl AsRef<str>) -> Self {
         self.options.push(CmdOption::new(
             "build-arg",
             format!("{}={}", to_string(key), to_string(value)),

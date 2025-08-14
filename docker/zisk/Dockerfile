@@ -50,7 +50,8 @@ RUN chmod +x /tmp/install_zisk_sdk.sh
 #
 # If argument `CI` is set, we only install verifying key, this is used by github
 # CI runner which only has small disk space (proving key requires ~35 GB).
-RUN if [ -n "$CI" ]; then export SETUP_KEY=verify; fi && \
+RUN --mount=type=secret,id=GITHUB_TOKEN if [ -n "$CI" ]; then export SETUP_KEY=verify; fi && \
+    if [ -s /run/secrets/GITHUB_TOKEN ]; then export GITHUB_TOKEN=$(cat /run/secrets/GITHUB_TOKEN); fi && \
     /tmp/install_zisk_sdk.sh && \
     rm /tmp/install_zisk_sdk.sh # Clean up the script
 

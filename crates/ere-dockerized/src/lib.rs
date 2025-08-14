@@ -158,7 +158,7 @@ impl ErezkVM {
                 )
                 .tag(self.base_zkvm_tag(CRATE_VERSION))
                 .tag(self.base_zkvm_tag("latest"))
-                .bulid_arg("BASE_IMAGE_TAG", self.base_tag(CRATE_VERSION))
+                .build_arg("BASE_IMAGE_TAG", self.base_tag(CRATE_VERSION))
                 .exec(&workspace_dir)
                 .map_err(CommonError::DockerBuildCmd)?;
         }
@@ -168,8 +168,9 @@ impl ErezkVM {
                 .file(workspace_dir.join("docker").join("cli").join("Dockerfile"))
                 .tag(self.cli_zkvm_tag(CRATE_VERSION))
                 .tag(self.cli_zkvm_tag("latest"))
-                .bulid_arg("BASE_ZKVM_IMAGE_TAG", self.base_zkvm_tag(CRATE_VERSION))
-                .bulid_arg("ZKVM", self.as_str())
+                .build_arg("BASE_ZKVM_IMAGE_TAG", self.base_zkvm_tag(CRATE_VERSION))
+                .build_arg("ZKVM", self.as_str())
+                .inherit_env("GITHUB_TOKEN")
                 .exec(&workspace_dir)
                 .map_err(CommonError::DockerBuildCmd)?;
         }

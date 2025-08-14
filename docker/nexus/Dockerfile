@@ -13,7 +13,8 @@ RUN chmod +x /tmp/install_nexus_sdk.sh
 # This script installs the specific Rust toolchain (nightly-2025-06-05)
 # and installs cargo-nexus
 # The CARGO_HOME from ere-base (e.g., /root/.cargo) will be used, and cargo-nexus will be in its bin.
-RUN /tmp/install_nexus_sdk.sh && rm /tmp/install_nexus_sdk.sh # Clean up the script
+RUN --mount=type=secret,id=GITHUB_TOKEN if [ -s /run/secrets/GITHUB_TOKEN ]; then export GITHUB_TOKEN=$(cat /run/secrets/GITHUB_TOKEN); fi && \
+    /tmp/install_nexus_sdk.sh && rm /tmp/install_nexus_sdk.sh # Clean up the script
 
 # Define the Nexus toolchain for convenience in subsequent commands if needed, though cargo pico should use it.
 ENV NEXUS_TOOLCHAIN_VERSION="nightly-2025-06-05"

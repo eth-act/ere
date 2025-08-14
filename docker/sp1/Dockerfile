@@ -14,7 +14,8 @@ ENV SP1_DIR="/root/.sp1" \
 
 # Run the SP1 SDK installation script
 # It will use the SP1_DIR and SP1_VERSION defined above.
-RUN /tmp/install_sp1_sdk.sh && rm /tmp/install_sp1_sdk.sh
+RUN --mount=type=secret,id=GITHUB_TOKEN if [ -s /run/secrets/GITHUB_TOKEN ]; then export GITHUB_TOKEN=$(cat /run/secrets/GITHUB_TOKEN); fi && \
+    /tmp/install_sp1_sdk.sh && rm /tmp/install_sp1_sdk.sh
 
 # Update the image's persistent PATH to include SP1 binaries.
 # This uses the SP1_DIR defined above.

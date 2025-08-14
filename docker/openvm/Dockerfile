@@ -12,7 +12,8 @@ RUN chmod +x /tmp/install_openvm_sdk.sh
 # Run the OpenVM SDK installation script.
 # This script installs a specific toolchain
 # and installs cargo-openvm.
-RUN /tmp/install_openvm_sdk.sh && rm /tmp/install_openvm_sdk.sh
+RUN --mount=type=secret,id=GITHUB_TOKEN if [ -s /run/secrets/GITHUB_TOKEN ]; then export GITHUB_TOKEN=$(cat /run/secrets/GITHUB_TOKEN); fi && \
+    /tmp/install_openvm_sdk.sh && rm /tmp/install_openvm_sdk.sh
 
 # The specific Rust toolchain for OpenVM is now installed.
 # cargo-openvm is installed in $CARGO_HOME/bin, which is already in PATH from ere-base.

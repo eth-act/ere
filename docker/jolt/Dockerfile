@@ -11,7 +11,8 @@ RUN chmod +x /tmp/install_jolt_sdk.sh
 
 # Run the Jolt CLI installation script.
 # This script installs the 'jolt' binary to $CARGO_HOME/bin.
-RUN /tmp/install_jolt_sdk.sh && rm /tmp/install_jolt_sdk.sh # Clean up the script
+RUN --mount=type=secret,id=GITHUB_TOKEN if [ -s /run/secrets/GITHUB_TOKEN ]; then export GITHUB_TOKEN=$(cat /run/secrets/GITHUB_TOKEN); fi && \
+    /tmp/install_jolt_sdk.sh && rm /tmp/install_jolt_sdk.sh # Clean up the script
 
 # The jolt CLI is installed in $CARGO_HOME/bin, which is already in PATH from ere-base.
 

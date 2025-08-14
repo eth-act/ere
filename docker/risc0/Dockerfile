@@ -12,7 +12,8 @@ ENV RISC0_CLI_VERSION="2.3.1" \
     RISC0_RUST_VERSION="1.88.0"
 
 # Run the script without version arguments to install latest
-RUN chmod +x /tmp/install_risc0_sdk.sh && /tmp/install_risc0_sdk.sh
+RUN --mount=type=secret,id=GITHUB_TOKEN if [ -s /run/secrets/GITHUB_TOKEN ]; then export GITHUB_TOKEN=$(cat /run/secrets/GITHUB_TOKEN); fi && \
+    chmod +x /tmp/install_risc0_sdk.sh && /tmp/install_risc0_sdk.sh
 
 # Verify Risc0 installation (script also does this, but good for Dockerfile sanity)
 RUN echo "Verifying Risc0 installation in Dockerfile (post-script)..." && cargo risczero --version
