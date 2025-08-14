@@ -453,7 +453,9 @@ fn workspace_dir() -> PathBuf {
 #[cfg(test)]
 mod test {
     use crate::{EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM, workspace_dir};
-    use test_utils::host::{BasicProgramInputGen, run_zkvm_prove, testing_guest_directory};
+    use test_utils::host::{
+        BasicProgramInputGen, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+    };
     use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
 
     // TODO: Test other ere-{zkvm} when they are end-to-end ready:
@@ -515,6 +517,7 @@ mod test {
         let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
 
         let inputs = BasicProgramInputGen::valid();
+        run_zkvm_execute(&zkvm, &inputs);
         run_zkvm_prove(&zkvm, &inputs);
     }
 
