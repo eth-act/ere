@@ -13,10 +13,14 @@ tempfile = "3.3"
 bincode = "1.3"
 thiserror = "2"
 tracing = "0.1"
-indexmap = { version = "2.9.0", features = ["serde"] }
 
 [build-dependencies]
 build-utils.workspace = true
+
+
+[features]
+default = []
+cude = ["zkm-sdk/cuda"]
 
 
 [lints]

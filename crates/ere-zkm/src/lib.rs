@@ -7,10 +7,7 @@ use std::time::Instant;
 
 use compile::compile_zkm_program;
 use tracing::info;
-use zkm_sdk::{
-    CpuProver, Prover, ProverClient, ZKMProof, ZKMProofWithPublicValues, ZKMProvingKey, ZKMStdin,
-    ZKMVerifyingKey,
-};
+use zkm_sdk::{ProverClient, ZKMProofWithPublicValues, ZKMProvingKey, ZKMStdin, ZKMVerifyingKey};
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
     zkVM, zkVMError,
@@ -21,59 +18,6 @@ mod compile;
 mod error;
 use error::{ExecuteError, ProveError, VerifyError, ZKMError};
 
-enum ProverType {
-    Cpu(CpuProver),
-}
-
-impl ProverType {
-    fn setup(
-        &self,
-        program: &<RV32_IM_ZKM_ZKVM_ELF as Compiler>::Program,
-    ) -> (ZKMProvingKey, ZKMVerifyingKey) {
-        match self {
-            ProverType::Cpu(cpu_prover) => cpu_prover.setup(program),
-            _ => unimplemented!(),
-        }
-    }
-
-    fn execute(
-        &self,
-        program: &<RV32_IM_ZKM_ZKVM_ELF as Compiler>::Program,
-        input: &ZKMStdin,
-    ) -> Result<(zkm_sdk::ZKMPublicValues, zkm_sdk::ExecutionReport), ZKMError> {
-        let cpu_executor_builder = match self {
-            ProverType::Cpu(cpu_prover) => cpu_prover.execute(program, input),
-        };
-
-        cpu_executor_builder
-            .run()
-            .map_err(|e| ZKMError::Execute(ExecuteError::Client(e.into())))
-    }
-    fn prove(
-        &self,
-        pk: &ZKMProvingKey,
-        input: &ZKMStdin,
-    ) -> Result<ZKMProofWithPublicValues, ZKMError> {
-        match self {
-            ProverType::Cpu(cpu_prover) => cpu_prover.prove(pk, input, ZKMProof::Core()),
-            _ => unimplemented!(),
-        }
-        .map_err(|e| ZKMError::Prove(ProveError::Client(e.into())))
-    }
-
-    fn verify(
-        &self,
-        proof: &ZKMProofWithPublicValues,
-        vk: &ZKMVerifyingKey,
-    ) -> Result<(), ZKMError> {
-        match self {
-            ProverType::Cpu(cpu_prover) => cpu_prover.verify(proof, vk),
-            _ => unimplemented!(),
-        }
-        .map_err(|e| ZKMError::Verify(VerifyError::Client(e.into())))
-    }
-}
-
 #[allow(non_camel_case_types)]
 pub struct RV32_IM_ZKM_ZKVM_ELF;
 pub struct EreZKM {
@@ -83,7 +27,7 @@ pub struct EreZKM {
     /// Verification key
     vk: ZKMVerifyingKey,
     /// Proof and Verification orchestrator
-    client: ProverType,
+    client: ProverClient,
 }
 
 impl Compiler for RV32_IM_ZKM_ZKVM_ELF {
@@ -91,7 +35,7 @@ impl Compiler for RV32_IM_ZKM_ZKVM_ELF {
 
     type Program = Vec<u8>;
 
-    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error>{
+    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
         compile_zkm_program(guest_directory).map_err(ZKMError::from)
     }
 }
@@ -102,8 +46,10 @@ impl EreZKM {
         resource: ProverResourceType,
     ) -> Self {
         let client = match resource {
-            ProverResourceType::Cpu => ProverType::Cpu(ProverClient::builder().build()),
-            _ => unimplemented!(),
+            ProverResourceType::Cpu => ProverClient::cpu(),
+            _ => unimplemented!(
+                "Network or Gpu proving not yet implemented for ZKM. Use CPU resource type."
+            ),
         };
         let (pk, vk) = client.setup(&program);
 
@@ -120,14 +66,20 @@ impl zkVM for EreZKM {
     fn execute(&self, inputs: &Input) -> Result<zkvm_interface::ProgramExecutionReport, zkVMError> {
         let mut stdin = ZKMStdin::new();
         for input in inputs.iter() {
-            // match input {
-            //     InputItem::Object(serialize) => stdin.write(serialize),
-            //     InputItem::Bytes(items) => stdin.write_slice(items),
-            // }
+            match input {
+                InputItem::Object(serialize) => stdin.write(serialize),
+                InputItem::SerializedObject(bytes) | InputItem::Bytes(bytes) => {
+                    stdin.write_slice(bytes)
+                }
+            }
         }
 
         let start = Instant::now();
-        let (_, exec_report) = self.client.execute(&self.program, &stdin)?;
+        let (_, exec_report) = self
+            .client
+            .execute(&self.program, stdin)
+            .run()
+            .map_err(|err| ZKMError::Execute(ExecuteError::Client(Box::from(err))))?;
         Ok(ProgramExecutionReport {
             total_num_cycles: exec_report.total_instruction_count(),
             region_cycles: exec_report.cycle_tracker.into_iter().collect(),
@@ -143,14 +95,20 @@ impl zkVM for EreZKM {
 
         let mut stdin = ZKMStdin::new();
         for input in inputs.iter() {
-            // match input {
-            //     InputItem::Object(serialize) => stdin.write(serialize),
-            //     InputItem::Bytes(items) => stdin.write_slice(items),
-            // };
+            match input {
+                InputItem::Object(serialize) => stdin.write(serialize),
+                InputItem::SerializedObject(bytes) | InputItem::Bytes(bytes) => {
+                    stdin.write_slice(bytes)
+                }
+            }
         }
 
         let start = std::time::Instant::now();
-        let proof_with_inputs = self.client.prove(&self.pk, &stdin)?;
+        let proof_with_inputs = self
+            .client
+            .prove(&self.pk, stdin)
+            .run()
+            .map_err(|err| ZKMError::Execute(ExecuteError::Client(Box::from(err))))?;
         let proving_time = start.elapsed();
 
         let bytes = bincode::serialize(&proof_with_inputs)
@@ -167,6 +125,7 @@ impl zkVM for EreZKM {
 
         self.client
             .verify(&proof, &self.vk)
+            .map_err(|e| ZKMError::Verify(VerifyError::Client(Box::new(e))))
             .map_err(zkVMError::from)
     }
 
