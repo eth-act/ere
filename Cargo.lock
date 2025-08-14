@@ -2301,10 +2301,10 @@ dependencies = [
 name = "ere-nexus"
 version = "0.0.11"
 dependencies = [
- "anyhow",
  "bincode",
  "build-utils",
  "nexus-sdk",
+ "test-utils",
  "thiserror 2.0.12",
  "toml",
  "tracing",

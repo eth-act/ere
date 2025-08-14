@@ -18,7 +18,7 @@ nexus-sdk.workspace = true
 zkvm-interface.workspace = true
 
 [dev-dependencies]
-anyhow.workspace = true
+test-utils = { workspace = true, features = ["host"] }
 
 [build-dependencies]
 build-utils.workspace = true

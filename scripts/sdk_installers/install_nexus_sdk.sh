@@ -38,7 +38,7 @@ echo "Installing Nexus CLI from GitHub repository..."
 cargo "+${NEXUS_TOOLCHAIN_VERSION}" install --git https://github.com/nexus-xyz/nexus-zkvm cargo-nexus --tag "$NEXUS_CLI_VERSION_TAG"
 
 # Install Nexus's target
-rustup target add riscv32i-unknown-none-elf
+rustup "+${NEXUS_TOOLCHAIN_VERSION}" target add riscv32i-unknown-none-elf
 
 # Verify Nexus installation
 echo "Verifying Nexus CLI installation..."
@@ -51,7 +51,7 @@ else
 fi
 
 echo "Verifying Nexus's target installation..."
-if rustup target list --installed | grep -q "riscv32i-unknown-none-elf"; then
+if rustup "+${NEXUS_TOOLCHAIN_VERSION}" target list --installed | grep -q "riscv32i-unknown-none-elf"; then
     echo "Target 'riscv32i-unknown-none-elf' installation verified successfully."
 else
     echo "Target 'riscv32i-unknown-none-elf' not installed correctly." >&2
