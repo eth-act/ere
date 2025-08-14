@@ -488,21 +488,16 @@ mod test {
     fn dockerized_risc0() {
         let zkvm = ErezkVM::Risc0;
 
-        let guest_directory = workspace_dir().join(format!("tests/{zkvm}/compile/basic"));
+        let guest_directory = testing_guest_directory(zkvm.as_str(), "basic");
         let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
             .compile(&guest_directory)
             .unwrap();
 
         let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
 
-        let mut inputs = Input::new();
-        inputs.write(42u32);
-
-        let _report = zkvm.execute(&inputs).unwrap();
-
-        let (proof, _report) = zkvm.prove(&inputs).unwrap();
-
-        zkvm.verify(&proof).unwrap();
+        let inputs = BasicProgramInputGen::valid();
+        run_zkvm_execute(&zkvm, &inputs);
+        run_zkvm_prove(&zkvm, &inputs);
     }
 
     #[test]
