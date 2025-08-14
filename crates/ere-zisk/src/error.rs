@@ -117,6 +117,8 @@ pub enum ProveError {
     CargoZiskProveFailed { status: ExitStatus },
     #[error("Serialising proof with `bincode` failed: {0}")]
     Bincode(#[from] bincode::Error),
+    #[error("Failed to obtain prove lock")]
+    ProveLockPoisoned,
 }
 
 #[derive(Debug, Error)]

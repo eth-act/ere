@@ -11,6 +11,7 @@ use std::{
     os::unix::fs::symlink,
     path::{Path, PathBuf},
     process::{Command, Stdio},
+    sync::Mutex,
     time,
 };
 use tempfile::{TempDir, tempdir};
@@ -23,6 +24,10 @@ include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 mod compile;
 mod error;
+
+/// It panics if `EreZisk::prove` is called concurrently, so we need a lock here
+/// to avoid that.
+static PROVE_LOCK: Mutex<()> = Mutex::new(());
 
 #[allow(non_camel_case_types)]
 pub struct RV64_IMA_ZISK_ZKVM_ELF;
@@ -114,6 +119,12 @@ impl zkVM for EreZisk {
     }
 
     fn prove(&self, inputs: &Input) -> Result<(Vec<u8>, ProgramProvingReport), zkVMError> {
+        // Obtain the prove lock to make sure proving can't be called concurrently.
+        let _guard = PROVE_LOCK
+            .lock()
+            .map_err(|_| ProveError::ProveLockPoisoned)
+            .map_err(ZiskError::Prove)?;
+
         // Write ELF and serialized input to file.
 
         let input_bytes = serialize_inputs(inputs)
@@ -284,13 +295,17 @@ impl zkVM for EreZisk {
     }
 }
 
+/// Serialize `Input` into sequence of bytes.
+///
+/// Because ZisK doesn't provide stdin API so we need to handle multiple inputs,
+/// the current approach naively serializes each `InputItem` individually, then
+/// concat them into single `Vec<u8>`.
 fn serialize_inputs(inputs: &Input) -> Result<Vec<u8>, bincode::Error> {
     inputs.iter().try_fold(Vec::new(), |mut acc, item| {
         match item {
-            InputItem::Object(obj) => {
-                bincode::serialize_into(&mut acc, &**obj)?;
-            }
-            InputItem::SerializedObject(bytes) | InputItem::Bytes(bytes) => acc.extend(bytes),
+            InputItem::Object(obj) => bincode::serialize_into(&mut acc, &**obj)?,
+            InputItem::SerializedObject(bytes) => acc.extend(bytes),
+            InputItem::Bytes(bytes) => bincode::serialize_into(&mut acc, bytes)?,
         };
         Ok(acc)
     })
@@ -444,124 +459,68 @@ impl ZiskTempDir {
 }
 
 #[cfg(test)]
-mod execute_tests {
+mod tests {
     use super::*;
+    use std::sync::OnceLock;
+    use test_utils::host::{
+        BasicProgramInputGen, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+    };
 
-    fn get_compiled_test_zisk_elf() -> Result<Vec<u8>, ZiskError> {
-        let test_guest_path = get_execute_test_guest_program_path();
-        RV64_IMA_ZISK_ZKVM_ELF.compile(&test_guest_path)
-    }
+    static BASIC_PRORGAM: OnceLock<Vec<u8>> = OnceLock::new();
 
-    fn get_execute_test_guest_program_path() -> PathBuf {
-        let workspace_dir = env!("CARGO_WORKSPACE_DIR");
-        PathBuf::from(workspace_dir)
-            .join("tests")
-            .join("zisk")
-            .join("execute")
-            .join("basic")
-            .canonicalize()
-            .expect("Failed to find or canonicalize test guest program at <CARGO_WORKSPACE_DIR>/tests/execute/zisk")
+    fn basic_program() -> Vec<u8> {
+        BASIC_PRORGAM
+            .get_or_init(|| {
+                RV64_IMA_ZISK_ZKVM_ELF
+                    .compile(&testing_guest_directory("zisk", "basic"))
+                    .unwrap()
+            })
+            .to_vec()
     }
 
     #[test]
-    fn test_execute_zisk_dummy_input() {
-        let elf_bytes = get_compiled_test_zisk_elf()
-            .expect("Failed to compile test ZisK guest for execution test");
+    fn test_execute() {
+        let program = basic_program();
+        let zkvm = EreZisk::new(program, ProverResourceType::Cpu);
 
-        let mut input_builder = Input::new();
-        let n: u32 = 42;
-        let a: u16 = 42;
-        input_builder.write(n);
-        input_builder.write(a);
+        let inputs = BasicProgramInputGen::valid();
+        run_zkvm_execute(&zkvm, &inputs);
+    }
 
-        let zkvm = EreZisk::new(elf_bytes, ProverResourceType::Cpu);
+    #[test]
+    fn test_execute_invalid_inputs() {
+        let program = basic_program();
+        let zkvm = EreZisk::new(program, ProverResourceType::Cpu);
 
-        let result = zkvm.execute(&input_builder);
-
-        if let Err(e) = &result {
-            panic!("Execution error: {e:?}");
+        for inputs in [
+            BasicProgramInputGen::empty(),
+            BasicProgramInputGen::invalid_string(),
+            BasicProgramInputGen::invalid_type(),
+        ] {
+            zkvm.execute(&inputs).unwrap_err();
         }
     }
 
     #[test]
-    fn test_execute_zisk_no_input_for_guest_expecting_input() {
-        let elf_bytes = get_compiled_test_zisk_elf()
-            .expect("Failed to compile test ZisK guest for execution test");
+    fn test_prove() {
+        let program = basic_program();
+        let zkvm = EreZisk::new(program, ProverResourceType::Cpu);
 
-        let empty_input = Input::new();
-
-        let zkvm = EreZisk::new(elf_bytes, ProverResourceType::Cpu);
-        assert!(zkvm.execute(&empty_input).is_err());
-    }
-}
-
-#[cfg(test)]
-mod prove_tests {
-    use std::path::PathBuf;
-
-    use super::*;
-    use zkvm_interface::Input;
-
-    fn get_prove_test_guest_program_path() -> PathBuf {
-        let workspace_dir = env!("CARGO_WORKSPACE_DIR");
-        PathBuf::from(workspace_dir)
-            .join("tests")
-            .join("zisk")
-            .join("prove")
-            .join("basic")
-            .canonicalize()
-            .expect("Failed to find or canonicalize test guest program at <CARGO_WORKSPACE_DIR>/tests/execute/zisk")
-    }
-
-    fn get_compiled_test_zisk_elf_for_prove() -> Result<Vec<u8>, ZiskError> {
-        let test_guest_path = get_prove_test_guest_program_path();
-        RV64_IMA_ZISK_ZKVM_ELF.compile(&test_guest_path)
+        let inputs = BasicProgramInputGen::valid();
+        run_zkvm_prove(&zkvm, &inputs);
     }
 
     #[test]
-    fn test_prove_zisk_dummy_input() {
-        let elf_path = get_compiled_test_zisk_elf_for_prove()
-            .expect("Failed to compile test ZisK guest for proving test");
+    fn test_prove_invalid_inputs() {
+        let program = basic_program();
+        let zkvm = EreZisk::new(program, ProverResourceType::Cpu);
 
-        let mut input_builder = Input::new();
-        let n: u32 = 42;
-        let a: u16 = 42;
-        input_builder.write(n);
-        input_builder.write(a);
-
-        let zkvm = EreZisk::new(elf_path, ProverResourceType::Cpu);
-
-        let proof_bytes = match zkvm.prove(&input_builder) {
-            Ok((prove_result, _)) => prove_result,
-            Err(err) => {
-                panic!("Proving error in test: {err:?}");
-            }
-        };
-
-        assert!(!proof_bytes.is_empty(), "Proof bytes should not be empty.");
-
-        assert!(zkvm.verify(&proof_bytes).is_ok());
-
-        let invalid_proof_bytes = {
-            let mut invalid_proof: ZiskProofWithPublicValues =
-                bincode::deserialize(&proof_bytes).unwrap();
-            // alter the first digit of `evals[0][0]`
-            invalid_proof.proof[40] = invalid_proof.proof[40].overflowing_add(1).0;
-            bincode::serialize(&invalid_proof).unwrap()
-        };
-        assert!(zkvm.verify(&invalid_proof_bytes).is_err());
-
-        // TODO: Check public inputs
-    }
-
-    #[test]
-    fn test_prove_zisk_fails_on_bad_input_causing_execution_failure() {
-        let elf_path = get_compiled_test_zisk_elf_for_prove()
-            .expect("Failed to compile test ZisK guest for proving test");
-
-        let empty_input = Input::new();
-
-        let zkvm = EreZisk::new(elf_path, ProverResourceType::Cpu);
-        assert!(zkvm.prove(&empty_input).is_err());
+        for inputs in [
+            BasicProgramInputGen::empty(),
+            BasicProgramInputGen::invalid_string(),
+            BasicProgramInputGen::invalid_type(),
+        ] {
+            zkvm.prove(&inputs).unwrap_err();
+        }
     }
 }
