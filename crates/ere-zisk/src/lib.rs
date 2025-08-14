@@ -288,7 +288,7 @@ fn serialize_inputs(inputs: &Input) -> Result<Vec<u8>, bincode::Error> {
     inputs.iter().try_fold(Vec::new(), |mut acc, item| {
         match item {
             InputItem::Object(obj) => {
-                bincode::serialize_into(&mut acc, obj)?;
+                bincode::serialize_into(&mut acc, &**obj)?;
             }
             InputItem::SerializedObject(bytes) | InputItem::Bytes(bytes) => acc.extend(bytes),
         };
