@@ -139,6 +139,7 @@ impl zkVM for EreZKM {
 }
 
 #[cfg(test)]
+#[allow(non_snake_case)]
 mod execute_tests {
     use std::path::PathBuf;
 
@@ -147,7 +148,7 @@ mod execute_tests {
 
     fn get_compiled_test_ZKM_elf() -> Result<Vec<u8>, ZKMError> {
         let test_guest_path = get_execute_test_guest_program_path();
-        RV32_IM_ZKM_ZKVM_ELF::compile(&test_guest_path)
+        RV32_IM_ZKM_ZKVM_ELF.compile(&test_guest_path)
     }
 
     fn get_execute_test_guest_program_path() -> PathBuf {
@@ -155,7 +156,7 @@ mod execute_tests {
         PathBuf::from(workspace_dir)
             .join("tests")
             .join("zkm")
-            .join("execute")
+            .join("compile")
             .join("basic")
             .canonicalize()
             .expect("Failed to find or canonicalize test guest program at <CARGO_WORKSPACE_DIR>/tests/execute/ZKM")
@@ -168,9 +169,7 @@ mod execute_tests {
 
         let mut input_builder = Input::new();
         let n: u32 = 42;
-        let a: u16 = 42;
         input_builder.write(n);
-        input_builder.write(a);
 
         let zkvm = EreZKM::new(elf_bytes, ProverResourceType::Cpu);
 
@@ -199,7 +198,9 @@ mod execute_tests {
 }
 
 #[cfg(test)]
+#[allow(non_snake_case)]
 mod prove_tests {
+
     use std::path::PathBuf;
 
     use super::*;
@@ -210,7 +211,7 @@ mod prove_tests {
         PathBuf::from(workspace_dir)
             .join("tests")
             .join("zkm")
-            .join("prove")
+            .join("compile")
             .join("basic")
             .canonicalize()
             .expect("Failed to find or canonicalize test guest program at <CARGO_WORKSPACE_DIR>/tests/execute/ZKM")
@@ -218,7 +219,7 @@ mod prove_tests {
 
     fn get_compiled_test_ZKM_elf_for_prove() -> Result<Vec<u8>, ZKMError> {
         let test_guest_path = get_prove_test_guest_program_path();
-        RV32_IM_ZKM_ZKVM_ELF::compile(&test_guest_path)
+        RV32_IM_ZKM_ZKVM_ELF.compile(&test_guest_path)
     }
 
     #[test]

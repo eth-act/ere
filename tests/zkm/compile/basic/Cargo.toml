@@ -1,5 +1,5 @@
 [package]
-name = "ere-test-openvm-guest"
+name = "ere-test-zkm-guest"
 version = "0.1.0"
 edition = "2021"
 

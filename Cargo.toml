@@ -87,6 +87,7 @@ ere-pico = { path = "crates/ere-pico" }
 ere-risc0 = { path = "crates/ere-risc0" }
 ere-sp1 = { path = "crates/ere-sp1" }
 ere-zisk = { path = "crates/ere-zisk" }
+ere-zkm = { path = "crates/ere-zkm" }
 
 [patch.crates-io]
 # These patches are only needed by Jolt

@@ -39,7 +39,7 @@ if ! is_tool_installed "zkmup"; then
     echo "Attempting to install zkmup..."
     # The zkmup installer (https://docs.zkm.io/introduction/installation.html) installs zkmup to $HOME/.zkm-toolchain/bin
     # and should modify shell profiles like .bashrc to add it to PATH.
-    curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/zkMIPS/toolchain/refs/heads/main/setup.sh | sh
+    curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/ProjectZKM/toolchain/refs/heads/main/setup.sh | sh
 
 
     # For the current script's execution, we need to add the zkmup path explicitly
@@ -69,8 +69,8 @@ zkmup install
 #// TODO:
 # Verify zkm installation
 echo "Verifying zkm installation..."
-ensure_tool_installed "cargo" "as cargo-risczero needs it"
-cargo risczero --version || (echo "Error: cargo risczero command failed!" >&2 && exit 1)
+ensure_tool_installed "cargo"
+zkmup list-available || (echo "Error: zkmup list-available command failed!" >&2 && exit 1)
 
 echo "zkm Toolchain installation (latest release) successful."
 echo "The zkmup installer might have updated your shell configuration files (e.g., ~/.bashrc, ~/.zshrc)."
