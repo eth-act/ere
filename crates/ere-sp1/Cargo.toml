@@ -1,9 +1,9 @@
 [package]
-name = "ere-sp1"
-version.workspace = true
 edition.workspace = true
-rust-version.workspace = true
 license.workspace = true
+name = "ere-sp1"
+rust-version.workspace = true
+version.workspace = true
 
 [dependencies]
 bincode.workspace = true
@@ -17,6 +17,9 @@ sp1-sdk.workspace = true
 
 # Local dependencies
 zkvm-interface.workspace = true
+
+[dev-dependencies]
+test-utils = { workspace = true, features = ["host"] }
 
 [build-dependencies]
 build-utils.workspace = true

@@ -2276,6 +2276,7 @@ dependencies = [
  "risc0-zkvm",
  "serde",
  "tempfile",
+ "test-utils",
  "thiserror 2.0.12",
  "zkvm-interface",
 ]
@@ -2367,6 +2368,7 @@ dependencies = [
  "build-utils",
  "sp1-sdk",
  "tempfile",
+ "test-utils",
  "thiserror 2.0.12",
  "toml",
  "tracing",
@@ -9408,6 +9410,14 @@ dependencies = [
  "quote",
  "syn 2.0.101",
  "test-case-core",
+]
+
+[[package]]
+name = "test-utils"
+version = "0.0.11"
+dependencies = [
+ "serde",
+ "zkvm-interface",
 ]
 
 [[package]]
