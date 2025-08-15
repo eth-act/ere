@@ -57,6 +57,9 @@ jobs:
   build_image:
     name: Build image
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     outputs:
       zkvm_version: ${{ steps.inspect_image.outputs.zkvm_version }}
       base_image_tag: ${{ steps.inspect_image.outputs.base_image_tag }}
