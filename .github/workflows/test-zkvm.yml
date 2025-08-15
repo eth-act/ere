@@ -61,7 +61,7 @@ jobs:
       contents: read
       packages: write
     outputs:
-      zkvm_version: ${{ steps.inspect_image.outputs.zkvm_version }}
+      image_version: ${{ steps.inspect_image.outputs.image_version }}
       base_image_tag: ${{ steps.inspect_image.outputs.base_image_tag }}
       base_zkvm_image_tag: ${{ steps.inspect_image.outputs.base_zkvm_image_tag }}
     steps:
@@ -78,25 +78,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check if image ere-base-${{ inputs.zkvm }} exists or not
+      - name: Get image version and tags of ere-base and ere-base-${{ inputs.zkvm }}
         id: inspect_image
         run: |
-          ZKVM_VERSION=$(cargo metadata --format-version=1 --no-deps | jq -r '.packages[] | select(.name == "ere-${{ inputs.zkvm }}") | .version')
-          BASE_IMAGE_TAG="ghcr.io/${{ github.repository }}/ere-base:$ZKVM_VERSION"
-          BASE_ZKVM_IMAGE_TAG="ghcr.io/${{ github.repository }}/ere-base-${{ inputs.zkvm }}:$ZKVM_VERSION"
+          ZKVM_CRATE_VERSION=$(cargo metadata --format-version=1 --no-deps | jq -r '.packages[] | select(.name == "ere-${{ inputs.zkvm }}") | .version')
+          GIT_REV=$(git rev-parse --short=7 HEAD)
+          IMAGE_VERSION="$ZKVM_CRATE_VERSION-$GIT_REV"
+          BASE_IMAGE_TAG="ghcr.io/${{ github.repository }}/ere-base:$IMAGE_VERSION"
+          BASE_ZKVM_IMAGE_TAG="ghcr.io/${{ github.repository }}/ere-base-${{ inputs.zkvm }}:$IMAGE_VERSION"
 
-          echo "zkvm_version=$ZKVM_VERSION" >> $GITHUB_OUTPUT
+          echo "image_version=$IMAGE_VERSION" >> $GITHUB_OUTPUT
           echo "base_image_tag=$BASE_IMAGE_TAG" >> $GITHUB_OUTPUT
           echo "base_zkvm_image_tag=$BASE_ZKVM_IMAGE_TAG" >> $GITHUB_OUTPUT
 
-          if docker manifest inspect "$BASE_ZKVM_IMAGE_TAG" >/dev/null 2>&1; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Build ere-base image
-        if: steps.inspect_image.outputs.exists == 'false'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -105,7 +100,6 @@ jobs:
           tags: ${{ steps.inspect_image.outputs.base_image_tag }}
 
       - name: Build ere-base-${{ inputs.zkvm }} image
-        if: steps.inspect_image.outputs.exists == 'false'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -177,8 +171,8 @@ jobs:
         run: |
           docker image pull ${{ needs.build_image.outputs.base_image_tag }}
           docker image pull ${{ needs.build_image.outputs.base_zkvm_image_tag }}
-          docker image tag ${{ needs.build_image.outputs.base_image_tag }} ere-base:${{ needs.build_image.outputs.zkvm_version }}
-          docker image tag ${{ needs.build_image.outputs.base_zkvm_image_tag }} ere-base-${{ inputs.zkvm }}:${{ needs.build_image.outputs.zkvm_version }}
+          docker image tag ${{ needs.build_image.outputs.base_image_tag }} ere-base:${{ needs.build_image.outputs.image_version }}
+          docker image tag ${{ needs.build_image.outputs.base_zkvm_image_tag }} ere-base-${{ inputs.zkvm }}:${{ needs.build_image.outputs.image_version }}
 
       - name: Run cargo test for ere-${{ inputs.zkvm }} via ere-dockerized
         run: cargo test --release --package ere-dockerized -- ${{ inputs.zkvm }}
