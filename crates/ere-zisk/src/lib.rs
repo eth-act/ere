@@ -180,7 +180,7 @@ impl zkVM for EreZisk {
                         "--aggregation",
                         "--verify-proofs",
                         "--save-proofs",
-                        // Uncomment this when in memory constrained environment.
+                        // Uncomment this if locked memory is not enough.
                         // "--unlock-mapped-memory",
                     ])
                     .status()
@@ -213,8 +213,9 @@ impl zkVM for EreZisk {
                         "--aggregation",
                         "--verify-proofs",
                         "--save-proofs",
+                        // Comment out this if GPU RAM is not enough.
                         "--preallocate",
-                        // Uncomment this when in memory constrained environment.
+                        // Uncomment this if locked memory is not enough.
                         // "--unlock-mapped-memory",
                     ])
                     .status()
