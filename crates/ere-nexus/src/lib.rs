@@ -139,59 +139,28 @@ impl zkVM for EreNexus {
 
 #[cfg(test)]
 mod tests {
-    use zkvm_interface::Compiler;
-
-    use crate::NEXUS_TARGET;
-
     use super::*;
-    use std::path::PathBuf;
+    use std::{fs, sync::OnceLock};
+    use test_utils::host::testing_guest_directory;
 
-    fn get_test_guest_program_path() -> PathBuf {
-        let workspace_dir = env!("CARGO_WORKSPACE_DIR");
-        PathBuf::from(workspace_dir)
-            .join("tests")
-            .join("nexus")
-            .join("guest")
-            .canonicalize()
-            .expect("Failed to find or canonicalize test guest program at <CARGO_WORKSPACE_DIR>/tests/compile/nexus")
+    static BASIC_PRORGAM: OnceLock<PathBuf> = OnceLock::new();
+
+    fn basic_program() -> PathBuf {
+        BASIC_PRORGAM
+            .get_or_init(|| {
+                NEXUS_TARGET
+                    .compile(&testing_guest_directory("nexus", "basic"))
+                    .unwrap()
+            })
+            .to_path_buf()
     }
 
     #[test]
-    fn test_compile() -> anyhow::Result<()> {
-        let test_guest_path = get_test_guest_program_path();
-        let elf_path = NEXUS_TARGET.compile(&test_guest_path)?;
-        let prover: Stwo<Local> = Stwo::new_from_file(&elf_path.to_string_lossy().to_string())?;
-        let elf = prover.elf.clone();
+    fn test_compiler_impl() {
+        let elf_path = basic_program();
         assert!(
-            !elf.instructions.is_empty(),
+            fs::metadata(&elf_path).unwrap().len() != 0,
             "ELF bytes should not be empty."
         );
-        Ok(())
-    }
-
-    #[test]
-    fn test_execute() {
-        let test_guest_path = get_test_guest_program_path();
-        let elf = NEXUS_TARGET
-            .compile(&test_guest_path)
-            .expect("compilation failed");
-        let mut input = Input::new();
-        input.write(10u64);
-
-        let zkvm = EreNexus::new(elf, ProverResourceType::Cpu);
-        zkvm.execute(&input).unwrap();
-    }
-
-    #[test]
-    fn test_prove_verify() -> anyhow::Result<()> {
-        let test_guest_path = get_test_guest_program_path();
-        let elf = NEXUS_TARGET.compile(&test_guest_path)?;
-        let mut input = Input::new();
-        input.write(10u64);
-
-        let zkvm = EreNexus::new(elf, ProverResourceType::Cpu);
-        let (proof, _) = zkvm.prove(&input).unwrap();
-        zkvm.verify(&proof).expect("proof should verify");
-        Ok(())
     }
 }

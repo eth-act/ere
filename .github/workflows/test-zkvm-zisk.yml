@@ -1,0 +1,19 @@
+name: Test and clippy ZisK
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  test:
+    uses: ./.github/workflows/test-zkvm.yml
+    permissions:
+      contents: read
+      packages: write
+    with:
+      zkvm: zisk
+      toolchain: 1.85.0
+      test_ere_dockerized: false
+      test_options: 'execute compile'

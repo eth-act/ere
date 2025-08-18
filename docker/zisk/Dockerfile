@@ -31,15 +31,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     clang && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN wget https://developer.download.nvidia.com/compute/cuda/repos/$(. /etc/os-release && echo "${ID}${VERSION_ID}" | tr -d '.')/$(uname -i)/cuda-keyring_1.1-1_all.deb && \
+# If current environment is in CI or not.
+ARG CI
+
+RUN [ -n "$CI" ] || \
+    (wget https://developer.download.nvidia.com/compute/cuda/repos/$(. /etc/os-release && echo "${ID}${VERSION_ID}" | tr -d '.')/$(uname -i)/cuda-keyring_1.1-1_all.deb && \
     dpkg -i cuda-keyring_1.1-1_all.deb && \
     rm cuda-keyring_1.1-1_all.deb && \
     apt update && \
     apt install -y cuda-toolkit-12-9 && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# If current environment is in CI or not.
-ARG CI
+    apt-get clean && rm -rf /var/lib/apt/lists/*)
 
 # Copy the ZisK SDK installer script from the workspace context
 COPY scripts/sdk_installers/install_zisk_sdk.sh /tmp/install_zisk_sdk.sh

@@ -45,31 +45,14 @@ pub fn compile_risc0_program(guest_directory: &Path) -> Result<Risc0Program, Com
 
 #[cfg(test)]
 mod tests {
-    mod compile {
-        use crate::compile::compile_risc0_program;
-        use std::path::PathBuf;
+    use crate::RV32_IM_RISC0_ZKVM_ELF;
+    use test_utils::host::testing_guest_directory;
+    use zkvm_interface::Compiler;
 
-        fn get_test_risc0_methods_crate_path() -> PathBuf {
-            let workspace_dir = env!("CARGO_WORKSPACE_DIR");
-            PathBuf::from(workspace_dir)
-                .join("tests")
-                .join("risc0")
-                .join("compile")
-                .join("basic")
-                .canonicalize()
-                .expect("Failed to find or canonicalize test Risc0 methods crate")
-        }
-
-        #[test]
-        fn test_compile_risc0_method() {
-            let test_methods_path = get_test_risc0_methods_crate_path();
-
-            let program =
-                compile_risc0_program(&test_methods_path).expect("risc0 compilation failed");
-            assert!(
-                !program.elf.is_empty(),
-                "Risc0 ELF bytes should not be empty."
-            );
-        }
+    #[test]
+    fn test_compiler_impl() {
+        let guest_directory = testing_guest_directory("risc0", "basic");
+        let program = RV32_IM_RISC0_ZKVM_ELF.compile(&guest_directory).unwrap();
+        assert!(!program.elf.is_empty(), "ELF bytes should not be empty.");
     }
 }

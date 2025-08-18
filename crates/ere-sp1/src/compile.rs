@@ -95,50 +95,14 @@ pub fn compile(guest_directory: &Path) -> Result<Vec<u8>, CompileError> {
 
 #[cfg(test)]
 mod tests {
+    use crate::RV32_IM_SUCCINCT_ZKVM_ELF;
+    use test_utils::host::testing_guest_directory;
     use zkvm_interface::Compiler;
 
-    use crate::RV32_IM_SUCCINCT_ZKVM_ELF;
-
-    use super::*;
-    use std::path::PathBuf;
-
-    // TODO: for now, we just get one test file
-    // TODO: but this should get the whole directory and compile each test
-    fn get_compile_test_guest_program_path() -> PathBuf {
-        let workspace_dir = env!("CARGO_WORKSPACE_DIR");
-        PathBuf::from(workspace_dir)
-            .join("tests")
-            .join("sp1")
-            .join("compile")
-            .join("basic")
-            .canonicalize()
-            .expect("Failed to find or canonicalize test guest program at <CARGO_WORKSPACE_DIR>/tests/compile/sp1")
-    }
-
     #[test]
-    fn test_compile_sp1_program() {
-        let test_guest_path = get_compile_test_guest_program_path();
-
-        match compile(&test_guest_path) {
-            Ok(elf_bytes) => {
-                assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
-            }
-            Err(err) => {
-                panic!("compile failed for dedicated guest: {err}");
-            }
-        }
-    }
-
-    #[test]
-    fn test_compile_trait() {
-        let test_guest_path = get_compile_test_guest_program_path();
-        match RV32_IM_SUCCINCT_ZKVM_ELF.compile(&test_guest_path) {
-            Ok(elf_bytes) => {
-                assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
-            }
-            Err(err) => {
-                panic!("compile_sp1_program direct call failed for dedicated guest: {err}");
-            }
-        }
+    fn test_compiler_impl() {
+        let guest_directory = testing_guest_directory("sp1", "basic");
+        let elf_bytes = RV32_IM_SUCCINCT_ZKVM_ELF.compile(&guest_directory).unwrap();
+        assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
     }
 }

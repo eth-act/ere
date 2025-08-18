@@ -10,13 +10,13 @@ COPY scripts/sdk_installers/install_nexus_sdk.sh /tmp/install_nexus_sdk.sh
 RUN chmod +x /tmp/install_nexus_sdk.sh
 
 # Run the Nexus SDK installation script.
-# This script installs the specific Rust toolchain (nightly-2025-06-05)
+# This script installs the specific Rust toolchain (nightly-2025-04-06)
 # and installs cargo-nexus
 # The CARGO_HOME from ere-base (e.g., /root/.cargo) will be used, and cargo-nexus will be in its bin.
 RUN /tmp/install_nexus_sdk.sh && rm /tmp/install_nexus_sdk.sh # Clean up the script
 
-# Define the Nexus toolchain for convenience in subsequent commands if needed, though cargo pico should use it.
-ENV NEXUS_TOOLCHAIN_VERSION="nightly-2025-06-05"
+# Define the Nexus toolchain for convenience in subsequent commands if needed.
+ENV NEXUS_TOOLCHAIN_VERSION="nightly-2025-04-06"
 
 # Set default toolchain
 RUN rustup default "$NEXUS_TOOLCHAIN_VERSION"

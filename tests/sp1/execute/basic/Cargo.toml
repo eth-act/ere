@@ -1,9 +1,0 @@
-[package]
-name = "ere-test-sp1-guest"
-version = "0.1.0"
-edition = "2021"
-
-[workspace]
-
-[dependencies]
-sp1-zkvm = "5.1.0"

@@ -20,6 +20,9 @@ openvm-transpiler.workspace = true
 # Local dependencies
 zkvm-interface.workspace = true
 
+[dev-dependencies]
+test-utils = { workspace = true, features = ["host"] }
+
 [build-dependencies]
 build-utils.workspace = true
 
