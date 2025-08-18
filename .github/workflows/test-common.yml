@@ -24,7 +24,7 @@ jobs:
           - crate: zkvm-interface
             run_test: true
           - crate: ere-dockerized
-            run_test: false
+            run_test: false # They are run in per-zkVM workflows
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
