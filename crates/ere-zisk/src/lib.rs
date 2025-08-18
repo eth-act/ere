@@ -15,6 +15,7 @@ use std::{
     time,
 };
 use tempfile::{TempDir, tempdir};
+use tracing::info;
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
     zkVM, zkVMError,
@@ -24,6 +25,9 @@ include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 mod compile;
 mod error;
+
+/// Lock for the command `cargo-zisk check-setup` to avoid multiple runs.
+static SETUP_LOCK: Mutex<bool> = Mutex::new(false);
 
 /// It panics if `EreZisk::prove` is called concurrently, so we need a lock here
 /// to avoid that.
@@ -119,6 +123,9 @@ impl zkVM for EreZisk {
     }
 
     fn prove(&self, inputs: &Input) -> Result<(Vec<u8>, ProgramProvingReport), zkVMError> {
+        // Make sure proving key setup is done.
+        check_setup()?;
+
         // Obtain the prove lock to make sure proving can't be called concurrently.
         let _guard = PROVE_LOCK
             .lock()
@@ -143,6 +150,8 @@ impl zkVM for EreZisk {
         // Setup ROM.
 
         if !is_bin_exists(&self.elf, tempdir.elf_path()) {
+            info!("Running command `cargo-zisk rom-setup` ...");
+
             let status = Command::new("cargo-zisk")
                 .arg("rom-setup")
                 .arg("--elf")
@@ -157,6 +166,8 @@ impl zkVM for EreZisk {
                     ZiskError::Prove(ProveError::CargoZiskRomSetupFailed { status }).into(),
                 );
             }
+
+            info!("Command `cargo-zisk rom-setup` succeeded");
         }
 
         // Prove.
@@ -314,6 +325,41 @@ fn serialize_inputs(inputs: &Input) -> Result<Vec<u8>, bincode::Error> {
 
 fn dot_zisk_dir_path() -> PathBuf {
     PathBuf::from(std::env::var("HOME").expect("env `$HOME` should be set")).join(".zisk")
+}
+
+fn check_setup() -> Result<(), zkVMError> {
+    let mut setup = SETUP_LOCK
+        .lock()
+        .map_err(|_| zkVMError::Other("Setup lock is poisoned".into()))?;
+
+    if !*setup {
+        info!("Running command `cargo-zisk check-setup --aggregation`...");
+
+        let output = Command::new("cargo-zisk")
+            .args(["check-setup", "--aggregation"])
+            .output()
+            .map_err(|e| {
+                zkVMError::Other(
+                    format!("Failed to run command `cargo-zisk check-setup`: {e}").into(),
+                )
+            })?;
+
+        if !output.status.success() {
+            return Err(zkVMError::Other(
+                format!(
+                    "Command `cargo-zisk check-setup` failed: {}",
+                    String::from_utf8_lossy(&output.stderr)
+                )
+                .into(),
+            ));
+        }
+
+        info!("Command `cargo-zisk check-setup --aggregation` succeeded");
+
+        *setup = true;
+    }
+
+    Ok(())
 }
 
 /// Check if these files exists in `$HOME/.zisk/cache`:
