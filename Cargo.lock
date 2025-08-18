@@ -3017,6 +3017,7 @@ dependencies = [
  "thiserror 2.0.12",
  "toml",
  "tracing",
+ "zkm-build",
  "zkm-sdk",
  "zkvm-interface",
 ]

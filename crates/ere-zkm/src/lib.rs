@@ -5,17 +5,18 @@ include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 use std::path::Path;
 use std::time::Instant;
 
-use compile::compile_zkm_program;
 use tracing::info;
+use zkm_build::{build_program_with_args, execute_build_program, include_elf, BuildArgs};
 use zkm_sdk::{ProverClient, ZKMProofWithPublicValues, ZKMProvingKey, ZKMStdin, ZKMVerifyingKey};
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
     zkVM, zkVMError,
 };
 
-mod compile;
+// mod compile;
 
 mod error;
+use crate::error::CompileError;
 use error::{ExecuteError, ProveError, VerifyError, ZKMError};
 
 #[allow(non_camel_case_types)]
@@ -36,7 +37,12 @@ impl Compiler for RV32_IM_ZKM_ZKVM_ELF {
     type Program = Vec<u8>;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        compile_zkm_program(guest_directory).map_err(ZKMError::from)
+        let path_str = guest_directory.to_str().unwrap();
+        let target_elf_paths =
+            execute_build_program(&BuildArgs::default(), Some(guest_directory.to_path_buf()))
+                .map_err(|e| ZKMError::CompileError(CompileError::Client(Box::from(e))))?;
+
+        Ok(vec![1])
     }
 }
 
@@ -200,7 +206,6 @@ mod execute_tests {
 #[cfg(test)]
 #[allow(non_snake_case)]
 mod prove_tests {
-
     use std::path::PathBuf;
 
     use super::*;

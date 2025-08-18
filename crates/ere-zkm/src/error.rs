@@ -24,9 +24,11 @@ pub enum ZKMError {
     Verify(#[from] VerifyError),
 }
 
-/// Errors that can be encountered while compiling a SP1 program
+/// Errors that can be encountered while compiling a ZKM program
 #[derive(Debug, Error)]
 pub enum CompileError {
+    #[error("ZKM execution failed: {0}")]
+    Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
     #[error("Program path does not exist or is not a directory: {0}")]
     InvalidProgramPath(PathBuf),
     #[error(
@@ -66,13 +68,13 @@ pub enum CompileError {
 
 #[derive(Debug, Error)]
 pub enum ExecuteError {
-    #[error("SP1 execution failed: {0}")]
+    #[error("ZKM execution failed: {0}")]
     Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
 }
 
 #[derive(Debug, Error)]
 pub enum ProveError {
-    #[error("SP1 SDK proving failed: {0}")]
+    #[error("ZKM SDK proving failed: {0}")]
     Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
 
     #[error("Serialising proof with `bincode` failed: {0}")]
@@ -84,6 +86,6 @@ pub enum VerifyError {
     #[error("Deserialising proof failed: {0}")]
     Bincode(#[from] bincode::Error),
 
-    #[error("SP1 SDK verification failed: {0}")]
+    #[error("ZKM SDK verification failed: {0}")]
     Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
 }
