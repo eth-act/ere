@@ -17,5 +17,9 @@ tracing.workspace = true
 # Local dependencies
 zkvm-interface.workspace = true
 
+[dev-dependencies]
+# Local dependencies
+test-utils = { workspace = true, features = ["host"] }
+
 [build-dependencies]
 build-utils.workspace = true

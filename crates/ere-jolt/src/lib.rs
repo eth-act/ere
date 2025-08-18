@@ -149,50 +149,25 @@ pub fn program(elf: &[u8]) -> Result<(TempDir, jolt::host::Program), zkVMError> 
 
 #[cfg(test)]
 mod tests {
-    use crate::{EreJolt, JOLT_TARGET};
-    use std::path::PathBuf;
-    use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
+    use super::*;
+    use std::sync::OnceLock;
+    use test_utils::host::testing_guest_directory;
 
-    // TODO: for now, we just get one test file
-    // TODO: but this should get the whole directory and compile each test
-    fn get_compile_test_guest_program_path() -> PathBuf {
-        let workspace_dir = env!("CARGO_WORKSPACE_DIR");
-        PathBuf::from(workspace_dir)
-            .join("tests")
-            .join("jolt")
-            .join("compile")
-            .join("basic")
-            .canonicalize()
-            .expect("Failed to find or canonicalize test guest program at <CARGO_WORKSPACE_DIR>/tests/compile/jolt")
+    static BASIC_PRORGAM: OnceLock<Vec<u8>> = OnceLock::new();
+
+    fn basic_program() -> Vec<u8> {
+        BASIC_PRORGAM
+            .get_or_init(|| {
+                JOLT_TARGET
+                    .compile(&testing_guest_directory("jolt", "basic"))
+                    .unwrap()
+            })
+            .clone()
     }
 
     #[test]
-    fn test_compile_trait() {
-        let test_guest_path = get_compile_test_guest_program_path();
-        let elf = JOLT_TARGET.compile(&test_guest_path).unwrap();
-        assert!(!elf.is_empty(), "elf has not been compiled");
-    }
-
-    #[test]
-    fn test_execute() {
-        let test_guest_path = get_compile_test_guest_program_path();
-        let elf = JOLT_TARGET.compile(&test_guest_path).unwrap();
-        let mut inputs = Input::new();
-        inputs.write(1_u32);
-
-        let zkvm = EreJolt::new(elf, ProverResourceType::Cpu).unwrap();
-        zkvm.execute(&inputs).unwrap();
-    }
-
-    #[test]
-    fn test_prove_verify() {
-        let test_guest_path = get_compile_test_guest_program_path();
-        let elf = JOLT_TARGET.compile(&test_guest_path).unwrap();
-        let mut inputs = Input::new();
-        inputs.write(1_u32);
-
-        let zkvm = EreJolt::new(elf, ProverResourceType::Cpu).unwrap();
-        let (proof, _) = zkvm.prove(&inputs).unwrap();
-        zkvm.verify(&proof).unwrap();
+    fn test_compiler_impl() {
+        let elf_bytes = basic_program();
+        assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
     }
 }

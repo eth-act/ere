@@ -225,127 +225,74 @@ fn serialize_inputs(stdin: &mut SP1Stdin, inputs: &Input) {
 }
 
 #[cfg(test)]
-mod execute_tests {
-    use std::path::PathBuf;
-
+mod tests {
     use super::*;
-    use zkvm_interface::Input;
+    use std::{panic, sync::OnceLock};
+    use test_utils::host::{
+        BasicProgramInputGen, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+    };
 
-    fn get_compiled_test_sp1_elf() -> Result<Vec<u8>, SP1Error> {
-        let test_guest_path = get_execute_test_guest_program_path();
-        RV32_IM_SUCCINCT_ZKVM_ELF.compile(&test_guest_path)
-    }
+    static BASIC_PRORGAM: OnceLock<Vec<u8>> = OnceLock::new();
 
-    fn get_execute_test_guest_program_path() -> PathBuf {
-        let workspace_dir = env!("CARGO_WORKSPACE_DIR");
-        PathBuf::from(workspace_dir)
-            .join("tests")
-            .join("sp1")
-            .join("execute")
-            .join("basic")
-            .canonicalize()
-            .expect("Failed to find or canonicalize test guest program at <CARGO_WORKSPACE_DIR>/tests/execute/sp1")
+    fn basic_program() -> Vec<u8> {
+        BASIC_PRORGAM
+            .get_or_init(|| {
+                RV32_IM_SUCCINCT_ZKVM_ELF
+                    .compile(&testing_guest_directory("sp1", "basic"))
+                    .unwrap()
+            })
+            .to_vec()
     }
 
     #[test]
-    fn test_execute_sp1_dummy_input() {
-        let elf_bytes = get_compiled_test_sp1_elf()
-            .expect("Failed to compile test SP1 guest for execution test");
+    fn test_execute() {
+        let program = basic_program();
+        let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
 
-        let mut input_builder = Input::new();
-        let n: u32 = 42;
-        let a: u16 = 42;
-        input_builder.write(n);
-        input_builder.write(a);
+        let inputs = BasicProgramInputGen::valid();
+        run_zkvm_execute(&zkvm, &inputs);
+    }
 
-        let zkvm = EreSP1::new(elf_bytes, ProverResourceType::Cpu);
+    #[test]
+    fn test_execute_invalid_inputs() {
+        let program = basic_program();
+        let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
 
-        let result = zkvm.execute(&input_builder);
-
-        if let Err(err) = &result {
-            panic!("Execution error: {err}");
+        for inputs in [
+            BasicProgramInputGen::empty(),
+            BasicProgramInputGen::invalid_string(),
+            BasicProgramInputGen::invalid_type(),
+        ] {
+            zkvm.execute(&inputs).unwrap_err();
         }
     }
 
     #[test]
-    fn test_execute_sp1_no_input_for_guest_expecting_input() {
-        let elf_bytes = get_compiled_test_sp1_elf()
-            .expect("Failed to compile test SP1 guest for execution test");
+    fn test_prove() {
+        let program = basic_program();
+        let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
 
-        let empty_input = Input::new();
-
-        let zkvm = EreSP1::new(elf_bytes, ProverResourceType::Cpu);
-        let result = zkvm.execute(&empty_input);
-
-        assert!(
-            result.is_err(),
-            "execute should fail if guest expects input but none is provided."
-        );
-    }
-}
-
-#[cfg(test)]
-mod prove_tests {
-    use std::path::PathBuf;
-
-    use super::*;
-    use zkvm_interface::Input;
-
-    fn get_prove_test_guest_program_path() -> PathBuf {
-        let workspace_dir = env!("CARGO_WORKSPACE_DIR");
-        PathBuf::from(workspace_dir)
-            .join("tests")
-            .join("sp1")
-            .join("prove")
-            .join("basic")
-            .canonicalize()
-            .expect("Failed to find or canonicalize test guest program at <CARGO_WORKSPACE_DIR>/tests/execute/sp1")
-    }
-
-    fn get_compiled_test_sp1_elf_for_prove() -> Result<Vec<u8>, SP1Error> {
-        let test_guest_path = get_prove_test_guest_program_path();
-        RV32_IM_SUCCINCT_ZKVM_ELF.compile(&test_guest_path)
+        let inputs = BasicProgramInputGen::valid();
+        run_zkvm_prove(&zkvm, &inputs);
     }
 
     #[test]
-    fn test_prove_sp1_dummy_input() {
-        let elf_bytes = get_compiled_test_sp1_elf_for_prove()
-            .expect("Failed to compile test SP1 guest for proving test");
+    fn test_prove_invalid_inputs() {
+        let program = basic_program();
+        let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
 
-        let mut input_builder = Input::new();
-        let n: u32 = 42;
-        let a: u16 = 42;
-        input_builder.write(n);
-        input_builder.write(a);
-
-        let zkvm = EreSP1::new(elf_bytes, ProverResourceType::Cpu);
-
-        let proof_bytes = match zkvm.prove(&input_builder) {
-            Ok((prove_result, _)) => prove_result,
-            Err(err) => {
-                panic!("Proving error in test: {err}");
-            }
-        };
-
-        assert!(!proof_bytes.is_empty(), "Proof bytes should not be empty.");
-
-        let verify_results = zkvm.verify(&proof_bytes).is_ok();
-        assert!(verify_results);
-
-        // TODO: Check public inputs
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_prove_sp1_fails_on_bad_input_causing_execution_failure() {
-        let elf_bytes = get_compiled_test_sp1_elf_for_prove()
-            .expect("Failed to compile test SP1 guest for proving test");
-
-        let empty_input = Input::new();
-
-        let zkvm = EreSP1::new(elf_bytes, ProverResourceType::Cpu);
-        let prove_result = zkvm.prove(&empty_input);
-        assert!(prove_result.is_err())
+        // On invalid inputs SP1 prove will panics, the issue for tracking:
+        // https://github.com/eth-act/ere/issues/16.
+        //
+        // Note that we iterate on methods because `InputItem::Object` doesn't
+        // implement `RefUnwindSafe`.
+        for inputs_gen in [
+            BasicProgramInputGen::empty,
+            BasicProgramInputGen::invalid_string,
+            BasicProgramInputGen::invalid_type,
+        ] {
+            panic::catch_unwind(|| zkvm.prove(&inputs_gen())).unwrap_err();
+        }
     }
 
     #[test]
@@ -357,42 +304,15 @@ mod prove_tests {
             return;
         }
 
-        let elf_bytes = get_compiled_test_sp1_elf_for_prove()
-            .expect("Failed to compile test SP1 guest for proving test");
-
-        let mut input_builder = Input::new();
-        let n: u32 = 42;
-        let a: u16 = 42;
-        input_builder.write(n);
-        input_builder.write(a);
-
         // Create a network prover configuration
         let network_config = NetworkProverConfig {
             endpoint: std::env::var("NETWORK_RPC_URL").unwrap_or_default(),
             api_key: std::env::var("NETWORK_PRIVATE_KEY").ok(),
         };
+        let program = basic_program();
+        let zkvm = EreSP1::new(program, ProverResourceType::Network(network_config));
 
-        let zkvm = EreSP1::new(elf_bytes, ProverResourceType::Network(network_config));
-
-        // Execute first to ensure the program works
-        let exec_result = zkvm.execute(&input_builder);
-        assert!(exec_result.is_ok(), "Execution should succeed");
-
-        // Now prove using the network
-        let proof_bytes = match zkvm.prove(&input_builder) {
-            Ok((prove_result, report)) => {
-                println!("Network proving completed in {:?}", report.proving_time);
-                prove_result
-            }
-            Err(err) => {
-                panic!("Network proving error: {err}");
-            }
-        };
-
-        assert!(!proof_bytes.is_empty(), "Proof bytes should not be empty.");
-
-        // Verify the proof
-        let verify_result = zkvm.verify(&proof_bytes);
-        assert!(verify_result.is_ok(), "Verification should succeed");
+        let inputs = BasicProgramInputGen::valid();
+        run_zkvm_prove(&zkvm, &inputs);
     }
 }

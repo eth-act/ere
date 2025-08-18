@@ -1,0 +1,10 @@
+[package]
+name = "app"
+version = "0.1.0"
+edition = "2024"
+
+[workspace]
+
+[dependencies]
+pico-sdk = { git = "https://github.com/brevis-network/pico", tag = "v1.1.4" }
+test-utils = { path = "../../../crates/test-utils" }

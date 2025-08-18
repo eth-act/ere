@@ -1,0 +1,19 @@
+name: Test and clippy SP1
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  test:
+    uses: ./.github/workflows/test-zkvm.yml
+    permissions:
+      contents: read
+      packages: write
+    with:
+      zkvm: sp1
+      toolchain: 1.85.0
+      test_ere_dockerized: true
+      test_options: ''

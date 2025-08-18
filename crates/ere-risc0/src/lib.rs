@@ -154,138 +154,68 @@ fn serialize_inputs(env: &mut ExecutorEnvBuilder, inputs: &Input) -> Result<(), 
 }
 
 #[cfg(test)]
-mod prove_tests {
-    use std::path::PathBuf;
-
+mod tests {
     use super::*;
-    use zkvm_interface::Input;
+    use std::sync::OnceLock;
+    use test_utils::host::{
+        BasicProgramInputGen, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+    };
 
-    fn get_prove_test_guest_program_path() -> PathBuf {
-        let workspace_dir = env!("CARGO_WORKSPACE_DIR");
-        PathBuf::from(workspace_dir)
-            .join("tests")
-            .join("risc0")
-            .join("compile")
-            .join("basic")
-            .canonicalize()
-            .expect("Failed to find or canonicalize test Risc0 methods crate")
-    }
+    static BASIC_PRORGAM: OnceLock<Risc0Program> = OnceLock::new();
 
-    fn get_compiled_test_r0_elf_for_prove() -> Result<Risc0Program, Risc0Error> {
-        let test_guest_path = get_prove_test_guest_program_path();
-        RV32_IM_RISC0_ZKVM_ELF.compile(&test_guest_path)
+    fn basic_program() -> Risc0Program {
+        BASIC_PRORGAM
+            .get_or_init(|| {
+                RV32_IM_RISC0_ZKVM_ELF
+                    .compile(&testing_guest_directory("risc0", "basic"))
+                    .unwrap()
+            })
+            .clone()
     }
 
     #[test]
-    fn test_prove_r0_dummy_input() {
-        let program = get_compiled_test_r0_elf_for_prove().unwrap();
-
-        let mut input_builder = Input::new();
-        let n: u32 = 42;
-        let a: u16 = 42;
-        input_builder.write(n);
-        input_builder.write(a);
-
+    fn test_execute() {
+        let program = basic_program();
         let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
-        let (proof_bytes, _) = zkvm
-            .prove(&input_builder)
-            .unwrap_or_else(|err| panic!("Proving error in test: {err:?}"));
-
-        assert!(!proof_bytes.is_empty(), "Proof bytes should not be empty.");
-
-        let verify_results = zkvm.verify(&proof_bytes).is_ok();
-        assert!(verify_results);
-
-        // TODO: Check public inputs
+        let inputs = BasicProgramInputGen::valid();
+        run_zkvm_execute(&zkvm, &inputs);
     }
 
     #[test]
-    fn test_prove_r0_fails_on_bad_input_causing_execution_failure() {
-        let elf_bytes = get_compiled_test_r0_elf_for_prove().unwrap();
-
-        let empty_input = Input::new();
-
-        let zkvm = EreRisc0::new(elf_bytes, ProverResourceType::Cpu).unwrap();
-        let prove_result = zkvm.prove(&empty_input);
-        assert!(prove_result.is_err());
-    }
-
-    #[test]
-    #[ignore = "Requires GPU to run"]
-    fn test_prove_r0_dummy_input_bento() {
-        let program = get_compiled_test_r0_elf_for_prove().unwrap();
-
-        let mut input_builder = Input::new();
-        let n: u32 = 42;
-        let a: u16 = 42;
-        input_builder.write(n);
-        input_builder.write(a);
-
-        let zkvm = EreRisc0::new(program, ProverResourceType::Gpu).unwrap();
-
-        let (proof_bytes, _) = zkvm
-            .prove(&input_builder)
-            .unwrap_or_else(|err| panic!("Proving error in test: {err:?}"));
-
-        assert!(!proof_bytes.is_empty(), "Proof bytes should not be empty.");
-
-        let verify_results = zkvm.verify(&proof_bytes).is_ok();
-        assert!(verify_results);
-    }
-}
-
-#[cfg(test)]
-mod execute_tests {
-    use std::path::PathBuf;
-
-    use super::*;
-    use zkvm_interface::Input;
-
-    fn get_compiled_test_r0_elf() -> Result<Risc0Program, Risc0Error> {
-        let test_guest_path = get_execute_test_guest_program_path();
-        RV32_IM_RISC0_ZKVM_ELF.compile(&test_guest_path)
-    }
-
-    fn get_execute_test_guest_program_path() -> PathBuf {
-        let workspace_dir = env!("CARGO_WORKSPACE_DIR");
-        PathBuf::from(workspace_dir)
-            .join("tests")
-            .join("risc0")
-            .join("compile")
-            .join("basic")
-            .canonicalize()
-            .expect("Failed to find or canonicalize test Risc0 methods crate")
-    }
-
-    #[test]
-    fn test_execute_r0_dummy_input() {
-        let program = get_compiled_test_r0_elf().unwrap();
-
-        let mut input_builder = Input::new();
-        let n: u32 = 42;
-        let a: u16 = 42;
-        input_builder.write(n);
-        input_builder.write(a);
-
+    fn test_execute_invalid_inputs() {
+        let program = basic_program();
         let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
-        zkvm.execute(&input_builder)
-            .unwrap_or_else(|err| panic!("Execution error: {err:?}"));
+        for inputs in [
+            BasicProgramInputGen::empty(),
+            BasicProgramInputGen::invalid_string(),
+            BasicProgramInputGen::invalid_type(),
+        ] {
+            zkvm.execute(&inputs).unwrap_err();
+        }
     }
 
     #[test]
-    fn test_execute_r0_no_input_for_guest_expecting_input() {
-        let program = get_compiled_test_r0_elf().unwrap();
-
-        let empty_input = Input::new();
-
+    fn test_prove() {
+        let program = basic_program();
         let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
-        let result = zkvm.execute(&empty_input);
 
-        assert!(
-            result.is_err(),
-            "execute should fail if guest expects input but none is provided."
-        );
+        let inputs = BasicProgramInputGen::valid();
+        run_zkvm_prove(&zkvm, &inputs);
+    }
+
+    #[test]
+    fn test_prove_invalid_inputs() {
+        let program = basic_program();
+        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
+
+        for inputs in [
+            BasicProgramInputGen::empty(),
+            BasicProgramInputGen::invalid_string(),
+            BasicProgramInputGen::invalid_type(),
+        ] {
+            zkvm.prove(&inputs).unwrap_err();
+        }
     }
 }

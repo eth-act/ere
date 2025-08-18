@@ -144,41 +144,48 @@ fn serialize_inputs(stdin: &mut EmulatorStdinBuilder<Vec<u8>>, inputs: &Input) {
 
 #[cfg(test)]
 mod tests {
-    use crate::PICO_TARGET;
-    use std::path::PathBuf;
-    use zkvm_interface::Compiler;
+    use super::*;
+    use std::{panic, sync::OnceLock};
+    use test_utils::host::{BasicProgramInputGen, run_zkvm_execute, testing_guest_directory};
 
-    fn get_compile_test_guest_program_path() -> PathBuf {
-        let workspace_dir = env!("CARGO_WORKSPACE_DIR");
-        let path = PathBuf::from(workspace_dir)
-            .join("tests")
-            .join("pico")
-            .join("compile")
-            .join("basic")
-            .join("app");
+    static BASIC_PRORGAM: OnceLock<Vec<u8>> = OnceLock::new();
 
-        println!(
-            "Attempting to find test guest program at: {}",
-            path.display()
-        );
-        println!("Workspace dir is: {workspace_dir}");
-
-        path.canonicalize()
-            .expect("Failed to find or canonicalize test guest program at <CARGO_WORKSPACE_DIR>/tests/pico/compile/basic/app")
+    fn basic_program() -> Vec<u8> {
+        BASIC_PRORGAM
+            .get_or_init(|| {
+                PICO_TARGET
+                    .compile(&testing_guest_directory("pico", "basic"))
+                    .unwrap()
+            })
+            .clone()
     }
 
     #[test]
-    fn test_compile_trait() {
-        let test_guest_path = get_compile_test_guest_program_path();
-        println!("Using test guest path: {}", test_guest_path.display());
+    fn test_compiler_impl() {
+        let elf_bytes = basic_program();
+        assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
+    }
 
-        match PICO_TARGET.compile(&test_guest_path) {
-            Ok(elf_bytes) => {
-                assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
-            }
-            Err(err) => {
-                panic!("compile_sp1_program direct call failed for dedicated guest: {err}");
-            }
+    #[test]
+    fn test_execute() {
+        let program = basic_program();
+        let zkvm = ErePico::new(program, ProverResourceType::Cpu);
+
+        let inputs = BasicProgramInputGen::valid();
+        run_zkvm_execute(&zkvm, &inputs);
+    }
+
+    #[test]
+    fn test_execute_invalid_inputs() {
+        let program = basic_program();
+        let zkvm = ErePico::new(program, ProverResourceType::Cpu);
+
+        for inputs_gen in [
+            BasicProgramInputGen::empty,
+            BasicProgramInputGen::invalid_string,
+            BasicProgramInputGen::invalid_type,
+        ] {
+            panic::catch_unwind(|| zkvm.execute(&inputs_gen()).unwrap_err()).unwrap_err();
         }
     }
 }
