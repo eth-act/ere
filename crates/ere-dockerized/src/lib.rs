@@ -456,7 +456,7 @@ mod test {
     use test_utils::host::{
         BasicProgramInputGen, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
-    use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
+    use zkvm_interface::{Compiler, ProverResourceType};
 
     // TODO: Test other ere-{zkvm} when they are end-to-end ready:
     //       - ere-jolt
