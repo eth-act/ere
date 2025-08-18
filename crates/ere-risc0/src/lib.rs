@@ -174,6 +174,18 @@ mod tests {
     }
 
     #[test]
+    fn test_image_id_determinism() {
+        let program = basic_program();
+        let zkvm = EreRisc0::new(program.clone(), ProverResourceType::Cpu).unwrap();
+        let zkvm2 = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
+        assert_eq!(
+            zkvm.program.image_id.as_bytes(),
+            zkvm2.program.image_id.as_bytes(),
+            "ImageID should be deterministic"
+        );
+    }
+
+    #[test]
     fn test_execute() {
         let program = basic_program();
         let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();

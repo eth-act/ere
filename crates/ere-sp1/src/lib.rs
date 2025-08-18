@@ -227,6 +227,7 @@ fn serialize_inputs(stdin: &mut SP1Stdin, inputs: &Input) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sp1_sdk::HashableKey;
     use std::{panic, sync::OnceLock};
     use test_utils::host::{
         BasicProgramInputGen, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
@@ -242,6 +243,18 @@ mod tests {
                     .unwrap()
             })
             .to_vec()
+    }
+
+    #[test]
+    fn test_verification_key_determinism() {
+        let program = basic_program();
+        let zkvm = EreSP1::new(program.clone(), ProverResourceType::Cpu);
+        let zkvm2 = EreSP1::new(program, ProverResourceType::Cpu);
+        assert_eq!(
+            zkvm.vk.bytes32(),
+            zkvm2.vk.bytes32(),
+            "Verification keys should be deterministic"
+        );
     }
 
     #[test]
