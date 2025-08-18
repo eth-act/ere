@@ -360,7 +360,7 @@ impl zkVM for EreDockerizedzkVM {
         match self.zkvm {
             // ZisK uses shared memory to exchagne data between processes, it
             // requires at least 8G shared memory, here we set 16G for safety.
-            ErezkVM::Zisk => cmd = cmd.shm_size("16G"),
+            ErezkVM::Zisk => cmd = cmd.option("shm-size", "16G"),
             _ => {}
         }
 
