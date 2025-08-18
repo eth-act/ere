@@ -129,6 +129,11 @@ impl DockerRunCmd {
         self
     }
 
+    pub fn shm_size(mut self, size: impl AsRef<str>) -> Self {
+        self.options.push(CmdOption::new("shm-size", size));
+        self
+    }
+
     /// Inherit environment variable `key` if it's set and valid.
     pub fn inherit_env(mut self, key: impl AsRef<str>) -> Self {
         let key = key.as_ref();
