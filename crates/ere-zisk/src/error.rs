@@ -1,9 +1,16 @@
-use std::{io, path::PathBuf, process::ExitStatus};
+use crate::RomDigest;
+use std::{io, num::ParseIntError, path::PathBuf, process::ExitStatus};
 use thiserror::Error;
 use zkvm_interface::zkVMError;
 
 impl From<ZiskError> for zkVMError {
     fn from(value: ZiskError) -> Self {
+        zkVMError::Other(Box::new(value))
+    }
+}
+
+impl From<CommonError> for zkVMError {
+    fn from(value: CommonError) -> Self {
         zkVMError::Other(Box::new(value))
     }
 }
@@ -101,13 +108,6 @@ pub enum ProveError {
     TempDir(io::Error),
     #[error("Failed to serialize input: {0}")]
     SerializeInput(Box<dyn std::error::Error + Send + Sync>),
-    #[error("Failed to execute `cargo-zisk rom-setup`: {source}")]
-    CargoZiskRomSetup {
-        #[source]
-        source: io::Error,
-    },
-    #[error("`cargo-zisk rom-setup` failed with status: {status}")]
-    CargoZiskRomSetupFailed { status: ExitStatus },
     #[error("Failed to execute `cargo prove`: {source}")]
     CargoZiskProve {
         #[source]
@@ -117,7 +117,7 @@ pub enum ProveError {
     CargoZiskProveFailed { status: ExitStatus },
     #[error("Serialising proof with `bincode` failed: {0}")]
     Bincode(#[from] bincode::Error),
-    #[error("Failed to obtain prove lock")]
+    #[error("Prove lock poisoned")]
     ProveLockPoisoned,
 }
 
@@ -134,4 +134,37 @@ pub enum VerifyError {
     },
     #[error("Invalid proof: {0}")]
     InvalidProof(String),
+    #[error("Invalid public values: {0}")]
+    DeserializePublicValues(serde_json::Error),
+    #[error("Invalid public value: {0}")]
+    ParsePublicValue(ParseIntError),
+    #[error("Unexpected ROM digest")]
+    UnexpectedRomDigest {
+        preprocessed: RomDigest,
+        public_values: Vec<u64>,
+    },
+}
+
+#[derive(Debug, Error)]
+pub enum CommonError {
+    #[error("IO failure in temporary directory: {0}")]
+    TempDir(io::Error),
+    #[error("ROM digest map poisoned")]
+    RomDigestMapPoisoned,
+    #[error("Failed to execute `cargo-zisk rom-setup`: {source}")]
+    CargoZiskRomSetup {
+        #[source]
+        source: io::Error,
+    },
+    #[error("`cargo-zisk rom-setup` failed with status: {status}")]
+    CargoZiskRomSetupFailed { status: ExitStatus },
+    #[error("Failed to find ROM digest")]
+    RomDigestNotFound,
+    #[error("Failed to execute `cargo-zisk check-setup`: {source}")]
+    CargoZiskCheckSetup {
+        #[source]
+        source: io::Error,
+    },
+    #[error("`cargo-zisk check-setup` failed with status: {status}")]
+    CargoZiskCheckSetupFailed { status: ExitStatus },
 }
