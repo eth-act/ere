@@ -216,16 +216,20 @@ mod tests {
         BasicProgramInputGen, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
 
-    static BASIC_PRORGAM: OnceLock<OpenVMProgram> = OnceLock::new();
-
     fn basic_program() -> OpenVMProgram {
-        BASIC_PRORGAM
+        static PROGRAM: OnceLock<OpenVMProgram> = OnceLock::new();
+        PROGRAM
             .get_or_init(|| {
                 OPENVM_TARGET
                     .compile(&testing_guest_directory("openvm", "basic"))
                     .unwrap()
             })
             .clone()
+    }
+
+    fn basic_program_ere_openvm() -> &'static EreOpenVM {
+        static ERE_OPENVM: OnceLock<EreOpenVM> = OnceLock::new();
+        ERE_OPENVM.get_or_init(|| EreOpenVM::new(basic_program(), ProverResourceType::Cpu).unwrap())
     }
 
     #[test]
@@ -236,8 +240,7 @@ mod tests {
 
     #[test]
     fn test_execute() {
-        let program = basic_program();
-        let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = basic_program_ere_openvm();
 
         let inputs = BasicProgramInputGen::valid();
         run_zkvm_execute(&zkvm, &inputs);
@@ -245,8 +248,7 @@ mod tests {
 
     #[test]
     fn test_execute_invalid_inputs() {
-        let program = basic_program();
-        let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = basic_program_ere_openvm();
 
         for inputs in [
             BasicProgramInputGen::empty(),
@@ -259,8 +261,7 @@ mod tests {
 
     #[test]
     fn test_prove() {
-        let program = basic_program();
-        let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = basic_program_ere_openvm();
 
         let inputs = BasicProgramInputGen::valid();
         run_zkvm_prove(&zkvm, &inputs);
@@ -268,8 +269,7 @@ mod tests {
 
     #[test]
     fn test_prove_invalid_inputs() {
-        let program = basic_program();
-        let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = basic_program_ere_openvm();
 
         for inputs in [
             BasicProgramInputGen::empty(),
