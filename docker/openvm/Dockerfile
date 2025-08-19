@@ -14,11 +14,7 @@ RUN chmod +x /tmp/install_openvm_sdk.sh
 # and installs cargo-openvm.
 RUN /tmp/install_openvm_sdk.sh && rm /tmp/install_openvm_sdk.sh
 
-# The specific Rust toolchain for OpenVM is now installed.
-# cargo-openvm is installed in $CARGO_HOME/bin, which is already in PATH from ere-base.
-ENV OPENVM_TOOLCHAIN_VERSION="nightly-2025-02-14"
-
 # Verify cargo-openvm is accessible with the correct toolchain
-RUN cargo "+${OPENVM_TOOLCHAIN_VERSION}" openvm --version
+RUN cargo openvm --version
 
 CMD ["/bin/bash"]

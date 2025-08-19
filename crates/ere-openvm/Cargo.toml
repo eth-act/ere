@@ -13,6 +13,7 @@ toml.workspace = true
 # OpenVM dependencies
 openvm-build.workspace = true
 openvm-circuit.workspace = true
+openvm-continuations.workspace = true
 openvm-sdk.workspace = true
 openvm-stark-sdk.workspace = true
 openvm-transpiler.workspace = true

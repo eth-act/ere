@@ -1,9 +1,16 @@
+use openvm_sdk::{SdkError, commit::AppExecutionCommit};
 use std::{io, path::PathBuf};
 use thiserror::Error;
 use zkvm_interface::zkVMError;
 
 impl From<OpenVMError> for zkVMError {
     fn from(value: OpenVMError) -> Self {
+        zkVMError::Other(Box::new(value))
+    }
+}
+
+impl From<CommonError> for zkVMError {
+    fn from(value: CommonError) -> Self {
         zkVMError::Other(Box::new(value))
     }
 }
@@ -36,27 +43,50 @@ pub enum CompileError {
     #[error("Failed to read OpenVM's config file at {path}: {source}")]
     ReadConfigFailed { source: io::Error, path: PathBuf },
     #[error("Failed to deserialize OpenVM's config file: {0}")]
-    DeserializeConfigFailed(Box<dyn std::error::Error + Send + Sync + 'static>),
-    #[error("Failed to decode elf: {0}")]
-    DecodeFailed(Box<dyn std::error::Error + Send + Sync + 'static>),
-    #[error("Failed to transpile elf: {0}")]
-    TranspileFailed(Box<dyn std::error::Error + Send + Sync + 'static>),
+    DeserializeConfigFailed(toml::de::Error),
 }
 
 #[derive(Debug, Error)]
 pub enum ExecuteError {
     #[error("OpenVM execute failed: {0}")]
-    Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
+    Execute(#[source] SdkError),
+    #[error(transparent)]
+    Common(#[from] CommonError),
 }
 
 #[derive(Debug, Error)]
 pub enum ProveError {
     #[error("OpenVM prove failed: {0}")]
-    Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
+    Prove(#[source] SdkError),
+    #[error("Unexpected app commit: {proved:?}, expected: {preprocessed:?}")]
+    UnexpectedAppCommit {
+        preprocessed: AppExecutionCommit,
+        proved: AppExecutionCommit,
+    },
+    #[error("Serialize proof failed: {0}")]
+    SerializeProof(io::Error),
+    #[error(transparent)]
+    Common(#[from] CommonError),
 }
 
 #[derive(Debug, Error)]
 pub enum VerifyError {
     #[error("OpenVM verification failed: {0}")]
-    Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
+    Verify(#[source] SdkError),
+    #[error("Deserialize proof failed: {0}")]
+    DeserializeProof(io::Error),
+}
+
+#[derive(Debug, Error)]
+pub enum CommonError {
+    #[error("Initialize SDK failed: {0}")]
+    SdkInit(SdkError),
+    #[error("Decode elf failed: {0}")]
+    ElfDecode(Box<dyn std::error::Error + Send + Sync + 'static>),
+    #[error("Transpile elf failed: {0}")]
+    Transpile(SdkError),
+    #[error("Agg keygen failed: {0}")]
+    AggKeyGen(SdkError),
+    #[error("Initialize prover failed: {0}")]
+    ProverInit(SdkError),
 }

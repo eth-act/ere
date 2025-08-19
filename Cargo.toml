@@ -57,11 +57,12 @@ jolt-sdk = { git = "https://github.com/a16z/jolt.git", rev = "55b9830a3944dde55d
 nexus-sdk = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.4" }
 
 # OpenVM dependencies
-openvm-build = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.0", default-features = false }
-openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.0", default-features = false }
-openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.0", default-features = false }
-openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.1.0" }
-openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.2.0", default-features = false }
+openvm-build = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0-rc.4", default-features = false }
+openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0-rc.4", default-features = false }
+openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0-rc.4", default-features = false }
+openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0-rc.4", default-features = false }
+openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0-rc.1" }
+openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0-rc.4", default-features = false }
 
 # Pico dependencies
 pico-vm = { git = "https://github.com/brevis-network/pico.git", tag = "v1.1.4" }
