@@ -29,8 +29,8 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Install rustup.
-# RUST_VERSION can be 1.85, stable, nightly, etc
-ARG RUST_VERSION=1.85.0 
+# RUST_VERSION can be 1.86, stable, nightly, etc
+ARG RUST_VERSION=1.86.0 
 
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
