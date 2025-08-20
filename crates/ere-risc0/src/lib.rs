@@ -43,7 +43,7 @@ pub struct Risc0ProofWithPublicValues {
 }
 
 impl TryFrom<Receipt> for Risc0ProofWithPublicValues {
-    type Error = Receipt;
+    type Error = zkVMError;
 
     fn try_from(receipt: Receipt) -> Result<Self, Self::Error> {
         match receipt.inner {
@@ -53,7 +53,16 @@ impl TryFrom<Receipt> for Risc0ProofWithPublicValues {
                 journal: receipt.journal,
             }),
             // Rejects other variants
-            _ => Err(receipt),
+            _ => {
+                let variant_name = format!("{:?}", receipt.inner)
+                    .split('(')
+                    .next()
+                    .unwrap()
+                    .to_string();
+                Err(zkVMError::other(format!(
+                    "Unexpected inner receipt variant: {variant_name}"
+                )))
+            }
         }
     }
 }
@@ -80,10 +89,8 @@ impl EreRisc0 {
                 // If not using Metal, we use the bento stack which requires
                 // Docker to spin up the proving services that use Cuda.
                 if !cfg!(feature = "metal") {
-                    prove::bento::build_bento_images()
-                        .map_err(|err| zkVMError::Other(Box::new(err)))?;
-                    prove::bento::docker_compose_bento_up()
-                        .map_err(|err| zkVMError::Other(Box::new(err)))?;
+                    prove::bento::build_bento_images().map_err(zkVMError::other)?;
+                    prove::bento::docker_compose_bento_up().map_err(zkVMError::other)?;
                 }
             }
             ProverResourceType::Network(_) => {
@@ -101,13 +108,13 @@ impl zkVM for EreRisc0 {
     fn execute(&self, inputs: &Input) -> Result<ProgramExecutionReport, zkVMError> {
         let executor = default_executor();
         let mut env = ExecutorEnv::builder();
-        serialize_inputs(&mut env, inputs).map_err(|err| zkVMError::Other(err.into()))?;
-        let env = env.build().map_err(|err| zkVMError::Other(err.into()))?;
+        serialize_inputs(&mut env, inputs).map_err(zkVMError::other)?;
+        let env = env.build().map_err(zkVMError::other)?;
 
         let start = Instant::now();
         let session_info = executor
             .execute(env, &self.program.elf)
-            .map_err(|err| zkVMError::Other(err.into()))?;
+            .map_err(zkVMError::other)?;
         Ok(ProgramExecutionReport {
             total_num_cycles: session_info.cycles() as u64,
             execution_duration: start.elapsed(),
@@ -136,24 +143,20 @@ impl zkVM for EreRisc0 {
             }
         };
 
-        let proof = borsh::to_vec(
-            &Risc0ProofWithPublicValues::try_from(receipt)
-                .map_err(|_| zkVMError::Other("Unexpected inner receipt variant".into()))?,
-        )
-        .map_err(|err| zkVMError::Other(err.into()))?;
+        let proof = borsh::to_vec(&Risc0ProofWithPublicValues::try_from(receipt)?)
+            .map_err(zkVMError::other)?;
 
         Ok((proof, ProgramProvingReport::new(proving_time)))
     }
 
     fn verify(&self, proof: &[u8]) -> Result<(), zkVMError> {
-        let receipt = Receipt::from(
-            borsh::from_slice::<Risc0ProofWithPublicValues>(proof)
-                .map_err(|err| zkVMError::Other(Box::new(err)))?,
-        );
+        let receipt: Receipt = borsh::from_slice::<Risc0ProofWithPublicValues>(proof)
+            .map_err(zkVMError::other)?
+            .into();
 
         receipt
             .verify(self.program.image_id)
-            .map_err(|err| zkVMError::Other(Box::new(err)))
+            .map_err(zkVMError::other)
     }
 
     fn name(&self) -> &'static str {

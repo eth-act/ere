@@ -84,6 +84,12 @@ pub enum zkVMError {
     Other(#[from] Box<dyn std::error::Error + Send + Sync + 'static>),
 }
 
+impl zkVMError {
+    pub fn other(error: impl Into<Box<dyn std::error::Error + Send + Sync + 'static>>) -> Self {
+        Self::Other(error.into())
+    }
+}
+
 #[allow(non_camel_case_types)]
 #[auto_impl::auto_impl(&, Arc, Box)]
 /// zkVM trait to abstract away the differences between each zkVM.
