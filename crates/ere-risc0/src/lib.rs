@@ -42,27 +42,15 @@ pub struct Risc0ProofWithPublicValues {
     pub journal: Journal,
 }
 
-impl TryFrom<Receipt> for Risc0ProofWithPublicValues {
-    type Error = zkVMError;
-
-    fn try_from(receipt: Receipt) -> Result<Self, Self::Error> {
+impl From<Receipt> for Risc0ProofWithPublicValues {
+    fn from(receipt: Receipt) -> Self {
         match receipt.inner {
-            // Accepts only `Succinct` variant
-            InnerReceipt::Succinct(inner) => Ok(Self {
+            // We always use `ProverOpts::succinct()`.
+            InnerReceipt::Succinct(inner) => Self {
                 receipt: inner,
                 journal: receipt.journal,
-            }),
-            // Rejects other variants
-            _ => {
-                let variant_name = format!("{:?}", receipt.inner)
-                    .split('(')
-                    .next()
-                    .unwrap()
-                    .to_string();
-                Err(zkVMError::other(format!(
-                    "Unexpected inner receipt variant: {variant_name}"
-                )))
-            }
+            },
+            _ => unreachable!(),
         }
     }
 }
@@ -143,8 +131,8 @@ impl zkVM for EreRisc0 {
             }
         };
 
-        let proof = borsh::to_vec(&Risc0ProofWithPublicValues::try_from(receipt)?)
-            .map_err(zkVMError::other)?;
+        let proof =
+            borsh::to_vec(&Risc0ProofWithPublicValues::from(receipt)).map_err(zkVMError::other)?;
 
         Ok((proof, ProgramProvingReport::new(proving_time)))
     }
