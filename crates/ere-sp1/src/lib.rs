@@ -107,7 +107,9 @@ impl Compiler for RV32_IM_SUCCINCT_ZKVM_ELF {
     type Program = Vec<u8>;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        compile::compile(guest_directory).map_err(SP1Error::from)
+        let toolchain =
+            std::env::var("ERE_GUEST_TOOLCHAIN").unwrap_or_else(|_error| "succinct".into());
+        compile::compile(guest_directory, &toolchain).map_err(SP1Error::from)
     }
 }
 
