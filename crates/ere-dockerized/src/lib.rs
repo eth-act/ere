@@ -374,10 +374,9 @@ impl zkVM for EreDockerizedzkVM {
                 // spin up, so we don't need to set here.
                 ErezkVM::SP1 => cmd.mount_docker_socket().network("host"),
                 ErezkVM::Risc0 => cmd
-                    .mount_docker_socket()
-                    .network("host")
-                    .inherit_env("CUDA_VISIBLE_DEVICES")
-                    .inherit_env("SEGMENT_SIZE")
+                    .gpus("all")
+                    .inherit_env("RISC0_DEFAULT_PROVER_NUM_GPUS")
+                    .inherit_env("RISC0_SEGMENT_PO2")
                     .inherit_env("RISC0_KECCAK_PO2"),
                 ErezkVM::Zisk => cmd.gpus("all"),
                 _ => cmd,

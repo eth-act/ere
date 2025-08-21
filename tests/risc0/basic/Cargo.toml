@@ -6,5 +6,5 @@ edition = "2021"
 [workspace]
 
 [dependencies]
-risc0-zkvm = { version = "2.3.1", default-features = false, features = ['std', 'unstable'] }
+risc0-zkvm = { git = "https://github.com/risc0/risc0.git", tag = "v3.0.0", default-features = false, features = ["std", "unstable"] }
 test-utils = { path = "../../../crates/test-utils" }

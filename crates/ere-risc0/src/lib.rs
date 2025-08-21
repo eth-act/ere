@@ -1,13 +1,16 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use crate::{compile::compile_risc0_program, error::Risc0Error};
+use crate::{
+    compile::{Risc0Program, compile_risc0_program},
+    error::Risc0Error,
+};
 use borsh::{BorshDeserialize, BorshSerialize};
 use risc0_zkvm::{
-    ExecutorEnv, ExecutorEnvBuilder, InnerReceipt, Journal, Receipt, ReceiptClaim, SuccinctReceipt,
-    default_executor,
+    DefaultProver, ExecutorEnv, ExecutorEnvBuilder, ExternalProver, InnerReceipt, Journal,
+    ProverOpts, Receipt, ReceiptClaim, SuccinctReceipt, default_executor, default_prover,
 };
 use serde::{Deserialize, Serialize};
-use std::{path::Path, time::Instant};
+use std::{env, path::Path, rc::Rc, time::Instant};
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
     zkVM, zkVMError,
@@ -17,9 +20,13 @@ include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 mod compile;
 mod error;
-mod prove;
 
-pub use compile::Risc0Program;
+/// Default logarithmic segment size.
+/// Copied from https://github.com/risc0/risc0/blob/v3.0.0/risc0/circuit/rv32im/src/execute/mod.rs#L39.
+const DEFAULT_SEGMENT_PO2: usize = 20;
+/// Default logarithmic keccak size.
+/// Copied from https://github.com/risc0/risc0/blob/v3.0.0/risc0/circuit/keccak/src/lib.rs#L27.
+const DEFAULT_KECCAK_PO2: usize = 17;
 
 #[allow(non_camel_case_types)]
 pub struct RV32_IM_RISC0_ZKVM_ELF;
@@ -64,6 +71,8 @@ impl From<Risc0ProofWithPublicValues> for Receipt {
 pub struct EreRisc0 {
     program: <RV32_IM_RISC0_ZKVM_ELF as Compiler>::Program,
     resource: ProverResourceType,
+    segment_po2: usize,
+    keccak_po2: usize,
 }
 
 impl EreRisc0 {
@@ -71,24 +80,29 @@ impl EreRisc0 {
         program: <RV32_IM_RISC0_ZKVM_ELF as Compiler>::Program,
         resource: ProverResourceType,
     ) -> Result<Self, zkVMError> {
-        match resource {
-            ProverResourceType::Cpu => {}
-            ProverResourceType::Gpu => {
-                // If not using Metal, we use the bento stack which requires
-                // Docker to spin up the proving services that use Cuda.
-                if !cfg!(feature = "metal") {
-                    prove::bento::build_bento_images().map_err(zkVMError::other)?;
-                    prove::bento::docker_compose_bento_up().map_err(zkVMError::other)?;
-                }
-            }
-            ProverResourceType::Network(_) => {
-                panic!(
-                    "Network proving not yet implemented for RISC Zero. Use CPU or GPU resource type."
-                );
-            }
+        if matches!(resource, ProverResourceType::Network(_)) {
+            panic!(
+                "Network proving not yet implemented for RISC Zero. Use CPU or GPU resource type."
+            );
         }
 
-        Ok(Self { program, resource })
+        let [segment_po2, keccak_po2] = [
+            ("RISC0_SEGMENT_PO2", DEFAULT_SEGMENT_PO2),
+            ("RISC0_KECCAK_PO2", DEFAULT_KECCAK_PO2),
+        ]
+        .map(|(key, default)| {
+            env::var(key)
+                .ok()
+                .and_then(|po2| po2.parse::<usize>().ok())
+                .unwrap_or(default)
+        });
+
+        Ok(Self {
+            program,
+            resource,
+            segment_po2,
+            keccak_po2,
+        })
     }
 }
 
@@ -111,17 +125,20 @@ impl zkVM for EreRisc0 {
     }
 
     fn prove(&self, inputs: &Input) -> Result<(Vec<u8>, ProgramProvingReport), zkVMError> {
-        let (receipt, proving_time) = match self.resource {
-            ProverResourceType::Cpu => prove::default::prove(&self.program, inputs)?,
+        let prover = match self.resource {
+            ProverResourceType::Cpu => Rc::new(ExternalProver::new("ipc", "r0vm")),
             ProverResourceType::Gpu => {
                 if cfg!(feature = "metal") {
-                    // The default prover selects the prover depending on the
-                    // feature flag, if non enabled, it executes the pre-installed
-                    // binary to generate the proof; if `metal` is enabled, it
-                    // uses the local built binary.
-                    prove::default::prove(&self.program, inputs)?
+                    // When `metal` is enabled, we use the `LocalProver` to do
+                    // proving. but it's not public so we use `default_prover`
+                    // to instantiate it.
+                    default_prover()
                 } else {
-                    prove::bento::prove(&self.program, inputs)?
+                    // The `DefaultProver` uses `r0vm-cuda` to spawn multiple
+                    // workers to do multi-gpu proving.
+                    // It uses env `RISC0_DEFAULT_PROVER_NUM_GPUS` to determine
+                    // how many available GPUs there are.
+                    Rc::new(DefaultProver::new("r0vm-cuda").map_err(zkVMError::other)?)
                 }
             }
             ProverResourceType::Network(_) => {
@@ -131,9 +148,27 @@ impl zkVM for EreRisc0 {
             }
         };
 
-        let proof =
-            borsh::to_vec(&Risc0ProofWithPublicValues::from(receipt)).map_err(zkVMError::other)?;
+        let mut env = ExecutorEnv::builder();
+        serialize_inputs(&mut env, inputs).map_err(zkVMError::other)?;
+        let env = env
+            .segment_limit_po2(self.segment_po2 as _)
+            .keccak_max_po2(self.keccak_po2 as _)
+            .map_err(zkVMError::other)?
+            .build()
+            .map_err(zkVMError::other)?;
 
+        let now = std::time::Instant::now();
+        let prove_info = prover
+            .prove_with_opts(
+                env,
+                &self.program.elf,
+                &ProverOpts::succinct().with_segment_po2_max(self.segment_po2),
+            )
+            .map_err(zkVMError::other)?;
+        let proving_time = now.elapsed();
+
+        let proof = borsh::to_vec(&Risc0ProofWithPublicValues::from(prove_info.receipt))
+            .map_err(zkVMError::other)?;
         Ok((proof, ProgramProvingReport::new(proving_time)))
     }
 
@@ -153,16 +188,6 @@ impl zkVM for EreRisc0 {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
-    }
-}
-
-impl Drop for EreRisc0 {
-    fn drop(&mut self) {
-        if matches!(self.resource, ProverResourceType::Gpu) && !cfg!(feature = "metal") {
-            prove::bento::docker_compose_bento_down().unwrap_or_else(|err| {
-                tracing::error!("Failed to shutdown bento docker compose sevices\n{err}")
-            })
-        }
     }
 }
 
