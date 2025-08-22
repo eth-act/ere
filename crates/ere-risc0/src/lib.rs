@@ -6,11 +6,11 @@ use crate::{
 };
 use borsh::{BorshDeserialize, BorshSerialize};
 use risc0_zkvm::{
-    DefaultProver, ExecutorEnv, ExecutorEnvBuilder, ExternalProver, InnerReceipt, Journal,
-    ProverOpts, Receipt, ReceiptClaim, SuccinctReceipt, default_executor, default_prover,
+    DEFAULT_MAX_PO2, DefaultProver, ExecutorEnv, ExecutorEnvBuilder, ExternalProver, InnerReceipt,
+    Journal, ProverOpts, Receipt, ReceiptClaim, SuccinctReceipt, default_executor, default_prover,
 };
 use serde::{Deserialize, Serialize};
-use std::{env, path::Path, rc::Rc, time::Instant};
+use std::{env, ops::RangeInclusive, path::Path, rc::Rc, time::Instant};
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
     zkVM, zkVMError,
@@ -21,12 +21,31 @@ include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 mod compile;
 mod error;
 
-/// Default logarithmic segment size.
-/// Copied from https://github.com/risc0/risc0/blob/v3.0.0/risc0/circuit/rv32im/src/execute/mod.rs#L39.
+/// Default logarithmic segment size from [`DEFAULT_SEGMENT_LIMIT_PO2`].
+///
+/// [`DEFAULT_SEGMENT_LIMIT_PO2`]: https://github.com/risc0/risc0/blob/v3.0.0/risc0/circuit/rv32im/src/execute/mod.rs#L39.
 const DEFAULT_SEGMENT_PO2: usize = 20;
-/// Default logarithmic keccak size.
-/// Copied from https://github.com/risc0/risc0/blob/v3.0.0/risc0/circuit/keccak/src/lib.rs#L27.
+
+/// Supported range of logarithmic segment size.
+///
+/// The minimum is by [`MIN_LIFT_PO2`] to be lifted.
+///
+/// The maximum is by [`DEFAULT_MAX_PO2`], although the real maximum is `24`,
+/// but it requires us to set the `control_ids` manually in the `ProverOpts`.
+///
+/// [`MIN_LIFT_PO2`]: https://github.com/risc0/risc0/blob/v3.0.0/risc0/circuit/recursion/src/control_id.rs#L19
+/// [`DEFAULT_MAX_PO2`]: https://github.com/risc0/risc0/blob/v3.0.0/risc0/zkvm/src/receipt.rs#L884
+const SEGMENT_PO2_RANGE: RangeInclusive<usize> = 14..=DEFAULT_MAX_PO2;
+
+/// Default logarithmic keccak size from [`KECCAK_DEFAULT_PO2`].
+///
+/// [`KECCAK_DEFAULT_PO2`]: https://github.com/risc0/risc0/blob/v3.0.0/risc0/circuit/keccak/src/lib.rs#L27.
 const DEFAULT_KECCAK_PO2: usize = 17;
+
+/// Supported range of logarithmic keccak size from [`KECCAK_PO2_RANGE`].
+///
+/// [`KECCAK_PO2_RANGE`]: https://github.com/risc0/risc0/blob/v3.0.0/risc0/circuit/keccak/src/lib.rs#L29.
+const KECCAK_PO2_RANGE: RangeInclusive<usize> = 14..=18;
 
 #[allow(non_camel_case_types)]
 pub struct RV32_IM_RISC0_ZKVM_ELF;
@@ -87,14 +106,18 @@ impl EreRisc0 {
         }
 
         let [segment_po2, keccak_po2] = [
-            ("RISC0_SEGMENT_PO2", DEFAULT_SEGMENT_PO2),
-            ("RISC0_KECCAK_PO2", DEFAULT_KECCAK_PO2),
+            ("RISC0_SEGMENT_PO2", DEFAULT_SEGMENT_PO2, SEGMENT_PO2_RANGE),
+            ("RISC0_KECCAK_PO2", DEFAULT_KECCAK_PO2, KECCAK_PO2_RANGE),
         ]
-        .map(|(key, default)| {
-            env::var(key)
+        .map(|(key, default, range)| {
+            let val = env::var(key)
                 .ok()
                 .and_then(|po2| po2.parse::<usize>().ok())
-                .unwrap_or(default)
+                .unwrap_or(default);
+            if !range.contains(&val) {
+                panic!("Unsupported po2 value {val} of {key}, expected in range {range:?}")
+            }
+            val
         });
 
         Ok(Self {
@@ -159,11 +182,7 @@ impl zkVM for EreRisc0 {
 
         let now = std::time::Instant::now();
         let prove_info = prover
-            .prove_with_opts(
-                env,
-                &self.program.elf,
-                &ProverOpts::succinct().with_segment_po2_max(self.segment_po2),
-            )
+            .prove_with_opts(env, &self.program.elf, &ProverOpts::succinct())
             .map_err(zkVMError::other)?;
         let proving_time = now.elapsed();
 
