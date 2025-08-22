@@ -1,3 +1,4 @@
+use crate::compile_stock_rust::stock_rust_compile;
 use crate::error::CompileError;
 use std::process::ExitStatus;
 use std::{fs, path::Path, path::PathBuf, process::Command};
@@ -87,7 +88,12 @@ pub fn compile(guest_directory: &Path, toolchain: &String) -> Result<Vec<u8>, Co
 
     let (status, elf_path) = match toolchain.as_str() {
         "succinct" => sp1_compile(guest_directory, temp_output_dir_path)?,
-        _ => unimplemented!(),
+        _ => stock_rust_compile(
+            guest_directory,
+            temp_output_dir_path,
+            &program_name,
+            toolchain,
+        )?,
     };
 
     if !status.success() {
@@ -117,6 +123,7 @@ pub fn compile(guest_directory: &Path, toolchain: &String) -> Result<Vec<u8>, Co
 #[cfg(test)]
 mod tests {
     use crate::RV32_IM_SUCCINCT_ZKVM_ELF;
+    use crate::compile::compile;
     use test_utils::host::testing_guest_directory;
     use zkvm_interface::Compiler;
 
@@ -124,6 +131,12 @@ mod tests {
     fn test_compiler_impl() {
         let guest_directory = testing_guest_directory("sp1", "basic");
         let elf_bytes = RV32_IM_SUCCINCT_ZKVM_ELF.compile(&guest_directory).unwrap();
+        assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
+    }
+    #[test]
+    fn test_stock_compiler_impl() {
+        let guest_directory = testing_guest_directory("sp1", "stock_nightly_no_std");
+        let elf_bytes = compile(&guest_directory, &"nightly".to_string()).unwrap();
         assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
     }
 }

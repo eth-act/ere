@@ -15,6 +15,7 @@ use zkvm_interface::{
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 mod compile;
+mod compile_stock_rust;
 
 mod error;
 use error::{ExecuteError, ProveError, SP1Error, VerifyError};
@@ -229,6 +230,7 @@ fn serialize_inputs(stdin: &mut SP1Stdin, inputs: &Input) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::compile::compile;
     use std::{panic, sync::OnceLock};
     use test_utils::host::{
         BasicProgramInputGen, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
@@ -253,6 +255,15 @@ mod tests {
 
         let inputs = BasicProgramInputGen::valid();
         run_zkvm_execute(&zkvm, &inputs);
+    }
+
+    #[test]
+    fn test_execute_nightly() {
+        let guest_directory = testing_guest_directory("sp1", "stock_nightly_no_std");
+        let program = compile(&guest_directory, &"nightly".to_string()).unwrap();
+        let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
+
+        run_zkvm_execute(&zkvm, &Input::new());
     }
 
     #[test]
