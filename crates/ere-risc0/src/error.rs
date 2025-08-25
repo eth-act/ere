@@ -27,6 +27,12 @@ pub enum CompileError {
     },
     #[error("`risc0_build::build_package` succeeded but failed to find guest")]
     Risc0BuildMissingGuest,
+    #[error("Failed to read file at {path}: {source}")]
+    ReadFile {
+        path: PathBuf,
+        #[source]
+        source: std::io::Error,
+    },
 }
 
 impl CompileError {

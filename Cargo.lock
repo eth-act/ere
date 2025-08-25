@@ -2359,6 +2359,7 @@ dependencies = [
  "borsh",
  "build-utils",
  "cargo_metadata 0.19.2",
+ "risc0-binfmt",
  "risc0-build",
  "risc0-zkvm",
  "serde",
