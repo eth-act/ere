@@ -2,6 +2,7 @@
 
 use crate::{
     compile::{Risc0Program, compile_risc0_program},
+    compile_stock_rust::compile_risc0_program_stock_rust,
     error::Risc0Error,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -23,6 +24,8 @@ use zkvm_interface::{
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 mod compile;
+mod compile_stock_rust;
+
 mod error;
 
 /// Default logarithmic segment size from [`DEFAULT_SEGMENT_LIMIT_PO2`].
@@ -60,7 +63,12 @@ impl Compiler for RV32_IM_RISC0_ZKVM_ELF {
     type Program = Risc0Program;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        compile_risc0_program(guest_directory).map_err(Risc0Error::from)
+        let toolchain =
+            env::var("ERE_GUEST_TOOLCHAIN").unwrap_or_else(|_error| "risc0".into());
+        match toolchain.as_str() {
+            "risc0" => Ok(compile_risc0_program(guest_directory)?),
+            _ => Ok(compile_risc0_program_stock_rust(guest_directory, &toolchain)?),
+        }
     }
 }
 
@@ -306,6 +314,15 @@ mod tests {
         let io = BasicProgramIo::valid();
         let public_values = run_zkvm_execute(&zkvm, &io);
         assert_eq!(io.deserialize_outputs(&zkvm, &public_values), io.outputs());
+    }
+
+    #[test]
+    fn test_execute_nightly() {
+        let guest_directory = testing_guest_directory("risc0", "stock_nightly_no_std");
+        let program = compile_risc0_program_stock_rust(&guest_directory, &"nightly".to_string()).unwrap();
+        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
+
+        run_zkvm_execute(&zkvm, &Input::new());
     }
 
     #[test]
