@@ -17,6 +17,7 @@ tracing.workspace = true
 # Risc0 dependencies
 risc0-build = { workspace = true, features = ["unstable"] }
 risc0-zkvm = { workspace = true, features = ["client", "unstable"] }
+risc0-binfmt.workspace = true
 
 # Local dependencies
 zkvm-interface.workspace = true
