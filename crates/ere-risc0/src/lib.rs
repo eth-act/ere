@@ -8,8 +8,12 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use risc0_zkvm::{
     DEFAULT_MAX_PO2, DefaultProver, ExecutorEnv, ExecutorEnvBuilder, ExternalProver, InnerReceipt,
     Journal, ProverOpts, Receipt, ReceiptClaim, SuccinctReceipt, default_executor, default_prover,
+    serde::{Deserializer, WordRead},
 };
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde::{
+    Deserialize, Serialize,
+    de::{DeserializeOwned, Error},
+};
 use std::{env, io::Read, ops::RangeInclusive, path::Path, rc::Rc, time::Instant};
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof,
@@ -141,8 +145,7 @@ impl zkVM for EreRisc0 {
             .execute(env, &self.program.elf)
             .map_err(zkVMError::other)?;
 
-        // TODO: Public values
-        let public_values = Vec::new();
+        let public_values = session_info.journal.bytes.clone();
 
         Ok((
             public_values,
@@ -196,11 +199,9 @@ impl zkVM for EreRisc0 {
             .map_err(zkVMError::other)?;
         let proving_time = now.elapsed();
 
+        let public_values = prove_info.receipt.journal.bytes.clone();
         let proof = borsh::to_vec(&Risc0ProofWithPublicValues::from(prove_info.receipt))
             .map_err(zkVMError::other)?;
-
-        // TODO: Public values
-        let public_values = Vec::new();
 
         Ok((
             public_values,
@@ -218,8 +219,7 @@ impl zkVM for EreRisc0 {
             .verify(self.program.image_id)
             .map_err(zkVMError::other)?;
 
-        // TODO: Public values
-        let public_values = Vec::new();
+        let public_values = receipt.journal.bytes.clone();
 
         Ok(public_values)
     }
@@ -232,8 +232,29 @@ impl zkVM for EreRisc0 {
         SDK_VERSION
     }
 
-    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, _reader: R) -> Result<T, zkVMError> {
-        todo!()
+    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, reader: R) -> Result<T, zkVMError> {
+        struct WordReadAdapter<R>(R);
+
+        impl<R: Read> WordRead for WordReadAdapter<R> {
+            fn read_words(&mut self, words: &mut [u32]) -> risc0_zkvm::serde::Result<()> {
+                let bytes = bytemuck::cast_slice_mut(words);
+                self.0
+                    .read_exact(bytes)
+                    .map_err(risc0_zkvm::serde::Error::custom)
+            }
+
+            fn read_padded_bytes(&mut self, bytes: &mut [u8]) -> risc0_zkvm::serde::Result<()> {
+                let mut padded_bytes = vec![0u8; bytes.len().next_multiple_of(4) - bytes.len()];
+                self.0
+                    .read_exact(bytes)
+                    .map_err(risc0_zkvm::serde::Error::custom)?;
+                self.0
+                    .read_exact(&mut padded_bytes)
+                    .map_err(risc0_zkvm::serde::Error::custom)
+            }
+        }
+
+        T::deserialize(&mut Deserializer::new(WordReadAdapter(reader))).map_err(zkVMError::other)
     }
 }
 
@@ -262,7 +283,7 @@ mod tests {
     use super::*;
     use std::sync::OnceLock;
     use test_utils::host::{
-        BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+        BasicProgramIo, Io, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
 
     static BASIC_PRORGAM: OnceLock<Risc0Program> = OnceLock::new();
@@ -283,7 +304,8 @@ mod tests {
         let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
         let io = BasicProgramIo::valid();
-        run_zkvm_execute(&zkvm, &io);
+        let public_values = run_zkvm_execute(&zkvm, &io);
+        assert_eq!(io.deserialize_outputs(&zkvm, &public_values), io.outputs());
     }
 
     #[test]
@@ -306,7 +328,8 @@ mod tests {
         let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
         let io = BasicProgramIo::valid();
-        run_zkvm_prove(&zkvm, &io);
+        let public_values = run_zkvm_prove(&zkvm, &io);
+        assert_eq!(io.deserialize_outputs(&zkvm, &public_values), io.outputs());
     }
 
     #[test]

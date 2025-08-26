@@ -8,6 +8,7 @@ license.workspace = true
 [dependencies]
 anyhow.workspace = true
 borsh.workspace = true
+bytemuck.workspace = true
 cargo_metadata.workspace = true
 serde = { workspace = true, features = ["derive", "rc"] }
 thiserror.workspace = true
