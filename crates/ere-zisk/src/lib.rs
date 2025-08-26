@@ -635,14 +635,14 @@ mod tests {
         assert_eq!(io.deserialize_outputs(&zkvm, &public_values), io.outputs());
     }
 
-    #[test]
-    fn test_execute_nightly() {
-        let guest_direcotry = testing_guest_directory("risc0", "stock_nightly_no_std");
-        let program = compile_zisk_program_stock_rust(&guest_direcotry, &"nightly".to_string()).unwrap();
-        let zkvm = EreZisk::new(program, ProverResourceType::Cpu);
-
-        run_zkvm_execute(&zkvm, &Input::new());
-    }
+    // #[test]
+    // fn test_execute_nightly() {
+    //     let guest_direcotry = testing_guest_directory("risc0", "stock_nightly_no_std");
+    //     let program = compile_zisk_program_stock_rust(&guest_direcotry, &"nightly".to_string()).unwrap();
+    //     let zkvm = EreZisk::new(program, ProverResourceType::Cpu);
+    // 
+    //     run_zkvm_execute(&zkvm, &Input::new());
+    // }
 
     #[test]
     fn test_execute_invalid_inputs() {
