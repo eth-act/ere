@@ -1,6 +1,7 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 use crate::error::{CommonError, CompileError, ExecuteError, OpenVMError, ProveError, VerifyError};
+use crate::compile_stock_rust::compile_openvm_program_stock_rust;
 use openvm_build::GuestOptions;
 use openvm_circuit::arch::instructions::exe::VmExe;
 use openvm_continuations::verifier::internal::types::VmStarkProof;
@@ -14,11 +15,13 @@ use openvm_sdk::{
 use openvm_stark_sdk::{config::FriParameters, openvm_stark_backend::p3_field::PrimeField32};
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
-use std::{fs, io::Read, path::Path, sync::Arc, time::Instant};
+use std::{env, fs, io::Read, path::Path, sync::Arc, time::Instant};
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof,
     ProverResourceType, PublicValues, zkVM, zkVMError,
 };
+
+mod compile_stock_rust;
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 mod error;
@@ -37,56 +40,65 @@ impl Compiler for OPENVM_TARGET {
 
     type Program = OpenVMProgram;
 
-    // Inlining `openvm_sdk::Sdk::build` in order to get raw elf bytes.
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        let pkg = openvm_build::get_package(guest_directory);
-        let guest_opts = GuestOptions::default().with_profile("release".to_string());
-        let target_dir = match openvm_build::build_guest_package(&pkg, &guest_opts, None, &None) {
-            Ok(target_dir) => target_dir,
-            Err(Some(code)) => return Err(CompileError::BuildFailed(code))?,
-            Err(None) => return Err(CompileError::BuildSkipped)?,
-        };
-
-        let elf_path = openvm_build::find_unique_executable(guest_directory, target_dir, &None)
-            .map_err(|e| CompileError::UniqueElfNotFound(e.into()))?;
-        let elf = fs::read(&elf_path).map_err(|source| CompileError::ReadElfFailed {
-            source,
-            path: elf_path.to_path_buf(),
-        })?;
-
-        let app_config_path = guest_directory.join("openvm.toml");
-        let app_config = if app_config_path.exists() {
-            let toml = fs::read_to_string(&app_config_path).map_err(|source| {
-                CompileError::ReadConfigFailed {
-                    source,
-                    path: app_config_path.to_path_buf(),
-                }
-            })?;
-            toml::from_str(&toml).map_err(CompileError::DeserializeConfigFailed)?
-        } else {
-            // The default `AppConfig` copied from https://github.com/openvm-org/openvm/blob/ca36de3/crates/cli/src/default.rs#L31.
-            AppConfig {
-                app_fri_params: FriParameters::standard_with_100_bits_conjectured_security(
-                    DEFAULT_APP_LOG_BLOWUP,
-                )
-                .into(),
-                // By default it supports RISCV32IM with IO but no precompiles.
-                app_vm_config: SdkVmConfig::builder()
-                    .system(Default::default())
-                    .rv32i(Default::default())
-                    .rv32m(Default::default())
-                    .io(Default::default())
-                    .build(),
-                leaf_fri_params: FriParameters::standard_with_100_bits_conjectured_security(
-                    DEFAULT_LEAF_LOG_BLOWUP,
-                )
-                .into(),
-                compiler_options: Default::default(),
-            }
-        };
-
-        Ok(OpenVMProgram { elf, app_config })
+        let toolchain =
+            env::var("ERE_GUEST_TOOLCHAIN").unwrap_or_else(|_error| "openvm".into());
+        match toolchain.as_str() {
+            "openvm" => Ok(compile_openvm_program(guest_directory)?),
+            _ => Ok(compile_openvm_program_stock_rust(guest_directory, &toolchain)?),
+        }
     }
+}
+
+// Inlining `openvm_sdk::Sdk::build` in order to get raw elf bytes.
+fn compile_openvm_program(guest_directory: &Path) -> Result<OpenVMProgram, OpenVMError> {
+    let pkg = openvm_build::get_package(guest_directory);
+    let guest_opts = GuestOptions::default().with_profile("release".to_string());
+    let target_dir = match openvm_build::build_guest_package(&pkg, &guest_opts, None, &None) {
+        Ok(target_dir) => target_dir,
+        Err(Some(code)) => return Err(CompileError::BuildFailed(code))?,
+        Err(None) => return Err(CompileError::BuildSkipped)?,
+    };
+
+    let elf_path = openvm_build::find_unique_executable(guest_directory, target_dir, &None)
+        .map_err(|e| CompileError::UniqueElfNotFound(e.into()))?;
+    let elf = fs::read(&elf_path).map_err(|source| CompileError::ReadElfFailed {
+        source,
+        path: elf_path.to_path_buf(),
+    })?;
+
+    let app_config_path = guest_directory.join("openvm.toml");
+    let app_config = if app_config_path.exists() {
+        let toml = fs::read_to_string(&app_config_path).map_err(|source| {
+            CompileError::ReadConfigFailed {
+                source,
+                path: app_config_path.to_path_buf(),
+            }
+        })?;
+        toml::from_str(&toml).map_err(CompileError::DeserializeConfigFailed)?
+    } else {
+        // The default `AppConfig` copied from https://github.com/openvm-org/openvm/blob/ca36de3/crates/cli/src/default.rs#L31.
+        AppConfig {
+            app_fri_params: FriParameters::standard_with_100_bits_conjectured_security(
+                DEFAULT_APP_LOG_BLOWUP,
+            )
+                .into(),
+            // By default it supports RISCV32IM with IO but no precompiles.
+            app_vm_config: SdkVmConfig::builder()
+                .system(Default::default())
+                .rv32i(Default::default())
+                .rv32m(Default::default())
+                .io(Default::default())
+                .build(),
+            leaf_fri_params: FriParameters::standard_with_100_bits_conjectured_security(
+                DEFAULT_LEAF_LOG_BLOWUP,
+            )
+                .into(),
+            compiler_options: Default::default(),
+        }
+    };
+
+    Ok(OpenVMProgram { elf, app_config })
 }
 
 pub struct EreOpenVM {
@@ -246,6 +258,7 @@ mod tests {
     use test_utils::host::{
         BasicProgramIo, Io, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
+    use crate::compile_stock_rust::compile_openvm_program_stock_rust;
 
     fn basic_program() -> OpenVMProgram {
         static PROGRAM: OnceLock<OpenVMProgram> = OnceLock::new();
@@ -276,6 +289,14 @@ mod tests {
         let io = BasicProgramIo::valid().into_output_hashed_io();
         let public_values = run_zkvm_execute(&zkvm, &io);
         assert_eq!(io.deserialize_outputs(&zkvm, &public_values), io.outputs());
+    }
+
+    #[test]
+    fn test_execute_nightly() {
+        let guest_directory = testing_guest_directory("openvm", "stock_nightly_no_std");
+        let program = compile_openvm_program_stock_rust(&guest_directory, &"nightly".to_string()).unwrap();
+        let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
+        run_zkvm_execute(&zkvm, &Input::new());
     }
 
     #[test]
