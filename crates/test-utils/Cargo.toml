@@ -6,6 +6,7 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
+rand = { workspace = true, optional = true }
 serde = { workspace = true, features = ["derive"] }
 
 # Local dependencies
@@ -16,4 +17,4 @@ workspace = true
 
 [features]
 default = []
-host = ["dep:zkvm-interface"]
+host = ["dep:rand", "dep:zkvm-interface"]

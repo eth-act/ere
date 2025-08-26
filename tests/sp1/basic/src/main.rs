@@ -5,14 +5,14 @@ use test_utils::guest::BasicStruct;
 sp1_zkvm::entrypoint!(main);
 
 pub fn main() {
-    // Read `Hello world` bytes.
+    // Read `bytes`.
     let bytes = sp1_zkvm::io::read_vec();
-    assert_eq!(String::from_utf8_lossy(&bytes), "Hello world");
 
-    // Read `BasicStruct`.
+    // Read `basic_struct`.
     let basic_struct = sp1_zkvm::io::read::<BasicStruct>();
-    let output = basic_struct.output();
+    let basic_struct_output = basic_struct.output();
 
-    // Write `output`
-    sp1_zkvm::io::commit(&output);
+    // Write reversed `bytes` and `basic_struct_output`
+    sp1_zkvm::io::commit_slice(&bytes.into_iter().rev().collect::<Vec<_>>());
+    sp1_zkvm::io::commit(&basic_struct_output);
 }
