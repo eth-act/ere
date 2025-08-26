@@ -2314,7 +2314,9 @@ dependencies = [
 name = "ere-openvm"
 version = "0.0.11"
 dependencies = [
+ "anyhow",
  "build-utils",
+ "cargo_metadata 0.19.2",
  "openvm-build",
  "openvm-circuit",
  "openvm-continuations",
@@ -2325,6 +2327,7 @@ dependencies = [
  "test-utils",
  "thiserror 2.0.12",
  "toml",
+ "tracing",
  "zkvm-interface",
 ]
 
