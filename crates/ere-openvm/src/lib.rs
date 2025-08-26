@@ -266,7 +266,7 @@ mod tests {
         let zkvm = basic_program_ere_openvm();
 
         let io = BasicProgramIo::valid();
-        run_zkvm_execute(&zkvm, io);
+        run_zkvm_execute(&zkvm, &io);
     }
 
     #[test]
@@ -283,7 +283,7 @@ mod tests {
         let zkvm = basic_program_ere_openvm();
 
         let io = BasicProgramIo::valid();
-        run_zkvm_prove(&zkvm, io);
+        run_zkvm_prove(&zkvm, &io);
     }
 
     #[test]

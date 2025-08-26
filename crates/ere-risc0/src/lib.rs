@@ -283,7 +283,7 @@ mod tests {
         let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
         let io = BasicProgramIo::valid();
-        run_zkvm_execute(&zkvm, io);
+        run_zkvm_execute(&zkvm, &io);
     }
 
     #[test]
@@ -302,7 +302,7 @@ mod tests {
         let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
         let io = BasicProgramIo::valid();
-        run_zkvm_prove(&zkvm, io);
+        run_zkvm_prove(&zkvm, &io);
     }
 
     #[test]

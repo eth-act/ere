@@ -572,7 +572,7 @@ mod tests {
         let zkvm = EreZisk::new(program, ProverResourceType::Cpu);
 
         let io = BasicProgramIo::valid();
-        run_zkvm_execute(&zkvm, io);
+        run_zkvm_execute(&zkvm, &io);
     }
 
     #[test]
@@ -591,7 +591,7 @@ mod tests {
         let zkvm = EreZisk::new(program, ProverResourceType::Cpu);
 
         let io = BasicProgramIo::valid();
-        run_zkvm_prove(&zkvm, io);
+        run_zkvm_prove(&zkvm, &io);
     }
 
     #[test]

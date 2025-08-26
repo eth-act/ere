@@ -24,7 +24,7 @@ pub trait Io {
     fn deserialize_outputs(&self, zkvm: &impl zkVM, bytes: &[u8]) -> Self::Output;
 }
 
-pub fn run_zkvm_execute(zkvm: &impl zkVM, io: impl Io) -> PublicValues {
+pub fn run_zkvm_execute(zkvm: &impl zkVM, io: &impl Io) -> PublicValues {
     let (public_values, _report) = zkvm
         .execute(&io.inputs())
         .expect("execute should not fail with valid input");
@@ -35,7 +35,7 @@ pub fn run_zkvm_execute(zkvm: &impl zkVM, io: impl Io) -> PublicValues {
     public_values
 }
 
-pub fn run_zkvm_prove(zkvm: &impl zkVM, io: impl Io) -> PublicValues {
+pub fn run_zkvm_prove(zkvm: &impl zkVM, io: &impl Io) -> PublicValues {
     let (prover_public_values, proof, _report) = zkvm
         .prove(&io.inputs())
         .expect("prove should not fail with valid input");

@@ -274,7 +274,7 @@ mod tests {
         let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
 
         let io = BasicProgramIo::valid();
-        let public_values = run_zkvm_execute(&zkvm, io.clone());
+        let public_values = run_zkvm_execute(&zkvm, &io);
         assert_eq!(io.deserialize_outputs(&zkvm, &public_values), io.outputs());
     }
 
@@ -303,7 +303,7 @@ mod tests {
         let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
 
         let io = BasicProgramIo::valid();
-        let public_values = run_zkvm_prove(&zkvm, io.clone());
+        let public_values = run_zkvm_prove(&zkvm, &io);
         assert_eq!(io.deserialize_outputs(&zkvm, &public_values), io.outputs());
     }
 
@@ -340,7 +340,7 @@ mod tests {
         let zkvm = EreSP1::new(program, ProverResourceType::Network(network_config));
 
         let io = BasicProgramIo::valid();
-        let public_values = run_zkvm_prove(&zkvm, io.clone());
+        let public_values = run_zkvm_prove(&zkvm, &io);
         assert_eq!(io.deserialize_outputs(&zkvm, &public_values), io.outputs());
     }
 }

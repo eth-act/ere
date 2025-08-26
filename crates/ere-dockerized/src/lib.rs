@@ -509,8 +509,8 @@ mod test {
         let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
 
         let io = BasicProgramIo::valid();
-        run_zkvm_execute(&zkvm, io.clone());
-        run_zkvm_prove(&zkvm, io);
+        run_zkvm_execute(&zkvm, &io);
+        run_zkvm_prove(&zkvm, &io);
     }
 
     #[test]
@@ -525,8 +525,8 @@ mod test {
         let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
 
         let io = BasicProgramIo::valid();
-        run_zkvm_execute(&zkvm, io.clone());
-        run_zkvm_prove(&zkvm, io);
+        run_zkvm_execute(&zkvm, &io);
+        run_zkvm_prove(&zkvm, &io);
     }
 
     #[test]
@@ -541,8 +541,8 @@ mod test {
         let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
 
         let io = BasicProgramIo::valid();
-        run_zkvm_execute(&zkvm, io.clone());
-        run_zkvm_prove(&zkvm, io);
+        run_zkvm_execute(&zkvm, &io);
+        run_zkvm_prove(&zkvm, &io);
     }
 
     #[test]
@@ -557,7 +557,7 @@ mod test {
         let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
 
         let io = BasicProgramIo::valid();
-        run_zkvm_execute(&zkvm, io.clone());
-        run_zkvm_prove(&zkvm, io);
+        run_zkvm_execute(&zkvm, &io);
+        run_zkvm_prove(&zkvm, &io);
     }
 }

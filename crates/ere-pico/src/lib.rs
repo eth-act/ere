@@ -193,7 +193,7 @@ mod tests {
         let zkvm = ErePico::new(program, ProverResourceType::Cpu);
 
         let io = BasicProgramIo::valid();
-        run_zkvm_execute(&zkvm, io);
+        run_zkvm_execute(&zkvm, &io);
     }
 
     #[test]
