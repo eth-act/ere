@@ -2373,6 +2373,7 @@ dependencies = [
  "bincode",
  "blake3",
  "build-utils",
+ "cargo_metadata 0.19.2",
  "dashmap",
  "serde",
  "serde_json",
