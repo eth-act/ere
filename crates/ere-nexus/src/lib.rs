@@ -1,17 +1,19 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 #![allow(clippy::uninlined_format_args)]
 
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
 use nexus_sdk::compile::cargo::CargoPackager;
 use nexus_sdk::compile::{Compile, Compiler as NexusCompiler};
-use nexus_sdk::stwo::seq::{Proof, Stwo};
+use nexus_sdk::stwo::seq::Stwo;
 use nexus_sdk::{Local, Prover, Verifiable};
+use serde::de::DeserializeOwned;
 use tracing::info;
 use zkvm_interface::{
-    Compiler, Input, ProgramExecutionReport, ProgramProvingReport, ProverResourceType, zkVM,
-    zkVMError,
+    Compiler, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType,
+    PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -69,19 +71,22 @@ impl zkVM for EreNexus {
     fn execute(
         &self,
         _inputs: &Input,
-    ) -> Result<zkvm_interface::ProgramExecutionReport, zkVMError> {
+    ) -> Result<(PublicValues, zkvm_interface::ProgramExecutionReport), zkVMError> {
         // TODO: Serialize inputs by `postcard` and make sure there is no double serailization.
         // Issue for tracking: https://github.com/eth-act/ere/issues/63.
 
         // TODO: Execute and get cycle count
 
-        Ok(ProgramExecutionReport::default())
+        // TODO: Public values
+        let public_values = Vec::new();
+
+        Ok((public_values, ProgramExecutionReport::default()))
     }
 
     fn prove(
         &self,
         _inputs: &Input,
-    ) -> Result<(Vec<u8>, zkvm_interface::ProgramProvingReport), zkVMError> {
+    ) -> Result<(PublicValues, Proof, zkvm_interface::ProgramProvingReport), zkVMError> {
         let prover: Stwo<Local> = Stwo::new_from_file(&self.program.to_string_lossy().to_string())
             .map_err(|e| NexusError::Prove(ProveError::Client(e.into())))
             .map_err(zkVMError::from)?;
@@ -99,13 +104,16 @@ impl zkVM for EreNexus {
         let bytes = bincode::serialize(&proof)
             .map_err(|err| NexusError::Prove(ProveError::Bincode(err)))?;
 
-        Ok((bytes, ProgramProvingReport::new(elapsed)))
+        // TODO: Public values
+        let public_values = Vec::new();
+
+        Ok((public_values, bytes, ProgramProvingReport::new(elapsed)))
     }
 
-    fn verify(&self, proof: &[u8]) -> Result<(), zkVMError> {
+    fn verify(&self, proof: &[u8]) -> Result<PublicValues, zkVMError> {
         info!("Verifying proof...");
 
-        let proof: Proof = bincode::deserialize(proof)
+        let proof: nexus_sdk::stwo::seq::Proof = bincode::deserialize(proof)
             .map_err(|err| NexusError::Verify(VerifyError::Bincode(err)))?;
 
         let prover: Stwo<Local> = Stwo::new_from_file(&self.program.to_string_lossy().to_string())
@@ -125,7 +133,11 @@ impl zkVM for EreNexus {
         .map_err(zkVMError::from)?;
 
         info!("Verify Succeeded!");
-        Ok(())
+
+        // TODO: Public values
+        let public_values = Vec::new();
+
+        Ok(public_values)
     }
 
     fn name(&self) -> &'static str {
@@ -134,6 +146,10 @@ impl zkVM for EreNexus {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
+    }
+
+    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, _reader: R) -> Result<T, zkVMError> {
+        todo!()
     }
 }
 

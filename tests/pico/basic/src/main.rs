@@ -1,19 +1,19 @@
 #![no_main]
 
-use pico_sdk::io::{commit, read_as, read_vec};
+use pico_sdk::io::{commit, commit_bytes, read_as, read_vec};
 use test_utils::guest::BasicStruct;
 
 pico_sdk::entrypoint!(main);
 
 pub fn main() {
-    // Read `Hello world` bytes.
+    // Read `bytes`.
     let bytes = read_vec();
-    assert_eq!(String::from_utf8_lossy(&bytes), "Hello world");
 
-    // Read `BasicStruct`.
+    // Read `basic_struct`.
     let basic_struct = read_as::<BasicStruct>();
-    let output = basic_struct.output();
+    let basic_struct_output = basic_struct.output();
 
-    // Write `output`
-    commit(&output);
+    // Write reversed `bytes` and `basic_struct_output`
+    commit_bytes(&bytes.into_iter().rev().collect::<Vec<_>>());
+    commit(&basic_struct_output);
 }
