@@ -77,15 +77,12 @@ impl zkVM for ErePico {
         serialize_inputs(&mut stdin, inputs);
 
         let start = Instant::now();
-        let emulation_result = client.emulate(stdin);
-
-        // TODO: Public values
-        let public_values = Vec::new();
+        let (total_num_cycles, public_values) = client.emulate(stdin);
 
         Ok((
             public_values,
             ProgramExecutionReport {
-                total_num_cycles: emulation_result.0,
+                total_num_cycles,
                 execution_duration: start.elapsed(),
                 ..Default::default()
             },
@@ -147,8 +144,8 @@ impl zkVM for ErePico {
         SDK_VERSION
     }
 
-    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, _reader: R) -> Result<T, zkVMError> {
-        todo!()
+    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, reader: R) -> Result<T, zkVMError> {
+        bincode::deserialize_from(reader).map_err(zkVMError::other)
     }
 }
 
@@ -167,7 +164,7 @@ fn serialize_inputs(stdin: &mut EmulatorStdinBuilder<Vec<u8>>, inputs: &Input) {
 mod tests {
     use super::*;
     use std::{panic, sync::OnceLock};
-    use test_utils::host::{BasicProgramIo, run_zkvm_execute, testing_guest_directory};
+    use test_utils::host::{BasicProgramIo, Io, run_zkvm_execute, testing_guest_directory};
 
     static BASIC_PRORGAM: OnceLock<Vec<u8>> = OnceLock::new();
 
@@ -193,7 +190,8 @@ mod tests {
         let zkvm = ErePico::new(program, ProverResourceType::Cpu);
 
         let io = BasicProgramIo::valid();
-        run_zkvm_execute(&zkvm, &io);
+        let public_values = run_zkvm_execute(&zkvm, &io);
+        assert_eq!(io.deserialize_outputs(&zkvm, &public_values), io.outputs());
     }
 
     #[test]
