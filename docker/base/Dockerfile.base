@@ -24,14 +24,13 @@ RUN apt-get update && \
     ca-certificates \
     openssl \
     libssl-dev \
-    golang \
     # Clean up apt cache
     && apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Install rustup.
 # RUST_VERSION can be 1.86, stable, nightly, etc
-ARG RUST_VERSION=1.86.0 
+ARG RUST_VERSION=1.86.0
 
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
