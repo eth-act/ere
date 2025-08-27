@@ -1,4 +1,4 @@
-use crate::guest::BasicStruct;
+use crate::guest::{BASIC_PROGRAM_BYTES_LENGTH, BasicStruct};
 use rand::{Rng, rng};
 use std::{fmt::Debug, io::Read, path::PathBuf};
 use zkvm_interface::{Input, PublicValues, zkVM};
@@ -93,9 +93,8 @@ impl Io for BasicProgramIo {
 impl BasicProgramIo {
     pub fn valid() -> Self {
         let rng = &mut rng();
-        let n = rng.random_range(16..32);
         Self {
-            bytes: rng.random_iter().take(n).collect(),
+            bytes: rng.random_iter().take(BASIC_PROGRAM_BYTES_LENGTH).collect(),
             basic_struct: BasicStruct::random(rng),
         }
     }
@@ -112,6 +111,15 @@ impl BasicProgramIo {
         let mut inputs = Input::new();
         inputs.write(0u64);
         inputs.write_bytes(vec![0, 1, 2, 3]);
+        inputs
+    }
+
+    /// Input with invalid data that should trigger assertion failure in guest
+    /// program.
+    pub fn invalid_data() -> Input {
+        let mut inputs = Input::new();
+        inputs.write_bytes(vec![0; BASIC_PROGRAM_BYTES_LENGTH + 1]);
+        inputs.write(BasicStruct::default());
         inputs
     }
 }

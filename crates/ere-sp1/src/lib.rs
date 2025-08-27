@@ -292,7 +292,11 @@ mod tests {
         let program = basic_program();
         let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
 
-        for inputs in [BasicProgramIo::empty(), BasicProgramIo::invalid_type()] {
+        for inputs in [
+            BasicProgramIo::empty(),
+            BasicProgramIo::invalid_type(),
+            BasicProgramIo::invalid_data(),
+        ] {
             zkvm.execute(&inputs).unwrap_err();
         }
     }
@@ -317,7 +321,11 @@ mod tests {
         //
         // Note that we iterate on methods because `InputItem::Object` doesn't
         // implement `RefUnwindSafe`.
-        for inputs_gen in [BasicProgramIo::empty, BasicProgramIo::invalid_type] {
+        for inputs_gen in [
+            BasicProgramIo::empty,
+            BasicProgramIo::invalid_type,
+            BasicProgramIo::invalid_data,
+        ] {
             panic::catch_unwind(|| zkvm.prove(&inputs_gen())).unwrap_err();
         }
     }

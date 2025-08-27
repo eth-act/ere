@@ -273,7 +273,11 @@ mod tests {
     fn test_execute_invalid_inputs() {
         let zkvm = basic_program_ere_openvm();
 
-        for inputs in [BasicProgramIo::empty(), BasicProgramIo::invalid_type()] {
+        for inputs in [
+            BasicProgramIo::empty(),
+            BasicProgramIo::invalid_type(),
+            BasicProgramIo::invalid_data(),
+        ] {
             zkvm.execute(&inputs).unwrap_err();
         }
     }
@@ -290,7 +294,11 @@ mod tests {
     fn test_prove_invalid_inputs() {
         let zkvm = basic_program_ere_openvm();
 
-        for inputs in [BasicProgramIo::empty(), BasicProgramIo::invalid_type()] {
+        for inputs in [
+            BasicProgramIo::empty(),
+            BasicProgramIo::invalid_type(),
+            BasicProgramIo::invalid_data(),
+        ] {
             zkvm.prove(&inputs).unwrap_err();
         }
     }

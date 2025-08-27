@@ -1,6 +1,8 @@
 use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
 
+pub const BASIC_PROGRAM_BYTES_LENGTH: usize = 32;
+
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BasicStruct {
     pub a: u8,

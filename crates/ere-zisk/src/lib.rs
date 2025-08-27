@@ -580,7 +580,11 @@ mod tests {
         let program = basic_program();
         let zkvm = EreZisk::new(program, ProverResourceType::Cpu);
 
-        for inputs in [BasicProgramIo::empty(), BasicProgramIo::invalid_type()] {
+        for inputs in [
+            BasicProgramIo::empty(),
+            BasicProgramIo::invalid_type(),
+            BasicProgramIo::invalid_data(),
+        ] {
             zkvm.execute(&inputs).unwrap_err();
         }
     }
@@ -599,7 +603,11 @@ mod tests {
         let program = basic_program();
         let zkvm = EreZisk::new(program, ProverResourceType::Cpu);
 
-        for inputs in [BasicProgramIo::empty(), BasicProgramIo::invalid_type()] {
+        for inputs in [
+            BasicProgramIo::empty(),
+            BasicProgramIo::invalid_type(),
+            BasicProgramIo::invalid_data(),
+        ] {
             zkvm.prove(&inputs).unwrap_err();
         }
     }

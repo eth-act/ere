@@ -201,7 +201,11 @@ mod tests {
         let program = basic_program();
         let zkvm = ErePico::new(program, ProverResourceType::Cpu);
 
-        for inputs_gen in [BasicProgramIo::empty, BasicProgramIo::invalid_type] {
+        for inputs_gen in [
+            BasicProgramIo::empty,
+            BasicProgramIo::invalid_type,
+            BasicProgramIo::invalid_data,
+        ] {
             panic::catch_unwind(|| zkvm.execute(&inputs_gen()).unwrap_err()).unwrap_err();
         }
     }
