@@ -1,7 +1,7 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 use pico_sdk::client::DefaultProverClient;
-use pico_vm::emulator::stdin::EmulatorStdinBuilder;
+use pico_vm::{configs::stark_config::KoalaBearPoseidon2, emulator::stdin::EmulatorStdinBuilder};
 use serde::de::DeserializeOwned;
 use std::{io::Read, path::Path, process::Command, time::Instant};
 use zkvm_interface::{
@@ -149,7 +149,7 @@ impl zkVM for ErePico {
     }
 }
 
-fn serialize_inputs(stdin: &mut EmulatorStdinBuilder<Vec<u8>>, inputs: &Input) {
+fn serialize_inputs(stdin: &mut EmulatorStdinBuilder<Vec<u8>, KoalaBearPoseidon2>, inputs: &Input) {
     for input in inputs.iter() {
         match input {
             InputItem::Object(serialize) => stdin.write(serialize),

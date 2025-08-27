@@ -12,13 +12,13 @@ RUN chmod +x /tmp/install_pico_sdk.sh
 RUN rustup default nightly
 
 # Run the Pico SDK installation script.
-# This script installs the specific Rust toolchain (nightly-2024-11-27)
+# This script installs the specific Rust toolchain (nightly-2025-08-04)
 # and installs pico-cli (as cargo-pico).
 # The CARGO_HOME from ere-base (e.g., /root/.cargo) will be used, and cargo-pico will be in its bin.
 RUN /tmp/install_pico_sdk.sh && rm /tmp/install_pico_sdk.sh # Clean up the script
 
 # Define the Pico toolchain for convenience in subsequent commands if needed, though cargo pico should use it.
-ENV PICO_TOOLCHAIN_VERSION="nightly-2024-11-27"
+ENV PICO_TOOLCHAIN_VERSION="nightly-2025-08-04"
 
 # Set default toolchain
 RUN rustup default "$PICO_TOOLCHAIN_VERSION"
