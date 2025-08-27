@@ -28,22 +28,16 @@ ensure_tool_installed "rustup" "to manage Rust toolchains"
 ensure_tool_installed "git" "to install cargo-openvm from a git repository"
 ensure_tool_installed "cargo" "to build and install Rust packages"
 
-OPENVM_TOOLCHAIN_VERSION="nightly-2025-02-14"
-OPENVM_CLI_VERSION_TAG="v1.2.0"
-
-# Install the specific nightly toolchain for OpenVM
-echo "Installing OpenVM-specific Rust toolchain: ${OPENVM_TOOLCHAIN_VERSION}..."
-rustup install "${OPENVM_TOOLCHAIN_VERSION}"
-rustup component add rust-src --toolchain "${OPENVM_TOOLCHAIN_VERSION}"
+OPENVM_CLI_VERSION_TAG="v1.4.0-rc.4"
 
 # Install cargo-openvm using the specified toolchain and version tag
 echo "Installing cargo-openvm (version ${OPENVM_CLI_VERSION_TAG}) from GitHub repository (openvm-org/openvm)..."
-cargo "+${OPENVM_TOOLCHAIN_VERSION}" install --locked --git https://github.com/openvm-org/openvm.git --tag "${OPENVM_CLI_VERSION_TAG}" cargo-openvm
+cargo install --locked --git https://github.com/openvm-org/openvm.git --tag "${OPENVM_CLI_VERSION_TAG}" cargo-openvm
 
 # Verify cargo-openvm installation
 echo "Verifying cargo-openvm installation..."
 # The cargo-openvm is installed as `cargo-openvm`, so it's invoked as `cargo openvm`
-if cargo "+${OPENVM_TOOLCHAIN_VERSION}" openvm --version; then
+if cargo openvm --version; then
     echo "cargo-openvm installation verified successfully."
 else
     echo "Error: 'cargo openvm --version' failed. cargo-openvm might not have installed correctly." >&2

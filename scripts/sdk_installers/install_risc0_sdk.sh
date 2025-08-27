@@ -63,16 +63,14 @@ fi
 # Now that rzup is confirmed to be in PATH for this script, install the Risc0 toolchain
 echo "Running 'rzup install' to install/update Risc0 toolchain..."
 
-if [[ -n "$RISC0_CLI_VERSION" && -n "$RISC0_CPP_VERSION" && -n "$RISC0_R0VM_VERSION" && -n "$RISC0_RUST_VERSION" ]]; then
-    # If versions are specified, install each component by their version
-    rzup install cargo-risczero $RISC0_CLI_VERSION
-    rzup install cpp $RISC0_CPP_VERSION
-    rzup install r0vm $RISC0_R0VM_VERSION
-    rzup install rust $RISC0_RUST_VERSION
-else
-    # Otherwise just install all components with by their latest version
-    rzup install
-fi
+RISC0_VERSION="${RISC0_VERSION:-3.0.1}"
+RISC0_CPP_VERSION="${RISC0_CPP_VERSION:-2024.1.5}"
+RISC0_RUST_VERSION="${RISC0_RUST_VERSION:-1.88.0}"
+
+rzup install cargo-risczero "$RISC0_VERSION"
+rzup install cpp "$RISC0_CPP_VERSION"
+rzup install r0vm "$RISC0_VERSION"
+rzup install rust "$RISC0_RUST_VERSION"
 
 # Verify Risc0 installation
 echo "Verifying Risc0 installation..."
@@ -83,3 +81,22 @@ echo "Risc0 Toolchain installation (latest release) successful."
 echo "The rzup installer might have updated your shell configuration files (e.g., ~/.bashrc, ~/.zshrc)."
 echo "To ensure rzup and Risc0 tools are available in your current shell session if this was a new installation,"
 echo "you may need to source your shell profile (e.g., 'source ~/.bashrc') or open a new terminal." 
+
+# Build r0vm from source with CUDA features enabled (skip if in CI)
+if [ -z $CI ]; then
+    CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}"
+    RISC0_BIN_DIR="$HOME/.risc0/extensions/v$RISC0_VERSION-cargo-risczero-x86_64-unknown-linux-gnu"
+
+    TEMP_DIR=$(mktemp -d)
+    git clone https://github.com/risc0/risc0.git --depth 1 --branch "v$RISC0_VERSION" "$TEMP_DIR/risc0"
+    cd "$TEMP_DIR/risc0"
+
+    # Build with feature `cuda`
+    RUSTFLAGS="-C target-cpu=native" cargo build --release --features cuda --bin r0vm
+    # Copy the binary to the same directory with `cargo-risczero` and `r0vm`
+    cp ./target/release/r0vm "$RISC0_BIN_DIR/r0vm-cuda"
+    # Create symbolic link as `cargo-risczero` and `r0vm`
+    ln -s "$RISC0_BIN_DIR/r0vm-cuda" "$CARGO_HOME/bin/r0vm-cuda"
+
+    rm -rf "$TEMP_DIR"
+fi

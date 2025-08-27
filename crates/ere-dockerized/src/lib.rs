@@ -12,7 +12,7 @@
 //! 1. `ere-base:{version}` - Base image with common dependencies
 //! 2. `ere-base-{zkvm}:{version}` - zkVM-specific base image with the zkVM SDK
 //! 3. `ere-cli-{zkvm}:{version}` - CLI image with the `ere-cli` binary built
-//!     with the selected zkVM feature
+//!    with the selected zkVM feature
 //!
 //! To force rebuild all images, set the environment variable `ERE_FORCE_REBUILD_DOCKER_IMAGE=true`.
 //!
@@ -356,21 +356,30 @@ impl zkVM for EreDockerizedzkVM {
             .inherit_env("NO_COLOR")
             .volume(tempdir.path(), "/workspace");
 
+        // zkVM specific options
+        cmd = match self.zkvm {
+            // ZisK uses shared memory to exchange data between processes, it
+            // requires at least 8G shared memory, here we set 16G for safety.
+            ErezkVM::Zisk => cmd.option("shm-size", "16G"),
+            _ => cmd,
+        };
+
+        // zkVM specific options when using GPU
         if matches!(self.resource, ProverResourceType::Gpu) {
-            // SP1's and Risc0's GPU proving requires Docker to start GPU prover
-            // service, to give the client access to the prover service, we need
-            // to use the host networking driver.
-            match self.zkvm {
-                ErezkVM::SP1 => cmd = cmd.mount_docker_socket().network("host"),
-                ErezkVM::Risc0 => {
-                    cmd = cmd
-                        .mount_docker_socket()
-                        .network("host")
-                        .inherit_env("CUDA_VISIBLE_DEVICES")
-                        .inherit_env("SEGMENT_SIZE")
-                        .inherit_env("RISC0_KECCAK_PO2")
-                }
-                _ => {}
+            cmd = match self.zkvm {
+                // SP1's and Risc0's GPU proving requires Docker to start GPU prover
+                // service, to give the client access to the prover service, we need
+                // to use the host networking driver.
+                // The `--gpus` flags will be set when the GPU prover service is
+                // spin up, so we don't need to set here.
+                ErezkVM::SP1 => cmd.mount_docker_socket().network("host"),
+                ErezkVM::Risc0 => cmd
+                    .gpus("all")
+                    .inherit_env("RISC0_DEFAULT_PROVER_NUM_GPUS")
+                    .inherit_env("RISC0_SEGMENT_PO2")
+                    .inherit_env("RISC0_KECCAK_PO2"),
+                ErezkVM::Zisk => cmd.gpus("all"),
+                _ => cmd,
             }
         }
 
@@ -456,7 +465,7 @@ mod test {
     use test_utils::host::{
         BasicProgramInputGen, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
-    use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
+    use zkvm_interface::{Compiler, ProverResourceType};
 
     // TODO: Test other ere-{zkvm} when they are end-to-end ready:
     //       - ere-jolt

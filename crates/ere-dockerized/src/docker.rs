@@ -50,23 +50,24 @@ impl DockerBuildCmd {
         Self::default()
     }
 
-    pub fn file(mut self, file: impl AsRef<Path>) -> Self {
-        self.options
-            .push(CmdOption::new("file", file.as_ref().to_string_lossy()));
+    pub fn option(mut self, key: impl AsRef<str>, value: impl AsRef<str>) -> Self {
+        self.options.push(CmdOption::new(key, value));
         self
     }
 
-    pub fn tag(mut self, tag: impl AsRef<str>) -> Self {
-        self.options.push(CmdOption::new("tag", tag));
-        self
+    pub fn file(self, file: impl AsRef<Path>) -> Self {
+        self.option("file", file.as_ref().to_string_lossy())
     }
 
-    pub fn bulid_arg(mut self, key: impl AsRef<str>, value: impl AsRef<str>) -> Self {
-        self.options.push(CmdOption::new(
+    pub fn tag(self, tag: impl AsRef<str>) -> Self {
+        self.option("tag", tag)
+    }
+
+    pub fn bulid_arg(self, key: impl AsRef<str>, value: impl AsRef<str>) -> Self {
+        self.option(
             "build-arg",
             format!("{}={}", to_string(key), to_string(value)),
-        ));
-        self
+        )
     }
 
     pub fn exec(self, context: impl AsRef<Path>) -> Result<(), io::Error> {
@@ -102,16 +103,25 @@ impl DockerRunCmd {
         }
     }
 
-    pub fn volume(mut self, host: impl AsRef<Path>, container: impl AsRef<Path>) -> Self {
-        self.options.push(CmdOption::new(
+    pub fn flag(mut self, key: impl AsRef<str>) -> Self {
+        self.options.push(CmdOption::flag(key));
+        self
+    }
+
+    pub fn option(mut self, key: impl AsRef<str>, value: impl AsRef<str>) -> Self {
+        self.options.push(CmdOption::new(key, value));
+        self
+    }
+
+    pub fn volume(self, host: impl AsRef<Path>, container: impl AsRef<Path>) -> Self {
+        self.option(
             "volume",
             format!(
                 "{}:{}",
                 host.as_ref().display(),
                 container.as_ref().display(),
             ),
-        ));
-        self
+        )
     }
 
     /// Mounts `/var/run/docker.sock` to allow Docker-out-of-Docker (DooD).
@@ -119,29 +129,25 @@ impl DockerRunCmd {
         self.volume(DOCKER_SOCKET, DOCKER_SOCKET)
     }
 
-    pub fn gpus(mut self, devices: impl AsRef<str>) -> Self {
-        self.options.push(CmdOption::new("gpus", devices));
-        self
+    pub fn gpus(self, devices: impl AsRef<str>) -> Self {
+        self.option("gpus", devices)
     }
 
-    pub fn network(mut self, name: impl AsRef<str>) -> Self {
-        self.options.push(CmdOption::new("network", name));
-        self
+    pub fn network(self, name: impl AsRef<str>) -> Self {
+        self.option("network", name)
     }
 
     /// Inherit environment variable `key` if it's set and valid.
-    pub fn inherit_env(mut self, key: impl AsRef<str>) -> Self {
+    pub fn inherit_env(self, key: impl AsRef<str>) -> Self {
         let key = key.as_ref();
-        if let Ok(val) = env::var(key) {
-            self.options
-                .push(CmdOption::new("env", format!("{key}={val}")));
+        match env::var(key) {
+            Ok(val) => self.option("env", format!("{key}={val}")),
+            Err(_) => self,
         }
-        self
     }
 
-    pub fn rm(mut self) -> Self {
-        self.options.push(CmdOption::flag("rm"));
-        self
+    pub fn rm(self) -> Self {
+        self.flag("rm")
     }
 
     pub fn exec(self, commands: impl IntoIterator<Item: AsRef<str>>) -> Result<(), io::Error> {

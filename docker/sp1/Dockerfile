@@ -23,6 +23,9 @@ ENV PATH="${SP1_DIR}/bin:$PATH"
 # Verify SP1 installation (optional here, as script does it, but good for sanity)
 RUN cargo prove --version
 
+# Add `rust-src` component to enable std build for nightly rust.
+RUN rustup +nightly component add rust-src
+
 # Add Docker CLI
 COPY --from=docker:cli /usr/local/bin/docker /usr/local/bin/docker
 

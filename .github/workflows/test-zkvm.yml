@@ -11,7 +11,7 @@ on:
         description: 'Rust toolchain to use'
         required: false
         type: string
-        default: 1.85.0
+        default: 1.86.0
       test_ere_dockerized:
         description: 'Whether test ere-dockerized with the selected zkVM or not'
         required: false

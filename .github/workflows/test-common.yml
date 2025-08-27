@@ -16,10 +16,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        crate:
-          - build-utils
-          - test-utils
-          - zkvm-interface
+        include:
+          - crate: build-utils
+            run_test: true
+          - crate: test-utils
+            run_test: true
+          - crate: zkvm-interface
+            run_test: true
+          - crate: ere-dockerized
+            run_test: false # They are run in per-zkVM workflows
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,4 +41,5 @@ jobs:
         run: cargo clippy --all-targets --package ${{ matrix.crate }} -- -D warnings
 
       - name: Run cargo test
+        if: ${{ matrix.run_test }} 
         run: cargo test --release --package ${{ matrix.crate }}

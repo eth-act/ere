@@ -34,6 +34,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # If current environment is in CI or not.
 ARG CI
 
+# Install CUDA Toolkit 12.9
+#
+# If argument `CI` is set, we skip the installation.
 RUN [ -n "$CI" ] || \
     (wget https://developer.download.nvidia.com/compute/cuda/repos/$(. /etc/os-release && echo "${ID}${VERSION_ID}" | tr -d '.')/$(uname -i)/cuda-keyring_1.1-1_all.deb && \
     dpkg -i cuda-keyring_1.1-1_all.deb && \
@@ -50,10 +53,13 @@ RUN chmod +x /tmp/install_zisk_sdk.sh
 # This script installs the 'zisk' Rust toolchain and `cargo-zisk`
 #
 # If argument `CI` is set, we only install verifying key, this is used by github
-# CI runner which only has small disk space (proving key requires ~35 GB).
+# CI runner which only has small disk space (proving key requires ~27 GB).
 RUN if [ -n "$CI" ]; then export SETUP_KEY=verify; fi && \
     /tmp/install_zisk_sdk.sh && \
-    rm /tmp/install_zisk_sdk.sh # Clean up the script
+    rm /tmp/install_zisk_sdk.sh && \
+    # Remove the merkle tree of proving key to reduce docker image size (~20 GB).
+    # Re-generating takes only ~30 seconds.
+    find "/root/.zisk/provingKey" -name "*.consttree" -type f -delete
 
 # The 'zisk' Rust toolchain is now installed.
 # cargo-zisk is installed in /root/.zisk/bin.
@@ -63,6 +69,6 @@ ENV ZISK_BIN_DIR="/root/.zisk/bin"
 ENV PATH="${PATH}:${ZISK_BIN_DIR}"
 
 # Verify cargo-zisk is accessible
-RUN echo "Verifying Zisk installation in Dockerfile ..." && cargo-zisk --version
+RUN echo "Verifying ZisK installation in Dockerfile ..." && cargo-zisk --version
 
 CMD ["/bin/bash"]
