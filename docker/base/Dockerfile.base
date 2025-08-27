@@ -28,6 +28,15 @@ RUN apt-get update && \
     && apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+
+# Install Go.
+# GO_VERSION can be 1.22.3, 1.21.5, etc
+ARG GO_VERSION=1.22.3
+RUN curl -fsSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o /tmp/go.tar.gz \
+    && tar -C /usr/local -xzf /tmp/go.tar.gz \
+    && rm /tmp/go.tar.gz
+ENV PATH="/usr/local/go/bin:${PATH}"
+
 # Install rustup.
 # RUST_VERSION can be 1.86, stable, nightly, etc
 ARG RUST_VERSION=1.86.0 
@@ -56,4 +65,4 @@ WORKDIR /app
 RUN rustc --version
 RUN cargo --version
 
-CMD ["/bin/bash"] 
+CMD ["/bin/bash"]
