@@ -9,7 +9,7 @@ use openvm_sdk::{
     codec::{Decode, Encode},
     commit::AppExecutionCommit,
     config::{AppConfig, DEFAULT_APP_LOG_BLOWUP, DEFAULT_LEAF_LOG_BLOWUP, SdkVmConfig},
-    keygen::AggVerifyingKey,
+    keygen::{AggProvingKey, AggVerifyingKey, AppProvingKey},
 };
 use openvm_stark_sdk::{config::FriParameters, openvm_stark_backend::p3_field::PrimeField32};
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
@@ -92,6 +92,8 @@ impl Compiler for OPENVM_TARGET {
 pub struct EreOpenVM {
     app_config: AppConfig<SdkVmConfig>,
     app_exe: Arc<VmExe<F>>,
+    app_pk: AppProvingKey<SdkVmConfig>,
+    agg_pk: AggProvingKey,
     agg_vk: AggVerifyingKey,
     app_commit: AppExecutionCommit,
     _resource: ProverResourceType,
@@ -106,7 +108,9 @@ impl EreOpenVM {
 
         let app_exe = sdk.convert_to_exe(elf).map_err(CommonError::Transpile)?;
 
-        let (_, agg_vk) = sdk.agg_keygen().map_err(CommonError::AggKeyGen)?;
+        let (app_pk, _) = sdk.app_keygen();
+
+        let (agg_pk, agg_vk) = sdk.agg_keygen().map_err(CommonError::AggKeyGen)?;
 
         let app_commit = sdk
             .prover(app_exe.clone())
@@ -116,6 +120,8 @@ impl EreOpenVM {
         Ok(Self {
             app_config: program.app_config,
             app_exe,
+            app_pk,
+            agg_pk,
             agg_vk,
             app_commit,
             _resource,
@@ -123,7 +129,11 @@ impl EreOpenVM {
     }
 
     fn sdk(&self) -> Result<Sdk, CommonError> {
-        Sdk::new_without_transpiler(self.app_config.clone()).map_err(CommonError::SdkInit)
+        let sdk =
+            Sdk::new_without_transpiler(self.app_config.clone()).map_err(CommonError::SdkInit)?;
+        let _ = sdk.set_app_pk(self.app_pk.clone());
+        let _ = sdk.set_agg_pk(self.agg_pk.clone());
+        Ok(sdk)
     }
 }
 
