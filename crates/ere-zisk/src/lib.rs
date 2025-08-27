@@ -6,10 +6,10 @@ use crate::{
 };
 use blake3::Hash;
 use dashmap::{DashMap, Entry};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::{
     fs,
-    io::{self, BufRead, Write},
+    io::{self, BufRead, Read, Write},
     os::unix::fs::symlink,
     path::{Path, PathBuf},
     process::{Command, Stdio},
@@ -19,8 +19,8 @@ use std::{
 use tempfile::{TempDir, tempdir};
 use tracing::info;
 use zkvm_interface::{
-    Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
-    zkVM, zkVMError,
+    Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof,
+    ProverResourceType, PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -74,7 +74,7 @@ impl EreZisk {
 }
 
 impl zkVM for EreZisk {
-    fn execute(&self, inputs: &Input) -> Result<ProgramExecutionReport, zkVMError> {
+    fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
         // Write ELF and serialized input to file.
 
         let input_bytes = serialize_inputs(inputs)
@@ -122,14 +122,23 @@ impl zkVM for EreZisk {
             })
             .ok_or(ZiskError::Execute(ExecuteError::TotalStepsNotFound))?;
 
-        Ok(ProgramExecutionReport {
-            total_num_cycles,
-            execution_duration,
-            ..Default::default()
-        })
+        // TODO: Public values
+        let public_values = Vec::new();
+
+        Ok((
+            public_values,
+            ProgramExecutionReport {
+                total_num_cycles,
+                execution_duration,
+                ..Default::default()
+            },
+        ))
     }
 
-    fn prove(&self, inputs: &Input) -> Result<(Vec<u8>, ProgramProvingReport), zkVMError> {
+    fn prove(
+        &self,
+        inputs: &Input,
+    ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
         // Make sure proving key setup is done.
         check_setup()?;
 
@@ -246,10 +255,17 @@ impl zkVM for EreZisk {
         let bytes = bincode::serialize(&proof_with_public_values)
             .map_err(|err| ZiskError::Prove(ProveError::Bincode(err)))?;
 
-        Ok((bytes, ProgramProvingReport::new(proving_time)))
+        // TODO: Public values
+        let public_values = Vec::new();
+
+        Ok((
+            public_values,
+            bytes,
+            ProgramProvingReport::new(proving_time),
+        ))
     }
 
-    fn verify(&self, bytes: &[u8]) -> Result<(), zkVMError> {
+    fn verify(&self, bytes: &[u8]) -> Result<PublicValues, zkVMError> {
         // Run ELF specific setup
         let rom_digest = rom_setup(&self.elf)?;
 
@@ -301,7 +317,10 @@ impl zkVM for EreZisk {
             }))?
         }
 
-        Ok(())
+        // TODO: Public values
+        let public_values = Vec::new();
+
+        Ok(public_values)
     }
 
     fn name(&self) -> &'static str {
@@ -310,6 +329,10 @@ impl zkVM for EreZisk {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
+    }
+
+    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, _reader: R) -> Result<T, zkVMError> {
+        todo!()
     }
 }
 
@@ -528,7 +551,7 @@ mod tests {
     use super::*;
     use std::sync::OnceLock;
     use test_utils::host::{
-        BasicProgramInputGen, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+        BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
 
     static BASIC_PRORGAM: OnceLock<Vec<u8>> = OnceLock::new();
@@ -548,8 +571,8 @@ mod tests {
         let program = basic_program();
         let zkvm = EreZisk::new(program, ProverResourceType::Cpu);
 
-        let inputs = BasicProgramInputGen::valid();
-        run_zkvm_execute(&zkvm, &inputs);
+        let io = BasicProgramIo::valid();
+        run_zkvm_execute(&zkvm, &io);
     }
 
     #[test]
@@ -558,9 +581,9 @@ mod tests {
         let zkvm = EreZisk::new(program, ProverResourceType::Cpu);
 
         for inputs in [
-            BasicProgramInputGen::empty(),
-            BasicProgramInputGen::invalid_string(),
-            BasicProgramInputGen::invalid_type(),
+            BasicProgramIo::empty(),
+            BasicProgramIo::invalid_type(),
+            BasicProgramIo::invalid_data(),
         ] {
             zkvm.execute(&inputs).unwrap_err();
         }
@@ -571,8 +594,8 @@ mod tests {
         let program = basic_program();
         let zkvm = EreZisk::new(program, ProverResourceType::Cpu);
 
-        let inputs = BasicProgramInputGen::valid();
-        run_zkvm_prove(&zkvm, &inputs);
+        let io = BasicProgramIo::valid();
+        run_zkvm_prove(&zkvm, &io);
     }
 
     #[test]
@@ -581,9 +604,9 @@ mod tests {
         let zkvm = EreZisk::new(program, ProverResourceType::Cpu);
 
         for inputs in [
-            BasicProgramInputGen::empty(),
-            BasicProgramInputGen::invalid_string(),
-            BasicProgramInputGen::invalid_type(),
+            BasicProgramIo::empty(),
+            BasicProgramIo::invalid_type(),
+            BasicProgramIo::invalid_data(),
         ] {
             zkvm.prove(&inputs).unwrap_err();
         }

@@ -13,11 +13,11 @@ use openvm_sdk::{
 };
 use openvm_stark_sdk::config::FriParameters;
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
-use serde::{Deserialize, Serialize};
-use std::{fs, path::Path, sync::Arc, time::Instant};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use std::{fs, io::Read, path::Path, sync::Arc, time::Instant};
 use zkvm_interface::{
-    Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
-    zkVM, zkVMError,
+    Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof,
+    ProverResourceType, PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -128,7 +128,10 @@ impl EreOpenVM {
 }
 
 impl zkVM for EreOpenVM {
-    fn execute(&self, inputs: &Input) -> Result<zkvm_interface::ProgramExecutionReport, zkVMError> {
+    fn execute(
+        &self,
+        inputs: &Input,
+    ) -> Result<(PublicValues, zkvm_interface::ProgramExecutionReport), zkVMError> {
         let sdk = self
             .sdk()
             .map_err(|e| OpenVMError::from(ExecuteError::from(e)))?;
@@ -141,16 +144,22 @@ impl zkVM for EreOpenVM {
             .execute(self.app_exe.clone(), stdin)
             .map_err(|e| OpenVMError::from(ExecuteError::Execute(e)))?;
 
-        Ok(ProgramExecutionReport {
-            execution_duration: start.elapsed(),
-            ..Default::default()
-        })
+        // TODO: Public values
+        let public_values = Vec::new();
+
+        Ok((
+            public_values,
+            ProgramExecutionReport {
+                execution_duration: start.elapsed(),
+                ..Default::default()
+            },
+        ))
     }
 
     fn prove(
         &self,
         inputs: &Input,
-    ) -> Result<(Vec<u8>, zkvm_interface::ProgramProvingReport), zkVMError> {
+    ) -> Result<(PublicValues, Proof, zkvm_interface::ProgramProvingReport), zkVMError> {
         let sdk = self
             .sdk()
             .map_err(|e| OpenVMError::from(ProveError::from(e)))?;
@@ -175,17 +184,27 @@ impl zkVM for EreOpenVM {
             .encode_to_vec()
             .map_err(|e| OpenVMError::from(ProveError::SerializeProof(e)))?;
 
-        Ok((proof_bytes, ProgramProvingReport::new(elapsed)))
+        // TODO: Public values
+        let public_values = Vec::new();
+
+        Ok((
+            public_values,
+            proof_bytes,
+            ProgramProvingReport::new(elapsed),
+        ))
     }
 
-    fn verify(&self, mut proof: &[u8]) -> Result<(), zkVMError> {
+    fn verify(&self, mut proof: &[u8]) -> Result<PublicValues, zkVMError> {
         let proof = VmStarkProof::<SC>::decode(&mut proof)
             .map_err(|e| OpenVMError::from(VerifyError::DeserializeProof(e)))?;
 
         Sdk::verify_proof(&self.agg_vk, self.app_commit, &proof)
             .map_err(|e| OpenVMError::Verify(VerifyError::Verify(e)))?;
 
-        Ok(())
+        // TODO: Public values
+        let public_values = Vec::new();
+
+        Ok(public_values)
     }
 
     fn name(&self) -> &'static str {
@@ -194,6 +213,10 @@ impl zkVM for EreOpenVM {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
+    }
+
+    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, _reader: R) -> Result<T, zkVMError> {
+        todo!()
     }
 }
 
@@ -213,7 +236,7 @@ mod tests {
     use super::*;
     use std::sync::OnceLock;
     use test_utils::host::{
-        BasicProgramInputGen, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+        BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
 
     fn basic_program() -> OpenVMProgram {
@@ -242,8 +265,8 @@ mod tests {
     fn test_execute() {
         let zkvm = basic_program_ere_openvm();
 
-        let inputs = BasicProgramInputGen::valid();
-        run_zkvm_execute(&zkvm, &inputs);
+        let io = BasicProgramIo::valid();
+        run_zkvm_execute(&zkvm, &io);
     }
 
     #[test]
@@ -251,9 +274,9 @@ mod tests {
         let zkvm = basic_program_ere_openvm();
 
         for inputs in [
-            BasicProgramInputGen::empty(),
-            BasicProgramInputGen::invalid_string(),
-            BasicProgramInputGen::invalid_type(),
+            BasicProgramIo::empty(),
+            BasicProgramIo::invalid_type(),
+            BasicProgramIo::invalid_data(),
         ] {
             zkvm.execute(&inputs).unwrap_err();
         }
@@ -263,8 +286,8 @@ mod tests {
     fn test_prove() {
         let zkvm = basic_program_ere_openvm();
 
-        let inputs = BasicProgramInputGen::valid();
-        run_zkvm_prove(&zkvm, &inputs);
+        let io = BasicProgramIo::valid();
+        run_zkvm_prove(&zkvm, &io);
     }
 
     #[test]
@@ -272,9 +295,9 @@ mod tests {
         let zkvm = basic_program_ere_openvm();
 
         for inputs in [
-            BasicProgramInputGen::empty(),
-            BasicProgramInputGen::invalid_string(),
-            BasicProgramInputGen::invalid_type(),
+            BasicProgramIo::empty(),
+            BasicProgramIo::invalid_type(),
+            BasicProgramIo::invalid_data(),
         ] {
             zkvm.prove(&inputs).unwrap_err();
         }

@@ -2,10 +2,11 @@
 
 use pico_sdk::client::DefaultProverClient;
 use pico_vm::emulator::stdin::EmulatorStdinBuilder;
-use std::{path::Path, process::Command, time::Instant};
+use serde::de::DeserializeOwned;
+use std::{io::Read, path::Path, process::Command, time::Instant};
 use zkvm_interface::{
-    Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
-    zkVM, zkVMError,
+    Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof,
+    ProverResourceType, PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -69,7 +70,7 @@ impl ErePico {
     }
 }
 impl zkVM for ErePico {
-    fn execute(&self, inputs: &Input) -> Result<ProgramExecutionReport, zkVMError> {
+    fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
         let client = DefaultProverClient::new(&self.program);
 
         let mut stdin = client.new_stdin_builder();
@@ -78,17 +79,23 @@ impl zkVM for ErePico {
         let start = Instant::now();
         let emulation_result = client.emulate(stdin);
 
-        Ok(ProgramExecutionReport {
-            total_num_cycles: emulation_result.0,
-            execution_duration: start.elapsed(),
-            ..Default::default()
-        })
+        // TODO: Public values
+        let public_values = Vec::new();
+
+        Ok((
+            public_values,
+            ProgramExecutionReport {
+                total_num_cycles: emulation_result.0,
+                execution_duration: start.elapsed(),
+                ..Default::default()
+            },
+        ))
     }
 
     fn prove(
         &self,
         inputs: &Input,
-    ) -> Result<(Vec<u8>, zkvm_interface::ProgramProvingReport), zkVMError> {
+    ) -> Result<(PublicValues, Proof, zkvm_interface::ProgramProvingReport), zkVMError> {
         let client = DefaultProverClient::new(&self.program);
 
         let mut stdin = client.new_stdin_builder();
@@ -113,13 +120,23 @@ impl zkVM for ErePico {
             bincode::serialize_into(&mut proof_serialized, p).unwrap();
         }
 
-        Ok((proof_serialized, ProgramProvingReport::new(elapsed)))
+        // TODO: Public values
+        let public_values = Vec::new();
+
+        Ok((
+            public_values,
+            proof_serialized,
+            ProgramProvingReport::new(elapsed),
+        ))
     }
 
-    fn verify(&self, _proof: &[u8]) -> Result<(), zkVMError> {
+    fn verify(&self, _proof: &[u8]) -> Result<PublicValues, zkVMError> {
         let client = DefaultProverClient::new(&self.program);
         let _vk = client.riscv_vk();
-        todo!("Verification method missing from sdk")
+        // TODO: Verification method missing from sdk
+        // TODO: Public values
+        let public_values = Vec::new();
+        Ok(public_values)
     }
 
     fn name(&self) -> &'static str {
@@ -128,6 +145,10 @@ impl zkVM for ErePico {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
+    }
+
+    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, _reader: R) -> Result<T, zkVMError> {
+        todo!()
     }
 }
 
@@ -146,7 +167,7 @@ fn serialize_inputs(stdin: &mut EmulatorStdinBuilder<Vec<u8>>, inputs: &Input) {
 mod tests {
     use super::*;
     use std::{panic, sync::OnceLock};
-    use test_utils::host::{BasicProgramInputGen, run_zkvm_execute, testing_guest_directory};
+    use test_utils::host::{BasicProgramIo, run_zkvm_execute, testing_guest_directory};
 
     static BASIC_PRORGAM: OnceLock<Vec<u8>> = OnceLock::new();
 
@@ -171,8 +192,8 @@ mod tests {
         let program = basic_program();
         let zkvm = ErePico::new(program, ProverResourceType::Cpu);
 
-        let inputs = BasicProgramInputGen::valid();
-        run_zkvm_execute(&zkvm, &inputs);
+        let io = BasicProgramIo::valid();
+        run_zkvm_execute(&zkvm, &io);
     }
 
     #[test]
@@ -181,9 +202,9 @@ mod tests {
         let zkvm = ErePico::new(program, ProverResourceType::Cpu);
 
         for inputs_gen in [
-            BasicProgramInputGen::empty,
-            BasicProgramInputGen::invalid_string,
-            BasicProgramInputGen::invalid_type,
+            BasicProgramIo::empty,
+            BasicProgramIo::invalid_type,
+            BasicProgramIo::invalid_data,
         ] {
             panic::catch_unwind(|| zkvm.execute(&inputs_gen()).unwrap_err()).unwrap_err();
         }

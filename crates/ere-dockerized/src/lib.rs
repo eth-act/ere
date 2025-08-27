@@ -62,18 +62,20 @@ use crate::{
     docker::{DockerBuildCmd, DockerRunCmd, docker_image_exists},
     error::{CommonError, CompileError, DockerizedError, ExecuteError, ProveError, VerifyError},
 };
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::{
     env,
     fmt::{self, Display, Formatter},
-    fs, iter,
+    fs,
+    io::Read,
+    iter,
     path::{Path, PathBuf},
     str::FromStr,
 };
 use tempfile::TempDir;
 use zkvm_interface::{
-    Compiler, Input, ProgramExecutionReport, ProgramProvingReport, ProverResourceType, zkVM,
-    zkVMError,
+    Compiler, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType,
+    PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/crate_version.rs"));
@@ -288,7 +290,7 @@ impl EreDockerizedzkVM {
 }
 
 impl zkVM for EreDockerizedzkVM {
-    fn execute(&self, inputs: &Input) -> Result<ProgramExecutionReport, zkVMError> {
+    fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
         let tempdir = TempDir::new()
             .map_err(|err| CommonError::io(err, "Failed to create temporary directory"))
             .map_err(|err| DockerizedError::Execute(ExecuteError::Common(err)))?;
@@ -317,12 +319,17 @@ impl zkVM for EreDockerizedzkVM {
                 "/workspace/program",
                 "--input-path",
                 "/workspace/input",
+                "--public-values-path",
+                "/workspace/public_values",
                 "--report-path",
                 "/workspace/report",
             ])
             .map_err(CommonError::DockerRunCmd)
             .map_err(|err| DockerizedError::Execute(ExecuteError::Common(err)))?;
 
+        let public_values = fs::read(tempdir.path().join("public_values"))
+            .map_err(|err| CommonError::io(err, "Failed to read public_values"))
+            .map_err(|err| DockerizedError::Execute(ExecuteError::Common(err)))?;
         let report_bytes = fs::read(tempdir.path().join("report"))
             .map_err(|err| CommonError::io(err, "Failed to read report"))
             .map_err(|err| DockerizedError::Execute(ExecuteError::Common(err)))?;
@@ -330,10 +337,13 @@ impl zkVM for EreDockerizedzkVM {
         let report = bincode::deserialize(&report_bytes)
             .map_err(|err| CommonError::serilization(err, "Failed to deserialize report"))
             .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
-        Ok(report)
+        Ok((public_values, report))
     }
 
-    fn prove(&self, inputs: &Input) -> Result<(Vec<u8>, ProgramProvingReport), zkVMError> {
+    fn prove(
+        &self,
+        inputs: &Input,
+    ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
         let tempdir = TempDir::new()
             .map_err(|err| CommonError::io(err, "Failed to create temporary directory"))
             .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
@@ -391,6 +401,8 @@ impl zkVM for EreDockerizedzkVM {
                     "/workspace/program",
                     "--input-path",
                     "/workspace/input",
+                    "--public-values-path",
+                    "/workspace/public_values",
                     "--proof-path",
                     "/workspace/proof",
                     "--report-path",
@@ -401,6 +413,9 @@ impl zkVM for EreDockerizedzkVM {
         .map_err(CommonError::DockerRunCmd)
         .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
 
+        let public_values = fs::read(tempdir.path().join("public_values"))
+            .map_err(|err| CommonError::io(err, "Failed to read public_values"))
+            .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
         let proof = fs::read(tempdir.path().join("proof"))
             .map_err(|err| CommonError::io(err, "Failed to read proof"))
             .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
@@ -410,10 +425,10 @@ impl zkVM for EreDockerizedzkVM {
         let report = bincode::deserialize(&report_bytes)
             .map_err(|err| CommonError::serilization(err, "Failed to deserialize report"))
             .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
-        Ok((proof, report))
+        Ok((public_values, proof, report))
     }
 
-    fn verify(&self, proof: &[u8]) -> Result<(), zkVMError> {
+    fn verify(&self, proof: &[u8]) -> Result<PublicValues, zkVMError> {
         let tempdir = TempDir::new()
             .map_err(|err| CommonError::io(err, "Failed to create temporary directory"))
             .map_err(|err| DockerizedError::Verify(VerifyError::Common(err)))?;
@@ -436,11 +451,17 @@ impl zkVM for EreDockerizedzkVM {
                 "/workspace/program",
                 "--proof-path",
                 "/workspace/proof",
+                "--public-values-path",
+                "/workspace/public_values",
             ])
             .map_err(CommonError::DockerRunCmd)
             .map_err(|err| DockerizedError::Verify(VerifyError::Common(err)))?;
 
-        Ok(())
+        let public_values = fs::read(tempdir.path().join("public_values"))
+            .map_err(|err| CommonError::io(err, "Failed to read public_values"))
+            .map_err(|err| DockerizedError::Verify(VerifyError::Common(err)))?;
+
+        Ok(public_values)
     }
 
     fn name(&self) -> &'static str {
@@ -449,6 +470,10 @@ impl zkVM for EreDockerizedzkVM {
 
     fn sdk_version(&self) -> &'static str {
         self.zkvm.sdk_version()
+    }
+
+    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, _reader: R) -> Result<T, zkVMError> {
+        todo!()
     }
 }
 
@@ -463,7 +488,7 @@ fn workspace_dir() -> PathBuf {
 mod test {
     use crate::{EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM, workspace_dir};
     use test_utils::host::{
-        BasicProgramInputGen, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+        BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
     use zkvm_interface::{Compiler, ProverResourceType};
 
@@ -483,9 +508,9 @@ mod test {
 
         let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
 
-        let inputs = BasicProgramInputGen::valid();
-        run_zkvm_execute(&zkvm, &inputs);
-        run_zkvm_prove(&zkvm, &inputs);
+        let io = BasicProgramIo::valid();
+        run_zkvm_execute(&zkvm, &io);
+        run_zkvm_prove(&zkvm, &io);
     }
 
     #[test]
@@ -499,9 +524,9 @@ mod test {
 
         let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
 
-        let inputs = BasicProgramInputGen::valid();
-        run_zkvm_execute(&zkvm, &inputs);
-        run_zkvm_prove(&zkvm, &inputs);
+        let io = BasicProgramIo::valid();
+        run_zkvm_execute(&zkvm, &io);
+        run_zkvm_prove(&zkvm, &io);
     }
 
     #[test]
@@ -515,9 +540,9 @@ mod test {
 
         let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
 
-        let inputs = BasicProgramInputGen::valid();
-        run_zkvm_execute(&zkvm, &inputs);
-        run_zkvm_prove(&zkvm, &inputs);
+        let io = BasicProgramIo::valid();
+        run_zkvm_execute(&zkvm, &io);
+        run_zkvm_prove(&zkvm, &io);
     }
 
     #[test]
@@ -531,8 +556,8 @@ mod test {
 
         let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
 
-        let inputs = BasicProgramInputGen::valid();
-        run_zkvm_execute(&zkvm, &inputs);
-        run_zkvm_prove(&zkvm, &inputs);
+        let io = BasicProgramIo::valid();
+        run_zkvm_execute(&zkvm, &io);
+        run_zkvm_prove(&zkvm, &io);
     }
 }

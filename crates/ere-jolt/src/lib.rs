@@ -9,11 +9,17 @@ use jolt::{JoltHyperKZGProof, JoltProverPreprocessing, JoltVerifierPreprocessing
 use jolt_core::host::Program;
 use jolt_methods::{preprocess_prover, preprocess_verifier, prove_generic, verify_generic};
 use jolt_sdk::host::DEFAULT_TARGET_DIR;
-use std::{env::set_current_dir, fs, io::Cursor, path::Path};
+use serde::de::DeserializeOwned;
+use std::{
+    env::set_current_dir,
+    fs,
+    io::{Cursor, Read},
+    path::Path,
+};
 use tempfile::TempDir;
 use zkvm_interface::{
-    Compiler, Input, ProgramExecutionReport, ProgramProvingReport, ProverResourceType, zkVM,
-    zkVMError,
+    Compiler, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType,
+    PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -87,7 +93,7 @@ impl zkVM for EreJolt {
     fn execute(
         &self,
         _inputs: &Input,
-    ) -> Result<zkvm_interface::ProgramExecutionReport, zkVMError> {
+    ) -> Result<(PublicValues, zkvm_interface::ProgramExecutionReport), zkVMError> {
         let (_tempdir, program) = program(&self.elf)?;
 
         // TODO: Check how to pass private input to jolt, issue for tracking:
@@ -95,13 +101,16 @@ impl zkVM for EreJolt {
         let summary = program.clone().trace_analyze::<jolt::F>(&[]);
         let trace_len = summary.trace_len();
 
-        Ok(ProgramExecutionReport::new(trace_len as u64))
+        // TODO: Public values
+        let public_values = Vec::new();
+
+        Ok((public_values, ProgramExecutionReport::new(trace_len as u64)))
     }
 
     fn prove(
         &self,
         inputs: &Input,
-    ) -> Result<(Vec<u8>, zkvm_interface::ProgramProvingReport), zkVMError> {
+    ) -> Result<(PublicValues, Proof, zkvm_interface::ProgramProvingReport), zkVMError> {
         let (_tempdir, program) = program(&self.elf)?;
 
         let now = std::time::Instant::now();
@@ -113,16 +122,26 @@ impl zkVM for EreJolt {
             .serialize_compressed(&mut proof_bytes)
             .map_err(|err| JoltError::Prove(ProveError::Serialization(err)))?;
 
-        Ok((proof_bytes, ProgramProvingReport::new(elapsed)))
+        // TODO: Public values
+        let public_values = Vec::new();
+
+        Ok((
+            public_values,
+            proof_bytes,
+            ProgramProvingReport::new(elapsed),
+        ))
     }
 
-    fn verify(&self, proof_bytes: &[u8]) -> Result<(), zkVMError> {
+    fn verify(&self, proof_bytes: &[u8]) -> Result<PublicValues, zkVMError> {
         let proof = EreJoltProof::deserialize_compressed(&mut Cursor::new(proof_bytes))
             .map_err(|err| JoltError::Verify(VerifyError::Serialization(err)))?;
 
         verify_generic(proof, self.verifier_preprocessing.clone()).map_err(JoltError::Verify)?;
 
-        Ok(())
+        // TODO: Public values
+        let public_values = Vec::new();
+
+        Ok(public_values)
     }
 
     fn name(&self) -> &'static str {
@@ -131,6 +150,10 @@ impl zkVM for EreJolt {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
+    }
+
+    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, _reader: R) -> Result<T, zkVMError> {
+        todo!()
     }
 }
 
