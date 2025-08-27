@@ -98,6 +98,8 @@ impl zkVM for EreZisk {
             .arg(tempdir.elf_path())
             .arg("--inputs")
             .arg(tempdir.input_path())
+            .arg("--output")
+            .arg(tempdir.execution_output_path())
             .arg("--stats") // NOTE: enable stats in order to get total steps.
             .stderr(Stdio::inherit())
             .output()
@@ -122,8 +124,9 @@ impl zkVM for EreZisk {
             })
             .ok_or(ZiskError::Execute(ExecuteError::TotalStepsNotFound))?;
 
-        // TODO: Public values
-        let public_values = Vec::new();
+        let public_values = tempdir
+            .read_execution_output()
+            .map_err(|e| ZiskError::Execute(ExecuteError::TempDir(e)))?;
 
         Ok((
             public_values,
@@ -143,7 +146,7 @@ impl zkVM for EreZisk {
         check_setup()?;
 
         // Run ELF specific setup
-        rom_setup(&self.elf)?;
+        let preprocessed_rom_digest = rom_setup(&self.elf)?;
 
         // Obtain the prove lock to make sure proving can't be called concurrently.
         let _guard = PROVE_LOCK
@@ -244,19 +247,30 @@ impl zkVM for EreZisk {
 
         // Read proof and public values.
 
+        let public_values = tempdir
+            .read_public_values()
+            .map_err(|e| ZiskError::Prove(ProveError::TempDir(e)))?;
+
         let proof_with_public_values = ZiskProofWithPublicValues {
             proof: tempdir
                 .read_proof()
                 .map_err(|e| ZiskError::Prove(ProveError::TempDir(e)))?,
-            public_values: tempdir
-                .read_public_values()
-                .map_err(|e| ZiskError::Prove(ProveError::TempDir(e)))?,
+            public_values,
         };
         let bytes = bincode::serialize(&proof_with_public_values)
             .map_err(|err| ZiskError::Prove(ProveError::Bincode(err)))?;
 
-        // TODO: Public values
-        let public_values = Vec::new();
+        // Deserialize public values.
+        let (proved_rom_digest, public_values) =
+            deserialize_public_values(&proof_with_public_values.public_values)?;
+
+        // The proved ROM digest should be equal to preprocessed one.
+        if proved_rom_digest != preprocessed_rom_digest {
+            return Err(CommonError::UnexpectedRomDigest {
+                preprocessed: preprocessed_rom_digest,
+                proved: proved_rom_digest,
+            })?;
+        }
 
         Ok((
             public_values,
@@ -267,7 +281,7 @@ impl zkVM for EreZisk {
 
     fn verify(&self, bytes: &[u8]) -> Result<PublicValues, zkVMError> {
         // Run ELF specific setup
-        let rom_digest = rom_setup(&self.elf)?;
+        let preprocessed_rom_digest = rom_setup(&self.elf)?;
 
         // Write proof and public values to file.
 
@@ -300,25 +314,17 @@ impl zkVM for EreZisk {
             )))?
         }
 
-        // Deserialize public values as json string sequence.
-        let public_values =
-            serde_json::from_slice::<Vec<String>>(&proof_with_public_values.public_values)
-                .map_err(|e| ZiskError::Verify(VerifyError::DeserializePublicValues(e)))?
-                .into_iter()
-                .map(|v| v.parse())
-                .collect::<Result<Vec<u64>, _>>()
-                .map_err(|e| ZiskError::Verify(VerifyError::ParsePublicValue(e)))?;
+        // Deserialize public values.
+        let (proved_rom_digest, public_values) =
+            deserialize_public_values(&proof_with_public_values.public_values)?;
 
-        // The first 4 elements of public values should be equal to preprocessed ROM digest.
-        if public_values.len() < 4 || public_values[..4] != rom_digest {
-            Err(ZiskError::Verify(VerifyError::UnexpectedRomDigest {
-                preprocessed: rom_digest,
-                public_values,
-            }))?
+        // The proved ROM digest should be equal to preprocessed one.
+        if proved_rom_digest != preprocessed_rom_digest {
+            return Err(CommonError::UnexpectedRomDigest {
+                preprocessed: preprocessed_rom_digest,
+                proved: proved_rom_digest,
+            })?;
         }
-
-        // TODO: Public values
-        let public_values = Vec::new();
 
         Ok(public_values)
     }
@@ -350,6 +356,42 @@ fn serialize_inputs(inputs: &Input) -> Result<Vec<u8>, bincode::Error> {
         };
         Ok(acc)
     })
+}
+
+/// Deserialize public values as json string sequence, and parse the `RomDigest`
+/// and user set public values as `Vec<u8>`.
+fn deserialize_public_values(public_values: &[u8]) -> Result<(RomDigest, Vec<u8>), CommonError> {
+    let public_values = serde_json::from_slice::<Vec<String>>(public_values)
+        .map_err(CommonError::DeserializePublicValues)?
+        .into_iter()
+        .map(|v| v.parse())
+        .collect::<Result<Vec<u64>, _>>()
+        .map_err(CommonError::ParsePublicValue)?;
+
+    // The public values contain at least the `RomDigest` and the number of user
+    // set public values.
+    if public_values.len() < 5 {
+        return Err(CommonError::InvalidPublicValuesLength(public_values.len()));
+    }
+
+    // The first 4 elements of public values should be ROM digest.
+    let rom_digest = public_values[..4].try_into().unwrap();
+
+    // The 5-th element should be the number of user set public values.
+    let num_user_public_values = public_values[4] as usize;
+
+    // The rest elements should be user set public values and should be `u32`.
+    let public_values = public_values[5..]
+        .iter()
+        .map(|v| Some(u32::try_from(*v).ok()?.to_le_bytes()))
+        .take(num_user_public_values)
+        .collect::<Option<Vec<_>>>()
+        .ok_or(CommonError::InvalidPublicValue)?
+        .into_iter()
+        .flatten()
+        .collect();
+
+    Ok((rom_digest, public_values))
 }
 
 fn dot_zisk_dir_path() -> PathBuf {
@@ -500,6 +542,10 @@ impl ZiskTempDir {
         fs::File::create(self.input_path()).and_then(|mut file| file.write_all(input))
     }
 
+    fn read_execution_output(&self) -> io::Result<Vec<u8>> {
+        fs::read(self.execution_output_path())
+    }
+
     fn read_proof(&self) -> io::Result<Vec<u8>> {
         fs::read(self.proof_path())
     }
@@ -537,6 +583,10 @@ impl ZiskTempDir {
         self.tempdir.path().join("output")
     }
 
+    fn execution_output_path(&self) -> PathBuf {
+        self.output_dir_path().join("execution_output.bin")
+    }
+
     fn public_values_path(&self) -> PathBuf {
         self.output_dir_path().join("publics.json")
     }
@@ -551,7 +601,7 @@ mod tests {
     use super::*;
     use std::sync::OnceLock;
     use test_utils::host::{
-        BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+        BasicProgramIo, Io, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
 
     static BASIC_PRORGAM: OnceLock<Vec<u8>> = OnceLock::new();
@@ -571,8 +621,9 @@ mod tests {
         let program = basic_program();
         let zkvm = EreZisk::new(program, ProverResourceType::Cpu);
 
-        let io = BasicProgramIo::valid();
-        run_zkvm_execute(&zkvm, &io);
+        let io = BasicProgramIo::valid().into_output_hashed_io();
+        let public_values = run_zkvm_execute(&zkvm, &io);
+        assert_eq!(io.deserialize_outputs(&zkvm, &public_values), io.outputs());
     }
 
     #[test]
@@ -594,8 +645,9 @@ mod tests {
         let program = basic_program();
         let zkvm = EreZisk::new(program, ProverResourceType::Cpu);
 
-        let io = BasicProgramIo::valid();
-        run_zkvm_prove(&zkvm, &io);
+        let io = BasicProgramIo::valid().into_output_hashed_io();
+        let public_values = run_zkvm_prove(&zkvm, &io);
+        assert_eq!(io.deserialize_outputs(&zkvm, &public_values), io.outputs());
     }
 
     #[test]
