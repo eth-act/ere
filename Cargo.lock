@@ -3026,7 +3026,6 @@ version = "0.0.11"
 dependencies = [
  "bincode",
  "build-utils",
- "tempfile",
  "thiserror 2.0.12",
  "toml",
  "tracing",

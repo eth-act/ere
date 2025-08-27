@@ -6,7 +6,7 @@ use std::path::Path;
 use std::time::Instant;
 
 use tracing::info;
-use zkm_build::{build_program_with_args, execute_build_program, include_elf, BuildArgs};
+use zkm_build::{BuildArgs, execute_build_program};
 use zkm_sdk::{ProverClient, ZKMProofWithPublicValues, ZKMProvingKey, ZKMStdin, ZKMVerifyingKey};
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
@@ -37,12 +37,22 @@ impl Compiler for RV32_IM_ZKM_ZKVM_ELF {
     type Program = Vec<u8>;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        let path_str = guest_directory.to_str().unwrap();
         let target_elf_paths =
             execute_build_program(&BuildArgs::default(), Some(guest_directory.to_path_buf()))
                 .map_err(|e| ZKMError::CompileError(CompileError::Client(Box::from(e))))?;
 
-        Ok(vec![1])
+        if target_elf_paths.is_empty() {
+            return Err(ZKMError::CompileError(CompileError::Client(Box::from(
+                "No ELF files were built.",
+            ))));
+        }
+
+        let elf_path = &target_elf_paths[0].0;
+
+        let bytes = std::fs::read(elf_path)
+            .map_err(|e| ZKMError::CompileError(CompileError::Client(Box::from(e))))?;
+
+        Ok(bytes.to_vec())
     }
 }
 
