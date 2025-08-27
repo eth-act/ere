@@ -28,7 +28,7 @@ zkvm-interface = { workspace = true, features = ["clap"] }
 workspace = true
 
 [features]
-default = ["cli", "sp1"]
+default = []
 cli = ["dep:clap", "dep:tracing-subscriber"]
 jolt = ["dep:ere-jolt"]
 nexus = ["dep:ere-nexus"]
