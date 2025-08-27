@@ -2270,8 +2270,10 @@ dependencies = [
 name = "ere-jolt"
 version = "0.0.11"
 dependencies = [
+ "anyhow",
  "ark-serialize 0.5.0",
  "build-utils",
+ "cargo_metadata 0.19.2",
  "common",
  "jolt",
  "jolt-core",
@@ -2281,6 +2283,7 @@ dependencies = [
  "test-utils",
  "thiserror 2.0.12",
  "toml",
+ "tracing",
  "zkvm-interface",
 ]
 
