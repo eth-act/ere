@@ -53,6 +53,8 @@ WORKDIR /app
 # TODO: Default to the non-root user?
 # USER ${USERNAME}
 
+# Verify go installation went well
+RUN go version
 # Verify Rust installation went well
 RUN rustc --version
 RUN cargo --version
