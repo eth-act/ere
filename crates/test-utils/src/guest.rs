@@ -1,7 +1,29 @@
 use alloc::vec::Vec;
+use core::iter;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
-pub const BASIC_PROGRAM_BYTES_LENGTH: usize = 32;
+pub struct BasicProgramCore;
+
+impl BasicProgramCore {
+    pub const BYTES_LENGTH: usize = 32;
+
+    pub fn outputs(inputs: (Vec<u8>, BasicStruct)) -> (Vec<u8>, BasicStruct) {
+        let (bytes, basic_struct) = inputs;
+        (bytes.iter().rev().copied().collect(), basic_struct.output())
+    }
+
+    pub fn sha256_outputs(outputs: (Vec<u8>, BasicStruct)) -> [u8; 32] {
+        let (rev_bytes, basic_struct) = outputs;
+        Sha256::digest(
+            iter::empty()
+                .chain(rev_bytes)
+                .chain(bincode::serialize(&basic_struct).unwrap())
+                .collect::<Vec<_>>(),
+        )
+        .into()
+    }
+}
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BasicStruct {

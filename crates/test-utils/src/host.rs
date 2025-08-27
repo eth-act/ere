@@ -1,6 +1,6 @@
-use crate::guest::{BASIC_PROGRAM_BYTES_LENGTH, BasicStruct};
+use crate::guest::{BasicProgramCore, BasicStruct};
 use rand::{Rng, rng};
-use std::{fmt::Debug, io::Read, path::PathBuf};
+use std::{fmt::Debug, io::Read, marker::PhantomData, path::PathBuf};
 use zkvm_interface::{Input, PublicValues, zkVM};
 
 fn workspace() -> PathBuf {
@@ -76,10 +76,7 @@ impl Io for BasicProgramIo {
     }
 
     fn outputs(&self) -> Self::Output {
-        (
-            self.bytes.iter().rev().copied().collect(),
-            self.basic_struct.output(),
-        )
+        BasicProgramCore::outputs((self.bytes.clone(), self.basic_struct.clone()))
     }
 
     fn deserialize_outputs(&self, zkvm: &impl zkVM, mut bytes: &[u8]) -> Self::Output {
@@ -94,9 +91,16 @@ impl BasicProgramIo {
     pub fn valid() -> Self {
         let rng = &mut rng();
         Self {
-            bytes: rng.random_iter().take(BASIC_PROGRAM_BYTES_LENGTH).collect(),
+            bytes: rng
+                .random_iter()
+                .take(BasicProgramCore::BYTES_LENGTH)
+                .collect(),
             basic_struct: BasicStruct::random(rng),
         }
+    }
+
+    pub fn into_output_hashed_io(self) -> impl Io {
+        OutputHashedIo::new(self, BasicProgramCore::sha256_outputs)
     }
 
     /// Empty input that should trigger deserialization failure in guest
@@ -118,8 +122,48 @@ impl BasicProgramIo {
     /// program.
     pub fn invalid_data() -> Input {
         let mut inputs = Input::new();
-        inputs.write_bytes(vec![0; BASIC_PROGRAM_BYTES_LENGTH + 1]);
+        inputs.write_bytes(vec![0; BasicProgramCore::BYTES_LENGTH + 1]);
         inputs.write(BasicStruct::default());
         inputs
+    }
+}
+
+pub struct OutputHashedIo<T, H, D> {
+    inner: T,
+    hasher: H,
+    _marker: PhantomData<D>,
+}
+
+impl<T, H, D> OutputHashedIo<T, H, D> {
+    pub fn new(inner: T, hasher: H) -> Self {
+        Self {
+            inner,
+            hasher,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<T, H, D> Io for OutputHashedIo<T, H, D>
+where
+    T: Io,
+    H: Fn(T::Output) -> D,
+    D: Clone + Debug + Default + PartialEq + AsMut<[u8]>,
+{
+    type Output = D;
+
+    fn inputs(&self) -> Input {
+        self.inner.inputs()
+    }
+
+    fn outputs(&self) -> Self::Output {
+        (self.hasher)(self.inner.outputs())
+    }
+
+    fn deserialize_outputs(&self, _: &impl zkVM, bytes: &[u8]) -> Self::Output {
+        let mut digest = D::default();
+        assert_eq!(digest.as_mut().len(), bytes.len());
+        digest.as_mut().copy_from_slice(bytes);
+        digest
     }
 }

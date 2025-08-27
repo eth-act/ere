@@ -75,6 +75,8 @@ pub enum VerifyError {
     Verify(#[source] SdkError),
     #[error("Deserialize proof failed: {0}")]
     DeserializeProof(io::Error),
+    #[error(transparent)]
+    Common(#[from] CommonError),
 }
 
 #[derive(Debug, Error)]
@@ -89,4 +91,6 @@ pub enum CommonError {
     AggKeyGen(SdkError),
     #[error("Initialize prover failed: {0}")]
     ProverInit(SdkError),
+    #[error("Invalid public value")]
+    InvalidPublicValue,
 }

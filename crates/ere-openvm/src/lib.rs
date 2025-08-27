@@ -11,7 +11,7 @@ use openvm_sdk::{
     config::{AppConfig, DEFAULT_APP_LOG_BLOWUP, DEFAULT_LEAF_LOG_BLOWUP, SdkVmConfig},
     keygen::AggVerifyingKey,
 };
-use openvm_stark_sdk::config::FriParameters;
+use openvm_stark_sdk::{config::FriParameters, openvm_stark_backend::p3_field::PrimeField32};
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::{fs, io::Read, path::Path, sync::Arc, time::Instant};
@@ -140,12 +140,9 @@ impl zkVM for EreOpenVM {
         serialize_inputs(&mut stdin, inputs);
 
         let start = Instant::now();
-        let _outputs = sdk
+        let public_values = sdk
             .execute(self.app_exe.clone(), stdin)
             .map_err(|e| OpenVMError::from(ExecuteError::Execute(e)))?;
-
-        // TODO: Public values
-        let public_values = Vec::new();
 
         Ok((
             public_values,
@@ -180,12 +177,15 @@ impl zkVM for EreOpenVM {
             }))?;
         }
 
+        let public_values = proof
+            .user_public_values
+            .iter()
+            .map(|v| u8::try_from(v.as_canonical_u32()).ok())
+            .collect::<Option<_>>()
+            .ok_or_else(|| OpenVMError::from(ProveError::from(CommonError::InvalidPublicValue)))?;
         let proof_bytes = proof
             .encode_to_vec()
             .map_err(|e| OpenVMError::from(ProveError::SerializeProof(e)))?;
-
-        // TODO: Public values
-        let public_values = Vec::new();
 
         Ok((
             public_values,
@@ -201,8 +201,12 @@ impl zkVM for EreOpenVM {
         Sdk::verify_proof(&self.agg_vk, self.app_commit, &proof)
             .map_err(|e| OpenVMError::Verify(VerifyError::Verify(e)))?;
 
-        // TODO: Public values
-        let public_values = Vec::new();
+        let public_values = proof
+            .user_public_values
+            .iter()
+            .map(|v| u8::try_from(v.as_canonical_u32()).ok())
+            .collect::<Option<_>>()
+            .ok_or_else(|| OpenVMError::from(VerifyError::from(CommonError::InvalidPublicValue)))?;
 
         Ok(public_values)
     }
@@ -215,8 +219,10 @@ impl zkVM for EreOpenVM {
         SDK_VERSION
     }
 
-    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, _reader: R) -> Result<T, zkVMError> {
-        todo!()
+    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, _: R) -> Result<T, zkVMError> {
+        Err(zkVMError::other(
+            "public values de/serialization is not supported",
+        ))
     }
 }
 
@@ -236,7 +242,7 @@ mod tests {
     use super::*;
     use std::sync::OnceLock;
     use test_utils::host::{
-        BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+        BasicProgramIo, Io, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
 
     fn basic_program() -> OpenVMProgram {
@@ -265,8 +271,9 @@ mod tests {
     fn test_execute() {
         let zkvm = basic_program_ere_openvm();
 
-        let io = BasicProgramIo::valid();
-        run_zkvm_execute(&zkvm, &io);
+        let io = BasicProgramIo::valid().into_output_hashed_io();
+        let public_values = run_zkvm_execute(&zkvm, &io);
+        assert_eq!(io.deserialize_outputs(&zkvm, &public_values), io.outputs());
     }
 
     #[test]
@@ -286,8 +293,9 @@ mod tests {
     fn test_prove() {
         let zkvm = basic_program_ere_openvm();
 
-        let io = BasicProgramIo::valid();
-        run_zkvm_prove(&zkvm, &io);
+        let io = BasicProgramIo::valid().into_output_hashed_io();
+        let public_values = run_zkvm_prove(&zkvm, &io);
+        assert_eq!(io.deserialize_outputs(&zkvm, &public_values), io.outputs());
     }
 
     #[test]
