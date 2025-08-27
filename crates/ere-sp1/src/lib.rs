@@ -18,7 +18,6 @@ include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 mod compile;
 mod compile_stock_rust;
 
-
 mod error;
 use error::{ExecuteError, ProveError, SP1Error, VerifyError};
 
