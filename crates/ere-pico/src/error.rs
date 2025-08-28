@@ -33,4 +33,20 @@ pub enum PicoError {
         #[source]
         source: io::Error,
     },
+    #[error("Pico build failure for {crate_path} failed: {source}")]
+    BuildFailure {
+        #[source]
+        source: anyhow::Error,
+        crate_path: PathBuf,
+    },
+    #[error("Could not find `[package].name` in guest Cargo.toml at {path}")]
+    MissingPackageName { path: PathBuf },
+    #[error("Failed to read file at {path}: {source}")]
+    ReadFile {
+        path: PathBuf,
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("`cargo metadata` failed: {0}")]
+    MetadataCommand(#[from] cargo_metadata::Error),
 }
