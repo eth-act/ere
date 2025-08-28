@@ -10,9 +10,9 @@ impl ErezkVM {
     ) -> Result<Vec<u8>, CommonError> {
         match self {
             // Issue for tracking: https://github.com/eth-act/ere/issues/4.
-            Self::Jolt => unimplemented!(),
+            Self::Jolt => todo!(),
             // Issue for tracking: https://github.com/eth-act/ere/issues/63.
-            Self::Nexus => unimplemented!(),
+            Self::Nexus => todo!(),
             // FIXME: Instead of using `openvm::serde::to_vec`, we use Risc0's
             //        serializer, because OpenVM uses the same one, to avoid the
             //        duplicated extern symbol they export.

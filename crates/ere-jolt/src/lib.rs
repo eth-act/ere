@@ -153,6 +153,7 @@ impl zkVM for EreJolt {
     }
 
     fn deserialize_from<R: Read, T: DeserializeOwned>(&self, _reader: R) -> Result<T, zkVMError> {
+        // Issue for tracking: https://github.com/eth-act/ere/issues/4.
         todo!()
     }
 }
