@@ -84,6 +84,7 @@ include!(concat!(env!("OUT_DIR"), "/zkvm_sdk_version_impl.rs"));
 pub mod docker;
 pub mod error;
 pub mod input;
+pub mod output;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ErezkVM {
@@ -214,6 +215,10 @@ impl EreDockerizedCompiler {
             zkvm,
             mount_directory: mount_directory.as_ref().to_path_buf(),
         }
+    }
+
+    pub fn zkvm(&self) -> ErezkVM {
+        self.zkvm
     }
 }
 
@@ -472,8 +477,8 @@ impl zkVM for EreDockerizedzkVM {
         self.zkvm.sdk_version()
     }
 
-    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, _reader: R) -> Result<T, zkVMError> {
-        todo!()
+    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, reader: R) -> Result<T, zkVMError> {
+        self.zkvm.deserialize_from(reader)
     }
 }
 

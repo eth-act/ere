@@ -3,17 +3,14 @@
 use crate::{
     compile::{Risc0Program, compile_risc0_program},
     error::Risc0Error,
+    output::deserialize_from,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
 use risc0_zkvm::{
     DEFAULT_MAX_PO2, DefaultProver, ExecutorEnv, ExecutorEnvBuilder, ExternalProver, InnerReceipt,
     Journal, ProverOpts, Receipt, ReceiptClaim, SuccinctReceipt, default_executor, default_prover,
-    serde::{Deserializer, WordRead},
 };
-use serde::{
-    Deserialize, Serialize,
-    de::{DeserializeOwned, Error},
-};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::{env, io::Read, ops::RangeInclusive, path::Path, rc::Rc, time::Instant};
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof,
@@ -24,6 +21,7 @@ include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 mod compile;
 mod error;
+mod output;
 
 /// Default logarithmic segment size from [`DEFAULT_SEGMENT_LIMIT_PO2`].
 ///
@@ -233,28 +231,7 @@ impl zkVM for EreRisc0 {
     }
 
     fn deserialize_from<R: Read, T: DeserializeOwned>(&self, reader: R) -> Result<T, zkVMError> {
-        struct WordReadAdapter<R>(R);
-
-        impl<R: Read> WordRead for WordReadAdapter<R> {
-            fn read_words(&mut self, words: &mut [u32]) -> risc0_zkvm::serde::Result<()> {
-                let bytes = bytemuck::cast_slice_mut(words);
-                self.0
-                    .read_exact(bytes)
-                    .map_err(risc0_zkvm::serde::Error::custom)
-            }
-
-            fn read_padded_bytes(&mut self, bytes: &mut [u8]) -> risc0_zkvm::serde::Result<()> {
-                let mut padded_bytes = vec![0u8; bytes.len().next_multiple_of(4) - bytes.len()];
-                self.0
-                    .read_exact(bytes)
-                    .map_err(risc0_zkvm::serde::Error::custom)?;
-                self.0
-                    .read_exact(&mut padded_bytes)
-                    .map_err(risc0_zkvm::serde::Error::custom)
-            }
-        }
-
-        T::deserialize(&mut Deserializer::new(WordReadAdapter(reader))).map_err(zkVMError::other)
+        deserialize_from(reader)
     }
 }
 
