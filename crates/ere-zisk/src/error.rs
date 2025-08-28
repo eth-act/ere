@@ -43,6 +43,8 @@ pub enum CompileError {
         program_dir: PathBuf,
         manifest_path: PathBuf,
     },
+    #[error("`cargo metadata` failed: {0}")]
+    MetadataCommand(#[from] cargo_metadata::Error),
     #[error("Could not find `[package].name` in guest Cargo.toml at {path}")]
     MissingPackageName { path: PathBuf },
     #[error("Compiled ELF not found at expected path: {path}")]

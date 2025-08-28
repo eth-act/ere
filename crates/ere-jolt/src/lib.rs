@@ -21,11 +21,13 @@ use zkvm_interface::{
     Compiler, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType,
     PublicValues, zkVM, zkVMError,
 };
+use compile_stock_rust::compile_jolt_program_stock_rust;
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 mod error;
 mod jolt_methods;
 mod utils;
+mod compile_stock_rust;
 
 #[allow(non_camel_case_types)]
 pub struct JOLT_TARGET;
@@ -35,31 +37,40 @@ impl Compiler for JOLT_TARGET {
 
     type Program = Vec<u8>;
 
-    fn compile(&self, guest_dir: &Path) -> Result<Self::Program, Self::Error> {
-        // Change current directory for `Program::build` to build guest program.
-        set_current_dir(guest_dir).map_err(|source| CompileError::SetCurrentDirFailed {
-            source,
-            path: guest_dir.to_path_buf(),
-        })?;
+    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
+        let toolchain =
+            env::var("ERE_GUEST_TOOLCHAIN").unwrap_or_else(|_error| "jolt".into());
+        match toolchain.as_str() {
+            "jolt" => Ok(compile_jolt_program(guest_directory)?),
+            _ => Ok(compile_jolt_program_stock_rust(guest_directory, &toolchain)?),
+        }
+    }
+}
 
-        let package_name = package_name_from_manifest(Path::new("Cargo.toml"))?;
+fn compile_jolt_program(guest_directory: &Path) -> Result<Vec<u8>, JoltError> {
+    // Change current directory for `Program::build` to build guest program.
+    set_current_dir(guest_directory).map_err(|source| CompileError::SetCurrentDirFailed {
+        source,
+        path: guest_directory.to_path_buf(),
+    })?;
 
-        // Note that if this fails, it will panic, hence we need to catch it.
-        let elf_path = std::panic::catch_unwind(|| {
-            let mut program = Program::new(&package_name);
-            program.set_std(true);
-            program.build(DEFAULT_TARGET_DIR);
-            program.elf.unwrap()
-        })
+    let package_name = package_name_from_manifest(Path::new("Cargo.toml"))?;
+
+    // Note that if this fails, it will panic, hence we need to catch it.
+    let elf_path = std::panic::catch_unwind(|| {
+        let mut program = Program::new(&package_name);
+        program.set_std(true);
+        program.build(DEFAULT_TARGET_DIR);
+        program.elf.unwrap()
+    })
         .map_err(|_| CompileError::BuildFailed)?;
 
-        let elf = fs::read(&elf_path).map_err(|source| CompileError::ReadElfFailed {
-            source,
-            path: elf_path.to_path_buf(),
-        })?;
+    let elf = fs::read(&elf_path).map_err(|source| CompileError::ReadElfFailed {
+        source,
+        path: elf_path.to_path_buf(),
+    })?;
 
-        Ok(elf)
-    }
+    Ok(elf)
 }
 
 #[derive(CanonicalSerialize, CanonicalDeserialize)]
@@ -174,7 +185,7 @@ pub fn program(elf: &[u8]) -> Result<(TempDir, jolt::host::Program), zkVMError> 
 mod tests {
     use super::*;
     use std::sync::OnceLock;
-    use test_utils::host::testing_guest_directory;
+    use test_utils::host::{run_zkvm_execute, testing_guest_directory};
 
     static BASIC_PRORGAM: OnceLock<Vec<u8>> = OnceLock::new();
 
@@ -192,5 +203,20 @@ mod tests {
     fn test_compiler_impl() {
         let elf_bytes = basic_program();
         assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
+    }
+
+    #[test]
+    fn test_execute() {
+        let elf_bytes = basic_program();
+        let zkvm = EreJolt::new(elf_bytes, ProverResourceType::Cpu).unwrap();
+        run_zkvm_execute(&zkvm, &Input::new());
+    }
+    
+    #[test]
+    fn test_execute_nightly() {
+        let guest_directory = testing_guest_directory("jolt", "stock_nightly_no_std");
+        let program = compile_jolt_program_stock_rust(&guest_directory, &"nightly".to_string()).unwrap();
+        let zkvm = EreJolt::new(program, ProverResourceType::Cpu).unwrap();
+        run_zkvm_execute(&zkvm, &Input::new());
     }
 }

@@ -34,10 +34,20 @@ pub enum CompileError {
     },
     #[error("Failed to build guest")]
     BuildFailed,
+    #[error("`openvm` build failure for {crate_path} failed: {source}")]
+    BuildFailure {
+        #[source]
+        source: anyhow::Error,
+        crate_path: PathBuf,
+    },
     #[error("Failed to read elf at {path}: {source}")]
     ReadElfFailed { source: io::Error, path: PathBuf },
     #[error("Failed to set current directory to {path}: {source}")]
     SetCurrentDirFailed { source: io::Error, path: PathBuf },
+    #[error("`cargo metadata` failed: {0}")]
+    MetadataCommand(#[from] cargo_metadata::Error),
+    #[error("Could not find `[package].name` in guest Cargo.toml at {path}")]
+    MissingPackageName { path: PathBuf },
 }
 
 #[derive(Debug, Error)]

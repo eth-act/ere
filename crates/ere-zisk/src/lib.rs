@@ -2,12 +2,14 @@
 
 use crate::{
     compile::compile_zisk_program,
+    compile_stock_rust::compile_zisk_program_stock_rust,
     error::{CommonError, ExecuteError, ProveError, VerifyError, ZiskError},
 };
 use blake3::Hash;
 use dashmap::{DashMap, Entry};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::{
+    env,
     fs,
     io::{self, BufRead, Read, Write},
     os::unix::fs::symlink,
@@ -26,6 +28,8 @@ use zkvm_interface::{
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 mod compile;
+mod compile_stock_rust;
+
 mod error;
 
 /// Lock for the command `cargo-zisk check-setup` to avoid multiple runs.
@@ -50,7 +54,12 @@ impl Compiler for RV64_IMA_ZISK_ZKVM_ELF {
     type Program = Vec<u8>;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        compile_zisk_program(guest_directory).map_err(ZiskError::Compile)
+        let toolchain =
+            env::var("ERE_GUEST_TOOLCHAIN").unwrap_or_else(|_error| "risc0".into());
+        match toolchain.as_str() {
+            "zisk" => compile_zisk_program(guest_directory).map_err(ZiskError::Compile),
+            _ => Ok(compile_zisk_program_stock_rust(guest_directory, &toolchain)?),
+        }
     }
 }
 
@@ -625,6 +634,15 @@ mod tests {
         let public_values = run_zkvm_execute(&zkvm, &io);
         assert_eq!(io.deserialize_outputs(&zkvm, &public_values), io.outputs());
     }
+
+    // #[test]
+    // fn test_execute_nightly() {
+    //     let guest_direcotry = testing_guest_directory("risc0", "stock_nightly_no_std");
+    //     let program = compile_zisk_program_stock_rust(&guest_direcotry, &"nightly".to_string()).unwrap();
+    //     let zkvm = EreZisk::new(program, ProverResourceType::Cpu);
+    // 
+    //     run_zkvm_execute(&zkvm, &Input::new());
+    // }
 
     #[test]
     fn test_execute_invalid_inputs() {

@@ -2270,8 +2270,10 @@ dependencies = [
 name = "ere-jolt"
 version = "0.0.11"
 dependencies = [
+ "anyhow",
  "ark-serialize 0.5.0",
  "build-utils",
+ "cargo_metadata 0.19.2",
  "common",
  "jolt",
  "jolt-core",
@@ -2281,6 +2283,7 @@ dependencies = [
  "test-utils",
  "thiserror 2.0.12",
  "toml",
+ "tracing",
  "zkvm-interface",
 ]
 
@@ -2303,7 +2306,9 @@ dependencies = [
 name = "ere-openvm"
 version = "0.0.11"
 dependencies = [
+ "anyhow",
  "build-utils",
+ "cargo_metadata 0.19.2",
  "openvm-build",
  "openvm-circuit",
  "openvm-continuations",
@@ -2314,6 +2319,7 @@ dependencies = [
  "test-utils",
  "thiserror 2.0.12",
  "toml",
+ "tracing",
  "zkvm-interface",
 ]
 
@@ -2321,8 +2327,10 @@ dependencies = [
 name = "ere-pico"
 version = "0.0.11"
 dependencies = [
+ "anyhow",
  "bincode",
  "build-utils",
+ "cargo_metadata 0.19.2",
  "pico-sdk",
  "pico-vm",
  "serde",
@@ -2340,6 +2348,7 @@ dependencies = [
  "build-utils",
  "bytemuck",
  "cargo_metadata 0.19.2",
+ "risc0-binfmt",
  "risc0-build",
  "risc0-zkvm",
  "serde",
@@ -2372,6 +2381,7 @@ dependencies = [
  "bincode",
  "blake3",
  "build-utils",
+ "cargo_metadata 0.19.2",
  "dashmap",
  "serde",
  "serde_json",
