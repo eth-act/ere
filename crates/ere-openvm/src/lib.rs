@@ -177,12 +177,7 @@ impl zkVM for EreOpenVM {
             }))?;
         }
 
-        let public_values = proof
-            .user_public_values
-            .iter()
-            .map(|v| u8::try_from(v.as_canonical_u32()).ok())
-            .collect::<Option<_>>()
-            .ok_or_else(|| OpenVMError::from(ProveError::from(CommonError::InvalidPublicValue)))?;
+        let public_values = extract_public_values(&proof.user_public_values)?;
         let proof_bytes = proof
             .encode_to_vec()
             .map_err(|e| OpenVMError::from(ProveError::SerializeProof(e)))?;
@@ -201,12 +196,7 @@ impl zkVM for EreOpenVM {
         Sdk::verify_proof(&self.agg_vk, self.app_commit, &proof)
             .map_err(|e| OpenVMError::Verify(VerifyError::Verify(e)))?;
 
-        let public_values = proof
-            .user_public_values
-            .iter()
-            .map(|v| u8::try_from(v.as_canonical_u32()).ok())
-            .collect::<Option<_>>()
-            .ok_or_else(|| OpenVMError::from(VerifyError::from(CommonError::InvalidPublicValue)))?;
+        let public_values = extract_public_values(&proof.user_public_values)?;
 
         Ok(public_values)
     }
@@ -235,6 +225,18 @@ fn serialize_inputs(stdin: &mut StdIn, inputs: &Input) {
             }
         }
     }
+}
+
+/// Extract public values in bytes from field elements.
+///
+/// The public values revealed in guest program will be flatten into `Vec<u8>`
+/// then converted to field elements `Vec<F>`, so here we try to downcast it.
+fn extract_public_values(user_public_values: &[F]) -> Result<Vec<u8>, CommonError> {
+    user_public_values
+        .iter()
+        .map(|v| u8::try_from(v.as_canonical_u32()).ok())
+        .collect::<Option<_>>()
+        .ok_or(CommonError::InvalidPublicValue)
 }
 
 #[cfg(test)]
