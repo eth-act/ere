@@ -296,7 +296,9 @@ mod tests {
         let guest_directory = testing_guest_directory("openvm", "stock_nightly_no_std");
         let program = compile_openvm_program_stock_rust(&guest_directory, &"nightly".to_string()).unwrap();
         let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
-        run_zkvm_execute(&zkvm, &Input::new());
+
+        let result = zkvm.execute(&BasicProgramIo::empty());
+        assert!(!result.is_err(), "Openvm execution failure");
     }
 
     #[test]
