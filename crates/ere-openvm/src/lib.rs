@@ -9,12 +9,19 @@ use openvm_sdk::{
     codec::{Decode, Encode},
     commit::AppExecutionCommit,
     config::{AppConfig, DEFAULT_APP_LOG_BLOWUP, DEFAULT_LEAF_LOG_BLOWUP, SdkVmConfig},
+    fs::read_object_from_file,
     keygen::{AggProvingKey, AggVerifyingKey, AppProvingKey},
 };
 use openvm_stark_sdk::{config::FriParameters, openvm_stark_backend::p3_field::PrimeField32};
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
-use std::{fs, io::Read, path::Path, sync::Arc, time::Instant};
+use std::{
+    env, fs,
+    io::Read,
+    path::{Path, PathBuf},
+    sync::Arc,
+    time::Instant,
+};
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof,
     ProverResourceType, PublicValues, zkVM, zkVMError,
@@ -110,7 +117,11 @@ impl EreOpenVM {
 
         let (app_pk, _) = sdk.app_keygen();
 
-        let (agg_pk, agg_vk) = sdk.agg_keygen().map_err(CommonError::AggKeyGen)?;
+        let agg_pk = read_object_from_file::<AggProvingKey, _>(agg_pk_path())
+            .map_err(|e| CommonError::ReadAggKeyFailed(e.into()))?;
+        let agg_vk = agg_pk.get_agg_vk();
+
+        let _ = sdk.set_agg_pk(agg_pk.clone());
 
         let app_commit = sdk
             .prover(app_exe.clone())
@@ -247,6 +258,11 @@ fn extract_public_values(user_public_values: &[F]) -> Result<Vec<u8>, CommonErro
         .map(|v| u8::try_from(v.as_canonical_u32()).ok())
         .collect::<Option<_>>()
         .ok_or(CommonError::InvalidPublicValue)
+}
+
+pub fn agg_pk_path() -> PathBuf {
+    PathBuf::from(std::env::var("HOME").expect("env `$HOME` should be set"))
+        .join(".openvm/agg_stark.pk")
 }
 
 #[cfg(test)]

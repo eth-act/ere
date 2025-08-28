@@ -44,3 +44,6 @@ else
     echo "       Ensure ${HOME}/.cargo/bin is in your PATH for new shells." >&2
     exit 1
 fi
+
+# Setup aggregation keys
+cargo openvm setup

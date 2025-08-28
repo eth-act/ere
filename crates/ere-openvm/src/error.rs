@@ -87,8 +87,8 @@ pub enum CommonError {
     ElfDecode(Box<dyn std::error::Error + Send + Sync + 'static>),
     #[error("Transpile elf failed: {0}")]
     Transpile(SdkError),
-    #[error("Agg keygen failed: {0}")]
-    AggKeyGen(SdkError),
+    #[error("Read aggregation key failed: {0}")]
+    ReadAggKeyFailed(Box<dyn std::error::Error + Send + Sync + 'static>),
     #[error("Initialize prover failed: {0}")]
     ProverInit(SdkError),
     #[error("Invalid public value")]
