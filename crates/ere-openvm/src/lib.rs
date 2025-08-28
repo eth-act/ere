@@ -210,9 +210,7 @@ impl zkVM for EreOpenVM {
     }
 
     fn deserialize_from<R: Read, T: DeserializeOwned>(&self, _: R) -> Result<T, zkVMError> {
-        Err(zkVMError::other(
-            "public values de/serialization is not supported",
-        ))
+        unimplemented!("no native serialization in this platform")
     }
 }
 

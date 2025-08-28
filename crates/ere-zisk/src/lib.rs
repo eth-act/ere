@@ -337,8 +337,8 @@ impl zkVM for EreZisk {
         SDK_VERSION
     }
 
-    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, _reader: R) -> Result<T, zkVMError> {
-        todo!()
+    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, _: R) -> Result<T, zkVMError> {
+        unimplemented!("no native serialization in this platform")
     }
 }
 
