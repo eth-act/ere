@@ -284,11 +284,6 @@ mod tests {
             .clone()
     }
 
-    fn basic_program_ere_openvm() -> &'static EreOpenVM {
-        static ERE_OPENVM: OnceLock<EreOpenVM> = OnceLock::new();
-        ERE_OPENVM.get_or_init(|| EreOpenVM::new(basic_program(), ProverResourceType::Cpu).unwrap())
-    }
-
     #[test]
     fn test_compiler_impl() {
         let program = basic_program();
@@ -297,7 +292,8 @@ mod tests {
 
     #[test]
     fn test_execute() {
-        let zkvm = basic_program_ere_openvm();
+        let program = basic_program();
+        let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
 
         let io = BasicProgramIo::valid().into_output_hashed_io();
         let public_values = run_zkvm_execute(&zkvm, &io);
@@ -306,7 +302,8 @@ mod tests {
 
     #[test]
     fn test_execute_invalid_inputs() {
-        let zkvm = basic_program_ere_openvm();
+        let program = basic_program();
+        let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
 
         for inputs in [
             BasicProgramIo::empty(),
@@ -319,7 +316,8 @@ mod tests {
 
     #[test]
     fn test_prove() {
-        let zkvm = basic_program_ere_openvm();
+        let program = basic_program();
+        let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
 
         let io = BasicProgramIo::valid().into_output_hashed_io();
         let public_values = run_zkvm_prove(&zkvm, &io);
@@ -328,7 +326,8 @@ mod tests {
 
     #[test]
     fn test_prove_invalid_inputs() {
-        let zkvm = basic_program_ere_openvm();
+        let program = basic_program();
+        let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
 
         for inputs in [
             BasicProgramIo::empty(),
