@@ -6,7 +6,7 @@ use openvm_build::GuestOptions;
 use openvm_circuit::arch::instructions::exe::VmExe;
 use openvm_continuations::verifier::internal::types::VmStarkProof;
 use openvm_sdk::{
-    F, SC, Sdk, StdIn,
+    CpuSdk, F, GpuSdk, SC, StdIn,
     codec::{Decode, Encode},
     commit::AppExecutionCommit,
     config::{AppConfig, DEFAULT_APP_LOG_BLOWUP, DEFAULT_LEAF_LOG_BLOWUP, SdkVmConfig},
@@ -117,12 +117,12 @@ pub struct EreOpenVM {
     agg_pk: AggProvingKey,
     agg_vk: AggVerifyingKey,
     app_commit: AppExecutionCommit,
-    _resource: ProverResourceType,
+    resource: ProverResourceType,
 }
 
 impl EreOpenVM {
-    pub fn new(program: OpenVMProgram, _resource: ProverResourceType) -> Result<Self, zkVMError> {
-        let sdk = Sdk::new(program.app_config.clone()).map_err(CommonError::SdkInit)?;
+    pub fn new(program: OpenVMProgram, resource: ProverResourceType) -> Result<Self, zkVMError> {
+        let sdk = CpuSdk::new(program.app_config.clone()).map_err(CommonError::SdkInit)?;
 
         let elf = Elf::decode(&program.elf, MEM_SIZE as u32)
             .map_err(|e| CommonError::ElfDecode(e.into()))?;
@@ -149,17 +149,45 @@ impl EreOpenVM {
             agg_pk,
             agg_vk,
             app_commit,
-            _resource,
+            resource,
         })
     }
 
-    fn sdk(&self) -> Result<Sdk, CommonError> {
-        let sdk =
-            Sdk::new_without_transpiler(self.app_config.clone()).map_err(CommonError::SdkInit)?;
+    fn cpu_sdk(&self) -> Result<CpuSdk, CommonError> {
+        let sdk = CpuSdk::new_without_transpiler(self.app_config.clone())
+            .map_err(CommonError::SdkInit)?;
         let _ = sdk.set_app_pk(self.app_pk.clone());
         let _ = sdk.set_agg_pk(self.agg_pk.clone());
         Ok(sdk)
     }
+
+    fn gpu_sdk(&self) -> Result<GpuSdk, CommonError> {
+        let sdk = GpuSdk::new_without_transpiler(self.app_config.clone())
+            .map_err(CommonError::SdkInit)?;
+        let _ = sdk.set_app_pk(self.app_pk.clone());
+        let _ = sdk.set_agg_pk(self.agg_pk.clone());
+        Ok(sdk)
+    }
+}
+
+macro_rules! with_sdk {
+    ($zkvm:ident, |$sdk:ident| $f:expr) => {
+        match $zkvm.resource {
+            ProverResourceType::Cpu => {
+                let $sdk = $zkvm.cpu_sdk()?;
+                $f
+            }
+            ProverResourceType::Gpu => {
+                let $sdk = $zkvm.gpu_sdk()?;
+                $f
+            }
+            ProverResourceType::Network(_) => {
+                panic!(
+                    "Network proving not yet implemented for OpenVM. Use CPU or GPU resource type."
+                );
+            }
+        }
+    };
 }
 
 impl zkVM for EreOpenVM {
@@ -167,16 +195,11 @@ impl zkVM for EreOpenVM {
         &self,
         inputs: &Input,
     ) -> Result<(PublicValues, zkvm_interface::ProgramExecutionReport), zkVMError> {
-        let sdk = self
-            .sdk()
-            .map_err(|e| OpenVMError::from(ExecuteError::from(e)))?;
-
         let mut stdin = StdIn::default();
         serialize_inputs(&mut stdin, inputs);
 
         let start = Instant::now();
-        let public_values = sdk
-            .execute(self.app_exe.clone(), stdin)
+        let public_values = with_sdk!(self, |sdk| sdk.execute(self.app_exe.clone(), stdin))
             .map_err(|e| OpenVMError::from(ExecuteError::Execute(e)))?;
 
         Ok((
@@ -192,16 +215,11 @@ impl zkVM for EreOpenVM {
         &self,
         inputs: &Input,
     ) -> Result<(PublicValues, Proof, zkvm_interface::ProgramProvingReport), zkVMError> {
-        let sdk = self
-            .sdk()
-            .map_err(|e| OpenVMError::from(ProveError::from(e)))?;
-
         let mut stdin = StdIn::default();
         serialize_inputs(&mut stdin, inputs);
 
         let now = std::time::Instant::now();
-        let (proof, app_commit) = sdk
-            .prove(self.app_exe.clone(), stdin)
+        let (proof, app_commit) = with_sdk!(self, |sdk| sdk.prove(self.app_exe.clone(), stdin))
             .map_err(|e| OpenVMError::from(ProveError::Prove(e)))?;
         let elapsed = now.elapsed();
 
@@ -228,7 +246,7 @@ impl zkVM for EreOpenVM {
         let proof = VmStarkProof::<SC>::decode(&mut proof)
             .map_err(|e| OpenVMError::from(VerifyError::DeserializeProof(e)))?;
 
-        Sdk::verify_proof(&self.agg_vk, self.app_commit, &proof)
+        CpuSdk::verify_proof(&self.agg_vk, self.app_commit, &proof)
             .map_err(|e| OpenVMError::Verify(VerifyError::Verify(e)))?;
 
         let public_values = extract_public_values(&proof.user_public_values)?;
