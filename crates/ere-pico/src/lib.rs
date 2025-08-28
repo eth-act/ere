@@ -164,7 +164,7 @@ fn serialize_inputs(stdin: &mut EmulatorStdinBuilder<Vec<u8>>, inputs: &Input) {
 mod tests {
     use super::*;
     use std::{panic, sync::OnceLock};
-    use test_utils::host::{BasicProgramIo, Io, run_zkvm_execute, testing_guest_directory};
+    use test_utils::host::{BasicProgramIo, run_zkvm_execute, testing_guest_directory};
 
     static BASIC_PRORGAM: OnceLock<Vec<u8>> = OnceLock::new();
 
@@ -190,8 +190,7 @@ mod tests {
         let zkvm = ErePico::new(program, ProverResourceType::Cpu);
 
         let io = BasicProgramIo::valid();
-        let public_values = run_zkvm_execute(&zkvm, &io);
-        assert_eq!(io.deserialize_outputs(&zkvm, &public_values), io.outputs());
+        run_zkvm_execute(&zkvm, &io);
     }
 
     #[test]

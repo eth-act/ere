@@ -29,8 +29,7 @@ pub fn run_zkvm_execute(zkvm: &impl zkVM, io: &impl Io) -> PublicValues {
         .execute(&io.inputs())
         .expect("execute should not fail with valid input");
 
-    // TODO: Uncomment when most zkVMs implement the returning of public values:
-    // assert_eq!(io.deserialize_outputs(&zkvm, &public_values), io.outputs());
+    assert_eq!(io.deserialize_outputs(&zkvm, &public_values), io.outputs());
 
     public_values
 }
@@ -46,8 +45,10 @@ pub fn run_zkvm_prove(zkvm: &impl zkVM, io: &impl Io) -> PublicValues {
 
     assert_eq!(prover_public_values, verifier_public_values);
 
-    // TODO: Uncomment when most zkVMs implement the returning of public values:
-    // assert_eq!(io.deserialize_outputs(&zkvm, &verifier_public_values), io.outputs());
+    assert_eq!(
+        io.deserialize_outputs(&zkvm, &verifier_public_values),
+        io.outputs()
+    );
 
     verifier_public_values
 }

@@ -242,7 +242,7 @@ mod tests {
     use super::*;
     use std::sync::OnceLock;
     use test_utils::host::{
-        BasicProgramIo, Io, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+        BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
 
     fn basic_program() -> OpenVMProgram {
@@ -272,8 +272,7 @@ mod tests {
         let zkvm = basic_program_ere_openvm();
 
         let io = BasicProgramIo::valid().into_output_hashed_io();
-        let public_values = run_zkvm_execute(&zkvm, &io);
-        assert_eq!(io.deserialize_outputs(&zkvm, &public_values), io.outputs());
+        run_zkvm_execute(&zkvm, &io);
     }
 
     #[test]
@@ -294,8 +293,7 @@ mod tests {
         let zkvm = basic_program_ere_openvm();
 
         let io = BasicProgramIo::valid().into_output_hashed_io();
-        let public_values = run_zkvm_prove(&zkvm, &io);
-        assert_eq!(io.deserialize_outputs(&zkvm, &public_values), io.outputs());
+        run_zkvm_prove(&zkvm, &io);
     }
 
     #[test]

@@ -513,7 +513,7 @@ mod test {
 
         let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
 
-        let io = BasicProgramIo::valid();
+        let io = BasicProgramIo::valid().into_output_hashed_io();
         run_zkvm_execute(&zkvm, &io);
         run_zkvm_prove(&zkvm, &io);
     }
@@ -561,7 +561,7 @@ mod test {
 
         let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
 
-        let io = BasicProgramIo::valid();
+        let io = BasicProgramIo::valid().into_output_hashed_io();
         run_zkvm_execute(&zkvm, &io);
         run_zkvm_prove(&zkvm, &io);
     }
