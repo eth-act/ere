@@ -16,4 +16,5 @@ jobs:
       zkvm: openvm
       toolchain: 1.86.0
       test_ere_dockerized: true
+      default_features: false
       test_options: ''

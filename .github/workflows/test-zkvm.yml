@@ -17,6 +17,12 @@ on:
         required: false
         type: boolean
         default: true
+      # Currently only needed by those zkvms that need Cuda during building process by default
+      default_features:
+        description: 'Cargo clippy/build with default features or not'
+        required: false
+        type: boolean
+        default: true
       # Remove when we use larger runners, currently only needed to skip some zisk test
       test_options:
         description: 'Cargo test options when testing via Docker'
@@ -45,12 +51,14 @@ jobs:
         run: |
           cargo clippy --all-targets \
             --package ere-${{ inputs.zkvm }} \
+            ${{ inputs.default_features == false && '--no-default-features' }} \
             -- -D warnings
 
       - name: Run cargo clippy for ere-cli with feature ${{ inputs.zkvm }}
         run: |
           cargo clippy --all-targets \
             --package ere-cli \
+            ${{ inputs.default_features == false && '--no-default-features' }} \
             --features cli,${{ inputs.zkvm }} \
             -- -D warnings
 
@@ -138,8 +146,11 @@ jobs:
             --volume ${{ github.workspace }}:/ere \
             --workdir /ere \
             ${{ needs.build_image.outputs.base_zkvm_image_tag }} \
-            /bin/sh -c "\$(RUSTFLAGS=-Ctarget-cpu=native cargo test --release --package ere-${{ inputs.zkvm }} --no-run --message-format json \
-              | jq -r 'select(.executable) | select(.package_id | contains(\"ere-${{ inputs.zkvm }}\")) | .executable') \
+            /bin/bash -c "set -o pipefail && \
+              \$(RUSTFLAGS=-Ctarget-cpu=native cargo test --release --package ere-${{ inputs.zkvm }} \
+                  ${{ inputs.default_features == false && '--no-default-features' }} \
+                  --no-run --message-format json \
+                 | jq -r 'select(.executable) | select(.package_id | contains(\"ere-${{ inputs.zkvm }}\")) | .executable') \
               ${{ inputs.test_options }}"
 
   test_ere_dockerized:
