@@ -85,13 +85,13 @@ build-utils = { path = "crates/build-utils" }
 test-utils = { path = "crates/test-utils" }
 ere-cli = { path = "crates/ere-cli", default-features = false }
 ere-dockerized = { path = "crates/ere-dockerized" }
-ere-jolt = { path = "crates/ere-jolt" }
-ere-nexus = { path = "crates/ere-nexus" }
-ere-openvm = { path = "crates/ere-openvm" }
-ere-pico = { path = "crates/ere-pico" }
-ere-risc0 = { path = "crates/ere-risc0" }
-ere-sp1 = { path = "crates/ere-sp1" }
-ere-zisk = { path = "crates/ere-zisk" }
+ere-jolt = { path = "crates/ere-jolt", default-features = false }
+ere-nexus = { path = "crates/ere-nexus", default-features = false }
+ere-openvm = { path = "crates/ere-openvm", default-features = false }
+ere-pico = { path = "crates/ere-pico", default-features = false }
+ere-risc0 = { path = "crates/ere-risc0", default-features = false }
+ere-sp1 = { path = "crates/ere-sp1", default-features = false }
+ere-zisk = { path = "crates/ere-zisk", default-features = false }
 
 [patch.crates-io]
 # These patches are only needed by Jolt
