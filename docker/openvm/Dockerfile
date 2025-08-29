@@ -9,6 +9,9 @@ FROM ${BASE_IMAGE_TAG}
 COPY scripts/sdk_installers/install_openvm_sdk.sh /tmp/install_openvm_sdk.sh
 RUN chmod +x /tmp/install_openvm_sdk.sh
 
+# Add `rust-src` component to enable std build for nightly rust.
+RUN rustup +nightly component add rust-src
+
 # Run the OpenVM SDK installation script.
 # This script installs a specific toolchain
 # and installs cargo-openvm.
