@@ -16,4 +16,5 @@ jobs:
       zkvm: nexus
       toolchain: nightly-2025-04-06
       test_ere_dockerized: false
+      default_features: true
       test_options: ''

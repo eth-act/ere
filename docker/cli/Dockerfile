@@ -9,7 +9,10 @@ WORKDIR /ere
 ARG ZKVM
 ARG RUSTFLAGS="-Ctarget-cpu=native"
 
-RUN RUSTFLAGS=${RUSTFLAGS} cargo build --release --package ere-cli --bin ere-cli --features cli,${ZKVM} && \
+# If current environment is in CI or not.
+ARG CI
+
+RUN RUSTFLAGS=${RUSTFLAGS} cargo build --release --package ere-cli --bin ere-cli --features cli,${ZKVM} ${CI:+--no-default-features} && \
     cp /ere/target/release/ere-cli /ere/ere-cli && \
     cargo clean && \
     rm -rf $CARGO_HOME/registry/src $CARGO_HOME/registry/cache
