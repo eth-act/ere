@@ -17,7 +17,7 @@ toml.workspace = true
 openvm-build.workspace = true
 openvm-circuit.workspace = true
 openvm-continuations.workspace = true
-openvm-sdk = { workspace = true, features = ["cuda"] }
+openvm-sdk.workspace = true
 openvm-stark-sdk.workspace = true
 openvm-transpiler.workspace = true
 
@@ -29,6 +29,10 @@ test-utils = { workspace = true, features = ["host"] }
 
 [build-dependencies]
 build-utils.workspace = true
+
+[features]
+default = ["cuda"]
+cuda = ["openvm-sdk/cuda"]
 
 [lints]
 workspace = true

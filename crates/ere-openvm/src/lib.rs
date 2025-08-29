@@ -6,7 +6,7 @@ use openvm_build::GuestOptions;
 use openvm_circuit::arch::instructions::exe::VmExe;
 use openvm_continuations::verifier::internal::types::VmStarkProof;
 use openvm_sdk::{
-    CpuSdk, F, GpuSdk, SC, StdIn,
+    CpuSdk, F, SC, StdIn,
     codec::{Decode, Encode},
     commit::AppExecutionCommit,
     config::{AppConfig, DEFAULT_APP_LOG_BLOWUP, DEFAULT_LEAF_LOG_BLOWUP, SdkVmConfig},
@@ -161,8 +161,9 @@ impl EreOpenVM {
         Ok(sdk)
     }
 
-    fn gpu_sdk(&self) -> Result<GpuSdk, CommonError> {
-        let sdk = GpuSdk::new_without_transpiler(self.app_config.clone())
+    #[cfg(feature = "cuda")]
+    fn gpu_sdk(&self) -> Result<openvm_sdk::GpuSdk, CommonError> {
+        let sdk = openvm_sdk::GpuSdk::new_without_transpiler(self.app_config.clone())
             .map_err(CommonError::SdkInit)?;
         let _ = sdk.set_app_pk(self.app_pk.clone());
         let _ = sdk.set_agg_pk(self.agg_pk.clone());
@@ -178,8 +179,13 @@ macro_rules! with_sdk {
                 $f
             }
             ProverResourceType::Gpu => {
-                let $sdk = $zkvm.gpu_sdk()?;
-                $f
+                #[cfg(feature = "cuda")]
+                {
+                    let $sdk = $zkvm.gpu_sdk()?;
+                    $f
+                }
+                #[cfg(not(feature = "cuda"))]
+                panic!("Feature `cuda` is disabled. Enable `cuda` to use GPU resource type");
             }
             ProverResourceType::Network(_) => {
                 panic!(
