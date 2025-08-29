@@ -38,6 +38,9 @@ ENV RISC0_VERSION="3.0.1" \
     RISC0_CPP_VERSION="2024.1.5" \
     RISC0_RUST_VERSION="1.88.0"
 
+# Add `rust-src` component to enable std build for nightly rust.
+RUN rustup +nightly component add rust-src
+
 # Run the Risc0 SDK installation script
 # It will use the RISC0_VERSION, RISC0_CPP_VERSION and RISC0_RUST_VERSION defined above.
 RUN /tmp/install_risc0_sdk.sh && rm /tmp/install_risc0_sdk.sh
