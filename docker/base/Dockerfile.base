@@ -24,6 +24,7 @@ RUN apt-get update && \
     ca-certificates \
     openssl \
     libssl-dev \
+    golang \
     # Clean up apt cache
     && apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -52,6 +53,8 @@ WORKDIR /app
 # TODO: Default to the non-root user?
 # USER ${USERNAME}
 
+# Verify go installation went well
+RUN go version
 # Verify Rust installation went well
 RUN rustc --version
 RUN cargo --version

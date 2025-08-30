@@ -21,6 +21,7 @@ mod compile_stock_rust;
 mod error;
 use error::{ExecuteError, ProveError, SP1Error, VerifyError};
 
+#[allow(clippy::large_enum_variant)]
 enum ProverType {
     Cpu(CpuProver),
     Gpu(CudaProver),
