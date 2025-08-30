@@ -2337,8 +2337,10 @@ dependencies = [
 name = "ere-pico"
 version = "0.0.11"
 dependencies = [
+ "anyhow",
  "bincode",
  "build-utils",
+ "cargo_metadata 0.19.2",
  "pico-sdk",
  "pico-vm",
  "serde",
