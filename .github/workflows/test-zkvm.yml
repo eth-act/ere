@@ -17,6 +17,12 @@ on:
         required: false
         type: boolean
         default: true
+      # Currently only needed by those zkvms that need Cuda during building process by default
+      default_features:
+        description: 'Cargo clippy/build with default features or not'
+        required: false
+        type: boolean
+        default: true
       # Remove when we use larger runners, currently only needed to skip some zisk test
       test_options:
         description: 'Cargo test options when testing via Docker'
@@ -45,12 +51,14 @@ jobs:
         run: |
           cargo clippy --all-targets \
             --package ere-${{ inputs.zkvm }} \
+            ${{ inputs.default_features && '' || '--no-default-features' }} \
             -- -D warnings
 
       - name: Run cargo clippy for ere-cli with feature ${{ inputs.zkvm }}
         run: |
           cargo clippy --all-targets \
             --package ere-cli \
+            ${{ inputs.default_features && '' || '--no-default-features' }} \
             --features cli,${{ inputs.zkvm }} \
             -- -D warnings
 
@@ -64,6 +72,7 @@ jobs:
       image_version: ${{ steps.inspect_image.outputs.image_version }}
       base_image_tag: ${{ steps.inspect_image.outputs.base_image_tag }}
       base_zkvm_image_tag: ${{ steps.inspect_image.outputs.base_zkvm_image_tag }}
+      cli_zkvm_image_tag: ${{ steps.inspect_image.outputs.cli_zkvm_image_tag }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -86,10 +95,12 @@ jobs:
           IMAGE_VERSION="$ZKVM_CRATE_VERSION-$GIT_REV"
           BASE_IMAGE_TAG="ghcr.io/${{ github.repository }}/ere-base:$IMAGE_VERSION"
           BASE_ZKVM_IMAGE_TAG="ghcr.io/${{ github.repository }}/ere-base-${{ inputs.zkvm }}:$IMAGE_VERSION"
+          CLI_ZKVM_IMAGE_TAG="ghcr.io/${{ github.repository }}/ere-cli-${{ inputs.zkvm }}:$IMAGE_VERSION"
 
           echo "image_version=$IMAGE_VERSION" >> $GITHUB_OUTPUT
           echo "base_image_tag=$BASE_IMAGE_TAG" >> $GITHUB_OUTPUT
           echo "base_zkvm_image_tag=$BASE_ZKVM_IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "cli_zkvm_image_tag=$CLI_ZKVM_IMAGE_TAG" >> $GITHUB_OUTPUT
 
       - name: Build ere-base image
         uses: docker/build-push-action@v6
@@ -107,8 +118,8 @@ jobs:
           push: true
           tags: ${{ steps.inspect_image.outputs.base_zkvm_image_tag }}
           build-args: |
-            CI=1
             BASE_IMAGE_TAG=${{ steps.inspect_image.outputs.base_image_tag }}
+            CI=1
 
   test_via_docker:
     name: Test via Docker
@@ -138,8 +149,11 @@ jobs:
             --volume ${{ github.workspace }}:/ere \
             --workdir /ere \
             ${{ needs.build_image.outputs.base_zkvm_image_tag }} \
-            /bin/sh -c "\$(RUSTFLAGS=-Ctarget-cpu=native cargo test --release --package ere-${{ inputs.zkvm }} --no-run --message-format json \
-              | jq -r 'select(.executable) | select(.package_id | contains(\"ere-${{ inputs.zkvm }}\")) | .executable') \
+            /bin/bash -c "set -o pipefail && \
+              \$(RUSTFLAGS=-Ctarget-cpu=native cargo test --release --package ere-${{ inputs.zkvm }} \
+                  ${{ inputs.default_features && '' || '--no-default-features' }} \
+                  --no-run --message-format json \
+                 | jq -r 'select(.executable) | select(.package_id | contains(\"ere-${{ inputs.zkvm }}\")) | .executable') \
               ${{ inputs.test_options }}"
 
   test_ere_dockerized:
@@ -169,12 +183,26 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Build ere-cli-${{ inputs.zkvm }} image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/cli/Dockerfile
+          push: true
+          tags: ${{ needs.build_image.outputs.cli_zkvm_image_tag }}
+          build-args: |
+            BASE_ZKVM_IMAGE_TAG=${{ needs.build_image.outputs.base_zkvm_image_tag }}
+            ZKVM=${{ inputs.zkvm }}
+            CI=1
+
       - name: Pull image ere-base and ere-base-${{ inputs.zkvm }}
         run: |
           docker image pull ${{ needs.build_image.outputs.base_image_tag }}
           docker image pull ${{ needs.build_image.outputs.base_zkvm_image_tag }}
+          docker image pull ${{ needs.build_image.outputs.cli_zkvm_image_tag }}
           docker image tag ${{ needs.build_image.outputs.base_image_tag }} ere-base:${{ needs.build_image.outputs.image_version }}
           docker image tag ${{ needs.build_image.outputs.base_zkvm_image_tag }} ere-base-${{ inputs.zkvm }}:${{ needs.build_image.outputs.image_version }}
+          docker image tag ${{ needs.build_image.outputs.cli_zkvm_image_tag }} ere-cli-${{ inputs.zkvm }}:${{ needs.build_image.outputs.image_version }}
 
       - name: Run cargo test for ere-${{ inputs.zkvm }} via ere-dockerized
         run: cargo test --release --package ere-dockerized -- ${{ inputs.zkvm }}
