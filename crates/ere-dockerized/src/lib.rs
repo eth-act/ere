@@ -24,17 +24,17 @@
 //! use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
 //! use std::path::Path;
 //!
+//! // The zkVM we plan to use
+//! let zkvm = ErezkVM::SP1;
+//!
 //! // Compile a guest program
-//! let compiler = EreDockerizedCompiler::new(ErezkVM::SP1, "mounting/directory");
+//! let compiler = EreDockerizedCompiler::new(zkvm, "mounting/directory")?;
 //! let guest_path = Path::new("relative/path/to/guest/program");
 //! let program = compiler.compile(&guest_path)?;
 //!
 //! // Create zkVM instance
-//! let zkvm = EreDockerizedzkVM::new(
-//!     ErezkVM::SP1,
-//!     program,
-//!     ProverResourceType::Cpu
-//! )?;
+//! let resource = ProverResourceType::Cpu;
+//! let zkvm = EreDockerizedzkVM::new(zkvm, program, resource)?;
 //!
 //! // Prepare inputs
 //! let mut inputs = Input::new();
@@ -42,15 +42,15 @@
 //! inputs.write(100u16);
 //!
 //! // Execute program
-//! let execution_report = zkvm.execute(&inputs)?;
+//! let (public_values, execution_report) = zkvm.execute(&inputs)?;
 //! println!("Execution cycles: {}", execution_report.total_num_cycles);
 //!
 //! // Generate proof
-//! let (proof, proving_report) = zkvm.prove(&inputs)?;
+//! let (public_values, proof, proving_report) = zkvm.prove(&inputs)?;
 //! println!("Proof generated in: {:?}", proving_report.proving_time);
 //!
 //! // Verify proof
-//! zkvm.verify(&proof)?;
+//! let public_values = zkvm.verify(&proof)?;
 //! println!("Proof verified successfully!");
 //! # Ok(())
 //! # }
@@ -123,9 +123,9 @@ impl ErezkVM {
     }
 
     /// This method builds 3 Docker images in sequence:
-    /// 1. `ere-base:latest`: Base image with common dependencies
-    /// 2. `ere-base-{zkvm}:latest`: zkVM-specific base image with the zkVM SDK
-    /// 3. `ere-cli-{zkvm}:latest`: CLI image with the `ere-cli` binary built with feature `{zkvm}`
+    /// 1. `ere-base:{version}`: Base image with common dependencies
+    /// 2. `ere-base-{zkvm}:{version}`: zkVM-specific base image with the zkVM SDK
+    /// 3. `ere-cli-{zkvm}:{version}`: CLI image with the `ere-cli` binary built with feature `{zkvm}`
     ///
     /// Images are cached and only rebuilt if they don't exist or if the
     /// `ERE_FORCE_REBUILD_DOCKER_IMAGE=true` environment variable is set.
@@ -210,11 +210,12 @@ pub struct EreDockerizedCompiler {
 }
 
 impl EreDockerizedCompiler {
-    pub fn new(zkvm: ErezkVM, mount_directory: impl AsRef<Path>) -> Self {
-        Self {
+    pub fn new(zkvm: ErezkVM, mount_directory: impl AsRef<Path>) -> Result<Self, CommonError> {
+        zkvm.build_docker_image()?;
+        Ok(Self {
             zkvm,
             mount_directory: mount_directory.as_ref().to_path_buf(),
-        }
+        })
     }
 
     pub fn zkvm(&self) -> ErezkVM {
@@ -231,8 +232,6 @@ impl Compiler for EreDockerizedCompiler {
     type Program = SerializedProgram;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        self.zkvm.build_docker_image()?;
-
         let guest_relative_path = guest_directory
             .strip_prefix(&self.mount_directory)
             .map_err(|_| CompileError::GuestNotInMountingDirecty {
@@ -291,6 +290,18 @@ impl EreDockerizedzkVM {
             program,
             resource,
         })
+    }
+
+    pub fn zkvm(&self) -> ErezkVM {
+        self.zkvm
+    }
+
+    pub fn program(&self) -> &SerializedProgram {
+        &self.program
+    }
+
+    pub fn resource(&self) -> &ProverResourceType {
+        &self.resource
     }
 }
 
@@ -508,6 +519,7 @@ mod test {
 
         let guest_directory = testing_guest_directory(zkvm.as_str(), "basic");
         let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
+            .unwrap()
             .compile(&guest_directory)
             .unwrap();
 
@@ -524,6 +536,7 @@ mod test {
 
         let guest_directory = testing_guest_directory(zkvm.as_str(), "basic");
         let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
+            .unwrap()
             .compile(&guest_directory)
             .unwrap();
 
@@ -540,6 +553,7 @@ mod test {
 
         let guest_directory = testing_guest_directory(zkvm.as_str(), "basic");
         let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
+            .unwrap()
             .compile(&guest_directory)
             .unwrap();
 
@@ -556,6 +570,7 @@ mod test {
 
         let guest_directory = testing_guest_directory(zkvm.as_str(), "basic");
         let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
+            .unwrap()
             .compile(&guest_directory)
             .unwrap();
 
