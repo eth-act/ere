@@ -25,9 +25,9 @@ impl Compiler for PICO_TARGET {
     type Program = Vec<u8>;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        let toolchain = env::var("ERE_GUEST_TOOLCHAIN").unwrap_or_else(|_error| "risc0".into());
+        let toolchain = env::var("ERE_GUEST_TOOLCHAIN").unwrap_or_else(|_error| "pico".into());
         match toolchain.as_str() {
-            "risc0" => Ok(compile_pico_program(guest_directory)?),
+            "pico" => Ok(compile_pico_program(guest_directory)?),
             _ => Ok(compile_pico_program_stock_rust(
                 guest_directory,
                 &toolchain,
