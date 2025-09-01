@@ -152,7 +152,7 @@ impl ErezkVM {
         }
 
         if force_rebuild || !docker_image_exists(self.base_zkvm_tag(CRATE_VERSION))? {
-            DockerBuildCmd::new()
+            let mut cmd = DockerBuildCmd::new()
                 .file(
                     workspace_dir
                         .join("docker")
@@ -161,8 +161,15 @@ impl ErezkVM {
                 )
                 .tag(self.base_zkvm_tag(CRATE_VERSION))
                 .tag(self.base_zkvm_tag("latest"))
-                .bulid_arg("BASE_IMAGE_TAG", self.base_tag(CRATE_VERSION))
-                .exec(&workspace_dir)
+                .bulid_arg("BASE_IMAGE_TAG", self.base_tag(CRATE_VERSION));
+
+            if matches!(self, ErezkVM::OpenVM) {
+                if let Ok(cuda_arch) = env::var("CUDA_ARCH") {
+                    cmd = cmd.bulid_arg("CUDA_ARCH", cuda_arch)
+                }
+            };
+
+            cmd.exec(&workspace_dir)
                 .map_err(CommonError::DockerBuildCmd)?;
         }
 
@@ -393,6 +400,7 @@ impl zkVM for EreDockerizedzkVM {
         // zkVM specific options when using GPU
         if matches!(self.resource, ProverResourceType::Gpu) {
             cmd = match self.zkvm {
+                ErezkVM::OpenVM => cmd.gpus("all"),
                 // SP1's and Risc0's GPU proving requires Docker to start GPU prover
                 // service, to give the client access to the prover service, we need
                 // to use the host networking driver.
