@@ -6,5 +6,5 @@ edition = "2024"
 [workspace]
 
 [dependencies]
-pico-sdk = { git = "https://github.com/brevis-network/pico", tag = "v1.1.4" }
+pico-sdk = { git = "https://github.com/brevis-network/pico", tag = "v1.1.7" }
 test-utils = { path = "../../../crates/test-utils" }

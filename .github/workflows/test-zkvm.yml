@@ -138,7 +138,9 @@ jobs:
             --volume ${{ github.workspace }}:/ere \
             --workdir /ere \
             ${{ needs.build_image.outputs.base_zkvm_image_tag }} \
-            cargo test --release --package ere-${{ inputs.zkvm }} -- ${{ inputs.test_options }}
+            /bin/sh -c "\$(RUSTFLAGS=-Ctarget-cpu=native cargo test --release --package ere-${{ inputs.zkvm }} --no-run --message-format json \
+              | jq -r 'select(.executable) | select(.package_id | contains(\"ere-${{ inputs.zkvm }}\")) | .executable') \
+              ${{ inputs.test_options }}"
 
   test_ere_dockerized:
     name: Test ere-dockerized with the selected zkVM

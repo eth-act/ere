@@ -1,7 +1,6 @@
 #![no_main]
 
-use core::array::from_fn;
-use test_utils::guest::{BasicStruct, BASIC_PROGRAM_BYTES_LENGTH};
+use test_utils::guest::{BasicProgramCore, BasicStruct};
 
 ziskos::entrypoint!(main);
 
@@ -19,21 +18,16 @@ fn main() {
     assert!(input.is_empty());
 
     // Check `bytes` length is as expected.
-    assert_eq!(bytes.len(), BASIC_PROGRAM_BYTES_LENGTH);
+    assert_eq!(bytes.len(), BasicProgramCore::BYTES_LENGTH);
 
-    // Do some computation on `basic_struct`.
-    let basic_struct_output = basic_struct.output();
+    // Do some computation on `bytes` and `basic_struct`.
+    let outputs = BasicProgramCore::outputs((bytes, basic_struct));
 
-    // Write reversed `bytes` and `basic_struct_output`
-    let public_values = core::iter::empty()
-        .chain(bytes.into_iter().rev())
-        .chain(bincode::serialize(&basic_struct_output).unwrap())
-        .collect::<Vec<_>>();
-    public_values
-        .chunks(4)
-        .enumerate()
-        .for_each(|(idx, bytes)| {
-            let bytes = from_fn(|i| bytes.get(i).copied().unwrap_or_default());
-            ziskos::set_output(idx, u32::from_le_bytes(bytes));
-        });
+    // Hash `outputs` into digest.
+    let digest = BasicProgramCore::sha256_outputs(outputs);
+
+    // Write `digest`
+    digest.chunks_exact(4).enumerate().for_each(|(idx, bytes)| {
+        ziskos::set_output(idx, u32::from_le_bytes(bytes.try_into().unwrap()))
+    });
 }

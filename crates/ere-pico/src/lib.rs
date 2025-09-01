@@ -1,7 +1,7 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 use pico_sdk::client::DefaultProverClient;
-use pico_vm::emulator::stdin::EmulatorStdinBuilder;
+use pico_vm::{configs::stark_config::KoalaBearPoseidon2, emulator::stdin::EmulatorStdinBuilder};
 use serde::de::DeserializeOwned;
 use std::{io::Read, path::Path, process::Command, time::Instant};
 use zkvm_interface::{
@@ -77,15 +77,12 @@ impl zkVM for ErePico {
         serialize_inputs(&mut stdin, inputs);
 
         let start = Instant::now();
-        let emulation_result = client.emulate(stdin);
-
-        // TODO: Public values
-        let public_values = Vec::new();
+        let (total_num_cycles, public_values) = client.emulate(stdin);
 
         Ok((
             public_values,
             ProgramExecutionReport {
-                total_num_cycles: emulation_result.0,
+                total_num_cycles,
                 execution_duration: start.elapsed(),
                 ..Default::default()
             },
@@ -147,12 +144,12 @@ impl zkVM for ErePico {
         SDK_VERSION
     }
 
-    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, _reader: R) -> Result<T, zkVMError> {
-        todo!()
+    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, reader: R) -> Result<T, zkVMError> {
+        bincode::deserialize_from(reader).map_err(zkVMError::other)
     }
 }
 
-fn serialize_inputs(stdin: &mut EmulatorStdinBuilder<Vec<u8>>, inputs: &Input) {
+fn serialize_inputs(stdin: &mut EmulatorStdinBuilder<Vec<u8>, KoalaBearPoseidon2>, inputs: &Input) {
     for input in inputs.iter() {
         match input {
             InputItem::Object(serialize) => stdin.write(serialize),

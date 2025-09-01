@@ -34,6 +34,12 @@ pub enum OpenVMError {
 pub enum CompileError {
     #[error("Failed to build guest, code: {0}")]
     BuildFailed(i32),
+    #[error("`openvm` build failure for {crate_path} failed: {source}")]
+    BuildFailure {
+        #[source]
+        source: anyhow::Error,
+        crate_path: PathBuf,
+    },
     #[error("Guest building skipped (OPENVM_SKIP_BUILD is set)")]
     BuildSkipped,
     #[error("Missing to find unique elf: {0}")]
@@ -44,6 +50,16 @@ pub enum CompileError {
     ReadConfigFailed { source: io::Error, path: PathBuf },
     #[error("Failed to deserialize OpenVM's config file: {0}")]
     DeserializeConfigFailed(toml::de::Error),
+    #[error("`cargo metadata` failed: {0}")]
+    MetadataCommand(#[from] cargo_metadata::Error),
+    #[error("Could not find `[package].name` in guest Cargo.toml at {path}")]
+    MissingPackageName { path: PathBuf },
+    #[error("Failed to read file at {path}: {source}")]
+    ReadFile {
+        path: PathBuf,
+        #[source]
+        source: std::io::Error,
+    },
 }
 
 #[derive(Debug, Error)]
@@ -75,6 +91,8 @@ pub enum VerifyError {
     Verify(#[source] SdkError),
     #[error("Deserialize proof failed: {0}")]
     DeserializeProof(io::Error),
+    #[error(transparent)]
+    Common(#[from] CommonError),
 }
 
 #[derive(Debug, Error)]
@@ -85,8 +103,10 @@ pub enum CommonError {
     ElfDecode(Box<dyn std::error::Error + Send + Sync + 'static>),
     #[error("Transpile elf failed: {0}")]
     Transpile(SdkError),
-    #[error("Agg keygen failed: {0}")]
-    AggKeyGen(SdkError),
+    #[error("Read aggregation key failed: {0}")]
+    ReadAggKeyFailed(Box<dyn std::error::Error + Send + Sync + 'static>),
     #[error("Initialize prover failed: {0}")]
     ProverInit(SdkError),
+    #[error("Invalid public value")]
+    InvalidPublicValue,
 }

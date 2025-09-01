@@ -134,15 +134,6 @@ pub enum VerifyError {
     },
     #[error("Invalid proof: {0}")]
     InvalidProof(String),
-    #[error("Invalid public values: {0}")]
-    DeserializePublicValues(serde_json::Error),
-    #[error("Invalid public value: {0}")]
-    ParsePublicValue(ParseIntError),
-    #[error("Unexpected ROM digest")]
-    UnexpectedRomDigest {
-        preprocessed: RomDigest,
-        public_values: Vec<u64>,
-    },
 }
 
 #[derive(Debug, Error)]
@@ -167,4 +158,17 @@ pub enum CommonError {
     },
     #[error("`cargo-zisk check-setup` failed with status: {status}")]
     CargoZiskCheckSetupFailed { status: ExitStatus },
+    #[error("Invalid public values: {0}")]
+    DeserializePublicValues(serde_json::Error),
+    #[error("Parse public value failed: {0}")]
+    ParsePublicValue(ParseIntError),
+    #[error("Invalid public value")]
+    InvalidPublicValue,
+    #[error("Public values length {0}, but expected at least 5")]
+    InvalidPublicValuesLength(usize),
+    #[error("Unexpected ROM digest")]
+    UnexpectedRomDigest {
+        preprocessed: RomDigest,
+        proved: RomDigest,
+    },
 }
