@@ -1,13 +1,16 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
+use compile_stock_rust::compile_pico_program_stock_rust;
 use pico_sdk::client::DefaultProverClient;
 use pico_vm::{configs::stark_config::KoalaBearPoseidon2, emulator::stdin::EmulatorStdinBuilder};
 use serde::de::DeserializeOwned;
-use std::{io::Read, path::Path, process::Command, time::Instant};
+use std::{env, io::Read, path::Path, process::Command, time::Instant};
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof,
     ProverResourceType, PublicValues, zkVM, zkVMError,
 };
+
+mod compile_stock_rust;
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 mod error;
@@ -21,38 +24,49 @@ impl Compiler for PICO_TARGET {
 
     type Program = Vec<u8>;
 
-    fn compile(&self, guest_path: &Path) -> Result<Self::Program, Self::Error> {
-        // 1. Check guest path
-        if !guest_path.exists() {
-            return Err(PicoError::PathNotFound(guest_path.to_path_buf()));
+    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
+        let toolchain = env::var("ERE_GUEST_TOOLCHAIN").unwrap_or_else(|_error| "pico".into());
+        match toolchain.as_str() {
+            "pico" => Ok(compile_pico_program(guest_directory)?),
+            _ => Ok(compile_pico_program_stock_rust(
+                guest_directory,
+                &toolchain,
+            )?),
         }
-
-        // 2. Run `cargo pico build`
-        let status = Command::new("cargo")
-            .current_dir(guest_path)
-            .env("RUST_LOG", "info")
-            .args(["pico", "build"])
-            .status()?; // From<io::Error> → Spawn
-
-        if !status.success() {
-            return Err(PicoError::CargoFailed { status });
-        }
-
-        // 3. Locate the ELF file
-        let elf_path = guest_path.join("elf/riscv32im-pico-zkvm-elf");
-
-        if !elf_path.exists() {
-            return Err(PicoError::ElfNotFound(elf_path));
-        }
-
-        // 4. Read the ELF file
-        let elf_bytes = std::fs::read(&elf_path).map_err(|e| PicoError::ReadElf {
-            path: elf_path,
-            source: e,
-        })?;
-
-        Ok(elf_bytes)
     }
+}
+
+fn compile_pico_program(guest_directory: &Path) -> Result<Vec<u8>, PicoError> {
+    // 1. Check guest path
+    if !guest_directory.exists() {
+        return Err(PicoError::PathNotFound(guest_directory.to_path_buf()));
+    }
+
+    // 2. Run `cargo pico build`
+    let status = Command::new("cargo")
+        .current_dir(guest_directory)
+        .env("RUST_LOG", "info")
+        .args(["pico", "build"])
+        .status()?; // From<io::Error> → Spawn
+
+    if !status.success() {
+        return Err(PicoError::CargoFailed { status });
+    }
+
+    // 3. Locate the ELF file
+    let elf_path = guest_directory.join("elf/riscv32im-pico-zkvm-elf");
+
+    if !elf_path.exists() {
+        return Err(PicoError::ElfNotFound(elf_path));
+    }
+
+    // 4. Read the ELF file
+    let elf_bytes = std::fs::read(&elf_path).map_err(|e| PicoError::ReadElf {
+        path: elf_path,
+        source: e,
+    })?;
+
+    Ok(elf_bytes)
 }
 
 pub struct ErePico {
@@ -191,6 +205,17 @@ mod tests {
 
         let io = BasicProgramIo::valid();
         run_zkvm_execute(&zkvm, &io);
+    }
+
+    #[test]
+    fn test_execute_nightly() {
+        let guest_directory = testing_guest_directory("pico", "stock_nightly_no_std");
+        let program =
+            compile_pico_program_stock_rust(&guest_directory, &"nightly".to_string()).unwrap();
+        let zkvm = ErePico::new(program, ProverResourceType::Cpu);
+
+        let result = zkvm.execute(&BasicProgramIo::empty());
+        assert!(result.is_ok(), "Pico execution failure");
     }
 
     #[test]

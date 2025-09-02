@@ -11,6 +11,9 @@ RUN chmod +x /tmp/install_pico_sdk.sh
 
 RUN rustup default nightly
 
+# Add `rust-src` component to enable std build for nightly rust.
+RUN rustup +nightly component add rust-src
+
 # Run the Pico SDK installation script.
 # This script installs the specific Rust toolchain (nightly-2025-08-04)
 # and installs pico-cli (as cargo-pico).
