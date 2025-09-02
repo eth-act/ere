@@ -358,6 +358,7 @@ mod tests {
                 zkvm.execute(&input)
                     .expect("Power of two alignment should execute successfully");
             } else {
+                // See issue https://github.com/eth-act/ere/issues/121
                 zkvm.execute(&input)
                     .expect_err("Non-power of two aligment is expected to fail");
             }
