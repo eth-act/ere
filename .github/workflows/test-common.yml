@@ -38,7 +38,9 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Run cargo clippy
-        run: cargo clippy --all-targets --package ${{ matrix.crate }} -- -D warnings
+        run:
+          rustup component add --toolchain nightly-x86_64-unknown-linux-gnu clippy
+          cargo clippy --all-targets --package ${{ matrix.crate }} -- -D warnings
 
       - name: Run cargo test on documentation
         run: cargo test --doc --package ${{ matrix.crate }}
