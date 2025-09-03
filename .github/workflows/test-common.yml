@@ -40,6 +40,9 @@ jobs:
       - name: Run cargo clippy
         run: cargo clippy --all-targets --package ${{ matrix.crate }} -- -D warnings
 
+      - name: Run cargo test on documentation
+        run: cargo test --doc --package ${{ matrix.crate }}
+
       - name: Run cargo test
         if: ${{ matrix.run_test }} 
         run: cargo test --release --package ${{ matrix.crate }}

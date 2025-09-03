@@ -20,13 +20,21 @@ pub enum CompileError {
     #[error("Could not find `[package].name` in guest Cargo.toml at {path}")]
     MissingPackageName { path: PathBuf },
     #[error("`risc0_build::build_package` for {crate_path} failed: {source}")]
-    Risc0BuildFailure {
+    BuildFailure {
         #[source]
         source: anyhow::Error,
         crate_path: PathBuf,
     },
     #[error("`risc0_build::build_package` succeeded but failed to find guest")]
     Risc0BuildMissingGuest,
+    #[error("Failed to read file at {path}: {source}")]
+    ReadFile {
+        path: PathBuf,
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("ELF binary image calculation failure : {0}")]
+    ImageIDCalculationFailure(#[from] anyhow::Error),
 }
 
 impl CompileError {

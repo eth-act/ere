@@ -48,6 +48,9 @@ enum Commands {
         /// Path to the serialized input bytes file
         #[arg(long)]
         input_path: PathBuf,
+        /// Path where the public values will be written
+        #[arg(long)]
+        public_values_path: PathBuf,
         /// Path where the execution report will be written
         #[arg(long)]
         report_path: PathBuf,
@@ -60,6 +63,9 @@ enum Commands {
         /// Path to the serialized input bytes file
         #[arg(long)]
         input_path: PathBuf,
+        /// Path where the public values will be written
+        #[arg(long)]
+        public_values_path: PathBuf,
         /// Path where the proof will be written
         #[arg(long)]
         proof_path: PathBuf,
@@ -78,6 +84,9 @@ enum Commands {
         /// Path to the proof
         #[arg(long)]
         proof_path: PathBuf,
+        /// Path where the public values will be written
+        #[arg(long)]
+        public_values_path: PathBuf,
     },
 }
 
@@ -96,19 +105,29 @@ fn main() -> Result<(), Error> {
         Commands::Execute {
             program_path,
             input_path,
+            public_values_path,
             report_path,
-        } => execute(program_path, input_path, report_path),
+        } => execute(program_path, input_path, public_values_path, report_path),
         Commands::Prove {
             program_path,
             input_path,
+            public_values_path,
             proof_path,
             report_path,
             resource,
-        } => prove(program_path, resource, input_path, proof_path, report_path),
+        } => prove(
+            program_path,
+            resource,
+            input_path,
+            public_values_path,
+            proof_path,
+            report_path,
+        ),
         Commands::Verify {
             program_path,
             proof_path,
-        } => verify(program_path, proof_path),
+            public_values_path,
+        } => verify(program_path, proof_path, public_values_path),
     }
 }
 
@@ -145,32 +164,61 @@ fn prove(
     program_path: PathBuf,
     resource: ProverResourceType,
     input_path: PathBuf,
+    public_values_path: PathBuf,
     proof_path: PathBuf,
     report_path: PathBuf,
 ) -> Result<(), Error> {
     let zkvm = construct_zkvm(program_path, resource)?;
     let input = serde::read_input(&input_path)?;
-    let (proof, report) = zkvm.prove(&input).with_context(|| "Failed to prove")?;
+    let (public_values, proof, report) = zkvm.prove(&input).with_context(|| "Failed to prove")?;
+    fs::write(&public_values_path, &public_values).with_context(|| {
+        format!(
+            "Failed to write public values to {}",
+            public_values_path.display()
+        )
+    })?;
     fs::write(&proof_path, proof)
         .with_context(|| format!("Failed to write proof to {}", proof_path.display()))?;
     serde::write(&report_path, &report, "report")?;
     Ok(())
 }
 
-fn execute(program_path: PathBuf, input_path: PathBuf, report_path: PathBuf) -> Result<(), Error> {
+fn execute(
+    program_path: PathBuf,
+    input_path: PathBuf,
+    public_values_path: PathBuf,
+    report_path: PathBuf,
+) -> Result<(), Error> {
     let zkvm = construct_zkvm(program_path, ProverResourceType::Cpu)?;
     let input = serde::read_input(&input_path)?;
-    let report = zkvm.execute(&input).with_context(|| "Failed to execute")?;
+    let (public_values, report) = zkvm.execute(&input).with_context(|| "Failed to execute")?;
+    fs::write(&public_values_path, &public_values).with_context(|| {
+        format!(
+            "Failed to write public values to {}",
+            public_values_path.display()
+        )
+    })?;
     serde::write(&report_path, &report, "report")?;
     Ok(())
 }
 
-fn verify(program_path: PathBuf, proof_path: PathBuf) -> Result<(), Error> {
+fn verify(
+    program_path: PathBuf,
+    proof_path: PathBuf,
+    public_values_path: PathBuf,
+) -> Result<(), Error> {
     let zkvm = construct_zkvm(program_path, ProverResourceType::Cpu)?;
     let proof = fs::read(&proof_path)
         .with_context(|| format!("Failed to read proof from {}", proof_path.display()))?;
-    zkvm.verify(&proof)
+    let public_values = zkvm
+        .verify(&proof)
         .with_context(|| "Failed to verify proof")?;
+    fs::write(&public_values_path, &public_values).with_context(|| {
+        format!(
+            "Failed to write public values to {}",
+            public_values_path.display()
+        )
+    })?;
     Ok(())
 }
 

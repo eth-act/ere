@@ -18,7 +18,7 @@ pub fn stock_rust_compile(
     );
 
     let target_name = "riscv32ima-unknown-none-elf";
-    let plus_toolchain = format!("+{}", toolchain);
+    let plus_toolchain = format!("+{toolchain}");
 
     let args = [
         plus_toolchain.as_str(),

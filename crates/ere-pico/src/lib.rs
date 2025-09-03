@@ -1,12 +1,16 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
+use compile_stock_rust::compile_pico_program_stock_rust;
 use pico_sdk::client::DefaultProverClient;
-use pico_vm::emulator::stdin::EmulatorStdinBuilder;
-use std::{path::Path, process::Command, time::Instant};
+use pico_vm::{configs::stark_config::KoalaBearPoseidon2, emulator::stdin::EmulatorStdinBuilder};
+use serde::de::DeserializeOwned;
+use std::{env, io::Read, path::Path, process::Command, time::Instant};
 use zkvm_interface::{
-    Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
-    zkVM, zkVMError,
+    Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof,
+    ProverResourceType, PublicValues, zkVM, zkVMError,
 };
+
+mod compile_stock_rust;
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 mod error;
@@ -20,38 +24,49 @@ impl Compiler for PICO_TARGET {
 
     type Program = Vec<u8>;
 
-    fn compile(&self, guest_path: &Path) -> Result<Self::Program, Self::Error> {
-        // 1. Check guest path
-        if !guest_path.exists() {
-            return Err(PicoError::PathNotFound(guest_path.to_path_buf()));
+    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
+        let toolchain = env::var("ERE_GUEST_TOOLCHAIN").unwrap_or_else(|_error| "pico".into());
+        match toolchain.as_str() {
+            "pico" => Ok(compile_pico_program(guest_directory)?),
+            _ => Ok(compile_pico_program_stock_rust(
+                guest_directory,
+                &toolchain,
+            )?),
         }
-
-        // 2. Run `cargo pico build`
-        let status = Command::new("cargo")
-            .current_dir(guest_path)
-            .env("RUST_LOG", "info")
-            .args(["pico", "build"])
-            .status()?; // From<io::Error> → Spawn
-
-        if !status.success() {
-            return Err(PicoError::CargoFailed { status });
-        }
-
-        // 3. Locate the ELF file
-        let elf_path = guest_path.join("elf/riscv32im-pico-zkvm-elf");
-
-        if !elf_path.exists() {
-            return Err(PicoError::ElfNotFound(elf_path));
-        }
-
-        // 4. Read the ELF file
-        let elf_bytes = std::fs::read(&elf_path).map_err(|e| PicoError::ReadElf {
-            path: elf_path,
-            source: e,
-        })?;
-
-        Ok(elf_bytes)
     }
+}
+
+fn compile_pico_program(guest_directory: &Path) -> Result<Vec<u8>, PicoError> {
+    // 1. Check guest path
+    if !guest_directory.exists() {
+        return Err(PicoError::PathNotFound(guest_directory.to_path_buf()));
+    }
+
+    // 2. Run `cargo pico build`
+    let status = Command::new("cargo")
+        .current_dir(guest_directory)
+        .env("RUST_LOG", "info")
+        .args(["pico", "build"])
+        .status()?; // From<io::Error> → Spawn
+
+    if !status.success() {
+        return Err(PicoError::CargoFailed { status });
+    }
+
+    // 3. Locate the ELF file
+    let elf_path = guest_directory.join("elf/riscv32im-pico-zkvm-elf");
+
+    if !elf_path.exists() {
+        return Err(PicoError::ElfNotFound(elf_path));
+    }
+
+    // 4. Read the ELF file
+    let elf_bytes = std::fs::read(&elf_path).map_err(|e| PicoError::ReadElf {
+        path: elf_path,
+        source: e,
+    })?;
+
+    Ok(elf_bytes)
 }
 
 pub struct ErePico {
@@ -69,26 +84,29 @@ impl ErePico {
     }
 }
 impl zkVM for ErePico {
-    fn execute(&self, inputs: &Input) -> Result<ProgramExecutionReport, zkVMError> {
+    fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
         let client = DefaultProverClient::new(&self.program);
 
         let mut stdin = client.new_stdin_builder();
         serialize_inputs(&mut stdin, inputs);
 
         let start = Instant::now();
-        let emulation_result = client.emulate(stdin);
+        let (total_num_cycles, public_values) = client.emulate(stdin);
 
-        Ok(ProgramExecutionReport {
-            total_num_cycles: emulation_result.0,
-            execution_duration: start.elapsed(),
-            ..Default::default()
-        })
+        Ok((
+            public_values,
+            ProgramExecutionReport {
+                total_num_cycles,
+                execution_duration: start.elapsed(),
+                ..Default::default()
+            },
+        ))
     }
 
     fn prove(
         &self,
         inputs: &Input,
-    ) -> Result<(Vec<u8>, zkvm_interface::ProgramProvingReport), zkVMError> {
+    ) -> Result<(PublicValues, Proof, zkvm_interface::ProgramProvingReport), zkVMError> {
         let client = DefaultProverClient::new(&self.program);
 
         let mut stdin = client.new_stdin_builder();
@@ -113,13 +131,23 @@ impl zkVM for ErePico {
             bincode::serialize_into(&mut proof_serialized, p).unwrap();
         }
 
-        Ok((proof_serialized, ProgramProvingReport::new(elapsed)))
+        // TODO: Public values
+        let public_values = Vec::new();
+
+        Ok((
+            public_values,
+            proof_serialized,
+            ProgramProvingReport::new(elapsed),
+        ))
     }
 
-    fn verify(&self, _proof: &[u8]) -> Result<(), zkVMError> {
+    fn verify(&self, _proof: &[u8]) -> Result<PublicValues, zkVMError> {
         let client = DefaultProverClient::new(&self.program);
         let _vk = client.riscv_vk();
-        todo!("Verification method missing from sdk")
+        // TODO: Verification method missing from sdk
+        // TODO: Public values
+        let public_values = Vec::new();
+        Ok(public_values)
     }
 
     fn name(&self) -> &'static str {
@@ -129,9 +157,13 @@ impl zkVM for ErePico {
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
     }
+
+    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, reader: R) -> Result<T, zkVMError> {
+        bincode::deserialize_from(reader).map_err(zkVMError::other)
+    }
 }
 
-fn serialize_inputs(stdin: &mut EmulatorStdinBuilder<Vec<u8>>, inputs: &Input) {
+fn serialize_inputs(stdin: &mut EmulatorStdinBuilder<Vec<u8>, KoalaBearPoseidon2>, inputs: &Input) {
     for input in inputs.iter() {
         match input {
             InputItem::Object(serialize) => stdin.write(serialize),
@@ -146,12 +178,12 @@ fn serialize_inputs(stdin: &mut EmulatorStdinBuilder<Vec<u8>>, inputs: &Input) {
 mod tests {
     use super::*;
     use std::{panic, sync::OnceLock};
-    use test_utils::host::{BasicProgramInputGen, run_zkvm_execute, testing_guest_directory};
+    use test_utils::host::{BasicProgramIo, run_zkvm_execute, testing_guest_directory};
 
-    static BASIC_PRORGAM: OnceLock<Vec<u8>> = OnceLock::new();
+    static BASIC_PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
 
     fn basic_program() -> Vec<u8> {
-        BASIC_PRORGAM
+        BASIC_PROGRAM
             .get_or_init(|| {
                 PICO_TARGET
                     .compile(&testing_guest_directory("pico", "basic"))
@@ -171,8 +203,19 @@ mod tests {
         let program = basic_program();
         let zkvm = ErePico::new(program, ProverResourceType::Cpu);
 
-        let inputs = BasicProgramInputGen::valid();
-        run_zkvm_execute(&zkvm, &inputs);
+        let io = BasicProgramIo::valid();
+        run_zkvm_execute(&zkvm, &io);
+    }
+
+    #[test]
+    fn test_execute_nightly() {
+        let guest_directory = testing_guest_directory("pico", "stock_nightly_no_std");
+        let program =
+            compile_pico_program_stock_rust(&guest_directory, &"nightly".to_string()).unwrap();
+        let zkvm = ErePico::new(program, ProverResourceType::Cpu);
+
+        let result = zkvm.execute(&BasicProgramIo::empty());
+        assert!(result.is_ok(), "Pico execution failure");
     }
 
     #[test]
@@ -181,9 +224,9 @@ mod tests {
         let zkvm = ErePico::new(program, ProverResourceType::Cpu);
 
         for inputs_gen in [
-            BasicProgramInputGen::empty,
-            BasicProgramInputGen::invalid_string,
-            BasicProgramInputGen::invalid_type,
+            BasicProgramIo::empty,
+            BasicProgramIo::invalid_type,
+            BasicProgramIo::invalid_data,
         ] {
             panic::catch_unwind(|| zkvm.execute(&inputs_gen()).unwrap_err()).unwrap_err();
         }

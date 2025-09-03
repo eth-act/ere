@@ -2,24 +2,29 @@
 
 use crate::{
     compile::{Risc0Program, compile_risc0_program},
+    compile_stock_rust::compile_risc0_program_stock_rust,
     error::Risc0Error,
+    output::deserialize_from,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
 use risc0_zkvm::{
     DEFAULT_MAX_PO2, DefaultProver, ExecutorEnv, ExecutorEnvBuilder, ExternalProver, InnerReceipt,
     Journal, ProverOpts, Receipt, ReceiptClaim, SuccinctReceipt, default_executor, default_prover,
 };
-use serde::{Deserialize, Serialize};
-use std::{env, ops::RangeInclusive, path::Path, rc::Rc, time::Instant};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use std::{env, io::Read, ops::RangeInclusive, path::Path, rc::Rc, time::Instant};
 use zkvm_interface::{
-    Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
-    zkVM, zkVMError,
+    Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof,
+    ProverResourceType, PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 mod compile;
+mod compile_stock_rust;
+
 mod error;
+mod output;
 
 /// Default logarithmic segment size from [`DEFAULT_SEGMENT_LIMIT_PO2`].
 ///
@@ -56,7 +61,14 @@ impl Compiler for RV32_IM_RISC0_ZKVM_ELF {
     type Program = Risc0Program;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        compile_risc0_program(guest_directory).map_err(Risc0Error::from)
+        let toolchain = env::var("ERE_GUEST_TOOLCHAIN").unwrap_or_else(|_error| "risc0".into());
+        match toolchain.as_str() {
+            "risc0" => Ok(compile_risc0_program(guest_directory)?),
+            _ => Ok(compile_risc0_program_stock_rust(
+                guest_directory,
+                &toolchain,
+            )?),
+        }
     }
 }
 
@@ -130,7 +142,7 @@ impl EreRisc0 {
 }
 
 impl zkVM for EreRisc0 {
-    fn execute(&self, inputs: &Input) -> Result<ProgramExecutionReport, zkVMError> {
+    fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
         let executor = default_executor();
         let mut env = ExecutorEnv::builder();
         serialize_inputs(&mut env, inputs).map_err(zkVMError::other)?;
@@ -140,14 +152,23 @@ impl zkVM for EreRisc0 {
         let session_info = executor
             .execute(env, &self.program.elf)
             .map_err(zkVMError::other)?;
-        Ok(ProgramExecutionReport {
-            total_num_cycles: session_info.cycles() as u64,
-            execution_duration: start.elapsed(),
-            ..Default::default()
-        })
+
+        let public_values = session_info.journal.bytes.clone();
+
+        Ok((
+            public_values,
+            ProgramExecutionReport {
+                total_num_cycles: session_info.cycles() as u64,
+                execution_duration: start.elapsed(),
+                ..Default::default()
+            },
+        ))
     }
 
-    fn prove(&self, inputs: &Input) -> Result<(Vec<u8>, ProgramProvingReport), zkVMError> {
+    fn prove(
+        &self,
+        inputs: &Input,
+    ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
         let prover = match self.resource {
             ProverResourceType::Cpu => Rc::new(ExternalProver::new("ipc", "r0vm")),
             ProverResourceType::Gpu => {
@@ -186,19 +207,29 @@ impl zkVM for EreRisc0 {
             .map_err(zkVMError::other)?;
         let proving_time = now.elapsed();
 
+        let public_values = prove_info.receipt.journal.bytes.clone();
         let proof = borsh::to_vec(&Risc0ProofWithPublicValues::from(prove_info.receipt))
             .map_err(zkVMError::other)?;
-        Ok((proof, ProgramProvingReport::new(proving_time)))
+
+        Ok((
+            public_values,
+            proof,
+            ProgramProvingReport::new(proving_time),
+        ))
     }
 
-    fn verify(&self, proof: &[u8]) -> Result<(), zkVMError> {
+    fn verify(&self, proof: &[u8]) -> Result<PublicValues, zkVMError> {
         let receipt: Receipt = borsh::from_slice::<Risc0ProofWithPublicValues>(proof)
             .map_err(zkVMError::other)?
             .into();
 
         receipt
             .verify(self.program.image_id)
-            .map_err(zkVMError::other)
+            .map_err(zkVMError::other)?;
+
+        let public_values = receipt.journal.bytes.clone();
+
+        Ok(public_values)
     }
 
     fn name(&self) -> &'static str {
@@ -207,6 +238,10 @@ impl zkVM for EreRisc0 {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
+    }
+
+    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, reader: R) -> Result<T, zkVMError> {
+        deserialize_from(reader)
     }
 }
 
@@ -235,13 +270,13 @@ mod tests {
     use super::*;
     use std::sync::OnceLock;
     use test_utils::host::{
-        BasicProgramInputGen, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+        BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
 
-    static BASIC_PRORGAM: OnceLock<Risc0Program> = OnceLock::new();
+    static BASIC_PROGRAM: OnceLock<Risc0Program> = OnceLock::new();
 
     fn basic_program() -> Risc0Program {
-        BASIC_PRORGAM
+        BASIC_PROGRAM
             .get_or_init(|| {
                 RV32_IM_RISC0_ZKVM_ELF
                     .compile(&testing_guest_directory("risc0", "basic"))
@@ -255,8 +290,19 @@ mod tests {
         let program = basic_program();
         let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
-        let inputs = BasicProgramInputGen::valid();
-        run_zkvm_execute(&zkvm, &inputs);
+        let io = BasicProgramIo::valid();
+        run_zkvm_execute(&zkvm, &io);
+    }
+
+    #[test]
+    fn test_execute_nightly() {
+        let guest_directory = testing_guest_directory("risc0", "stock_nightly_no_std");
+        let program =
+            compile_risc0_program_stock_rust(&guest_directory, &"nightly".to_string()).unwrap();
+        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
+
+        let result = zkvm.execute(&BasicProgramIo::empty());
+        assert!(result.is_ok(), "Risc0 execution failure");
     }
 
     #[test]
@@ -265,9 +311,9 @@ mod tests {
         let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
         for inputs in [
-            BasicProgramInputGen::empty(),
-            BasicProgramInputGen::invalid_string(),
-            BasicProgramInputGen::invalid_type(),
+            BasicProgramIo::empty(),
+            BasicProgramIo::invalid_type(),
+            BasicProgramIo::invalid_data(),
         ] {
             zkvm.execute(&inputs).unwrap_err();
         }
@@ -278,8 +324,8 @@ mod tests {
         let program = basic_program();
         let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
-        let inputs = BasicProgramInputGen::valid();
-        run_zkvm_prove(&zkvm, &inputs);
+        let io = BasicProgramIo::valid();
+        run_zkvm_prove(&zkvm, &io);
     }
 
     #[test]
@@ -288,9 +334,9 @@ mod tests {
         let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
         for inputs in [
-            BasicProgramInputGen::empty(),
-            BasicProgramInputGen::invalid_string(),
-            BasicProgramInputGen::invalid_type(),
+            BasicProgramIo::empty(),
+            BasicProgramIo::invalid_type(),
+            BasicProgramIo::invalid_data(),
         ] {
             zkvm.prove(&inputs).unwrap_err();
         }

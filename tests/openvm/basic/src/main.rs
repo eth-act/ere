@@ -1,16 +1,22 @@
-use openvm::io::{read, read_vec, reveal_u32};
-use test_utils::guest::BasicStruct;
+use openvm::io::{read, read_vec, reveal_bytes32};
+use test_utils::guest::{BasicProgramCore, BasicStruct};
 
 fn main() {
-    // Read `Hello world` bytes.
+    // Read `bytes`.
     let bytes = read_vec();
-    assert_eq!(String::from_utf8_lossy(&bytes), "Hello world");
 
-    // Read `BasicStruct`.
+    // Read `basic_struct`.
     let basic_struct = read::<BasicStruct>();
-    let output = basic_struct.output();
 
-    output.chunks(4).enumerate().for_each(|(idx, bytes)| {
-        reveal_u32(u32::from_le_bytes(bytes.try_into().unwrap()), idx);
-    });
+    // Check `bytes` length is as expected.
+    assert_eq!(bytes.len(), BasicProgramCore::BYTES_LENGTH);
+
+    // Do some computation on `bytes` and `basic_struct`.
+    let outputs = BasicProgramCore::outputs((bytes, basic_struct));
+
+    // Hash `outputs` into digest.
+    let digest = BasicProgramCore::sha256_outputs(outputs);
+
+    // Write `digest`
+    reveal_bytes32(digest);
 }

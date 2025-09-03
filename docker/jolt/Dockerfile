@@ -5,6 +5,9 @@ FROM ${BASE_IMAGE_TAG}
 # The ere-base image provides Rust, Cargo (with a default nightly), and common tools.
 # We operate as root for SDK installation.
 
+# Add `rust-src` component to enable std build for nightly rust.
+RUN rustup +nightly component add rust-src
+
 # Copy the Jolt SDK (CLI) installer script from the workspace context
 COPY scripts/sdk_installers/install_jolt_sdk.sh /tmp/install_jolt_sdk.sh
 RUN chmod +x /tmp/install_jolt_sdk.sh

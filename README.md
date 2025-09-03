@@ -66,8 +66,8 @@ bash scripts/sdk_installers/install_sp1_sdk.sh
 ```toml
 # Cargo.toml
 [dependencies]
-zkvm-interface = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.11" }
-ere-sp1        = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.11" }
+zkvm-interface = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.12" }
+ere-sp1        = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.12" }
 ```
 
 #### 3. Compile & Prove Example
@@ -113,8 +113,8 @@ Use Docker for zkVM operations without installing SDKs locally. Only requires Do
 ```toml
 # Cargo.toml
 [dependencies]
-zkvm-interface = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.11" }
-ere-dockerized = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.11" }
+zkvm-interface = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.12" }
+ere-dockerized = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.12" }
 ```
 
 #### 2. Compile & Prove Example

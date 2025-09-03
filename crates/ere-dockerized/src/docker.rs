@@ -63,7 +63,7 @@ impl DockerBuildCmd {
         self.option("tag", tag)
     }
 
-    pub fn bulid_arg(self, key: impl AsRef<str>, value: impl AsRef<str>) -> Self {
+    pub fn build_arg(self, key: impl AsRef<str>, value: impl AsRef<str>) -> Self {
         self.option(
             "build-arg",
             format!("{}={}", to_string(key), to_string(value)),

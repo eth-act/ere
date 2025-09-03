@@ -24,17 +24,17 @@
 //! use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
 //! use std::path::Path;
 //!
+//! // The zkVM we plan to use
+//! let zkvm = ErezkVM::SP1;
+//!
 //! // Compile a guest program
-//! let compiler = EreDockerizedCompiler::new(ErezkVM::SP1, "mounting/directory");
+//! let compiler = EreDockerizedCompiler::new(zkvm, "mounting/directory")?;
 //! let guest_path = Path::new("relative/path/to/guest/program");
 //! let program = compiler.compile(&guest_path)?;
 //!
 //! // Create zkVM instance
-//! let zkvm = EreDockerizedzkVM::new(
-//!     ErezkVM::SP1,
-//!     program,
-//!     ProverResourceType::Cpu
-//! )?;
+//! let resource = ProverResourceType::Cpu;
+//! let zkvm = EreDockerizedzkVM::new(zkvm, program, resource)?;
 //!
 //! // Prepare inputs
 //! let mut inputs = Input::new();
@@ -42,15 +42,15 @@
 //! inputs.write(100u16);
 //!
 //! // Execute program
-//! let execution_report = zkvm.execute(&inputs)?;
+//! let (public_values, execution_report) = zkvm.execute(&inputs)?;
 //! println!("Execution cycles: {}", execution_report.total_num_cycles);
 //!
 //! // Generate proof
-//! let (proof, proving_report) = zkvm.prove(&inputs)?;
+//! let (public_values, proof, proving_report) = zkvm.prove(&inputs)?;
 //! println!("Proof generated in: {:?}", proving_report.proving_time);
 //!
 //! // Verify proof
-//! zkvm.verify(&proof)?;
+//! let public_values = zkvm.verify(&proof)?;
 //! println!("Proof verified successfully!");
 //! # Ok(())
 //! # }
@@ -59,29 +59,34 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 use crate::{
+    cuda::cuda_compute_cap,
     docker::{DockerBuildCmd, DockerRunCmd, docker_image_exists},
     error::{CommonError, CompileError, DockerizedError, ExecuteError, ProveError, VerifyError},
 };
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::{
     env,
     fmt::{self, Display, Formatter},
-    fs, iter,
+    fs,
+    io::Read,
+    iter,
     path::{Path, PathBuf},
     str::FromStr,
 };
 use tempfile::TempDir;
 use zkvm_interface::{
-    Compiler, Input, ProgramExecutionReport, ProgramProvingReport, ProverResourceType, zkVM,
-    zkVMError,
+    Compiler, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType,
+    PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/crate_version.rs"));
 include!(concat!(env!("OUT_DIR"), "/zkvm_sdk_version_impl.rs"));
 
+pub mod cuda;
 pub mod docker;
 pub mod error;
 pub mod input;
+pub mod output;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ErezkVM {
@@ -120,9 +125,9 @@ impl ErezkVM {
     }
 
     /// This method builds 3 Docker images in sequence:
-    /// 1. `ere-base:latest`: Base image with common dependencies
-    /// 2. `ere-base-{zkvm}:latest`: zkVM-specific base image with the zkVM SDK
-    /// 3. `ere-cli-{zkvm}:latest`: CLI image with the `ere-cli` binary built with feature `{zkvm}`
+    /// 1. `ere-base:{version}`: Base image with common dependencies
+    /// 2. `ere-base-{zkvm}:{version}`: zkVM-specific base image with the zkVM SDK
+    /// 3. `ere-cli-{zkvm}:{version}`: CLI image with the `ere-cli` binary built with feature `{zkvm}`
     ///
     /// Images are cached and only rebuilt if they don't exist or if the
     /// `ERE_FORCE_REBUILD_DOCKER_IMAGE=true` environment variable is set.
@@ -149,7 +154,7 @@ impl ErezkVM {
         }
 
         if force_rebuild || !docker_image_exists(self.base_zkvm_tag(CRATE_VERSION))? {
-            DockerBuildCmd::new()
+            let mut cmd = DockerBuildCmd::new()
                 .file(
                     workspace_dir
                         .join("docker")
@@ -158,8 +163,17 @@ impl ErezkVM {
                 )
                 .tag(self.base_zkvm_tag(CRATE_VERSION))
                 .tag(self.base_zkvm_tag("latest"))
-                .bulid_arg("BASE_IMAGE_TAG", self.base_tag(CRATE_VERSION))
-                .exec(&workspace_dir)
+                .build_arg("BASE_IMAGE_TAG", self.base_tag(CRATE_VERSION));
+
+            if matches!(self, ErezkVM::OpenVM) {
+                if let Ok(cuda_arch) = env::var("CUDA_ARCH") {
+                    cmd = cmd.build_arg("CUDA_ARCH", cuda_arch)
+                } else if let Some(cuda_compute_cap) = cuda_compute_cap() {
+                    cmd = cmd.build_arg("CUDA_ARCH", cuda_compute_cap.replace(".", ""))
+                }
+            };
+
+            cmd.exec(&workspace_dir)
                 .map_err(CommonError::DockerBuildCmd)?;
         }
 
@@ -168,8 +182,8 @@ impl ErezkVM {
                 .file(workspace_dir.join("docker").join("cli").join("Dockerfile"))
                 .tag(self.cli_zkvm_tag(CRATE_VERSION))
                 .tag(self.cli_zkvm_tag("latest"))
-                .bulid_arg("BASE_ZKVM_IMAGE_TAG", self.base_zkvm_tag(CRATE_VERSION))
-                .bulid_arg("ZKVM", self.as_str())
+                .build_arg("BASE_ZKVM_IMAGE_TAG", self.base_zkvm_tag(CRATE_VERSION))
+                .build_arg("ZKVM", self.as_str())
                 .exec(&workspace_dir)
                 .map_err(CommonError::DockerBuildCmd)?;
         }
@@ -207,11 +221,16 @@ pub struct EreDockerizedCompiler {
 }
 
 impl EreDockerizedCompiler {
-    pub fn new(zkvm: ErezkVM, mount_directory: impl AsRef<Path>) -> Self {
-        Self {
+    pub fn new(zkvm: ErezkVM, mount_directory: impl AsRef<Path>) -> Result<Self, CommonError> {
+        zkvm.build_docker_image()?;
+        Ok(Self {
             zkvm,
             mount_directory: mount_directory.as_ref().to_path_buf(),
-        }
+        })
+    }
+
+    pub fn zkvm(&self) -> ErezkVM {
+        self.zkvm
     }
 }
 
@@ -224,8 +243,6 @@ impl Compiler for EreDockerizedCompiler {
     type Program = SerializedProgram;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        self.zkvm.build_docker_image()?;
-
         let guest_relative_path = guest_directory
             .strip_prefix(&self.mount_directory)
             .map_err(|_| CompileError::GuestNotInMountingDirecty {
@@ -285,10 +302,22 @@ impl EreDockerizedzkVM {
             resource,
         })
     }
+
+    pub fn zkvm(&self) -> ErezkVM {
+        self.zkvm
+    }
+
+    pub fn program(&self) -> &SerializedProgram {
+        &self.program
+    }
+
+    pub fn resource(&self) -> &ProverResourceType {
+        &self.resource
+    }
 }
 
 impl zkVM for EreDockerizedzkVM {
-    fn execute(&self, inputs: &Input) -> Result<ProgramExecutionReport, zkVMError> {
+    fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
         let tempdir = TempDir::new()
             .map_err(|err| CommonError::io(err, "Failed to create temporary directory"))
             .map_err(|err| DockerizedError::Execute(ExecuteError::Common(err)))?;
@@ -317,12 +346,17 @@ impl zkVM for EreDockerizedzkVM {
                 "/workspace/program",
                 "--input-path",
                 "/workspace/input",
+                "--public-values-path",
+                "/workspace/public_values",
                 "--report-path",
                 "/workspace/report",
             ])
             .map_err(CommonError::DockerRunCmd)
             .map_err(|err| DockerizedError::Execute(ExecuteError::Common(err)))?;
 
+        let public_values = fs::read(tempdir.path().join("public_values"))
+            .map_err(|err| CommonError::io(err, "Failed to read public_values"))
+            .map_err(|err| DockerizedError::Execute(ExecuteError::Common(err)))?;
         let report_bytes = fs::read(tempdir.path().join("report"))
             .map_err(|err| CommonError::io(err, "Failed to read report"))
             .map_err(|err| DockerizedError::Execute(ExecuteError::Common(err)))?;
@@ -330,10 +364,13 @@ impl zkVM for EreDockerizedzkVM {
         let report = bincode::deserialize(&report_bytes)
             .map_err(|err| CommonError::serilization(err, "Failed to deserialize report"))
             .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
-        Ok(report)
+        Ok((public_values, report))
     }
 
-    fn prove(&self, inputs: &Input) -> Result<(Vec<u8>, ProgramProvingReport), zkVMError> {
+    fn prove(
+        &self,
+        inputs: &Input,
+    ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
         let tempdir = TempDir::new()
             .map_err(|err| CommonError::io(err, "Failed to create temporary directory"))
             .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
@@ -367,6 +404,7 @@ impl zkVM for EreDockerizedzkVM {
         // zkVM specific options when using GPU
         if matches!(self.resource, ProverResourceType::Gpu) {
             cmd = match self.zkvm {
+                ErezkVM::OpenVM => cmd.gpus("all"),
                 // SP1's and Risc0's GPU proving requires Docker to start GPU prover
                 // service, to give the client access to the prover service, we need
                 // to use the host networking driver.
@@ -391,6 +429,8 @@ impl zkVM for EreDockerizedzkVM {
                     "/workspace/program",
                     "--input-path",
                     "/workspace/input",
+                    "--public-values-path",
+                    "/workspace/public_values",
                     "--proof-path",
                     "/workspace/proof",
                     "--report-path",
@@ -401,6 +441,9 @@ impl zkVM for EreDockerizedzkVM {
         .map_err(CommonError::DockerRunCmd)
         .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
 
+        let public_values = fs::read(tempdir.path().join("public_values"))
+            .map_err(|err| CommonError::io(err, "Failed to read public_values"))
+            .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
         let proof = fs::read(tempdir.path().join("proof"))
             .map_err(|err| CommonError::io(err, "Failed to read proof"))
             .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
@@ -410,10 +453,10 @@ impl zkVM for EreDockerizedzkVM {
         let report = bincode::deserialize(&report_bytes)
             .map_err(|err| CommonError::serilization(err, "Failed to deserialize report"))
             .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
-        Ok((proof, report))
+        Ok((public_values, proof, report))
     }
 
-    fn verify(&self, proof: &[u8]) -> Result<(), zkVMError> {
+    fn verify(&self, proof: &[u8]) -> Result<PublicValues, zkVMError> {
         let tempdir = TempDir::new()
             .map_err(|err| CommonError::io(err, "Failed to create temporary directory"))
             .map_err(|err| DockerizedError::Verify(VerifyError::Common(err)))?;
@@ -436,11 +479,17 @@ impl zkVM for EreDockerizedzkVM {
                 "/workspace/program",
                 "--proof-path",
                 "/workspace/proof",
+                "--public-values-path",
+                "/workspace/public_values",
             ])
             .map_err(CommonError::DockerRunCmd)
             .map_err(|err| DockerizedError::Verify(VerifyError::Common(err)))?;
 
-        Ok(())
+        let public_values = fs::read(tempdir.path().join("public_values"))
+            .map_err(|err| CommonError::io(err, "Failed to read public_values"))
+            .map_err(|err| DockerizedError::Verify(VerifyError::Common(err)))?;
+
+        Ok(public_values)
     }
 
     fn name(&self) -> &'static str {
@@ -449,6 +498,10 @@ impl zkVM for EreDockerizedzkVM {
 
     fn sdk_version(&self) -> &'static str {
         self.zkvm.sdk_version()
+    }
+
+    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, reader: R) -> Result<T, zkVMError> {
+        self.zkvm.deserialize_from(reader)
     }
 }
 
@@ -463,7 +516,7 @@ fn workspace_dir() -> PathBuf {
 mod test {
     use crate::{EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM, workspace_dir};
     use test_utils::host::{
-        BasicProgramInputGen, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+        BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
     use zkvm_interface::{Compiler, ProverResourceType};
 
@@ -478,14 +531,15 @@ mod test {
 
         let guest_directory = testing_guest_directory(zkvm.as_str(), "basic");
         let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
+            .unwrap()
             .compile(&guest_directory)
             .unwrap();
 
         let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
 
-        let inputs = BasicProgramInputGen::valid();
-        run_zkvm_execute(&zkvm, &inputs);
-        run_zkvm_prove(&zkvm, &inputs);
+        let io = BasicProgramIo::valid().into_output_hashed_io();
+        run_zkvm_execute(&zkvm, &io);
+        run_zkvm_prove(&zkvm, &io);
     }
 
     #[test]
@@ -494,14 +548,15 @@ mod test {
 
         let guest_directory = testing_guest_directory(zkvm.as_str(), "basic");
         let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
+            .unwrap()
             .compile(&guest_directory)
             .unwrap();
 
         let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
 
-        let inputs = BasicProgramInputGen::valid();
-        run_zkvm_execute(&zkvm, &inputs);
-        run_zkvm_prove(&zkvm, &inputs);
+        let io = BasicProgramIo::valid();
+        run_zkvm_execute(&zkvm, &io);
+        run_zkvm_prove(&zkvm, &io);
     }
 
     #[test]
@@ -510,14 +565,15 @@ mod test {
 
         let guest_directory = testing_guest_directory(zkvm.as_str(), "basic");
         let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
+            .unwrap()
             .compile(&guest_directory)
             .unwrap();
 
         let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
 
-        let inputs = BasicProgramInputGen::valid();
-        run_zkvm_execute(&zkvm, &inputs);
-        run_zkvm_prove(&zkvm, &inputs);
+        let io = BasicProgramIo::valid();
+        run_zkvm_execute(&zkvm, &io);
+        run_zkvm_prove(&zkvm, &io);
     }
 
     #[test]
@@ -526,13 +582,14 @@ mod test {
 
         let guest_directory = testing_guest_directory(zkvm.as_str(), "basic");
         let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
+            .unwrap()
             .compile(&guest_directory)
             .unwrap();
 
         let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
 
-        let inputs = BasicProgramInputGen::valid();
-        run_zkvm_execute(&zkvm, &inputs);
-        run_zkvm_prove(&zkvm, &inputs);
+        let io = BasicProgramIo::valid().into_output_hashed_io();
+        run_zkvm_execute(&zkvm, &io);
+        run_zkvm_prove(&zkvm, &io);
     }
 }
