@@ -15,7 +15,7 @@ RUN [ -n "$CI" ] || \
     apt install -y cuda-toolkit-12-9 clang && \
     apt-get clean && rm -rf /var/lib/apt/lists/*)
 
-# Install protoc with same version as https://github.com/risc0/risc0/blob/v3.0.1/bento/dockerfiles/agent.dockerfile#L24-L26.
+# Install protoc with same version as https://github.com/risc0/risc0/blob/v3.0.3/bento/dockerfiles/agent.dockerfile#L24-L26.
 # If argument `CI` is set, we skip the installation.
 RUN [ -n "$CI" ] || \
     (curl -o protoc.zip -L https://github.com/protocolbuffers/protobuf/releases/download/v31.1/protoc-31.1-linux-x86_64.zip && \
@@ -34,7 +34,7 @@ ENV PATH=/usr/local/cuda/bin:$PATH
 COPY --chmod=+x scripts/sdk_installers/install_risc0_sdk.sh /tmp/install_risc0_sdk.sh
 
 # The install_risc0_sdk.sh script will respect these ENV variables.
-ENV RISC0_VERSION="3.0.1" \
+ENV RISC0_VERSION="3.0.3" \
     RISC0_CPP_VERSION="2024.1.5" \
     RISC0_RUST_VERSION="1.88.0"
 
