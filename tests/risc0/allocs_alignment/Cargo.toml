@@ -1,5 +1,5 @@
 [package]
-name = "ere-test-risc0-unaligned-allocs"
+name = "ere-test-risc0-allocs-alignment"
 version = "0.1.0"
 edition = "2021"
 
