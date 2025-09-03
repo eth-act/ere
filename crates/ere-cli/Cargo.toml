@@ -29,7 +29,7 @@ zkvm-interface = { workspace = true, features = ["clap"] }
 workspace = true
 
 [features]
-default = ["cuda"]
+default = ["cli", "zkm"]
 cli = ["dep:clap", "dep:tracing-subscriber"]
 
 # zkVM

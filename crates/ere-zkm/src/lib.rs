@@ -2,6 +2,8 @@
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
+use serde::de::DeserializeOwned;
+use std::io::Read;
 use std::path::Path;
 use std::time::Instant;
 
@@ -9,8 +11,8 @@ use tracing::info;
 use zkm_build::{BuildArgs, execute_build_program};
 use zkm_sdk::{ProverClient, ZKMProofWithPublicValues, ZKMProvingKey, ZKMStdin, ZKMVerifyingKey};
 use zkvm_interface::{
-    Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, ProverResourceType,
-    zkVM, zkVMError,
+    Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof,
+    ProverResourceType, PublicValues, zkVM, zkVMError,
 };
 
 // mod compile;
@@ -79,7 +81,7 @@ impl EreZKM {
 }
 
 impl zkVM for EreZKM {
-    fn execute(&self, inputs: &Input) -> Result<zkvm_interface::ProgramExecutionReport, zkVMError> {
+    fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
         let mut stdin = ZKMStdin::new();
         for input in inputs.iter() {
             match input {
@@ -91,22 +93,25 @@ impl zkVM for EreZKM {
         }
 
         let start = Instant::now();
-        let (_, exec_report) = self
+        let (public_inputs, exec_report) = self
             .client
             .execute(&self.program, stdin)
             .run()
             .map_err(|err| ZKMError::Execute(ExecuteError::Client(Box::from(err))))?;
-        Ok(ProgramExecutionReport {
-            total_num_cycles: exec_report.total_instruction_count(),
-            region_cycles: exec_report.cycle_tracker.into_iter().collect(),
-            execution_duration: start.elapsed(),
-        })
+        Ok((
+            public_inputs.to_vec(),
+            ProgramExecutionReport {
+                total_num_cycles: exec_report.total_instruction_count(),
+                region_cycles: exec_report.cycle_tracker.into_iter().collect(),
+                execution_duration: start.elapsed(),
+            },
+        ))
     }
 
     fn prove(
         &self,
-        inputs: &zkvm_interface::Input,
-    ) -> Result<(Vec<u8>, zkvm_interface::ProgramProvingReport), zkVMError> {
+        inputs: &Input,
+    ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
         info!("Generating proof…");
 
         let mut stdin = ZKMStdin::new();
@@ -130,10 +135,14 @@ impl zkVM for EreZKM {
         let bytes = bincode::serialize(&proof_with_inputs)
             .map_err(|err| ZKMError::Prove(ProveError::Bincode(err)))?;
 
-        Ok((bytes, ProgramProvingReport::new(proving_time)))
+        Ok((
+            proof_with_inputs.public_values.to_vec(),
+            bytes,
+            ProgramProvingReport::new(proving_time),
+        ))
     }
 
-    fn verify(&self, proof: &[u8]) -> Result<(), zkVMError> {
+    fn verify(&self, proof: &[u8]) -> Result<PublicValues, zkVMError> {
         info!("Verifying proof…");
 
         let proof: ZKMProofWithPublicValues = bincode::deserialize(proof)
@@ -142,7 +151,9 @@ impl zkVM for EreZKM {
         self.client
             .verify(&proof, &self.vk)
             .map_err(|e| ZKMError::Verify(VerifyError::Client(Box::new(e))))
-            .map_err(zkVMError::from)
+            .map_err(zkVMError::from)?;
+
+        Ok(proof.public_values.to_vec())
     }
 
     fn name(&self) -> &'static str {
@@ -151,6 +162,10 @@ impl zkVM for EreZKM {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
+    }
+
+    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, reader: R) -> Result<T, zkVMError> {
+        bincode::deserialize_from(reader).map_err(zkVMError::other)
     }
 }
 
