@@ -15,7 +15,7 @@ const _: () = {
                 + cfg!(feature = "pico") as u8
                 + cfg!(feature = "risc0") as u8
                 + cfg!(feature = "sp1") as u8
-                + cfg!(feature = "zisk") as u8)
+                + cfg!(feature = "zisk") as u8
                 + cfg!(feature = "zkm") as u8)
                 == 1,
             "Exactly one zkVM backend feature must be enabled"
