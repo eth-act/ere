@@ -180,10 +180,10 @@ mod tests {
     use std::{panic, sync::OnceLock};
     use test_utils::host::{BasicProgramIo, run_zkvm_execute, testing_guest_directory};
 
-    static BASIC_PRORGAM: OnceLock<Vec<u8>> = OnceLock::new();
+    static BASIC_PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
 
     fn basic_program() -> Vec<u8> {
-        BASIC_PRORGAM
+        BASIC_PROGRAM
             .get_or_init(|| {
                 PICO_TARGET
                     .compile(&testing_guest_directory("pico", "basic"))

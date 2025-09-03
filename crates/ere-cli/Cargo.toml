@@ -28,8 +28,10 @@ zkvm-interface = { workspace = true, features = ["clap"] }
 workspace = true
 
 [features]
-default = []
+default = ["cuda"]
 cli = ["dep:clap", "dep:tracing-subscriber"]
+
+# zkVM
 jolt = ["dep:ere-jolt"]
 nexus = ["dep:ere-nexus"]
 openvm = ["dep:ere-openvm"]
@@ -37,3 +39,6 @@ pico = ["dep:ere-pico"]
 risc0 = ["dep:ere-risc0"]
 sp1 = ["dep:ere-sp1"]
 zisk = ["dep:ere-zisk"]
+
+# Cuda
+cuda = ["ere-openvm?/cuda"]

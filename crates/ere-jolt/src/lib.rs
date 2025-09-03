@@ -191,10 +191,10 @@ mod tests {
     use std::sync::OnceLock;
     use test_utils::host::{BasicProgramIo, testing_guest_directory};
 
-    static BASIC_PRORGAM: OnceLock<Vec<u8>> = OnceLock::new();
+    static BASIC_PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
 
     fn basic_program() -> Vec<u8> {
-        BASIC_PRORGAM
+        BASIC_PROGRAM
             .get_or_init(|| {
                 JOLT_TARGET
                     .compile(&testing_guest_directory("jolt", "basic"))

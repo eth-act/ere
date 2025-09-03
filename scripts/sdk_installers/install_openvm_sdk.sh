@@ -28,7 +28,7 @@ ensure_tool_installed "rustup" "to manage Rust toolchains"
 ensure_tool_installed "git" "to install cargo-openvm from a git repository"
 ensure_tool_installed "cargo" "to build and install Rust packages"
 
-OPENVM_CLI_VERSION_TAG="v1.4.0-rc.8"
+OPENVM_CLI_VERSION_TAG="v1.4.0"
 
 # Install cargo-openvm using the specified toolchain and version tag
 echo "Installing cargo-openvm (version ${OPENVM_CLI_VERSION_TAG}) from GitHub repository (openvm-org/openvm)..."
@@ -47,3 +47,7 @@ fi
 
 # Setup aggregation keys
 cargo openvm setup
+
+# Install the toolchain for guest compilation.
+rustup install nightly-2025-02-14
+rustup component add rust-src --toolchain nightly-2025-02-14

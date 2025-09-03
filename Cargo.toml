@@ -19,7 +19,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.0.11"
+version = "0.0.12"
 edition = "2024"
 rust-version = "1.85"
 license = "MIT OR Apache-2.0"
@@ -60,12 +60,12 @@ jolt-sdk = { git = "https://github.com/a16z/jolt.git", rev = "55b9830a3944dde55d
 nexus-sdk = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.4" }
 
 # OpenVM dependencies
-openvm-build = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0-rc.8" }
-openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0-rc.8" }
-openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0-rc.8" }
-openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0-rc.8" }
-openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0-rc.6" }
-openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0-rc.8" }
+openvm-build = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
+openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
+openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
+openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
+openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.0" }
+openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
 
 # Pico dependencies
 pico-vm = { git = "https://github.com/brevis-network/pico.git", tag = "v1.1.7" }
@@ -85,13 +85,13 @@ build-utils = { path = "crates/build-utils" }
 test-utils = { path = "crates/test-utils" }
 ere-cli = { path = "crates/ere-cli", default-features = false }
 ere-dockerized = { path = "crates/ere-dockerized" }
-ere-jolt = { path = "crates/ere-jolt" }
-ere-nexus = { path = "crates/ere-nexus" }
-ere-openvm = { path = "crates/ere-openvm" }
-ere-pico = { path = "crates/ere-pico" }
-ere-risc0 = { path = "crates/ere-risc0" }
-ere-sp1 = { path = "crates/ere-sp1" }
-ere-zisk = { path = "crates/ere-zisk" }
+ere-jolt = { path = "crates/ere-jolt", default-features = false }
+ere-nexus = { path = "crates/ere-nexus", default-features = false }
+ere-openvm = { path = "crates/ere-openvm", default-features = false }
+ere-pico = { path = "crates/ere-pico", default-features = false }
+ere-risc0 = { path = "crates/ere-risc0", default-features = false }
+ere-sp1 = { path = "crates/ere-sp1", default-features = false }
+ere-zisk = { path = "crates/ere-zisk", default-features = false }
 
 [patch.crates-io]
 # These patches are only needed by Jolt

@@ -10,7 +10,7 @@ use tracing::info;
 
 static CARGO_ENCODED_RUSTFLAGS_SEPARATOR: &str = "\x1f";
 const TARGET_TRIPLE: &str = "riscv32ima-unknown-none-elf";
-// Rust flags according to https://github.com/openvm-org/openvm/blob/v1.4.0-rc.8/crates/toolchain/build/src/lib.rs#L291
+// Rust flags according to https://github.com/openvm-org/openvm/blob/v1.4.0/crates/toolchain/build/src/lib.rs#L291
 const RUSTFLAGS: &[&str] = &[
     // Replace atomic ops with nonatomic versions since the guest is single threaded.
     "-C",

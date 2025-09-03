@@ -59,6 +59,7 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 use crate::{
+    cuda::cuda_compute_cap,
     docker::{DockerBuildCmd, DockerRunCmd, docker_image_exists},
     error::{CommonError, CompileError, DockerizedError, ExecuteError, ProveError, VerifyError},
 };
@@ -81,6 +82,7 @@ use zkvm_interface::{
 include!(concat!(env!("OUT_DIR"), "/crate_version.rs"));
 include!(concat!(env!("OUT_DIR"), "/zkvm_sdk_version_impl.rs"));
 
+pub mod cuda;
 pub mod docker;
 pub mod error;
 pub mod input;
@@ -152,7 +154,7 @@ impl ErezkVM {
         }
 
         if force_rebuild || !docker_image_exists(self.base_zkvm_tag(CRATE_VERSION))? {
-            DockerBuildCmd::new()
+            let mut cmd = DockerBuildCmd::new()
                 .file(
                     workspace_dir
                         .join("docker")
@@ -161,8 +163,17 @@ impl ErezkVM {
                 )
                 .tag(self.base_zkvm_tag(CRATE_VERSION))
                 .tag(self.base_zkvm_tag("latest"))
-                .bulid_arg("BASE_IMAGE_TAG", self.base_tag(CRATE_VERSION))
-                .exec(&workspace_dir)
+                .build_arg("BASE_IMAGE_TAG", self.base_tag(CRATE_VERSION));
+
+            if matches!(self, ErezkVM::OpenVM) {
+                if let Ok(cuda_arch) = env::var("CUDA_ARCH") {
+                    cmd = cmd.build_arg("CUDA_ARCH", cuda_arch)
+                } else if let Some(cuda_compute_cap) = cuda_compute_cap() {
+                    cmd = cmd.build_arg("CUDA_ARCH", cuda_compute_cap.replace(".", ""))
+                }
+            };
+
+            cmd.exec(&workspace_dir)
                 .map_err(CommonError::DockerBuildCmd)?;
         }
 
@@ -171,8 +182,8 @@ impl ErezkVM {
                 .file(workspace_dir.join("docker").join("cli").join("Dockerfile"))
                 .tag(self.cli_zkvm_tag(CRATE_VERSION))
                 .tag(self.cli_zkvm_tag("latest"))
-                .bulid_arg("BASE_ZKVM_IMAGE_TAG", self.base_zkvm_tag(CRATE_VERSION))
-                .bulid_arg("ZKVM", self.as_str())
+                .build_arg("BASE_ZKVM_IMAGE_TAG", self.base_zkvm_tag(CRATE_VERSION))
+                .build_arg("ZKVM", self.as_str())
                 .exec(&workspace_dir)
                 .map_err(CommonError::DockerBuildCmd)?;
         }
@@ -393,6 +404,7 @@ impl zkVM for EreDockerizedzkVM {
         // zkVM specific options when using GPU
         if matches!(self.resource, ProverResourceType::Gpu) {
             cmd = match self.zkvm {
+                ErezkVM::OpenVM => cmd.gpus("all"),
                 // SP1's and Risc0's GPU proving requires Docker to start GPU prover
                 // service, to give the client access to the prover service, we need
                 // to use the host networking driver.
