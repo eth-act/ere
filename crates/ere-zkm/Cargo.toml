@@ -6,8 +6,8 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-zkm-sdk = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.1.2" }
-zkm-build = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.1.2" }
+zkm-sdk = {workspace = true}
+zkm-build = {workspace = true}
 
 zkvm-interface = { workspace = true }
 toml = "0.8"
