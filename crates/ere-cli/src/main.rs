@@ -16,6 +16,7 @@ const _: () = {
                 + cfg!(feature = "risc0") as u8
                 + cfg!(feature = "sp1") as u8
                 + cfg!(feature = "zisk") as u8)
+                + cfg!(feature = "zkm") as u8)
                 == 1,
             "Exactly one zkVM backend feature must be enabled"
         );
@@ -153,6 +154,9 @@ fn compile(guest_path: PathBuf, program_path: PathBuf) -> Result<(), Error> {
     #[cfg(feature = "zisk")]
     let program = ere_zisk::RV64_IMA_ZISK_ZKVM_ELF.compile(&guest_path);
 
+    #[cfg(feature = "zkm")]
+    let program = ere_zkm::RV32_IM_ZKM_ZKVM_ELF.compile(&guest_path);
+
     serde::write(
         &program_path,
         &program.with_context(|| "Failed to compile program")?,
@@ -245,6 +249,9 @@ fn construct_zkvm(program_path: PathBuf, resource: ProverResourceType) -> Result
 
     #[cfg(feature = "zisk")]
     let zkvm = Ok::<_, Error>(ere_zisk::EreZisk::new(program, resource));
+
+    #[cfg(feature = "zkm")]
+    let zkvm = Ok::<_, Error>(ere_zkm::EreZKM::new(program, resource));
 
     zkvm.with_context(|| "Failed to instantiate zkVM")
 }
