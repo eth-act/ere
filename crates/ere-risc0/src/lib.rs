@@ -273,10 +273,10 @@ mod tests {
         BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
 
-    static BASIC_PRORGAM: OnceLock<Risc0Program> = OnceLock::new();
+    static BASIC_PROGRAM: OnceLock<Risc0Program> = OnceLock::new();
 
     fn basic_program() -> Risc0Program {
-        BASIC_PRORGAM
+        BASIC_PROGRAM
             .get_or_init(|| {
                 RV32_IM_RISC0_ZKVM_ELF
                     .compile(&testing_guest_directory("risc0", "basic"))

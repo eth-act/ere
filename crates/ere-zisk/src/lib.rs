@@ -604,10 +604,10 @@ mod tests {
         BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
 
-    static BASIC_PRORGAM: OnceLock<Vec<u8>> = OnceLock::new();
+    static BASIC_PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
 
     fn basic_program() -> Vec<u8> {
-        BASIC_PRORGAM
+        BASIC_PROGRAM
             .get_or_init(|| {
                 RV64_IMA_ZISK_ZKVM_ELF
                     .compile(&testing_guest_directory("zisk", "basic"))

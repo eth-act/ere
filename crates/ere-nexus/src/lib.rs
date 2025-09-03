@@ -160,10 +160,10 @@ mod tests {
     use std::{fs, sync::OnceLock};
     use test_utils::host::testing_guest_directory;
 
-    static BASIC_PRORGAM: OnceLock<PathBuf> = OnceLock::new();
+    static BASIC_PROGRAM: OnceLock<PathBuf> = OnceLock::new();
 
     fn basic_program() -> PathBuf {
-        BASIC_PRORGAM
+        BASIC_PROGRAM
             .get_or_init(|| {
                 NEXUS_TARGET
                     .compile(&testing_guest_directory("nexus", "basic"))
