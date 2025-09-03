@@ -266,7 +266,7 @@ mod prove_tests {
         let zkvm = EreZKM::new(elf_bytes, ProverResourceType::Cpu);
 
         let proof_bytes = match zkvm.prove(&input_builder) {
-            Ok((prove_result, _)) => prove_result,
+            Ok((public_inputs, prove_result, _)) => prove_result,
             Err(err) => {
                 panic!("Proving error in test: {:?}", err);
             }
