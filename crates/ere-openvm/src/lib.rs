@@ -171,31 +171,6 @@ impl EreOpenVM {
     }
 }
 
-macro_rules! with_sdk {
-    ($zkvm:ident, |$sdk:ident| $f:expr) => {
-        match $zkvm.resource {
-            ProverResourceType::Cpu => {
-                let $sdk = $zkvm.cpu_sdk()?;
-                $f
-            }
-            ProverResourceType::Gpu => {
-                #[cfg(feature = "cuda")]
-                {
-                    let $sdk = $zkvm.gpu_sdk()?;
-                    $f
-                }
-                #[cfg(not(feature = "cuda"))]
-                panic!("Feature `cuda` is disabled. Enable `cuda` to use GPU resource type");
-            }
-            ProverResourceType::Network(_) => {
-                panic!(
-                    "Network proving not yet implemented for OpenVM. Use CPU or GPU resource type."
-                );
-            }
-        }
-    };
-}
-
 impl zkVM for EreOpenVM {
     fn execute(
         &self,
@@ -205,7 +180,9 @@ impl zkVM for EreOpenVM {
         serialize_inputs(&mut stdin, inputs);
 
         let start = Instant::now();
-        let public_values = with_sdk!(self, |sdk| sdk.execute(self.app_exe.clone(), stdin))
+        let public_values = self
+            .cpu_sdk()?
+            .execute(self.app_exe.clone(), stdin)
             .map_err(|e| OpenVMError::from(ExecuteError::Execute(e)))?;
 
         Ok((
@@ -225,8 +202,21 @@ impl zkVM for EreOpenVM {
         serialize_inputs(&mut stdin, inputs);
 
         let now = std::time::Instant::now();
-        let (proof, app_commit) = with_sdk!(self, |sdk| sdk.prove(self.app_exe.clone(), stdin))
-            .map_err(|e| OpenVMError::from(ProveError::Prove(e)))?;
+        let (proof, app_commit) = match self.resource {
+            ProverResourceType::Cpu => self.cpu_sdk()?.prove(self.app_exe.clone(), stdin),
+            #[cfg(feature = "cuda")]
+            ProverResourceType::Gpu => self.gpu_sdk()?.prove(self.app_exe.clone(), stdin),
+            #[cfg(not(feature = "cuda"))]
+            ProverResourceType::Gpu => {
+                panic!("Feature `cuda` is disabled. Enable `cuda` to use GPU resource type")
+            }
+            ProverResourceType::Network(_) => {
+                panic!(
+                    "Network proving not yet implemented for OpenVM. Use CPU or GPU resource type."
+                );
+            }
+        }
+        .map_err(|e| OpenVMError::from(ProveError::Prove(e)))?;
         let elapsed = now.elapsed();
 
         if app_commit != self.app_commit {
