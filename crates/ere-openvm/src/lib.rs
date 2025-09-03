@@ -122,6 +122,19 @@ pub struct EreOpenVM {
 
 impl EreOpenVM {
     pub fn new(program: OpenVMProgram, resource: ProverResourceType) -> Result<Self, zkVMError> {
+        match resource {
+            #[cfg(not(feature = "cuda"))]
+            ProverResourceType::Gpu => {
+                panic!("Feature `cuda` is disabled. Enable `cuda` to use GPU resource type")
+            }
+            ProverResourceType::Network(_) => {
+                panic!(
+                    "Network proving not yet implemented for OpenVM. Use CPU or GPU resource type."
+                );
+            }
+            _ => {}
+        }
+
         let sdk = CpuSdk::new(program.app_config.clone()).map_err(CommonError::SdkInit)?;
 
         let elf = Elf::decode(&program.elf, MEM_SIZE as u32)
