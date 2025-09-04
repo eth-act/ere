@@ -1,6 +1,6 @@
-use std::{path::PathBuf, process::ExitStatus};
-
+use std::{io, path::PathBuf, process::ExitStatus};
 use thiserror::Error;
+use zkm_sdk::ZKMProofKind;
 use zkvm_interface::zkVMError;
 
 impl From<ZKMError> for zkVMError {
@@ -12,7 +12,7 @@ impl From<ZKMError> for zkVMError {
 #[derive(Debug, Error)]
 pub enum ZKMError {
     #[error(transparent)]
-    CompileError(#[from] CompileError),
+    Compile(#[from] CompileError),
 
     #[error(transparent)]
     Execute(#[from] ExecuteError),
@@ -24,46 +24,40 @@ pub enum ZKMError {
     Verify(#[from] VerifyError),
 }
 
-/// Errors that can be encountered while compiling a ZKM program
 #[derive(Debug, Error)]
 pub enum CompileError {
-    #[error("ZKM execution failed: {0}")]
-    Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
-    #[error("Program path does not exist or is not a directory: {0}")]
-    InvalidProgramPath(PathBuf),
+    #[error("`cargo metadata` failed: {0}")]
+    MetadataCommand(#[from] cargo_metadata::Error),
+    #[error("Failed to find root package")]
+    MissingRootPackage,
+    #[error("`RUSTUP_TOOLCHAIN=zkm rustc --print sysroot` failed to execute: {0}")]
+    RustcSysrootFailed(#[source] io::Error),
     #[error(
-        "Cargo.toml not found in program directory: {program_dir}. Expected at: {manifest_path}"
+        "`RUSTUP_TOOLCHAIN=zkm rustc --print sysroot` exited with non-zero status {status}, stdout: {stdout}, stderr: {stderr}"
     )]
-    CargoTomlMissing {
-        program_dir: PathBuf,
-        manifest_path: PathBuf,
+    RustcSysrootExitNonZero {
+        status: ExitStatus,
+        stdout: String,
+        stderr: String,
     },
-    #[error("Could not find `[package].name` in guest Cargo.toml at {path}")]
-    MissingPackageName { path: PathBuf },
-    #[error("Compiled ELF not found at expected path: {0}")]
-    ElfNotFound(PathBuf),
-    #[error("`cargo prove build` failed with status: {status} for program at {path}")]
-    CargoBuildFailed { status: ExitStatus, path: PathBuf },
+    #[error("`cargo ziren build` failed to execute: {0}")]
+    CargoZirenBuildFailed(#[source] io::Error),
+    #[error(
+        "`cargo ziren build` exited with non-zero status {status}, stdout: {stdout}, stderr: {stderr}"
+    )]
+    CargoZirenBuildExitNonZero {
+        status: ExitStatus,
+        stdout: String,
+        stderr: String,
+    },
+    #[error("Failed to find guest in built packages")]
+    GuestNotFound { name: String },
     #[error("Failed to read file at {path}: {source}")]
     ReadFile {
         path: PathBuf,
         #[source]
         source: std::io::Error,
     },
-    #[error("Failed to parse guest Cargo.toml at {path}: {source}")]
-    ParseCargoToml {
-        path: PathBuf,
-        #[source]
-        source: toml::de::Error,
-    },
-    #[error("Failed to execute `cargo prove build` in {cwd}: {source}")]
-    CargoProveBuild {
-        cwd: PathBuf,
-        #[source]
-        source: std::io::Error,
-    },
-    #[error("Failed to create temporary output directory: {0}")]
-    TempDir(#[from] std::io::Error),
 }
 
 #[derive(Debug, Error)]
@@ -74,18 +68,21 @@ pub enum ExecuteError {
 
 #[derive(Debug, Error)]
 pub enum ProveError {
-    #[error("ZKM SDK proving failed: {0}")]
-    Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
-
     #[error("Serialising proof with `bincode` failed: {0}")]
     Bincode(#[from] bincode::Error),
+
+    #[error("ZKM proving failed: {0}")]
+    Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
 }
 
 #[derive(Debug, Error)]
 pub enum VerifyError {
-    #[error("Deserialising proof failed: {0}")]
+    #[error("Deserialising proof with `bincode` failed: {0}")]
     Bincode(#[from] bincode::Error),
 
-    #[error("ZKM SDK verification failed: {0}")]
+    #[error("Expect to get Compressed proof, but got: {}", 0.to_string())]
+    InvalidProofKind(ZKMProofKind),
+
+    #[error("ZKM verification failed: {0}")]
     Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
 }

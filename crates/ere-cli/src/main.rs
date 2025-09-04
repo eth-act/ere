@@ -155,7 +155,7 @@ fn compile(guest_path: PathBuf, program_path: PathBuf) -> Result<(), Error> {
     let program = ere_zisk::RV64_IMA_ZISK_ZKVM_ELF.compile(&guest_path);
 
     #[cfg(feature = "zkm")]
-    let program = ere_zkm::RV32_IM_ZKM_ZKVM_ELF.compile(&guest_path);
+    let program = ere_zkm::MIPS32R2_ZKM_ZKVM_ELF.compile(&guest_path);
 
     serde::write(
         &program_path,

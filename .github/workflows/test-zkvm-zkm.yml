@@ -14,6 +14,7 @@ jobs:
       packages: write
     with:
       zkvm: zkm
-      toolchain: nightly-2025-07-17
-      test_ere_dockerized: false
-      test_options: 'execute compile'
+      toolchain: nightly
+      test_ere_dockerized: true
+      default_features: true
+      test_options: ''

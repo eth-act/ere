@@ -82,7 +82,6 @@ sp1-sdk = "5.2.1"
 
 # ZKM dependencies
 zkm-sdk = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.1.4" }
-zkm-build = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.1.4" }
 
 # Local dependencies
 zkvm-interface = { path = "crates/zkvm-interface" }
