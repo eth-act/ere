@@ -66,7 +66,6 @@ fi
 echo "Running 'zkmup install' to install/update zkm toolchain..."
 zkmup install
 
-#// TODO:
 # Verify zkm installation
 echo "Verifying zkm installation..."
 ensure_tool_installed "cargo"
