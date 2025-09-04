@@ -1,108 +1,142 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
-
+use crate::error::{CompileError, ExecuteError, ProveError, VerifyError, ZKMError};
+use cargo_metadata::MetadataCommand;
 use serde::de::DeserializeOwned;
-use std::path::{Path, PathBuf};
-use std::time::Instant;
-use std::{io::Read, process::Command};
-
+use std::{
+    fs,
+    io::Read,
+    path::{Path, PathBuf},
+    process::Command,
+    time::Instant,
+};
 use tracing::info;
-use zkm_build::{BuildArgs, execute_build_program};
-use zkm_sdk::{ProverClient, ZKMProofWithPublicValues, ZKMProvingKey, ZKMStdin, ZKMVerifyingKey};
+use zkm_sdk::{
+    CpuProver, Prover, ZKMProofKind, ZKMProofWithPublicValues, ZKMProvingKey, ZKMStdin,
+    ZKMVerifyingKey,
+};
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof,
     ProverResourceType, PublicValues, zkVM, zkVMError,
 };
 
-// mod compile;
-
+include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 mod error;
-use crate::error::CompileError;
-use error::{ExecuteError, ProveError, VerifyError, ZKMError};
+
+const ZKM_TOOLCHAIN: &str = "zkm";
 
 #[allow(non_camel_case_types)]
-pub struct RV32_IM_ZKM_ZKVM_ELF;
-pub struct EreZKM {
-    program: <RV32_IM_ZKM_ZKVM_ELF as Compiler>::Program,
-    /// Proving key
-    pk: ZKMProvingKey,
-    /// Verification key
-    vk: ZKMVerifyingKey,
-    /// Proof and Verification orchestrator
-    client: ProverClient,
-}
+pub struct MIPS32R2_ZKM_ZKVM_ELF;
 
-impl Compiler for RV32_IM_ZKM_ZKVM_ELF {
-    type Error = ZKMError;
+impl Compiler for MIPS32R2_ZKM_ZKVM_ELF {
+    type Error = CompileError;
 
     type Program = Vec<u8>;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        let target_elf_paths =
-            execute_build_program(&BuildArgs::default(), Some(guest_directory.to_path_buf()))
-                .map_err(|e| ZKMError::CompileError(CompileError::Client(Box::from(e))))?;
-        if target_elf_paths.is_empty() {
-            return Err(ZKMError::CompileError(CompileError::Client(Box::from(
-                "No ELF files were built.",
-            ))));
+        let metadata = MetadataCommand::new().current_dir(guest_directory).exec()?;
+        let package = metadata
+            .root_package()
+            .ok_or(CompileError::MissingRootPackage)?;
+
+        let rustc = {
+            let output = Command::new("rustc")
+                .env("RUSTUP_TOOLCHAIN", ZKM_TOOLCHAIN)
+                .args(["--print", "sysroot"])
+                .output()
+                .map_err(CompileError::RustcSysrootFailed)?;
+
+            if !output.status.success() {
+                return Err(CompileError::RustcSysrootExitNonZero {
+                    status: output.status,
+                    stdout: String::from_utf8_lossy(&output.stdout).to_string(),
+                    stderr: String::from_utf8_lossy(&output.stderr).to_string(),
+                });
+            }
+
+            PathBuf::from(String::from_utf8_lossy(&output.stdout).trim())
+                .join("bin")
+                .join("rustc")
+        };
+
+        // Use `cargo ziren build` instead of using crate `zkm-build`, because
+        // it exits if the underlying `cargo build` fails, and there is no way
+        // to recover.
+        let output = Command::new("cargo")
+            .current_dir(guest_directory)
+            .env("RUSTC", rustc)
+            .env("ZIREN_ZKM_CC", "mipsel-zkm-zkvm-elf-gcc")
+            .args(["ziren", "build"])
+            .output()
+            .map_err(CompileError::CargoZirenBuildFailed)?;
+
+        if !output.status.success() {
+            return Err(CompileError::CargoZirenBuildExitNonZero {
+                status: output.status,
+                stdout: String::from_utf8_lossy(&output.stdout).to_string(),
+                stderr: String::from_utf8_lossy(&output.stderr).to_string(),
+            });
         }
 
-        let elf_path = &target_elf_paths[0].1;
+        let elf_path = String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .find_map(|line| {
+                let line = line.strip_prefix("cargo:rustc-env=ZKM_ELF_")?;
+                let (package_name, elf_path) = line.split_once("=")?;
+                (package_name == package.name).then(|| PathBuf::from(elf_path))
+            })
+            .ok_or_else(|| CompileError::GuestNotFound {
+                name: package.name.clone(),
+            })?;
 
-        let bytes = std::fs::read(elf_path)
-            .map_err(|e| ZKMError::CompileError(CompileError::Client(Box::from(e))))?;
+        let elf = fs::read(&elf_path).map_err(|source| CompileError::ReadFile {
+            path: elf_path,
+            source,
+        })?;
 
-        Ok(bytes.to_vec())
+        Ok(elf)
     }
+}
+
+pub struct EreZKM {
+    program: <MIPS32R2_ZKM_ZKVM_ELF as Compiler>::Program,
+    pk: ZKMProvingKey,
+    vk: ZKMVerifyingKey,
 }
 
 impl EreZKM {
     pub fn new(
-        program: <RV32_IM_ZKM_ZKVM_ELF as Compiler>::Program,
+        program: <MIPS32R2_ZKM_ZKVM_ELF as Compiler>::Program,
         resource: ProverResourceType,
     ) -> Self {
-        let client = match resource {
-            ProverResourceType::Cpu => ProverClient::cpu(),
-            _ => unimplemented!(
-                "Network or Gpu proving not yet implemented for ZKM. Use CPU resource type."
-            ),
-        };
-        let (pk, vk) = client.setup(&program);
-
-        Self {
-            program,
-            client,
-            pk,
-            vk,
+        if matches!(
+            resource,
+            ProverResourceType::Gpu | ProverResourceType::Network(_)
+        ) {
+            panic!("Network or Gpu proving not yet implemented for ZKM. Use CPU resource type.");
         }
+        let (pk, vk) = CpuProver::new().setup(&program);
+        Self { program, pk, vk }
     }
 }
 
 impl zkVM for EreZKM {
     fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
         let mut stdin = ZKMStdin::new();
-        for input in inputs.iter() {
-            match input {
-                InputItem::Object(serialize) => stdin.write(serialize),
-                InputItem::SerializedObject(bytes) | InputItem::Bytes(bytes) => {
-                    stdin.write_slice(bytes)
-                }
-            }
-        }
+        serialize_inputs(&mut stdin, inputs);
 
         let start = Instant::now();
-        let (public_inputs, exec_report) = self
-            .client
-            .execute(&self.program, stdin)
-            .run()
-            .map_err(|err| ZKMError::Execute(ExecuteError::Client(Box::from(err))))?;
+        let (public_inputs, exec_report) = CpuProver::new()
+            .execute(&self.program, &stdin)
+            .map_err(|err| ZKMError::Execute(ExecuteError::Client(err.into())))?;
+        let execution_duration = start.elapsed();
+
         Ok((
             public_inputs.to_vec(),
             ProgramExecutionReport {
                 total_num_cycles: exec_report.total_instruction_count(),
                 region_cycles: exec_report.cycle_tracker.into_iter().collect(),
-                execution_duration: start.elapsed(),
+                execution_duration,
             },
         ))
     }
@@ -114,28 +148,19 @@ impl zkVM for EreZKM {
         info!("Generating proof…");
 
         let mut stdin = ZKMStdin::new();
-        for input in inputs.iter() {
-            match input {
-                InputItem::Object(serialize) => stdin.write(serialize),
-                InputItem::SerializedObject(bytes) | InputItem::Bytes(bytes) => {
-                    stdin.write_slice(bytes)
-                }
-            }
-        }
+        serialize_inputs(&mut stdin, inputs);
 
         let start = std::time::Instant::now();
-        let proof_with_inputs = self
-            .client
-            .prove(&self.pk, stdin)
-            .run()
-            .map_err(|err| ZKMError::Execute(ExecuteError::Client(Box::from(err))))?;
+        let proof = CpuProver::new()
+            .prove(&self.pk, stdin, ZKMProofKind::Compressed)
+            .map_err(|err| ZKMError::Prove(ProveError::Client(err.into())))?;
         let proving_time = start.elapsed();
 
-        let bytes = bincode::serialize(&proof_with_inputs)
-            .map_err(|err| ZKMError::Prove(ProveError::Bincode(err)))?;
+        let bytes =
+            bincode::serialize(&proof).map_err(|err| ZKMError::Prove(ProveError::Bincode(err)))?;
 
         Ok((
-            proof_with_inputs.public_values.to_vec(),
+            proof.public_values.to_vec(),
             bytes,
             ProgramProvingReport::new(proving_time),
         ))
@@ -147,10 +172,14 @@ impl zkVM for EreZKM {
         let proof: ZKMProofWithPublicValues = bincode::deserialize(proof)
             .map_err(|err| ZKMError::Verify(VerifyError::Bincode(err)))?;
 
-        self.client
+        let proof_kind = ZKMProofKind::from(&proof.proof);
+        if !matches!(proof_kind, ZKMProofKind::Compressed) {
+            return Err(ZKMError::Verify(VerifyError::InvalidProofKind(proof_kind)))?;
+        }
+
+        CpuProver::new()
             .verify(&proof, &self.vk)
-            .map_err(|e| ZKMError::Verify(VerifyError::Client(Box::new(e))))
-            .map_err(zkVMError::from)?;
+            .map_err(|err| ZKMError::Verify(VerifyError::Client(err.into())))?;
 
         Ok(proof.public_values.to_vec())
     }
@@ -168,111 +197,87 @@ impl zkVM for EreZKM {
     }
 }
 
-#[cfg(test)]
-#[allow(non_snake_case)]
-mod execute_tests {
-    use std::path::PathBuf;
-
-    use super::*;
-    use zkvm_interface::Input;
-
-    fn get_compiled_test_ZKM_elf() -> Result<Vec<u8>, ZKMError> {
-        let test_guest_path = get_execute_test_guest_program_path();
-        println!("Test guest path: {:?}", test_guest_path);
-        RV32_IM_ZKM_ZKVM_ELF.compile(&test_guest_path)
-    }
-
-    fn get_execute_test_guest_program_path() -> PathBuf {
-        let workspace_dir = env!("CARGO_WORKSPACE_DIR");
-        PathBuf::from(workspace_dir)
-            .join("tests")
-            .join("zkm")
-            .join("compile")
-            .join("basic")
-            .canonicalize()
-            .expect("Failed to find or canonicalize test guest program at <CARGO_WORKSPACE_DIR>/tests/execute/ZKM")
-    }
-
-    #[test]
-    fn test_execute_ZKM_dummy_input() {
-        let elf_bytes = get_compiled_test_ZKM_elf()
-            .expect("Failed to compile test ZKM guest for execution test");
-
-        let mut input_builder = Input::new();
-        let n: u32 = 42;
-        input_builder.write(n);
-
-        let zkvm = EreZKM::new(elf_bytes, ProverResourceType::Cpu);
-
-        let result = zkvm.execute(&input_builder);
-
-        if let Err(e) = &result {
-            panic!("Execution error: {:?}", e);
+fn serialize_inputs(stdin: &mut ZKMStdin, inputs: &Input) {
+    for input in inputs.iter() {
+        match input {
+            InputItem::Object(obj) => stdin.write(obj),
+            InputItem::SerializedObject(bytes) | InputItem::Bytes(bytes) => {
+                stdin.write_slice(bytes)
+            }
         }
     }
 }
 
 #[cfg(test)]
-#[allow(non_snake_case)]
-mod prove_tests {
-    use std::path::PathBuf;
-
+mod tests {
     use super::*;
-    use zkvm_interface::Input;
-    use zkvm_interface::zkVM;
+    use std::{panic, sync::OnceLock};
+    use test_utils::host::{
+        BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+    };
 
-    fn get_prove_test_guest_program_path() -> PathBuf {
-        let workspace_dir = env!("CARGO_WORKSPACE_DIR");
-        PathBuf::from(workspace_dir)
-            .join("tests")
-            .join("zkm")
-            .join("compile")
-            .join("basic")
-            .canonicalize()
-            .expect("Failed to find or canonicalize test guest program at <CARGO_WORKSPACE_DIR>/tests/execute/ZKM")
-    }
+    static BASIC_PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
 
-    fn get_compiled_test_ZKM_elf_for_prove() -> Result<Vec<u8>, ZKMError> {
-        let test_guest_path = get_prove_test_guest_program_path();
-        RV32_IM_ZKM_ZKVM_ELF.compile(&test_guest_path)
-    }
-
-    #[test]
-    fn test_prove_ZKM_dummy_input() -> anyhow::Result<()> {
-        let elf_bytes = get_compiled_test_ZKM_elf_for_prove()
-            .expect("Failed to compile test ZKM guest for proving test");
-
-        let mut input_builder = Input::new();
-        let n: u32 = 42;
-        let a: u16 = 42;
-        input_builder.write(n);
-        input_builder.write(a);
-
-        let zkvm = EreZKM::new(elf_bytes, ProverResourceType::Cpu);
-
-        let (public_inputs, proof_bytes, _report) = zkvm.prove(&input_builder)?;
-
-        assert!(!proof_bytes.is_empty(), "Proof bytes should not be empty.");
-
-        let pi = zkvm
-            .verify(&proof_bytes)
-            .map_err(|err| anyhow::anyhow!("Failed to verify proof, error:{}", err))?;
-        println!("verified successfully");
-        assert_eq!(pi, public_inputs, "Public inputs should match.");
-
-        Ok(())
+    fn basic_program() -> Vec<u8> {
+        BASIC_PROGRAM
+            .get_or_init(|| {
+                MIPS32R2_ZKM_ZKVM_ELF
+                    .compile(&testing_guest_directory("zkm", "basic"))
+                    .unwrap()
+            })
+            .clone()
     }
 
     #[test]
-    #[should_panic]
-    fn test_prove_ZKM_fails_on_bad_input_causing_execution_failure() {
-        let elf_bytes = get_compiled_test_ZKM_elf_for_prove()
-            .expect("Failed to compile test ZKM guest for proving test");
+    fn test_execute() {
+        let program = basic_program();
+        let zkvm = EreZKM::new(program, ProverResourceType::Cpu);
 
-        let empty_input = Input::new();
+        let io = BasicProgramIo::valid();
+        run_zkvm_execute(&zkvm, &io);
+    }
 
-        let zkvm = EreZKM::new(elf_bytes, ProverResourceType::Cpu);
-        let prove_result = zkvm.prove(&empty_input);
-        assert!(prove_result.is_err())
+    #[test]
+    fn test_execute_invalid_inputs() {
+        type F = fn() -> zkvm_interface::Input;
+
+        let program = basic_program();
+        let zkvm = EreZKM::new(program, ProverResourceType::Cpu);
+
+        // Note that for some invalid cases the execution panics, but some not.
+        for (inputs_gen, should_panic) in [
+            (BasicProgramIo::empty as F, true),
+            (BasicProgramIo::invalid_type as F, false),
+            (BasicProgramIo::invalid_data as F, false),
+        ] {
+            if should_panic {
+                panic::catch_unwind(|| zkvm.execute(&inputs_gen())).unwrap_err();
+            } else {
+                zkvm.execute(&inputs_gen()).unwrap_err();
+            }
+        }
+    }
+
+    #[test]
+    fn test_prove() {
+        let program = basic_program();
+        let zkvm = EreZKM::new(program, ProverResourceType::Cpu);
+
+        let io = BasicProgramIo::valid();
+        run_zkvm_prove(&zkvm, &io);
+    }
+
+    #[test]
+    fn test_prove_invalid_inputs() {
+        let program = basic_program();
+        let zkvm = EreZKM::new(program, ProverResourceType::Cpu);
+
+        for inputs_gen in [
+            BasicProgramIo::empty,
+            BasicProgramIo::invalid_type,
+            BasicProgramIo::invalid_data,
+        ] {
+            panic::catch_unwind(|| zkvm.prove(&inputs_gen())).unwrap_err();
+        }
     }
 }

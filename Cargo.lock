@@ -3718,14 +3718,13 @@ dependencies = [
 name = "ere-zkm"
 version = "0.0.12"
 dependencies = [
- "anyhow",
  "bincode 1.3.3",
  "build-utils",
+ "cargo_metadata 0.19.2",
  "serde",
+ "test-utils",
  "thiserror 2.0.12",
- "toml",
  "tracing",
- "zkm-build",
  "zkm-sdk",
  "zkvm-interface",
 ]

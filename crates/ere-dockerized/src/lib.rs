@@ -206,7 +206,7 @@ impl FromStr for ErezkVM {
             "risc0" => Self::Risc0,
             "sp1" => Self::SP1,
             "zisk" => Self::Zisk,
-            "zkm" => Self::Zisk,
+            "zkm" => Self::ZKM,
             _ => return Err(format!("Unsupported zkvm {s}")),
         })
     }
@@ -607,6 +607,23 @@ mod test {
         let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
 
         let io = BasicProgramIo::valid().into_output_hashed_io();
+        run_zkvm_execute(&zkvm, &io);
+        run_zkvm_prove(&zkvm, &io);
+    }
+
+    #[test]
+    fn dockerized_zkm() {
+        let zkvm = ErezkVM::ZKM;
+
+        let guest_directory = testing_guest_directory(zkvm.as_str(), "basic");
+        let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
+            .unwrap()
+            .compile(&guest_directory)
+            .unwrap();
+
+        let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
+
+        let io = BasicProgramIo::valid();
         run_zkvm_execute(&zkvm, &io);
         run_zkvm_prove(&zkvm, &io);
     }
