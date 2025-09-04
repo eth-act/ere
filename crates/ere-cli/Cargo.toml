@@ -20,6 +20,7 @@ ere-pico = { workspace = true, optional = true }
 ere-risc0 = { workspace = true, optional = true }
 ere-sp1 = { workspace = true, optional = true }
 ere-zisk = { workspace = true, optional = true }
+ere-zkm = { workspace = true, optional = true }
 zkvm-interface = { workspace = true, features = ["clap"] }
 
 [dev-dependencies]
@@ -28,7 +29,7 @@ zkvm-interface = { workspace = true, features = ["clap"] }
 workspace = true
 
 [features]
-default = ["cuda"]
+default = ["cli", "zkm"]
 cli = ["dep:clap", "dep:tracing-subscriber"]
 
 # zkVM
@@ -39,6 +40,7 @@ pico = ["dep:ere-pico"]
 risc0 = ["dep:ere-risc0"]
 sp1 = ["dep:ere-sp1"]
 zisk = ["dep:ere-zisk"]
+zkm = ["dep:ere-zkm"]
 
 # Cuda
 cuda = ["ere-openvm?/cuda"]

@@ -97,6 +97,7 @@ pub enum ErezkVM {
     Risc0,
     SP1,
     Zisk,
+    ZKM,
 }
 
 impl ErezkVM {
@@ -109,6 +110,7 @@ impl ErezkVM {
             Self::Risc0 => "risc0",
             Self::SP1 => "sp1",
             Self::Zisk => "zisk",
+            Self::ZKM => "zkm",
         }
     }
 
@@ -204,6 +206,7 @@ impl FromStr for ErezkVM {
             "risc0" => Self::Risc0,
             "sp1" => Self::SP1,
             "zisk" => Self::Zisk,
+            "zkm" => Self::Zisk,
             _ => return Err(format!("Unsupported zkvm {s}")),
         })
     }

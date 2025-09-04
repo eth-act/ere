@@ -21,6 +21,7 @@ impl ErezkVM {
             Self::Risc0 => ere_risc0_output::deserialize_from(reader),
             Self::SP1 => bincode::deserialize_from(reader).map_err(zkVMError::other),
             Self::Zisk => unimplemented!("no native serialization in this platform"),
+            Self::ZKM => bincode::deserialize_from(reader).map_err(zkVMError::other),
         }
     }
 }

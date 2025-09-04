@@ -44,6 +44,9 @@ impl ErezkVM {
             Self::Zisk => bincode::serialize(obj).map_err(|err| {
                 CommonError::serilization(err, "Failed to serialize object with `bincode`")
             }),
+            Self::ZKM => bincode::serialize(obj).map_err(|err| {
+                CommonError::serilization(err, "Failed to serialize object with `bincode`")
+            }),
         }
     }
 
