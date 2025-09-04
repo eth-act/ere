@@ -42,17 +42,19 @@ impl Compiler for RV32_IM_ZKM_ZKVM_ELF {
         let target_elf_paths =
             execute_build_program(&BuildArgs::default(), Some(guest_directory.to_path_buf()))
                 .map_err(|e| ZKMError::CompileError(CompileError::Client(Box::from(e))))?;
-
         if target_elf_paths.is_empty() {
             return Err(ZKMError::CompileError(CompileError::Client(Box::from(
                 "No ELF files were built.",
             ))));
         }
 
-        let elf_path = &target_elf_paths[0].0;
+        let elf_path = &target_elf_paths[0].1;
+        println!("3");
 
+        println!("3. elf_path: {:?}", elf_path);
         let bytes = std::fs::read(elf_path)
             .map_err(|e| ZKMError::CompileError(CompileError::Client(Box::from(e))))?;
+        println!("4");
 
         Ok(bytes.to_vec())
     }
@@ -179,6 +181,7 @@ mod execute_tests {
 
     fn get_compiled_test_ZKM_elf() -> Result<Vec<u8>, ZKMError> {
         let test_guest_path = get_execute_test_guest_program_path();
+        println!("Test guest path: {:?}", test_guest_path);
         RV32_IM_ZKM_ZKVM_ELF.compile(&test_guest_path)
     }
 
