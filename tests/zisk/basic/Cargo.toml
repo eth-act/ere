@@ -7,5 +7,5 @@ edition = "2021"
 
 [dependencies]
 bincode = "1.3.3"
-ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.10.0" }
+ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.11.0" }
 test-utils = { path = "../../../crates/test-utils" }
