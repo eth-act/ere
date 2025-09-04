@@ -254,20 +254,27 @@ impl Compiler for EreDockerizedCompiler {
         let tempdir = TempDir::new()
             .map_err(|err| CommonError::io(err, "Failed to create temporary directory"))?;
 
-        DockerRunCmd::new(self.zkvm.cli_zkvm_tag(CRATE_VERSION))
+        let mut cmd = DockerRunCmd::new(self.zkvm.cli_zkvm_tag(CRATE_VERSION))
             .rm()
             .inherit_env("RUST_LOG")
             .inherit_env("NO_COLOR")
             .volume(&self.mount_directory, "/guest")
-            .volume(tempdir.path(), "/guest-output")
-            .exec([
-                "compile",
-                "--guest-path",
-                guest_path_in_docker.to_string_lossy().as_ref(),
-                "--program-path",
-                "/guest-output/program",
-            ])
-            .map_err(CommonError::DockerRunCmd)?;
+            .volume(tempdir.path(), "/guest-output");
+
+        cmd = match self.zkvm {
+            // OpenVM allows to select Rust toolchain for guest compilation.
+            ErezkVM::OpenVM => cmd.inherit_env("OPENVM_RUST_TOOLCHAIN"),
+            _ => cmd,
+        };
+
+        cmd.exec([
+            "compile",
+            "--guest-path",
+            guest_path_in_docker.to_string_lossy().as_ref(),
+            "--program-path",
+            "/guest-output/program",
+        ])
+        .map_err(CommonError::DockerRunCmd)?;
 
         let program_path = tempdir.path().join("program");
         let program = fs::read(&program_path).map_err(|err| {
