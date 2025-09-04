@@ -3069,6 +3069,7 @@ dependencies = [
 name = "ere-zkm"
 version = "0.0.12"
 dependencies = [
+ "anyhow",
  "bincode 1.3.3",
  "build-utils",
  "serde",

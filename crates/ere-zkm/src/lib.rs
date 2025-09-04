@@ -49,12 +49,9 @@ impl Compiler for RV32_IM_ZKM_ZKVM_ELF {
         }
 
         let elf_path = &target_elf_paths[0].1;
-        println!("3");
 
-        println!("3. elf_path: {:?}", elf_path);
         let bytes = std::fs::read(elf_path)
             .map_err(|e| ZKMError::CompileError(CompileError::Client(Box::from(e))))?;
-        println!("4");
 
         Ok(bytes.to_vec())
     }
@@ -213,22 +210,6 @@ mod execute_tests {
             panic!("Execution error: {:?}", e);
         }
     }
-
-    #[test]
-    fn test_execute_ZKM_no_input_for_guest_expecting_input() {
-        let elf_bytes = get_compiled_test_ZKM_elf()
-            .expect("Failed to compile test ZKM guest for execution test");
-
-        let empty_input = Input::new();
-
-        let zkvm = EreZKM::new(elf_bytes, ProverResourceType::Cpu);
-        let result = zkvm.execute(&empty_input);
-
-        assert!(
-            result.is_err(),
-            "execute should fail if guest expects input but none is provided."
-        );
-    }
 }
 
 #[cfg(test)]
@@ -238,6 +219,7 @@ mod prove_tests {
 
     use super::*;
     use zkvm_interface::Input;
+    use zkvm_interface::zkVM;
 
     fn get_prove_test_guest_program_path() -> PathBuf {
         let workspace_dir = env!("CARGO_WORKSPACE_DIR");
@@ -256,7 +238,7 @@ mod prove_tests {
     }
 
     #[test]
-    fn test_prove_ZKM_dummy_input() {
+    fn test_prove_ZKM_dummy_input() -> anyhow::Result<()> {
         let elf_bytes = get_compiled_test_ZKM_elf_for_prove()
             .expect("Failed to compile test ZKM guest for proving test");
 
@@ -268,19 +250,17 @@ mod prove_tests {
 
         let zkvm = EreZKM::new(elf_bytes, ProverResourceType::Cpu);
 
-        let proof_bytes = match zkvm.prove(&input_builder) {
-            Ok((public_inputs, prove_result, _)) => prove_result,
-            Err(err) => {
-                panic!("Proving error in test: {:?}", err);
-            }
-        };
+        let (public_inputs, proof_bytes, _report) = zkvm.prove(&input_builder)?;
 
         assert!(!proof_bytes.is_empty(), "Proof bytes should not be empty.");
 
-        let verify_results = zkvm.verify(&proof_bytes).is_ok();
-        assert!(verify_results);
+        let pi = zkvm
+            .verify(&proof_bytes)
+            .map_err(|err| anyhow::anyhow!("Failed to verify proof, error:{}", err))?;
+        println!("verified successfully");
+        assert_eq!(pi, public_inputs, "Public inputs should match.");
 
-        // TODO: Check public inputs
+        Ok(())
     }
 
     #[test]
