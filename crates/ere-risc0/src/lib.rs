@@ -28,7 +28,7 @@ mod output;
 
 /// Default logarithmic segment size from [`DEFAULT_SEGMENT_LIMIT_PO2`].
 ///
-/// [`DEFAULT_SEGMENT_LIMIT_PO2`]: https://github.com/risc0/risc0/blob/v3.0.1/risc0/circuit/rv32im/src/execute/mod.rs#L39.
+/// [`DEFAULT_SEGMENT_LIMIT_PO2`]: https://github.com/risc0/risc0/blob/v3.0.3/risc0/circuit/rv32im/src/execute/mod.rs#L39.
 const DEFAULT_SEGMENT_PO2: usize = 20;
 
 /// Supported range of logarithmic segment size.
@@ -38,18 +38,18 @@ const DEFAULT_SEGMENT_PO2: usize = 20;
 /// The maximum is by [`DEFAULT_MAX_PO2`], although the real maximum is `24`,
 /// but it requires us to set the `control_ids` manually in the `ProverOpts`.
 ///
-/// [`MIN_LIFT_PO2`]: https://github.com/risc0/risc0/blob/v3.0.1/risc0/circuit/recursion/src/control_id.rs#L19
-/// [`DEFAULT_MAX_PO2`]: https://github.com/risc0/risc0/blob/v3.0.1/risc0/zkvm/src/receipt.rs#L884
+/// [`MIN_LIFT_PO2`]: https://github.com/risc0/risc0/blob/v3.0.3/risc0/circuit/recursion/src/control_id.rs#L19
+/// [`DEFAULT_MAX_PO2`]: https://github.com/risc0/risc0/blob/v3.0.3/risc0/zkvm/src/receipt.rs#L884
 const SEGMENT_PO2_RANGE: RangeInclusive<usize> = 14..=DEFAULT_MAX_PO2;
 
 /// Default logarithmic keccak size from [`KECCAK_DEFAULT_PO2`].
 ///
-/// [`KECCAK_DEFAULT_PO2`]: https://github.com/risc0/risc0/blob/v3.0.1/risc0/circuit/keccak/src/lib.rs#L27.
+/// [`KECCAK_DEFAULT_PO2`]: https://github.com/risc0/risc0/blob/v3.0.3/risc0/circuit/keccak/src/lib.rs#L27.
 const DEFAULT_KECCAK_PO2: usize = 17;
 
 /// Supported range of logarithmic keccak size from [`KECCAK_PO2_RANGE`].
 ///
-/// [`KECCAK_PO2_RANGE`]: https://github.com/risc0/risc0/blob/v3.0.1/risc0/circuit/keccak/src/lib.rs#L29.
+/// [`KECCAK_PO2_RANGE`]: https://github.com/risc0/risc0/blob/v3.0.3/risc0/circuit/keccak/src/lib.rs#L29.
 const KECCAK_PO2_RANGE: RangeInclusive<usize> = 14..=18;
 
 #[allow(non_camel_case_types)]
@@ -339,6 +339,28 @@ mod tests {
             BasicProgramIo::invalid_data(),
         ] {
             zkvm.prove(&inputs).unwrap_err();
+        }
+    }
+
+    #[test]
+    fn test_aligned_allocs() {
+        let program = RV32_IM_RISC0_ZKVM_ELF
+            .compile(&testing_guest_directory("risc0", "allocs_alignment"))
+            .unwrap();
+
+        for i in 1..=16_usize {
+            let zkvm = EreRisc0::new(program.clone(), ProverResourceType::Cpu).unwrap();
+
+            let mut input = Input::new();
+            input.write(i);
+
+            if i.is_power_of_two() {
+                zkvm.execute(&input)
+                    .expect("Power of two alignment should execute successfully");
+            } else {
+                zkvm.execute(&input)
+                    .expect_err("Non-power of two aligment is expected to fail");
+            }
         }
     }
 }

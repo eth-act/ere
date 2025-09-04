@@ -6,5 +6,5 @@ edition = "2021"
 [workspace]
 
 [dependencies]
-sp1-zkvm = "5.1.0"
+sp1-zkvm = "5.2.1"
 test-utils = { path = "../../../crates/test-utils" }

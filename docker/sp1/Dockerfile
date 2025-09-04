@@ -10,7 +10,7 @@ COPY --chmod=+x scripts/sdk_installers/install_sp1_sdk.sh /tmp/install_sp1_sdk.s
 # Define where SP1 SDK will be installed within the image.
 # The install_sp1_sdk.sh script will respect these ENV variables.
 ENV SP1_DIR="/root/.sp1" \
-    SP1_VERSION="v5.1.0"
+    SP1_VERSION="v5.2.1"
 
 # Run the SP1 SDK installation script
 # It will use the SP1_DIR and SP1_VERSION defined above.

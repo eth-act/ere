@@ -9,10 +9,10 @@ use tracing::info;
 
 static CARGO_ENCODED_RUSTFLAGS_SEPARATOR: &str = "\x1f";
 // TODO: Make this with `zkos` package building to avoid binary file storing in repo.
-// File taken from https://github.com/risc0/risc0/blob/v3.0.1/risc0/zkos/v1compat/elfs/v1compat.elf
+// File taken from https://github.com/risc0/risc0/blob/v3.0.3/risc0/zkos/v1compat/elfs/v1compat.elf
 const V1COMPAT_ELF: &[u8] = include_bytes!("kernel_elf/v1compat.elf");
 const TARGET_TRIPLE: &str = "riscv32ima-unknown-none-elf";
-// Rust flags according to https://github.com/risc0/risc0/blob/v3.0.1/risc0/build/src/lib.rs#L455
+// Rust flags according to https://github.com/risc0/risc0/blob/v3.0.3/risc0/build/src/lib.rs#L455
 const RUSTFLAGS: &[&str] = &[
     "-C",
     "passes=lower-atomic", // Only for rustc > 1.81
