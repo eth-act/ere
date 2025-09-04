@@ -10,6 +10,7 @@ members = [
     "crates/ere-risc0",
     "crates/ere-sp1",
     "crates/ere-zisk",
+    "crates/ere-zkm",
     # zkVM interface
     "crates/zkvm-interface",
     # CLI and dockerized zkVM
@@ -79,6 +80,10 @@ risc0-binfmt = { version = "3.0.2", default-features = false }
 # SP1 dependencies
 sp1-sdk = "5.2.1"
 
+# ZKM dependencies
+zkm-sdk = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.1.4" }
+zkm-build = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.1.4" }
+
 # Local dependencies
 zkvm-interface = { path = "crates/zkvm-interface" }
 build-utils = { path = "crates/build-utils" }
@@ -92,6 +97,7 @@ ere-pico = { path = "crates/ere-pico", default-features = false }
 ere-risc0 = { path = "crates/ere-risc0", default-features = false }
 ere-sp1 = { path = "crates/ere-sp1", default-features = false }
 ere-zisk = { path = "crates/ere-zisk", default-features = false }
+ere-zkm = { path = "crates/ere-zkm", default-features = false }
 
 [patch.crates-io]
 # These patches are only needed by Jolt

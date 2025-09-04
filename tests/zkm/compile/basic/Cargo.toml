@@ -1,0 +1,9 @@
+[package]
+name = "ere-test-zkm-guest"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+zkm-zkvm = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.1.4" }
