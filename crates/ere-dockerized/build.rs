@@ -26,6 +26,7 @@ fn generate_zkvm_sdk_version_impl() {
         pico_version,
         risc0_version,
         sp1_version,
+        zkm_version,
     ] = [
         "jolt-sdk",
         "nexus-sdk",
@@ -55,7 +56,7 @@ fn generate_zkvm_sdk_version_impl() {
             Self::Risc0 => "{risc0_version}",
             Self::SP1 => "{sp1_version}",
             Self::Zisk => "{zisk_version}",
-            Self::ZKM => "{zisk_version}",
+            Self::ZKM => "{zkm_version}",
         }}
     }}
 }}"#,
