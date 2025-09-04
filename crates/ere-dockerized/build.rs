@@ -41,7 +41,7 @@ fn generate_zkvm_sdk_version_impl() {
     //        Once ZisK's SDK is ready, we should update this to detect the SDK
     //        version.
     //        The issue for tracking https://github.com/eth-act/ere/issues/73.
-    let zisk_version = "0.10.0";
+    let zisk_version = "0.11.0";
 
     let zkvm_sdk_version_impl = format!(
         r#"impl crate::ErezkVM {{

@@ -1,5 +1,6 @@
 use crate::RomDigest;
-use std::{io, num::ParseIntError, path::PathBuf, process::ExitStatus};
+use bytemuck::PodCastError;
+use std::{io, path::PathBuf, process::ExitStatus};
 use thiserror::Error;
 use zkvm_interface::zkVMError;
 
@@ -160,8 +161,8 @@ pub enum CommonError {
     CargoZiskCheckSetupFailed { status: ExitStatus },
     #[error("Invalid public values: {0}")]
     DeserializePublicValues(serde_json::Error),
-    #[error("Parse public value failed: {0}")]
-    ParsePublicValue(ParseIntError),
+    #[error("Cast proof to `u64` slice failed: {0}")]
+    CastProofBytesToU64s(PodCastError),
     #[error("Invalid public value")]
     InvalidPublicValue,
     #[error("Public values length {0}, but expected at least 5")]

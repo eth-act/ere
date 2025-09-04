@@ -16,4 +16,5 @@ jobs:
       zkvm: zisk
       toolchain: 1.86.0
       test_ere_dockerized: false
+      default_features: true
       test_options: 'execute compile'
