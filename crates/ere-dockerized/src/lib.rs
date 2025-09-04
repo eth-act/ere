@@ -402,9 +402,21 @@ impl zkVM for EreDockerizedzkVM {
 
         // zkVM specific options
         cmd = match self.zkvm {
+            ErezkVM::Risc0 => cmd
+                .inherit_env("RISC0_SEGMENT_PO2")
+                .inherit_env("RISC0_KECCAK_PO2"),
             // ZisK uses shared memory to exchange data between processes, it
             // requires at least 8G shared memory, here we set 16G for safety.
-            ErezkVM::Zisk => cmd.option("shm-size", "16G"),
+            ErezkVM::Zisk => cmd
+                .option("shm-size", "16G")
+                .inherit_env("ZISK_PREALLOCATE")
+                .inherit_env("ZISK_UNLOCK_MAPPED_MEMORY")
+                .inherit_env("ZISK_MINIMAL_MEMORY")
+                .inherit_env("ZISK_SHARED_TABLES")
+                .inherit_env("ZISK_MAX_STREAMS")
+                .inherit_env("ZISK_NUMBER_THREADS_WITNESS")
+                .inherit_env("ZISK_MAX_WITNESS_STORED")
+                .inherit_env("ZISK_CHUNK_SIZE_BITS"),
             _ => cmd,
         };
 
@@ -418,11 +430,7 @@ impl zkVM for EreDockerizedzkVM {
                 // The `--gpus` flags will be set when the GPU prover service is
                 // spin up, so we don't need to set here.
                 ErezkVM::SP1 => cmd.mount_docker_socket().network("host"),
-                ErezkVM::Risc0 => cmd
-                    .gpus("all")
-                    .inherit_env("RISC0_DEFAULT_PROVER_NUM_GPUS")
-                    .inherit_env("RISC0_SEGMENT_PO2")
-                    .inherit_env("RISC0_KECCAK_PO2"),
+                ErezkVM::Risc0 => cmd.gpus("all").inherit_env("RISC0_DEFAULT_PROVER_NUM_GPUS"),
                 ErezkVM::Zisk => cmd.gpus("all"),
                 _ => cmd,
             }

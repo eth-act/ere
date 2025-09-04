@@ -8,7 +8,7 @@ use blake3::Hash;
 use dashmap::{DashMap, Entry};
 use serde::de::DeserializeOwned;
 use std::{
-    fs,
+    env, fs,
     io::{self, BufRead, Read, Write},
     os::unix::fs::symlink,
     path::{Path, PathBuf},
@@ -57,11 +57,39 @@ impl Compiler for RV64_IMA_ZISK_ZKVM_ELF {
 pub struct EreZisk {
     elf: Vec<u8>,
     resource: ProverResourceType,
+    prove_args: Vec<String>,
 }
 
 impl EreZisk {
     pub fn new(elf: Vec<u8>, resource: ProverResourceType) -> Self {
-        Self { elf, resource }
+        #[rustfmt::skip]
+        let prove_args = [
+            ("--preallocate", true),             // ZISK_PREALLOCATE (should be set only if GPU memory is enough)
+            ("--unlock-mapped-memory", true),    // ZISK_UNLOCK_MAPPED_MEMORY (should be set if locked memory is not enough)
+            ("--minimal-memory", true),          // ZISK_MINIMAL_MEMORY
+            ("--shared-tables", true),           // ZISK_SHARED_TABLES
+            ("--max-streams", false),            // ZISK_MAX_STREAMS
+            ("--number-threads-witness", false), // ZISK_NUMBER_THREADS_WITNESS
+            ("--max-witness-stored", false),     // ZISK_MAX_WITNESS_STORED
+            ("--chunk-size-bits", false),        // ZISK_CHUNK_SIZE_BITS
+        ]
+        .into_iter()
+        .flat_map(|(flag, is_bool)| {
+            let key = format!("ZISK_{}", flag[2..].to_uppercase().replace("-", "_"));
+            let val = env::var(key).ok()?;
+            Some(if is_bool {
+                vec![flag.to_string()]
+            } else {
+                vec![flag.to_string(), val]
+            })
+        })
+        .flatten()
+        .collect();
+        Self {
+            elf,
+            resource,
+            prove_args,
+        }
     }
 }
 
@@ -178,13 +206,8 @@ impl zkVM for EreZisk {
                     .arg(tempdir.input_path())
                     .arg("--output-dir")
                     .arg(tempdir.output_dir_path())
-                    .args([
-                        "--aggregation",
-                        "--verify-proofs",
-                        "--save-proofs",
-                        // Uncomment this if locked memory is not enough.
-                        // "--unlock-mapped-memory",
-                    ])
+                    .args(["--aggregation", "--verify-proofs", "--save-proofs"])
+                    .args(&self.prove_args)
                     .status()
                     .map_err(|e| ZiskError::Prove(ProveError::CargoZiskProve { source: e }))?;
 
@@ -211,15 +234,8 @@ impl zkVM for EreZisk {
                     .arg(tempdir.input_path())
                     .arg("--output-dir")
                     .arg(tempdir.output_dir_path())
-                    .args([
-                        "--aggregation",
-                        "--verify-proofs",
-                        "--save-proofs",
-                        // Comment out this if GPU RAM is not enough.
-                        "--preallocate",
-                        // Uncomment this if locked memory is not enough.
-                        // "--unlock-mapped-memory",
-                    ])
+                    .args(["--aggregation", "--verify-proofs", "--save-proofs"])
+                    .args(&self.prove_args)
                     .status()
                     .map_err(|e| ZiskError::Prove(ProveError::CargoZiskProve { source: e }))?;
 
@@ -600,7 +616,7 @@ mod tests {
     #[test]
     fn test_prove() {
         let program = basic_program();
-        let zkvm = EreZisk::new(program, ProverResourceType::Cpu);
+        let zkvm = EreZisk::new(program, ProverResourceType::Gpu);
 
         let io = BasicProgramIo::valid().into_output_hashed_io();
         run_zkvm_prove(&zkvm, &io);
