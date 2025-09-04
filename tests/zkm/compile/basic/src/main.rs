@@ -11,7 +11,7 @@ zkm_zkvm::entrypoint!(main);
 
 pub fn main() {
     // Read an input to the program.
-    let n = zkm_zkzvm::io::read::<u32>();
+    let n = zkm_zkvm::io::read::<u32>();
     // Write n*2 to output
-    zkm_zkzvm::io::commit(&(n * 2));
+    zkm_zkvm::io::commit(&(n * 2));
 }
