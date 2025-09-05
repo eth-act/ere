@@ -1,0 +1,28 @@
+[package]
+name = "ere-zkm"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+bincode.workspace = true
+cargo_metadata.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+# ZKM dependencies
+zkm-sdk = { workspace = true }
+
+# Local dependencies
+zkvm-interface = { workspace = true }
+
+[dev-dependencies]
+test-utils = { workspace = true, features = ["host"] }
+
+[build-dependencies]
+build-utils.workspace = true
+
+[lints]
+workspace = true

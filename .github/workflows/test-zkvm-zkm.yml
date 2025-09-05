@@ -1,0 +1,20 @@
+name: Test and clippy ZKM
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  test:
+    uses: ./.github/workflows/test-zkvm.yml
+    permissions:
+      contents: read
+      packages: write
+    with:
+      zkvm: zkm
+      toolchain: nightly
+      test_ere_dockerized: true
+      default_features: true
+      test_options: ''
