@@ -248,7 +248,9 @@ mod tests {
 
         // Note that for some invalid cases the execution panics, but some not.
         for (inputs_gen, should_panic) in [
+            // For empty input (insufficient input), the syscall reading input causes host to panics.
             (BasicProgramIo::empty as F, true),
+            // For invalid type/data, the guest panics but handled properly by the host.
             (BasicProgramIo::invalid_type as F, false),
             (BasicProgramIo::invalid_data as F, false),
         ] {
