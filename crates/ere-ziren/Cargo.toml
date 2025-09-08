@@ -1,5 +1,5 @@
 [package]
-name = "ere-zkm"
+name = "ere-ziren"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -12,7 +12,7 @@ serde.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 
-# ZKM dependencies
+# Ziren dependencies
 zkm-sdk = { workspace = true }
 
 # Local dependencies

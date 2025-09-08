@@ -1,4 +1,4 @@
-name: Test and clippy ZKM
+name: Test and clippy Ziren
 
 on:
   push:
@@ -13,7 +13,7 @@ jobs:
       contents: read
       packages: write
     with:
-      zkvm: zkm
+      zkvm: ziren
       toolchain: nightly
       test_ere_dockerized: true
       default_features: true

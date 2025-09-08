@@ -3,14 +3,14 @@ use thiserror::Error;
 use zkm_sdk::ZKMProofKind;
 use zkvm_interface::zkVMError;
 
-impl From<ZKMError> for zkVMError {
-    fn from(value: ZKMError) -> Self {
+impl From<ZirenError> for zkVMError {
+    fn from(value: ZirenError) -> Self {
         zkVMError::Other(Box::new(value))
     }
 }
 
 #[derive(Debug, Error)]
-pub enum ZKMError {
+pub enum ZirenError {
     #[error(transparent)]
     Compile(#[from] CompileError),
 
@@ -62,7 +62,7 @@ pub enum CompileError {
 
 #[derive(Debug, Error)]
 pub enum ExecuteError {
-    #[error("ZKM execution failed: {0}")]
+    #[error("Ziren execution failed: {0}")]
     Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
 }
 
@@ -71,7 +71,7 @@ pub enum ProveError {
     #[error("Serialising proof with `bincode` failed: {0}")]
     Bincode(#[from] bincode::Error),
 
-    #[error("ZKM proving failed: {0}")]
+    #[error("Ziren proving failed: {0}")]
     Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
 }
 
@@ -83,6 +83,6 @@ pub enum VerifyError {
     #[error("Expect to get Compressed proof, but got: {}", 0.to_string())]
     InvalidProofKind(ZKMProofKind),
 
-    #[error("ZKM verification failed: {0}")]
+    #[error("Ziren verification failed: {0}")]
     Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
 }

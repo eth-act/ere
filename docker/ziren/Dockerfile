@@ -16,16 +16,16 @@ ENV PATH=/usr/local/go/bin:$PATH
 # Set default toolchain to nightly
 RUN rustup default nightly
 
-# Copy the ZKM SDK installer script
-COPY --chmod=+x scripts/sdk_installers/install_zkm_sdk.sh /tmp/install_zkm_sdk.sh
+# Copy the Ziren SDK installer script
+COPY --chmod=+x scripts/sdk_installers/install_ziren_sdk.sh /tmp/install_ziren_sdk.sh
 
-# The install_zkm_sdk.sh script will respect these ENV variables.
+# The install_ziren_sdk.sh script will respect these ENV variables.
 ENV ZIREM_VERSION="1.1.4"
 
-# Run the ZKM SDK installation script
-RUN /tmp/install_zkm_sdk.sh && rm /tmp/install_zkm_sdk.sh
+# Run the Ziren SDK installation script
+RUN /tmp/install_ziren_sdk.sh && rm /tmp/install_ziren_sdk.sh
 
 # Verify cargo-ziren is accessible
-RUN echo "Verifying ZKM installation in Dockerfile ..." && cargo ziren --version
+RUN echo "Verifying Ziren installation in Dockerfile ..." && cargo ziren --version
 
 CMD ["/bin/bash"]

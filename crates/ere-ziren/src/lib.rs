@@ -1,6 +1,6 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use crate::error::{CompileError, ExecuteError, ProveError, VerifyError, ZKMError};
+use crate::error::{CompileError, ExecuteError, ProveError, VerifyError, ZirenError};
 use cargo_metadata::MetadataCommand;
 use serde::de::DeserializeOwned;
 use std::{
@@ -98,13 +98,13 @@ impl Compiler for MIPS32R2_ZKM_ZKVM_ELF {
     }
 }
 
-pub struct EreZKM {
+pub struct EreZiren {
     program: <MIPS32R2_ZKM_ZKVM_ELF as Compiler>::Program,
     pk: ZKMProvingKey,
     vk: ZKMVerifyingKey,
 }
 
-impl EreZKM {
+impl EreZiren {
     pub fn new(
         program: <MIPS32R2_ZKM_ZKVM_ELF as Compiler>::Program,
         resource: ProverResourceType,
@@ -120,7 +120,7 @@ impl EreZKM {
     }
 }
 
-impl zkVM for EreZKM {
+impl zkVM for EreZiren {
     fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
         let mut stdin = ZKMStdin::new();
         serialize_inputs(&mut stdin, inputs);
@@ -128,7 +128,7 @@ impl zkVM for EreZKM {
         let start = Instant::now();
         let (public_inputs, exec_report) = CpuProver::new()
             .execute(&self.program, &stdin)
-            .map_err(|err| ZKMError::Execute(ExecuteError::Client(err.into())))?;
+            .map_err(|err| ZirenError::Execute(ExecuteError::Client(err.into())))?;
         let execution_duration = start.elapsed();
 
         Ok((
@@ -153,11 +153,11 @@ impl zkVM for EreZKM {
         let start = std::time::Instant::now();
         let proof = CpuProver::new()
             .prove(&self.pk, stdin, ZKMProofKind::Compressed)
-            .map_err(|err| ZKMError::Prove(ProveError::Client(err.into())))?;
+            .map_err(|err| ZirenError::Prove(ProveError::Client(err.into())))?;
         let proving_time = start.elapsed();
 
-        let bytes =
-            bincode::serialize(&proof).map_err(|err| ZKMError::Prove(ProveError::Bincode(err)))?;
+        let bytes = bincode::serialize(&proof)
+            .map_err(|err| ZirenError::Prove(ProveError::Bincode(err)))?;
 
         Ok((
             proof.public_values.to_vec(),
@@ -170,16 +170,18 @@ impl zkVM for EreZKM {
         info!("Verifying proof…");
 
         let proof: ZKMProofWithPublicValues = bincode::deserialize(proof)
-            .map_err(|err| ZKMError::Verify(VerifyError::Bincode(err)))?;
+            .map_err(|err| ZirenError::Verify(VerifyError::Bincode(err)))?;
 
         let proof_kind = ZKMProofKind::from(&proof.proof);
         if !matches!(proof_kind, ZKMProofKind::Compressed) {
-            return Err(ZKMError::Verify(VerifyError::InvalidProofKind(proof_kind)))?;
+            return Err(ZirenError::Verify(VerifyError::InvalidProofKind(
+                proof_kind,
+            )))?;
         }
 
         CpuProver::new()
             .verify(&proof, &self.vk)
-            .map_err(|err| ZKMError::Verify(VerifyError::Client(err.into())))?;
+            .map_err(|err| ZirenError::Verify(VerifyError::Client(err.into())))?;
 
         Ok(proof.public_values.to_vec())
     }
@@ -222,7 +224,7 @@ mod tests {
         BASIC_PROGRAM
             .get_or_init(|| {
                 MIPS32R2_ZKM_ZKVM_ELF
-                    .compile(&testing_guest_directory("zkm", "basic"))
+                    .compile(&testing_guest_directory("ziren", "basic"))
                     .unwrap()
             })
             .clone()
@@ -231,7 +233,7 @@ mod tests {
     #[test]
     fn test_execute() {
         let program = basic_program();
-        let zkvm = EreZKM::new(program, ProverResourceType::Cpu);
+        let zkvm = EreZiren::new(program, ProverResourceType::Cpu);
 
         let io = BasicProgramIo::valid();
         run_zkvm_execute(&zkvm, &io);
@@ -242,7 +244,7 @@ mod tests {
         type F = fn() -> zkvm_interface::Input;
 
         let program = basic_program();
-        let zkvm = EreZKM::new(program, ProverResourceType::Cpu);
+        let zkvm = EreZiren::new(program, ProverResourceType::Cpu);
 
         // Note that for some invalid cases the execution panics, but some not.
         for (inputs_gen, should_panic) in [
@@ -261,7 +263,7 @@ mod tests {
     #[test]
     fn test_prove() {
         let program = basic_program();
-        let zkvm = EreZKM::new(program, ProverResourceType::Cpu);
+        let zkvm = EreZiren::new(program, ProverResourceType::Cpu);
 
         let io = BasicProgramIo::valid();
         run_zkvm_prove(&zkvm, &io);
@@ -270,7 +272,7 @@ mod tests {
     #[test]
     fn test_prove_invalid_inputs() {
         let program = basic_program();
-        let zkvm = EreZKM::new(program, ProverResourceType::Cpu);
+        let zkvm = EreZiren::new(program, ProverResourceType::Cpu);
 
         for inputs_gen in [
             BasicProgramIo::empty,
