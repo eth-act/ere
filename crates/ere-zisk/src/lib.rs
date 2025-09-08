@@ -616,7 +616,7 @@ mod tests {
     #[test]
     fn test_prove() {
         let program = basic_program();
-        let zkvm = EreZisk::new(program, ProverResourceType::Gpu);
+        let zkvm = EreZisk::new(program, ProverResourceType::Cpu);
 
         let io = BasicProgramIo::valid().into_output_hashed_io();
         run_zkvm_prove(&zkvm, &io);
