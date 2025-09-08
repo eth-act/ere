@@ -5,7 +5,7 @@ FROM ${BASE_IMAGE_TAG}
 ARG USERNAME=ere_user
 
 # Copy the SP1 SDK installer script
-COPY --chmod=+x scripts/sdk_installers/install_sp1_sdk.sh /tmp/install_sp1_sdk.sh
+COPY --chmod=755 scripts/sdk_installers/install_sp1_sdk.sh /tmp/install_sp1_sdk.sh
 
 # Define where SP1 SDK will be installed within the image.
 # The install_sp1_sdk.sh script will respect these ENV variables.
