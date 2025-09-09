@@ -17,7 +17,7 @@ ENV PATH=/usr/local/go/bin:$PATH
 RUN rustup default nightly
 
 # Copy the Ziren SDK installer script
-COPY --chmod=+x scripts/sdk_installers/install_ziren_sdk.sh /tmp/install_ziren_sdk.sh
+COPY --chmod=755 scripts/sdk_installers/install_ziren_sdk.sh /tmp/install_ziren_sdk.sh
 
 # The install_ziren_sdk.sh script will respect these ENV variables.
 ENV ZIREM_VERSION="1.1.4"
