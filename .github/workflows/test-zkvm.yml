@@ -41,10 +41,10 @@ jobs:
       contents: read
       packages: write
     outputs:
-      image_version: ${{ steps.inspect_image.outputs.image_version }}
-      base_image_tag: ${{ steps.inspect_image.outputs.base_image_tag }}
-      base_zkvm_image_tag: ${{ steps.inspect_image.outputs.base_zkvm_image_tag }}
-      cli_zkvm_image_tag: ${{ steps.inspect_image.outputs.cli_zkvm_image_tag }}
+      image_version: ${{ steps.image_tag.outputs.image_version }}
+      base_image_tag: ${{ steps.image_tag.outputs.base_image_tag }}
+      base_zkvm_image_tag: ${{ steps.image_tag.outputs.base_zkvm_image_tag }}
+      cli_zkvm_image_tag: ${{ steps.image_tag.outputs.cli_zkvm_image_tag }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -63,77 +63,69 @@ jobs:
         id: changed_files
         uses: tj-actions/changed-files@v46
         with:
-          files_yaml: |
-            base:
-              - docker/base/Dockerfile.base
-            base_zkvm:
-              - docker/${{ inputs.zkvm }}/Dockerfile
-              - scripts/sdk_installers/install_${{ inputs.zkvm }}_sdk.sh
-       
+          files: |
+            docker/base/Dockerfile.base
+            docker/${{ inputs.zkvm }}/Dockerfile
+            scripts/sdk_installers/install_${{ inputs.zkvm }}_sdk.sh
+
       - name: Get image version and tags of ere-base and ere-base-${{ inputs.zkvm }}
-        id: inspect_image
+        id: image_tag
         run: |
           ZKVM_CRATE_VERSION=$(cargo metadata --format-version=1 --no-deps | jq -r '.packages[] | select(.name == "ere-${{ inputs.zkvm }}") | .version')
+
           GIT_REV="${{ github.sha }}"
-          IMAGE_VERSION="$ZKVM_CRATE_VERSION-${GIT_REV:0:7}"
-
-          BASE_IMAGE_NAME="ghcr.io/${{ github.repository }}/ere-base"
-          BASE_ZKVM_IMAGE_NAME="ghcr.io/${{ github.repository }}/ere-base-${{ inputs.zkvm }}"
-          CLI_ZKVM_IMAGE_NAME="ghcr.io/${{ github.repository }}/ere-cli-${{ inputs.zkvm }}"
-
-          BASE_IMAGE_TAG="$BASE_IMAGE_NAME:$IMAGE_VERSION"
-          BASE_ZKVM_IMAGE_TAG="$BASE_ZKVM_IMAGE_NAME:$IMAGE_VERSION"
-          CLI_ZKVM_IMAGE_TAG="$CLI_ZKVM_IMAGE_NAME:$IMAGE_VERSION"
-
-          BUILD_BASE_IMAGE="true"
-          BUILD_BASE_ZKVM_IMAGE="true"
-
-          # Try to reuse image by re-tagging if related files are unchanged
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            PR_BASE_GIT_REV="${{ github.event.pull_request.base.sha }}"
-            PR_BASE_IMAGE_VERSION="$ZKVM_CRATE_VERSION-${PR_BASE_GIT_REV:0:7}"
-
-            if [ "${{ steps.changed_files.outputs.base_any_changed }}" == "false" ]; then
-              if docker buildx imagetools create --tag "$BASE_IMAGE_TAG" "$BASE_IMAGE_NAME:$PR_BASE_IMAGE_VERSION" 2>/dev/null; then
-                echo "Created new tag $BASE_IMAGE_TAG referring to $BASE_IMAGE_NAME:$PR_BASE_IMAGE_VERSION"
-                BUILD_BASE_IMAGE="false"
-              fi
-            fi
-
-            if [ "${{ steps.changed_files.outputs.any_changed }}" == "false" ]; then
-              if docker buildx imagetools create --tag "$BASE_ZKVM_IMAGE_TAG" "$BASE_ZKVM_IMAGE_NAME:$PR_BASE_IMAGE_VERSION" 2>/dev/null; then
-                echo "Created new tag $BASE_ZKVM_IMAGE_TAG referring to $BASE_ZKVM_IMAGE_NAME:$PR_BASE_IMAGE_VERSION"
-                BUILD_BASE_ZKVM_IMAGE="false"
-              fi
-            fi
+          if [ "${{ github.event_name }}" == "pull_request" ] && [ "${{ steps.changed_files.outputs.any_changed }}" == "false" ]; then
+            CACHED_GIT_REV="${{ github.event.pull_request.base.sha }}"
+          else
+            CACHED_GIT_REV="$GIT_REV"
           fi
+
+          IMAGE_VERSION="$ZKVM_CRATE_VERSION-${GIT_REV:0:7}"
+          CACHED_IMAGE_VERSION="$ZKVM_CRATE_VERSION-${CACHED_GIT_REV:0:7}"
+
+          IMAGE_REPO="ghcr.io/${{ github.repository }}"
+          BASE_IMAGE_TAG="$IMAGE_REPO/ere-base:$CACHED_IMAGE_VERSION"
+          BASE_ZKVM_IMAGE_TAG="$IMAGE_REPO/ere-base-${{ inputs.zkvm }}:$CACHED_IMAGE_VERSION"
+          CLI_ZKVM_IMAGE_TAG="$IMAGE_REPO/ere-cli-${{ inputs.zkvm }}:$CACHED_IMAGE_VERSION"
 
           echo "image_version=$IMAGE_VERSION" >> $GITHUB_OUTPUT
           echo "base_image_tag=$BASE_IMAGE_TAG" >> $GITHUB_OUTPUT
           echo "base_zkvm_image_tag=$BASE_ZKVM_IMAGE_TAG" >> $GITHUB_OUTPUT
           echo "cli_zkvm_image_tag=$CLI_ZKVM_IMAGE_TAG" >> $GITHUB_OUTPUT
-          echo "build_base_image=$BUILD_BASE_IMAGE" >> $GITHUB_OUTPUT
-          echo "build_base_zkvm_image=$BUILD_BASE_ZKVM_IMAGE" >> $GITHUB_OUTPUT
 
       - name: Build ere-base image
-        if: ${{ steps.inspect_image.outputs.build_base_image == 'true' }}
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || (github.event.pull_request.head.repo.full_name == github.repository && steps.changed_files.outputs.any_changed == 'true')
         uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/base/Dockerfile.base
           push: true
-          tags: ${{ steps.inspect_image.outputs.base_image_tag }}
+          tags: ${{ steps.image_tag.outputs.base_image_tag }}
 
       - name: Build ere-base-${{ inputs.zkvm }} image
-        if: ${{ steps.inspect_image.outputs.build_base_zkvm_image == 'true' }}
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || (github.event.pull_request.head.repo.full_name == github.repository && steps.changed_files.outputs.any_changed == 'true')
         uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/${{ inputs.zkvm }}/Dockerfile
           push: true
-          tags: ${{ steps.inspect_image.outputs.base_zkvm_image_tag }}
+          tags: ${{ steps.image_tag.outputs.base_zkvm_image_tag }}
           build-args: |
-            BASE_IMAGE_TAG=${{ steps.inspect_image.outputs.base_image_tag }}
+            BASE_IMAGE_TAG=${{ steps.image_tag.outputs.base_image_tag }}
+            CI=1
+
+      - name: Build ere-cli-${{ inputs.zkvm }} image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/cli/Dockerfile
+          push: true
+          tags: ${{ steps.image_tag.outputs.cli_zkvm_image_tag }}
+          build-args: |
+            BASE_ZKVM_IMAGE_TAG=${{ steps.image_tag.outputs.base_zkvm_image_tag }}
+            ZKVM=${{ inputs.zkvm }}
+            RUSTFLAGS=
             CI=1
 
   clippy_via_docker:
@@ -149,18 +141,24 @@ jobs:
         with:
           key: rust-${{ inputs.toolchain }}-${{ inputs.zkvm }}-${{ hashFiles('Cargo.lock') }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Pull images or build locally
+        run: |
+          # Pull or build ere-base-${{ inputs.zkvm }} locally
+          if ! docker image pull ${{ needs.build_image.outputs.base_zkvm_image_tag }}; then
+            echo "Building ere-base"
+            docker build \
+              --file docker/base/Dockerfile.base \
+              --tag ${{ needs.build_image.outputs.base_image_tag }} \
+              .
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Pull image ere-base-${{ inputs.zkvm }}
-        run: docker image pull ${{ needs.build_image.outputs.base_zkvm_image_tag }}
+            echo "Building ere-base-${{ inputs.zkvm }}"
+            docker build \
+              --file docker/${{ inputs.zkvm }}/Dockerfile \
+              --tag ${{ needs.build_image.outputs.base_zkvm_image_tag }} \
+              --build-arg BASE_IMAGE_TAG=${{ needs.build_image.outputs.base_image_tag }} \
+              --build-arg CI=1 \
+              .
+          fi
 
       - name: Run cargo clippy for ere-${{ inputs.zkvm }} via Docker
         run: |
@@ -197,18 +195,24 @@ jobs:
         with:
           key: rust-${{ inputs.toolchain }}-${{ inputs.zkvm }}-${{ hashFiles('Cargo.lock') }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Pull images or build locally
+        run: |
+          # Pull or build ere-base-${{ inputs.zkvm }} locally
+          if ! docker image pull ${{ needs.build_image.outputs.base_zkvm_image_tag }}; then
+            echo "Building ere-base"
+            docker build \
+              --file docker/base/Dockerfile.base \
+              --tag ${{ needs.build_image.outputs.base_image_tag }} \
+              .
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Pull image ere-base-${{ inputs.zkvm }}
-        run: docker image pull ${{ needs.build_image.outputs.base_zkvm_image_tag }}
+            echo "Building ere-base-${{ inputs.zkvm }}"
+            docker build \
+              --file docker/${{ inputs.zkvm }}/Dockerfile \
+              --tag ${{ needs.build_image.outputs.base_zkvm_image_tag }} \
+              --build-arg BASE_IMAGE_TAG=${{ needs.build_image.outputs.base_image_tag }} \
+              --build-arg CI=1 \
+              .
+          fi
 
       - name: Run cargo test for ere-${{ inputs.zkvm }} via Docker
         run: |
@@ -238,6 +242,7 @@ jobs:
   test_ere_dockerized:
     name: Test ere-dockerized with the selected zkVM
     needs: build_image
+    if: ${{ inputs.test_ere_dockerized }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -253,39 +258,42 @@ jobs:
         with:
           key: rust-${{ inputs.toolchain }}-${{ inputs.zkvm }}-${{ hashFiles('Cargo.lock') }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build ere-cli-${{ inputs.zkvm }} image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/cli/Dockerfile
-          push: true
-          tags: ${{ needs.build_image.outputs.cli_zkvm_image_tag }}
-          build-args: |
-            BASE_ZKVM_IMAGE_TAG=${{ needs.build_image.outputs.base_zkvm_image_tag }}
-            ZKVM=${{ inputs.zkvm }}
-            RUSTFLAGS=
-            CI=1
-
-      - name: Pull images ere-base, ere-base-${{ inputs.zkvm }}, and ere-cli-${{ inputs.zkvm }}
-        if: ${{ inputs.test_ere_dockerized }}
+      - name: Pull images or build locally
         run: |
-          docker image pull ${{ needs.build_image.outputs.base_image_tag }}
-          docker image pull ${{ needs.build_image.outputs.base_zkvm_image_tag }}
-          docker image pull ${{ needs.build_image.outputs.cli_zkvm_image_tag }}
+          # Pull or build ere-base locally
+          if ! docker image pull ${{ needs.build_image.outputs.base_image_tag }}; then
+            echo "Building ere-base"
+            docker build \
+              --file docker/base/Dockerfile.base \
+              --tag ${{ needs.build_image.outputs.base_image_tag }} \
+              .
+          fi
+
+          # Pull or build ere-base-${{ inputs.zkvm }} locally
+          if ! docker image pull ${{ needs.build_image.outputs.base_zkvm_image_tag }}; then
+            echo "Building ere-base-${{ inputs.zkvm }}"
+            docker build \
+              --file docker/${{ inputs.zkvm }}/Dockerfile \
+              --tag ${{ needs.build_image.outputs.base_zkvm_image_tag }} \
+              --build-arg BASE_IMAGE_TAG=${{ needs.build_image.outputs.base_image_tag }} \
+              --build-arg CI=1 \
+              .
+          fi
+
+          # Build ere-cli-${{ inputs.zkvm }}
+          echo "Building ere-cli-${{ inputs.zkvm }}"
+          docker build \
+            --file docker/cli/Dockerfile \
+            --tag ${{ needs.build_image.outputs.cli_zkvm_image_tag }} \
+            --build-arg BASE_ZKVM_IMAGE_TAG=${{ needs.build_image.outputs.base_zkvm_image_tag }} \
+            --build-arg ZKVM=${{ inputs.zkvm }} \
+            --build-arg RUSTFLAGS='' \
+            --build-arg CI=1 \
+            .
+
           docker image tag ${{ needs.build_image.outputs.base_image_tag }} ere-base:${{ needs.build_image.outputs.image_version }}
           docker image tag ${{ needs.build_image.outputs.base_zkvm_image_tag }} ere-base-${{ inputs.zkvm }}:${{ needs.build_image.outputs.image_version }}
           docker image tag ${{ needs.build_image.outputs.cli_zkvm_image_tag }} ere-cli-${{ inputs.zkvm }}:${{ needs.build_image.outputs.image_version }}
 
       - name: Run cargo test for ere-${{ inputs.zkvm }} via ere-dockerized
-        if: ${{ inputs.test_ere_dockerized }}
         run: cargo test --release --package ere-dockerized -- ${{ inputs.zkvm }}
