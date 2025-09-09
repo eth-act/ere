@@ -52,7 +52,7 @@ RUN chmod +x /tmp/install_zisk_sdk.sh
 # Run the ZisK SDK installation script using ziskup.
 # This script installs the 'zisk' Rust toolchain and `cargo-zisk`
 #
-# If argument `CI` is set, we only install verifying key, this is used by github
+# If argument `CI` is set, we only install verifying key, this is used by GitHub
 # CI runner which only has small disk space (proving key requires ~27 GB).
 RUN if [ -n "$CI" ]; then export SETUP_KEY=verify; fi && \
     /tmp/install_zisk_sdk.sh && \
