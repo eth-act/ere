@@ -273,7 +273,7 @@ jobs:
           build-args: |
             BASE_ZKVM_IMAGE_TAG=${{ needs.build_image.outputs.base_zkvm_image_tag }}
             ZKVM=${{ inputs.zkvm }}
-            RUSTFLAGS=""
+            RUSTFLAGS=
             CI=1
 
       - name: Pull images ere-base, ere-base-${{ inputs.zkvm }}, and ere-cli-${{ inputs.zkvm }}
