@@ -31,7 +31,7 @@ ENV NVCC_APPEND_FLAGS=${NVCC_APPEND_FLAGS}
 ENV PATH=/usr/local/cuda/bin:$PATH
 
 # Copy and run the Risc0 SDK installer script
-COPY --chmod=+x scripts/sdk_installers/install_risc0_sdk.sh /tmp/install_risc0_sdk.sh
+COPY --chmod=755 scripts/sdk_installers/install_risc0_sdk.sh /tmp/install_risc0_sdk.sh
 
 # The install_risc0_sdk.sh script will respect these ENV variables.
 ENV RISC0_VERSION="3.0.3" \
