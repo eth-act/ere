@@ -45,6 +45,9 @@ RUN [ -n "$CI" ] || \
     apt install -y cuda-toolkit-12-9 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*)
 
+ENV CUDA_HOME=/usr/local/cuda
+ENV PATH="${PATH}:${CUDA_HOME}/bin"
+
 # Copy the ZisK SDK installer script from the workspace context
 COPY scripts/sdk_installers/install_zisk_sdk.sh /tmp/install_zisk_sdk.sh
 RUN chmod +x /tmp/install_zisk_sdk.sh
