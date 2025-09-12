@@ -61,6 +61,8 @@ fi
 
 # Step 3: Build cargo-zisk-gpu from source with GPU features enabled (skip if in CI)
 if [ -z $CI ]; then
+    echo "$PATH" > /app/path.txt
+    nvcc --version 
     TEMP_DIR=$(mktemp -d)
     git clone https://github.com/0xPolygonHermez/zisk.git --single-branch --branch "v$ZISK_VERSION" "$TEMP_DIR/zisk"
     cd "$TEMP_DIR/zisk"
