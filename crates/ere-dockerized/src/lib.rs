@@ -175,6 +175,10 @@ impl ErezkVM {
                 }
             };
 
+            if matches!(self, ErezkVM::Zisk) {
+                cmd = cmd.option("gpus", "all");
+            }
+
             cmd.exec(&workspace_dir)
                 .map_err(CommonError::DockerBuildCmd)?;
         }
