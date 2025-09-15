@@ -22,6 +22,9 @@ use zkvm_interface::{
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
+#[allow(non_camel_case_types)]
+pub struct MIDEN_TARGET;
+
 #[derive(Clone, Serialize, Deserialize)]
 pub struct MidenProgram {
     pub program_bytes: Vec<u8>,
@@ -163,7 +166,6 @@ impl zkVM for EreMiden {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::compile::MIDEN_TARGET;
     use std::path::PathBuf;
     use zkvm_interface::Compiler;
 

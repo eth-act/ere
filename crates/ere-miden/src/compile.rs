@@ -1,5 +1,5 @@
 use crate::{
-    MidenProgram,
+    MIDEN_TARGET, MidenProgram,
     error::{CompileError, MidenError},
 };
 use miden_assembly::Assembler;
@@ -7,9 +7,6 @@ use miden_core::utils::Serializable;
 use miden_stdlib::StdLibrary;
 use std::{fs, path::Path};
 use zkvm_interface::Compiler;
-
-#[allow(non_camel_case_types)]
-pub struct MIDEN_TARGET;
 
 impl Compiler for MIDEN_TARGET {
     type Error = MidenError;
