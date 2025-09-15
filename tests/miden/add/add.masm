@@ -1,0 +1,12 @@
+# Adds two numbers from advice stack
+# Input: advice_stack contains second_number, first_number
+use.std::sys
+
+begin
+    adv_push.1
+    adv_push.1
+    
+    add
+
+    exec.sys::truncate_stack
+end

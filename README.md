@@ -45,6 +45,7 @@
 - Pico
 - Zisk
 - Nexus
+- Miden
 
 ## Quick Start
 

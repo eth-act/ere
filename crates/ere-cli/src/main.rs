@@ -10,6 +10,7 @@ const _: () = {
     if cfg!(feature = "cli") {
         assert!(
             (cfg!(feature = "jolt") as u8
+                + cfg!(feature = "miden") as u8
                 + cfg!(feature = "nexus") as u8
                 + cfg!(feature = "openvm") as u8
                 + cfg!(feature = "pico") as u8
@@ -136,6 +137,9 @@ fn compile(guest_path: PathBuf, program_path: PathBuf) -> Result<(), Error> {
     #[cfg(feature = "jolt")]
     let program = ere_jolt::JOLT_TARGET.compile(&guest_path);
 
+    #[cfg(feature = "miden")]
+    let program = ere_miden::MIDEN_TARGET.compile(&guest_path);
+
     #[cfg(feature = "nexus")]
     let program = ere_nexus::NEXUS_TARGET.compile(&guest_path);
 
@@ -231,6 +235,9 @@ fn construct_zkvm(program_path: PathBuf, resource: ProverResourceType) -> Result
 
     #[cfg(feature = "jolt")]
     let zkvm = ere_jolt::EreJolt::new(program, resource);
+
+    #[cfg(feature = "miden")]
+    let zkvm = Ok::<_, Error>(ere_miden::EreMiden::new(program, resource));
 
     #[cfg(feature = "nexus")]
     let zkvm = Ok::<_, Error>(ere_nexus::EreNexus::new(program, resource));

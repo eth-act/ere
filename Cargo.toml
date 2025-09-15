@@ -4,6 +4,7 @@ members = [
     "crates/test-utils",
     # zkVMs
     "crates/ere-jolt",
+    "crates/ere-miden",
     "crates/ere-nexus",
     "crates/ere-openvm",
     "crates/ere-pico",
@@ -57,6 +58,14 @@ jolt = { git = "https://github.com/a16z/jolt.git", rev = "55b9830a3944dde55d33a5
 jolt-core = { git = "https://github.com/a16z/jolt.git", rev = "55b9830a3944dde55d33a55c42522b81dd49f87a" }
 jolt-sdk = { git = "https://github.com/a16z/jolt.git", rev = "55b9830a3944dde55d33a55c42522b81dd49f87a" }
 
+# Miden dependencies
+miden-assembly = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.17.1" }
+miden-core = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.17.1" }
+miden-processor = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.17.1" }
+miden-prover = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.17.1" }
+miden-stdlib = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.17.1" }
+miden-verifier = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.17.1" }
+
 # Nexus dependencies
 nexus-sdk = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.4" }
 
@@ -90,6 +99,7 @@ test-utils = { path = "crates/test-utils" }
 ere-cli = { path = "crates/ere-cli", default-features = false }
 ere-dockerized = { path = "crates/ere-dockerized" }
 ere-jolt = { path = "crates/ere-jolt", default-features = false }
+ere-miden = { path = "crates/ere-miden", default-features = false }
 ere-nexus = { path = "crates/ere-nexus", default-features = false }
 ere-openvm = { path = "crates/ere-openvm", default-features = false }
 ere-pico = { path = "crates/ere-pico", default-features = false }

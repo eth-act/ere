@@ -1,0 +1,20 @@
+name: Test and clippy Miden
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  test:
+    uses: ./.github/workflows/test-miden.yml
+    permissions:
+      contents: read
+      packages: write
+    with:
+      zkvm: miden
+      toolchain: 1.88.0
+      test_ere_dockerized: false
+      default_features: false
+      test_options: ""
