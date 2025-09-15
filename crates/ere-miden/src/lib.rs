@@ -17,7 +17,8 @@ use miden_verifier::verify as miden_verify;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::{env, io::Read, time::Instant};
 use zkvm_interface::{
-    Input, ProgramExecutionReport, ProgramProvingReport, Proof, PublicValues, zkVM, zkVMError,
+    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType, PublicValues,
+    zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -42,7 +43,7 @@ pub struct EreMiden {
 }
 
 impl EreMiden {
-    pub fn new(program: MidenProgram) -> Result<Self, MidenError> {
+    pub fn new(program: MidenProgram, _resource: ProverResourceType) -> Result<Self, MidenError> {
         let program = Program::read_from_bytes(&program.program_bytes)
             .map_err(ExecuteError::ProgramDeserialization)
             .map_err(MidenError::Execute)?;
@@ -184,7 +185,7 @@ mod tests {
     #[test]
     fn test_prove_and_verify_add() {
         let program = load_miden_program("add");
-        let zkvm = EreMiden::new(program).unwrap();
+        let zkvm = EreMiden::new(program, ProverResourceType::Cpu).unwrap();
 
         let const_a = 2518446814u64;
         let const_b = 1949327098u64;
@@ -211,7 +212,7 @@ mod tests {
     #[test]
     fn test_prove_and_verify_fib() {
         let program = load_miden_program("fib");
-        let zkvm = EreMiden::new(program).unwrap();
+        let zkvm = EreMiden::new(program, ProverResourceType::Cpu).unwrap();
 
         let n_iterations = 50u64;
         let expected_fib = 12_586_269_025u64;
@@ -238,7 +239,7 @@ mod tests {
     #[test]
     fn test_invalid_inputs() {
         let program = load_miden_program("add");
-        let zkvm = EreMiden::new(program).unwrap();
+        let zkvm = EreMiden::new(program, ProverResourceType::Cpu).unwrap();
 
         let empty_inputs = Input::new();
         assert!(zkvm.execute(&empty_inputs).is_err());
