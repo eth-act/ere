@@ -167,7 +167,7 @@ impl zkVM for EreMiden {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::PathBuf;
+    use test_utils::host::testing_guest_directory;
     use zkvm_interface::Compiler;
 
     fn load_miden_program(guest_name: &str) -> MidenProgram {
