@@ -237,7 +237,7 @@ fn construct_zkvm(program_path: PathBuf, resource: ProverResourceType) -> Result
     let zkvm = ere_jolt::EreJolt::new(program, resource);
 
     #[cfg(feature = "miden")]
-    let zkvm = Ok::<_, Error>(ere_miden::EreMiden::new(program, resource));
+    let zkvm = ere_miden::EreMiden::new(program, resource);
 
     #[cfg(feature = "nexus")]
     let zkvm = Ok::<_, Error>(ere_nexus::EreNexus::new(program, resource));
