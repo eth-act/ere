@@ -62,7 +62,7 @@ fi
 # Step 3: Build cargo-zisk-gpu from source with GPU features enabled (skip if in CI)
 if [ -z $CI ]; then
     TEMP_DIR=$(mktemp -d)
-    git clone https://github.com/0xPolygonHermez/zisk.git --single-branch --branch "v$ZISK_VERSION" "$TEMP_DIR/zisk"
+    git clone https://github.com/han0110/zisk.git --single-branch --branch "feature/override-cuda-arch-0.11.0" "$TEMP_DIR/zisk"
     cd "$TEMP_DIR/zisk"
     cargo build --release --features gpu
     cp ./target/release/cargo-zisk "${HOME}/.zisk/bin/cargo-zisk-gpu"
