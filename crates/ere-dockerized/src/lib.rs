@@ -167,7 +167,7 @@ impl ErezkVM {
                 .tag(self.base_zkvm_tag("latest"))
                 .build_arg("BASE_IMAGE_TAG", self.base_tag(CRATE_VERSION));
 
-            if matches!(self, ErezkVM::OpenVM) {
+            if matches!(self, ErezkVM::OpenVM | ErezkVM::Zisk) {
                 if let Ok(cuda_arch) = env::var("CUDA_ARCH") {
                     cmd = cmd.build_arg("CUDA_ARCH", cuda_arch)
                 } else if let Some(cuda_compute_cap) = cuda_compute_cap() {

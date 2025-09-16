@@ -45,6 +45,13 @@ RUN [ -n "$CI" ] || \
     apt install -y cuda-toolkit-12-9 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*)
 
+# Add nvcc to path
+ENV PATH=/usr/local/cuda/bin:$PATH
+
+# Default to build for RTX 50 series
+ARG CUDA_ARCH=120
+ENV CUDA_ARCH=${CUDA_ARCH}
+
 # Copy the ZisK SDK installer script from the workspace context
 COPY scripts/sdk_installers/install_zisk_sdk.sh /tmp/install_zisk_sdk.sh
 RUN chmod +x /tmp/install_zisk_sdk.sh
