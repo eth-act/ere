@@ -171,15 +171,9 @@ mod tests {
     use zkvm_interface::Compiler;
 
     fn load_miden_program(guest_name: &str) -> MidenProgram {
-        let manifest_dir = env!("CARGO_MANIFEST_DIR");
-        let guest_dir = PathBuf::from(manifest_dir)
-            .parent()
+        MIDEN_TARGET
+            .compile(&testing_guest_directory("miden", guest_name))
             .unwrap()
-            .parent()
-            .unwrap()
-            .join(format!("tests/miden/{guest_name}"));
-
-        MIDEN_TARGET.compile(&guest_dir).unwrap()
     }
 
     #[test]
