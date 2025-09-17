@@ -31,7 +31,7 @@ fn generate_zkvm_sdk_version_impl() {
         "jolt-sdk",
         "nexus-sdk",
         "openvm-sdk",
-        "pico-sdk",
+        "pico-vm",
         "risc0-zkvm",
         "sp1-sdk",
         "zkm-sdk",

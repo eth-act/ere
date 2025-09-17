@@ -78,8 +78,8 @@ openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", ta
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
 
 # Pico dependencies
+pico-p3-field = { git = "https://github.com/brevis-network/Plonky3.git", package = "p3-field", rev = "a4d376b" }
 pico-vm = { git = "https://github.com/brevis-network/pico.git", tag = "v1.1.7" }
-pico-sdk = { git = "https://github.com/brevis-network/pico.git", tag = "v1.1.7" }
 
 # Risc0 dependencies
 risc0-build = "3.0.3"

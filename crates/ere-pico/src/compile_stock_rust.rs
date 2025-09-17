@@ -1,4 +1,4 @@
-use crate::error::PicoError;
+use crate::error::CompileError;
 use cargo_metadata::MetadataCommand;
 use std::fs;
 use std::path::Path;
@@ -38,18 +38,18 @@ const CARGO_ARGS: &[&str] = &[
 pub fn compile_pico_program_stock_rust(
     guest_directory: &Path,
     toolchain: &String,
-) -> Result<Vec<u8>, PicoError> {
+) -> Result<Vec<u8>, CompileError> {
     compile_program_stock_rust(guest_directory, toolchain)
 }
 
 fn compile_program_stock_rust(
     guest_directory: &Path,
     toolchain: &String,
-) -> Result<Vec<u8>, PicoError> {
+) -> Result<Vec<u8>, CompileError> {
     let metadata = MetadataCommand::new().current_dir(guest_directory).exec()?;
     let package = metadata
         .root_package()
-        .ok_or_else(|| PicoError::MissingPackageName {
+        .ok_or_else(|| CompileError::MissingPackageName {
             path: guest_directory.to_path_buf(),
         })?;
 
@@ -76,7 +76,7 @@ fn compile_program_stock_rust(
         .stdout(std::process::Stdio::inherit())
         .stderr(std::process::Stdio::inherit())
         .status()
-        .map_err(|source| PicoError::BuildFailure {
+        .map_err(|source| CompileError::BuildFailure {
             source: source.into(),
             crate_path: guest_directory.to_path_buf(),
         });
@@ -87,7 +87,7 @@ fn compile_program_stock_rust(
 
     let elf_path = target_direcotry.join(&package.name);
 
-    fs::read(&elf_path).map_err(|e| PicoError::ReadFile {
+    fs::read(&elf_path).map_err(|e| CompileError::ReadFile {
         path: elf_path,
         source: e,
     })

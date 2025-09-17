@@ -1,20 +1,32 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use compile_stock_rust::compile_pico_program_stock_rust;
-use pico_sdk::client::DefaultProverClient;
+use crate::{
+    client::{MetaProof, ProverClient},
+    compile_stock_rust::compile_pico_program_stock_rust,
+    error::{CompileError, PicoError, ProveError, VerifyError},
+};
+use pico_p3_field::PrimeField32;
 use pico_vm::{configs::stark_config::KoalaBearPoseidon2, emulator::stdin::EmulatorStdinBuilder};
-use serde::de::DeserializeOwned;
-use std::{env, io::Read, path::Path, process::Command, time::Instant};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use sha2::{Digest, Sha256};
+use std::{
+    env, fs,
+    io::Read,
+    path::Path,
+    process::Command,
+    time::{self, Instant},
+};
+use tempfile::tempdir;
 use zkvm_interface::{
     Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof,
     ProverResourceType, PublicValues, zkVM, zkVMError,
 };
 
-mod compile_stock_rust;
-
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
+
+mod client;
+mod compile_stock_rust;
 mod error;
-use error::PicoError;
 
 #[allow(non_camel_case_types)]
 pub struct PICO_TARGET;
@@ -36,32 +48,36 @@ impl Compiler for PICO_TARGET {
     }
 }
 
-fn compile_pico_program(guest_directory: &Path) -> Result<Vec<u8>, PicoError> {
+fn compile_pico_program(guest_directory: &Path) -> Result<Vec<u8>, CompileError> {
+    let tempdir = tempdir().map_err(CompileError::Tempdir)?;
+
     // 1. Check guest path
     if !guest_directory.exists() {
-        return Err(PicoError::PathNotFound(guest_directory.to_path_buf()));
+        return Err(CompileError::PathNotFound(guest_directory.to_path_buf()));
     }
 
     // 2. Run `cargo pico build`
     let status = Command::new("cargo")
         .current_dir(guest_directory)
         .env("RUST_LOG", "info")
-        .args(["pico", "build"])
-        .status()?; // From<io::Error> → Spawn
+        .args(["pico", "build", "--output-directory"])
+        .arg(tempdir.path())
+        .status()
+        .map_err(CompileError::CargoPicoBuild)?;
 
     if !status.success() {
-        return Err(PicoError::CargoFailed { status });
+        return Err(CompileError::CargoPicoBuildFailed { status });
     }
 
     // 3. Locate the ELF file
-    let elf_path = guest_directory.join("elf/riscv32im-pico-zkvm-elf");
+    let elf_path = tempdir.path().join("riscv32im-pico-zkvm-elf");
 
     if !elf_path.exists() {
-        return Err(PicoError::ElfNotFound(elf_path));
+        return Err(CompileError::ElfNotFound(elf_path));
     }
 
     // 4. Read the ELF file
-    let elf_bytes = std::fs::read(&elf_path).map_err(|e| PicoError::ReadElf {
+    let elf_bytes = fs::read(&elf_path).map_err(|e| CompileError::ReadElf {
         path: elf_path,
         source: e,
     })?;
@@ -69,29 +85,38 @@ fn compile_pico_program(guest_directory: &Path) -> Result<Vec<u8>, PicoError> {
     Ok(elf_bytes)
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct PicoProofWithPublicValues {
+    proof: MetaProof,
+    public_values: Vec<u8>,
+}
+
 pub struct ErePico {
     program: <PICO_TARGET as Compiler>::Program,
 }
 
 impl ErePico {
-    pub fn new(
-        program_bytes: <PICO_TARGET as Compiler>::Program,
-        _resource_type: ProverResourceType,
-    ) -> Self {
-        ErePico {
-            program: program_bytes,
+    pub fn new(program: <PICO_TARGET as Compiler>::Program, resource: ProverResourceType) -> Self {
+        if !matches!(resource, ProverResourceType::Cpu) {
+            panic!("Network or GPU proving not yet implemented for Pico. Use CPU resource type.");
         }
+        ErePico { program }
+    }
+
+    pub fn client(&self) -> ProverClient {
+        ProverClient::new(&self.program)
     }
 }
+
 impl zkVM for ErePico {
     fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
-        let client = DefaultProverClient::new(&self.program);
+        let client = self.client();
 
         let mut stdin = client.new_stdin_builder();
         serialize_inputs(&mut stdin, inputs);
 
         let start = Instant::now();
-        let (total_num_cycles, public_values) = client.emulate(stdin);
+        let (total_num_cycles, public_values) = client.execute(stdin);
 
         Ok((
             public_values,
@@ -107,47 +132,47 @@ impl zkVM for ErePico {
         &self,
         inputs: &Input,
     ) -> Result<(PublicValues, Proof, zkvm_interface::ProgramProvingReport), zkVMError> {
-        let client = DefaultProverClient::new(&self.program);
+        let client = self.client();
 
         let mut stdin = client.new_stdin_builder();
         serialize_inputs(&mut stdin, inputs);
 
-        let now = std::time::Instant::now();
-        let meta_proof = client.prove(stdin).expect("Failed to generate proof");
+        let now = time::Instant::now();
+        let (public_values, proof) = client
+            .prove(stdin)
+            .map_err(|err| PicoError::Prove(ProveError::Client(err)))?;
         let elapsed = now.elapsed();
 
-        let mut proof_serialized = Vec::new();
-        for p in meta_proof.0.proofs().iter() {
-            bincode::serialize_into(&mut proof_serialized, p).unwrap();
-        }
-        for p in meta_proof.1.proofs().iter() {
-            bincode::serialize_into(&mut proof_serialized, p).unwrap();
-        }
-
-        for p in meta_proof.0.pv_stream.iter() {
-            bincode::serialize_into(&mut proof_serialized, p).unwrap();
-        }
-        for p in meta_proof.1.pv_stream.iter() {
-            bincode::serialize_into(&mut proof_serialized, p).unwrap();
-        }
-
-        // TODO: Public values
-        let public_values = Vec::new();
+        let proof_bytes = bincode::serialize(&PicoProofWithPublicValues {
+            proof,
+            public_values: public_values.clone(),
+        })
+        .map_err(|err| PicoError::Prove(ProveError::Bincode(err)))?;
 
         Ok((
             public_values,
-            proof_serialized,
+            proof_bytes,
             ProgramProvingReport::new(elapsed),
         ))
     }
 
-    fn verify(&self, _proof: &[u8]) -> Result<PublicValues, zkVMError> {
-        let client = DefaultProverClient::new(&self.program);
-        let _vk = client.riscv_vk();
-        // TODO: Verification method missing from sdk
-        // TODO: Public values
-        let public_values = Vec::new();
-        Ok(public_values)
+    fn verify(&self, proof: &[u8]) -> Result<PublicValues, zkVMError> {
+        let client = self.client();
+
+        let proof: PicoProofWithPublicValues = bincode::deserialize(proof)
+            .map_err(|err| PicoError::Verify(VerifyError::Bincode(err)))?;
+
+        client
+            .verify(&proof.proof)
+            .map_err(|err| PicoError::Verify(VerifyError::Client(err)))?;
+
+        if extract_public_values_sha256_digest(&proof.proof).map_err(PicoError::Verify)?
+            != <[u8; 32]>::from(Sha256::digest(&proof.public_values))
+        {
+            return Err(PicoError::Verify(VerifyError::InvalidPublicValuesDigest))?;
+        }
+
+        Ok(proof.public_values)
     }
 
     fn name(&self) -> &'static str {
@@ -174,11 +199,36 @@ fn serialize_inputs(stdin: &mut EmulatorStdinBuilder<Vec<u8>, KoalaBearPoseidon2
     }
 }
 
+/// Extract public values sha256 digest from base proof of compressed proof.
+/// The sha256 digest will be placed at the first 32 field elements of the
+/// public values of the only base proof.
+fn extract_public_values_sha256_digest(proof: &MetaProof) -> Result<[u8; 32], VerifyError> {
+    if proof.proofs().len() != 1 {
+        return Err(VerifyError::InvalidBaseProofLength(proof.proofs().len()));
+    }
+
+    if proof.proofs()[0].public_values.len() < 32 {
+        return Err(VerifyError::InvalidPublicValuesLength(
+            proof.proofs()[0].public_values.len(),
+        ));
+    }
+
+    Ok(proof.proofs()[0].public_values[..32]
+        .iter()
+        .map(|value| u8::try_from(value.as_canonical_u32()))
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|_| VerifyError::InvalidPublicValues)?
+        .try_into()
+        .unwrap())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::{panic, sync::OnceLock};
-    use test_utils::host::{BasicProgramIo, run_zkvm_execute, testing_guest_directory};
+    use test_utils::host::{
+        BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+    };
 
     static BASIC_PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
 
@@ -228,7 +278,30 @@ mod tests {
             BasicProgramIo::invalid_type,
             BasicProgramIo::invalid_data,
         ] {
-            panic::catch_unwind(|| zkvm.execute(&inputs_gen()).unwrap_err()).unwrap_err();
+            panic::catch_unwind(|| zkvm.execute(&inputs_gen())).unwrap_err();
+        }
+    }
+
+    #[test]
+    fn test_prove() {
+        let program = basic_program();
+        let zkvm = ErePico::new(program, ProverResourceType::Cpu);
+
+        let io = BasicProgramIo::valid();
+        run_zkvm_prove(&zkvm, &io);
+    }
+
+    #[test]
+    fn test_prove_invalid_inputs() {
+        let program = basic_program();
+        let zkvm = ErePico::new(program, ProverResourceType::Cpu);
+
+        for inputs_gen in [
+            BasicProgramIo::empty,
+            BasicProgramIo::invalid_type,
+            BasicProgramIo::invalid_data,
+        ] {
+            panic::catch_unwind(|| zkvm.prove(&inputs_gen())).unwrap_err();
         }
     }
 }
