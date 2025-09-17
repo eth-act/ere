@@ -18,7 +18,7 @@ impl Compiler for MIDEN_TARGET {
             .and_then(|name| name.to_str())
             .ok_or(CompileError::InvalidProgramPath)?;
 
-        let entrypoint = format!("{}.masm", dir_name);
+        let entrypoint = format!("{dir_name}.masm");
         let main_path = guest_directory.join(&entrypoint);
         if !main_path.exists() {
             return Err(CompileError::MissingEntrypoint {

@@ -12,5 +12,5 @@ ENV MIDEN_VERSION="v0.17.1" \
 
 # Verify
 # RUN miden-vm --version
-
+RUN rustup default 1.88.0
 CMD ["/bin/bash"]
