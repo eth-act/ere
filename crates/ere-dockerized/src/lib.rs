@@ -59,7 +59,7 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 use crate::{
-    cuda::cuda_compute_cap,
+    cuda::cuda_arch,
     docker::{DockerBuildCmd, DockerRunCmd, docker_image_exists},
     error::{CommonError, CompileError, DockerizedError, ExecuteError, ProveError, VerifyError},
 };
@@ -167,13 +167,21 @@ impl ErezkVM {
                 .tag(self.base_zkvm_tag("latest"))
                 .build_arg("BASE_IMAGE_TAG", self.base_tag(CRATE_VERSION));
 
-            if matches!(self, ErezkVM::OpenVM | ErezkVM::Zisk) {
-                if let Ok(cuda_arch) = env::var("CUDA_ARCH") {
-                    cmd = cmd.build_arg("CUDA_ARCH", cuda_arch)
-                } else if let Some(cuda_compute_cap) = cuda_compute_cap() {
-                    cmd = cmd.build_arg("CUDA_ARCH", cuda_compute_cap.replace(".", ""))
+            let cuda_arch = cuda_arch();
+            match self {
+                ErezkVM::OpenVM => {
+                    // OpenVM takes only the numeric part.
+                    if let Some(cuda_arch) = cuda_arch {
+                        cmd = cmd.build_arg("CUDA_ARCH", cuda_arch.replace("sm_", ""))
+                    }
                 }
-            };
+                ErezkVM::Zisk => {
+                    if let Some(cuda_arch) = cuda_arch {
+                        cmd = cmd.build_arg("CUDA_ARCH", cuda_arch)
+                    }
+                }
+                _ => {}
+            }
 
             cmd.exec(&workspace_dir)
                 .map_err(CommonError::DockerBuildCmd)?;

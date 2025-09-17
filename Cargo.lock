@@ -3585,6 +3585,7 @@ dependencies = [
  "tempfile",
  "test-utils",
  "thiserror 2.0.12",
+ "tracing",
  "zkvm-interface",
 ]
 

@@ -10,6 +10,7 @@ bincode.workspace = true
 serde = { workspace = true, features = ["derive"] }
 tempfile.workspace = true
 thiserror.workspace = true
+tracing.workspace = true
 
 # Needed for Risc0 and OpenVM input serialization.
 bytemuck.workspace = true
