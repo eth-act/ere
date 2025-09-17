@@ -177,10 +177,10 @@ jobs:
           OPTIONS="--all-targets ${{ inputs.default_features && '' || '--no-default-features' }} -- -D warnings"
           cargo clippy --package ere-${{ inputs.zkvm }} \$OPTIONS
           cargo clippy --package ere-cli --features cli,${{ inputs.zkvm }} \$OPTIONS
+          EOF
 
           chown -R $(id -u):$(id -g) ~/.cargo
           chown -R $(id -u):$(id -g) target
-          EOF
 
   test_via_docker:
     name: Test via Docker
@@ -234,10 +234,10 @@ jobs:
           EXEC=\$(RUSTFLAGS=-Ctarget-cpu=native \$CARGO_BUILD_CMD \
             | jq -r 'select(.executable) | select(.package_id | contains("ere-${{ inputs.zkvm }}")) | .executable')
           \$EXEC ${{ inputs.test_options }}
+          EOF
 
           chown -R $(id -u):$(id -g) ~/.cargo
           chown -R $(id -u):$(id -g) target
-          EOF
 
   test_ere_dockerized:
     name: Test ere-dockerized with the selected zkVM
