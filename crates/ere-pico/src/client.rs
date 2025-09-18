@@ -1,6 +1,6 @@
 // Copied and modified from https://github.com/brevis-network/pico/blob/v1.1.7/sdk/sdk/src/client.rs.
 // The `EmbedProver` is removed because we don't need the proof to be verified
-// on chain.
+// on chain. Issue for tracking: https://github.com/eth-act/ere/issues/140.
 
 use anyhow::{Error, Ok, Result};
 use pico_vm::{
