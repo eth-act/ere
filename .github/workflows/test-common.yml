@@ -19,6 +19,8 @@ jobs:
         include:
           - crate: build-utils
             run_test: true
+          - crate: compile-utils
+            run_test: true
           - crate: test-utils
             run_test: true
           - crate: zkvm-interface
