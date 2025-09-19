@@ -1,11 +1,9 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use crate::{
-    error::{CompileError, JoltError, ProveError, VerifyError},
-    utils::package_name_from_manifest,
-};
+use crate::error::{CompileError, JoltError, ProveError, VerifyError};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use compile_stock_rust::compile_jolt_program_stock_rust;
+use compile_utils::cargo_metadata;
 use jolt::{JoltHyperKZGProof, JoltProverPreprocessing, JoltVerifierPreprocessing};
 use jolt_core::host::Program;
 use jolt_methods::{preprocess_prover, preprocess_verifier, prove_generic, verify_generic};
@@ -28,7 +26,6 @@ include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 mod compile_stock_rust;
 mod error;
 mod jolt_methods;
-mod utils;
 
 #[allow(non_camel_case_types)]
 pub struct JOLT_TARGET;
@@ -57,7 +54,12 @@ fn compile_jolt_program(guest_directory: &Path) -> Result<Vec<u8>, JoltError> {
         path: guest_directory.to_path_buf(),
     })?;
 
-    let package_name = package_name_from_manifest(Path::new("Cargo.toml"))?;
+    let package_name = cargo_metadata(guest_directory)
+        .map_err(CompileError::CompileUtilError)?
+        .root_package()
+        .unwrap()
+        .name
+        .clone();
 
     // Note that if this fails, it will panic, hence we need to catch it.
     let elf_path = std::panic::catch_unwind(|| {
