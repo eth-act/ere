@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/build-utils",
+    "crates/compile-utils",
     "crates/test-utils",
     # zkVMs
     "crates/ere-jolt",
@@ -95,6 +96,7 @@ zkm-sdk = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.1.4" }
 # Local dependencies
 zkvm-interface = { path = "crates/zkvm-interface" }
 build-utils = { path = "crates/build-utils" }
+compile-utils = { path = "crates/compile-utils" }
 test-utils = { path = "crates/test-utils" }
 ere-cli = { path = "crates/ere-cli", default-features = false }
 ere-dockerized = { path = "crates/ere-dockerized" }
