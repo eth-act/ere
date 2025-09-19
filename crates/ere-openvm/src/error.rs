@@ -34,12 +34,6 @@ pub enum OpenVMError {
 pub enum CompileError {
     #[error("Failed to build guest, code: {0}")]
     BuildFailed(i32),
-    #[error("`openvm` build failure for {crate_path} failed: {source}")]
-    BuildFailure {
-        #[source]
-        source: anyhow::Error,
-        crate_path: PathBuf,
-    },
     #[error("Guest building skipped (OPENVM_SKIP_BUILD is set)")]
     BuildSkipped,
     #[error("Missing to find unique elf: {0}")]
@@ -50,16 +44,8 @@ pub enum CompileError {
     ReadConfigFailed { source: io::Error, path: PathBuf },
     #[error("Failed to deserialize OpenVM's config file: {0}")]
     DeserializeConfigFailed(toml::de::Error),
-    #[error("`cargo metadata` failed: {0}")]
-    MetadataCommand(#[from] cargo_metadata::Error),
-    #[error("Could not find `[package].name` in guest Cargo.toml at {path}")]
-    MissingPackageName { path: PathBuf },
-    #[error("Failed to read file at {path}: {source}")]
-    ReadFile {
-        path: PathBuf,
-        #[source]
-        source: std::io::Error,
-    },
+    #[error(transparent)]
+    CompileUtilError(#[from] compile_utils::CompileError),
 }
 
 #[derive(Debug, Error)]
