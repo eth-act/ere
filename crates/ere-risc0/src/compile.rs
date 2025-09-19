@@ -1,5 +1,5 @@
 use crate::error::CompileError;
-use cargo_metadata::MetadataCommand;
+use compile_utils::cargo_metadata;
 use risc0_build::GuestOptions;
 use risc0_zkvm::Digest;
 use serde::{Deserialize, Serialize};
@@ -15,12 +15,8 @@ pub struct Risc0Program {
 pub fn compile_risc0_program(guest_directory: &Path) -> Result<Risc0Program, CompileError> {
     info!("Compiling Risc0 program at {}", guest_directory.display());
 
-    let metadata = MetadataCommand::new().current_dir(guest_directory).exec()?;
-    let package = metadata
-        .root_package()
-        .ok_or_else(|| CompileError::MissingPackageName {
-            path: guest_directory.to_path_buf(),
-        })?;
+    let metadata = cargo_metadata(guest_directory)?;
+    let package = metadata.root_package().unwrap();
 
     // Use `risc0_build::build_package` to build package instead of calling
     // `cargo-risczero build` for the `unstable` features.

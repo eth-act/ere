@@ -9,7 +9,6 @@ license.workspace = true
 anyhow.workspace = true
 borsh.workspace = true
 bytemuck.workspace = true
-cargo_metadata.workspace = true
 serde = { workspace = true, features = ["derive", "rc"] }
 thiserror.workspace = true
 tracing.workspace = true
@@ -20,6 +19,7 @@ risc0-zkvm = { workspace = true, features = ["client", "unstable"] }
 risc0-binfmt.workspace = true
 
 # Local dependencies
+compile-utils.workspace = true
 zkvm-interface.workspace = true
 
 [dev-dependencies]
