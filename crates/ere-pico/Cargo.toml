@@ -8,7 +8,6 @@ license.workspace = true
 [dependencies]
 anyhow.workspace = true
 bincode.workspace = true
-cargo_metadata.workspace = true
 sha2.workspace = true
 serde.workspace = true
 tempfile.workspace = true
@@ -19,6 +18,7 @@ pico-p3-field.workspace = true
 pico-vm.workspace = true
 
 # Local dependencies
+compile-utils.workspace = true
 zkvm-interface.workspace = true
 
 [dev-dependencies]
