@@ -1,11 +1,12 @@
 use crate::compile_stock_rust::stock_rust_compile;
 use crate::error::CompileError;
-use std::process::ExitStatus;
-use std::{fs, path::Path, path::PathBuf, process::Command};
-use tempfile::TempDir;
+use std::{fs, path::Path, process::Command};
+use tempfile::tempdir;
 use tracing::info;
 
-fn get_guest_program_name(guest_directory: &Path) -> Result<String, CompileError> {
+fn sp1_compile(guest_directory: &Path) -> Result<Vec<u8>, CompileError> {
+    info!("Compiling SP1 program at {}", guest_directory.display());
+
     if !guest_directory.exists() || !guest_directory.is_dir() {
         return Err(CompileError::InvalidProgramPath(
             guest_directory.to_path_buf(),
@@ -20,89 +21,39 @@ fn get_guest_program_name(guest_directory: &Path) -> Result<String, CompileError
         });
     }
 
-    // ── read + parse Cargo.toml ───────────────────────────────────────────
-    let manifest_content =
-        fs::read_to_string(&guest_manifest_path).map_err(|e| CompileError::ReadFile {
-            path: guest_manifest_path.clone(),
-            source: e,
-        })?;
+    // ── build into a temp dir ─────────────────────────────────────────────
+    let temp_output_dir = tempdir()?;
+    let temp_output_dir_path = temp_output_dir.path();
 
-    let manifest_toml: toml::Value =
-        manifest_content
-            .parse::<toml::Value>()
-            .map_err(|e| CompileError::ParseCargoToml {
-                path: guest_manifest_path.clone(),
-                source: e,
-            })?;
-
-    let program_name = manifest_toml
-        .get("package")
-        .and_then(|p| p.get("name"))
-        .and_then(|n| n.as_str())
-        .ok_or_else(|| CompileError::MissingPackageName {
-            path: guest_manifest_path.clone(),
-        })?;
-
-    Ok(program_name.into())
-}
-
-fn sp1_compile(
-    guest_directory: &Path,
-    output_directory: &Path,
-) -> Result<(ExitStatus, PathBuf), CompileError> {
     info!(
         "Running `cargo prove build` → dir: {}",
-        output_directory.display(),
+        temp_output_dir_path.display(),
     );
 
-    let result = Command::new("cargo")
+    let status = Command::new("cargo")
         .current_dir(guest_directory)
         .args([
             "prove",
             "build",
             "--output-directory",
-            output_directory.to_str().unwrap(),
+            temp_output_dir_path.to_str().unwrap(),
             "--elf-name",
             "guest.elf",
         ])
-        .stdout(std::process::Stdio::inherit())
-        .stderr(std::process::Stdio::inherit())
         .status()
         .map_err(|e| CompileError::CargoProveBuild {
             cwd: guest_directory.to_path_buf(),
             source: e,
-        });
-    match result {
-        Ok(status) => Ok((status, output_directory.join("guest.elf"))),
-        Err(err) => Err(err),
-    }
-}
-
-pub fn compile(guest_directory: &Path, toolchain: &String) -> Result<Vec<u8>, CompileError> {
-    let program_name = get_guest_program_name(guest_directory)?;
-    info!("Parsed program name: {program_name}");
-
-    // ── build into a temp dir ─────────────────────────────────────────────
-    let temp_output_dir = TempDir::new_in(guest_directory)?;
-    let temp_output_dir_path = temp_output_dir.path();
-
-    let (status, elf_path) = match toolchain.as_str() {
-        "succinct" => sp1_compile(guest_directory, temp_output_dir_path)?,
-        _ => stock_rust_compile(
-            guest_directory,
-            temp_output_dir_path,
-            &program_name,
-            toolchain,
-        )?,
-    };
+        })?;
 
     if !status.success() {
-        return Err(CompileError::CargoBuildFailed {
+        return Err(CompileError::CargoProveBuildFailed {
             status,
             path: guest_directory.to_path_buf(),
         });
     }
 
+    let elf_path = temp_output_dir_path.join("guest.elf");
     if !elf_path.exists() {
         return Err(CompileError::ElfNotFound(elf_path));
     }
@@ -111,13 +62,16 @@ pub fn compile(guest_directory: &Path, toolchain: &String) -> Result<Vec<u8>, Co
         path: elf_path,
         source: e,
     })?;
-    info!(
-        "SP1 ({}) program compiled OK - {} bytes",
-        toolchain,
-        elf_bytes.len()
-    );
+    info!("SP1 program compiled OK - {} bytes", elf_bytes.len());
 
     Ok(elf_bytes)
+}
+
+pub fn compile(guest_directory: &Path, toolchain: &String) -> Result<Vec<u8>, CompileError> {
+    match toolchain.as_str() {
+        "succinct" => sp1_compile(guest_directory),
+        _ => stock_rust_compile(guest_directory, toolchain),
+    }
 }
 
 #[cfg(test)]

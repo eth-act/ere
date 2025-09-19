@@ -36,32 +36,28 @@ pub enum CompileError {
         program_dir: PathBuf,
         manifest_path: PathBuf,
     },
+    #[error("Failed to create temporary output directory: {0}")]
+    TempDir(#[from] std::io::Error),
     #[error("Could not find `[package].name` in guest Cargo.toml at {path}")]
     MissingPackageName { path: PathBuf },
-    #[error("Compiled ELF not found at expected path: {0}")]
-    ElfNotFound(PathBuf),
-    #[error("`cargo prove build` failed with status: {status} for program at {path}")]
-    CargoBuildFailed { status: ExitStatus, path: PathBuf },
-    #[error("Failed to read file at {path}: {source}")]
-    ReadFile {
-        path: PathBuf,
-        #[source]
-        source: std::io::Error,
-    },
-    #[error("Failed to parse guest Cargo.toml at {path}: {source}")]
-    ParseCargoToml {
-        path: PathBuf,
-        #[source]
-        source: toml::de::Error,
-    },
     #[error("Failed to execute `cargo prove build` in {cwd}: {source}")]
     CargoProveBuild {
         cwd: PathBuf,
         #[source]
         source: std::io::Error,
     },
-    #[error("Failed to create temporary output directory: {0}")]
-    TempDir(#[from] std::io::Error),
+    #[error("`cargo prove build` failed with status: {status} for program at {path}")]
+    CargoProveBuildFailed { status: ExitStatus, path: PathBuf },
+    #[error("Compiled ELF not found at expected path: {0}")]
+    ElfNotFound(PathBuf),
+    #[error("Failed to read file at {path}: {source}")]
+    ReadFile {
+        path: PathBuf,
+        #[source]
+        source: std::io::Error,
+    },
+    #[error(transparent)]
+    CompileUtilError(#[from] compile_utils::CompileError),
 }
 
 #[derive(Debug, Error)]
