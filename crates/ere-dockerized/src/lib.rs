@@ -420,6 +420,7 @@ impl zkVM for EreDockerizedzkVM {
             // requires at least 8G shared memory, here we set 16G for safety.
             ErezkVM::Zisk => cmd
                 .option("shm-size", "16G")
+                .option("ulimit", "memlock=-1:-1")
                 .inherit_env("ZISK_PREALLOCATE")
                 .inherit_env("ZISK_UNLOCK_MAPPED_MEMORY")
                 .inherit_env("ZISK_MINIMAL_MEMORY")
