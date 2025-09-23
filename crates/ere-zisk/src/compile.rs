@@ -1,4 +1,4 @@
-use crate::error::CompileError;
+use crate::error::ZiskError;
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -11,18 +11,18 @@ const ZISK_TOOLCHAIN: &str = "zisk";
 const ZISK_TARGET: &str = "riscv64ima-zisk-zkvm-elf";
 
 /// Compile the guest crate and return raw ELF bytes.
-pub fn compile_zisk_program(program_crate_path: &Path) -> Result<Vec<u8>, CompileError> {
+pub fn compile_zisk_program(program_crate_path: &Path) -> Result<Vec<u8>, ZiskError> {
     info!("Compiling ZisK program at {}", program_crate_path.display());
 
     if !program_crate_path.exists() || !program_crate_path.is_dir() {
-        return Err(CompileError::InvalidProgramPath(
+        return Err(ZiskError::InvalidProgramPath(
             program_crate_path.to_path_buf(),
         ));
     }
 
     let guest_manifest_path = program_crate_path.join("Cargo.toml");
     if !guest_manifest_path.exists() {
-        return Err(CompileError::CargoTomlMissing {
+        return Err(ZiskError::CargoTomlMissing {
             program_dir: program_crate_path.to_path_buf(),
             manifest_path: guest_manifest_path.clone(),
         });
@@ -30,7 +30,7 @@ pub fn compile_zisk_program(program_crate_path: &Path) -> Result<Vec<u8>, Compil
 
     // ── read + parse Cargo.toml ───────────────────────────────────────────
     let manifest_content =
-        fs::read_to_string(&guest_manifest_path).map_err(|e| CompileError::ReadFile {
+        fs::read_to_string(&guest_manifest_path).map_err(|e| ZiskError::ReadFile {
             path: guest_manifest_path.clone(),
             source: e,
         })?;
@@ -38,7 +38,7 @@ pub fn compile_zisk_program(program_crate_path: &Path) -> Result<Vec<u8>, Compil
     let manifest_toml: TomlValue =
         manifest_content
             .parse::<TomlValue>()
-            .map_err(|e| CompileError::ParseCargoToml {
+            .map_err(|e| ZiskError::ParseCargoToml {
                 path: guest_manifest_path.clone(),
                 source: e,
             })?;
@@ -47,7 +47,7 @@ pub fn compile_zisk_program(program_crate_path: &Path) -> Result<Vec<u8>, Compil
         .get("package")
         .and_then(|p| p.get("name"))
         .and_then(|n| n.as_str())
-        .ok_or_else(|| CompileError::MissingPackageName {
+        .ok_or_else(|| ZiskError::MissingPackageName {
             path: guest_manifest_path.clone(),
         })?;
 
@@ -62,7 +62,7 @@ pub fn compile_zisk_program(program_crate_path: &Path) -> Result<Vec<u8>, Compil
             .arg("--print")
             .arg("sysroot")
             .output()
-            .map_err(|e| CompileError::RustcSysroot { source: e })?;
+            .map_err(ZiskError::RustcSysroot)?;
         PathBuf::from(String::from_utf8_lossy(&output.stdout).trim())
             .join("bin")
             .join("rustc")
@@ -73,13 +73,13 @@ pub fn compile_zisk_program(program_crate_path: &Path) -> Result<Vec<u8>, Compil
         .env("RUSTC", zisk_rustc)
         .args(["build", "--release", "--target", ZISK_TARGET])
         .status()
-        .map_err(|e| CompileError::CargoBuild {
+        .map_err(|e| ZiskError::CargoBuild {
             cwd: program_crate_path.to_path_buf(),
             source: e,
         })?;
 
     if !status.success() {
-        return Err(CompileError::CargoBuildFailed {
+        return Err(ZiskError::CargoBuildFailed {
             status,
             path: program_crate_path.to_path_buf(),
         });
@@ -93,7 +93,7 @@ pub fn compile_zisk_program(program_crate_path: &Path) -> Result<Vec<u8>, Compil
             .arg("--workspace")
             .arg("--message-format=plain")
             .output()
-            .map_err(|e| CompileError::CargoLocateProject { source: e })?;
+            .map_err(ZiskError::CargoLocateProject)?;
         PathBuf::from(
             String::from_utf8_lossy(&output.stdout)
                 .trim()
@@ -107,7 +107,7 @@ pub fn compile_zisk_program(program_crate_path: &Path) -> Result<Vec<u8>, Compil
         .join("riscv64ima-zisk-zkvm-elf")
         .join("release")
         .join(program_name);
-    let elf_bytes = fs::read(&elf_path).map_err(|e| CompileError::ReadFile {
+    let elf_bytes = fs::read(&elf_path).map_err(|e| ZiskError::ReadFile {
         path: elf_path.clone(),
         source: e,
     })?;

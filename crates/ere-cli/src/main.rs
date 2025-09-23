@@ -258,7 +258,7 @@ fn construct_zkvm(program_path: PathBuf, resource: ProverResourceType) -> Result
     let zkvm = Ok::<_, Error>(ere_ziren::EreZiren::new(program, resource));
 
     #[cfg(feature = "zisk")]
-    let zkvm = Ok::<_, Error>(ere_zisk::EreZisk::new(program, resource));
+    let zkvm = ere_zisk::EreZisk::new(program, resource);
 
     zkvm.with_context(|| "Failed to instantiate zkVM")
 }
