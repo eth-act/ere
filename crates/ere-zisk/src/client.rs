@@ -73,7 +73,9 @@ impl ZiskOption {
             Self::Port => "--port",
             Self::ChunkSizeBits => "--chunk-size-bits",
             Self::UnlockMappedMemory => "--unlock-mapped-memory",
-            Self::MinimalMemory => "--minimal_memory", // Note: Use snake case for `prove-client` command
+            // NOTE: Use snake case for `prove-client` command
+            // Issue for tracking: https://github.com/eth-act/ere/issues/151.
+            Self::MinimalMemory => "--minimal_memory",
             Self::Preallocate => "--preallocate",
             Self::SharedTables => "--shared-tables",
             Self::MaxStreams => "--max-streams",
@@ -399,6 +401,8 @@ impl ZiskServer {
             source,
         })?;
 
+        // NOTE: Use snake case for `prove-client` command
+        // Issue for tracking: https://github.com/eth-act/ere/issues/151.
         let status = Command::new("cargo-zisk")
             .args(["prove-client", "prove"])
             .arg("--input")
@@ -406,7 +410,7 @@ impl ZiskServer {
             .arg("--output_dir")
             .arg(&output_path)
             .args(["-p", PREFIX])
-            .args(["--aggregation", "--verify_proofs"]) // Note: Use snake case for `prove-client` command
+            .args(["--aggregation", "--verify_proofs"])
             .args(self.options.prove_args())
             .status()
             .map_err(ZiskError::CargoZiskProve)?;
