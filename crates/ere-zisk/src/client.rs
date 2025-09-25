@@ -10,6 +10,7 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
+use strum::{EnumIter, IntoEnumIterator};
 use tempfile::tempdir;
 use tracing::{error, info};
 use zkvm_interface::{Proof, ProverResourceType, PublicValues};
@@ -18,7 +19,7 @@ use zkvm_interface::{Proof, ProverResourceType, PublicValues};
 pub type RomDigest = [u64; 4];
 
 /// Options of `cargo-zisk` commands.
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
 pub enum ZiskOption {
     Port,
     ChunkSizeBits,
@@ -80,21 +81,6 @@ impl ZiskOption {
             Self::MaxWitnessStored => "--max-witness-stored",
         }
     }
-
-    fn enumerate() -> impl Iterator<Item = Self> {
-        [
-            Self::Port,
-            Self::ChunkSizeBits,
-            Self::UnlockMappedMemory,
-            Self::MinimalMemory,
-            Self::Preallocate,
-            Self::SharedTables,
-            Self::MaxStreams,
-            Self::NumberThreadsWitness,
-            Self::MaxWitnessStored,
-        ]
-        .into_iter()
-    }
 }
 
 #[derive(Clone)]
@@ -104,7 +90,7 @@ impl ZiskOptions {
     /// Read options from env variables.
     pub fn from_env() -> Self {
         Self(
-            ZiskOption::enumerate()
+            ZiskOption::iter()
                 .flat_map(|option| env::var(option.env_var_key()).ok().map(|val| (option, val)))
                 .collect(),
         )

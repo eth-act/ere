@@ -3771,6 +3771,7 @@ dependencies = [
  "build-utils",
  "bytemuck",
  "serde",
+ "strum 0.27.2",
  "tempfile",
  "test-utils",
  "thiserror 2.0.12",
