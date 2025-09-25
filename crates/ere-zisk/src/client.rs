@@ -67,7 +67,7 @@ impl ZiskOption {
         }
     }
 
-    /// The optoin key to be appended to `cargo-zisk` command arguments.
+    /// The option key to be appended to `cargo-zisk` command arguments.
     fn key(&self) -> &'static str {
         match self {
             Self::Port => "--port",
