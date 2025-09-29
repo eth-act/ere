@@ -1,0 +1,59 @@
+[package]
+name = "ere-server"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+bincode.workspace = true
+prost.workspace = true
+serde = { workspace = true, features = ["derive"] }
+tokio.workspace = true
+twirp.workspace = true
+
+# Server
+clap = { workspace = true, optional = true }
+tower-http = { workspace = true, features = ["catch-panic"], optional = true }
+tracing = { workspace = true, optional = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"], optional = true }
+
+# Local dependencies
+ere-jolt = { workspace = true, optional = true }
+ere-miden = { workspace = true, optional = true }
+ere-nexus = { workspace = true, optional = true }
+ere-openvm = { workspace = true, optional = true }
+ere-pico = { workspace = true, optional = true }
+ere-risc0 = { workspace = true, optional = true }
+ere-sp1 = { workspace = true, optional = true }
+ere-ziren = { workspace = true, optional = true }
+ere-zisk = { workspace = true, optional = true }
+zkvm-interface = { workspace = true, features = ["clap"] }
+
+[dev-dependencies]
+
+[lints]
+workspace = true
+
+[build-dependencies]
+prost-build.workspace = true
+twirp-build.workspace = true
+
+[features]
+default = []
+server = ["dep:clap", "tower-http", "tracing", "dep:tracing-subscriber", "tokio/macros", "tokio/rt-multi-thread", "tokio/signal"]
+
+# zkVM
+jolt = ["dep:ere-jolt", "server"]
+miden = ["dep:ere-miden", "server"]
+nexus = ["dep:ere-nexus", "server"]
+openvm = ["dep:ere-openvm", "server"]
+pico = ["dep:ere-pico", "server"]
+risc0 = ["dep:ere-risc0", "server"]
+sp1 = ["dep:ere-sp1", "server"]
+ziren = ["dep:ere-ziren", "server"]
+zisk = ["dep:ere-zisk", "server"]
+
+# Cuda
+cuda = ["ere-openvm?/cuda"]

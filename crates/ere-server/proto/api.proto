@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package api;
+
+service ZkvmService {
+    rpc Execute(ExecuteRequest) returns (ExecuteResponse) {}
+    rpc Prove(ProveRequest) returns (ProveResponse) {}
+    rpc Verify(VerifyRequest) returns (VerifyResponse) {}
+}
+
+message ExecuteRequest {
+    bytes input = 1;
+}
+
+message ExecuteResponse {
+    bytes public_values = 1;
+    bytes report = 2;
+}
+
+message ProveRequest {
+    bytes input = 1;
+}
+
+message ProveResponse {
+    bytes public_values = 1;
+    bytes proof = 2;
+    bytes report = 3;
+}
+
+message VerifyRequest {
+    bytes proof = 1;
+}
+
+message VerifyResponse {
+    bytes public_values = 1;
+}
