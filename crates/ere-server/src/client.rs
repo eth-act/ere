@@ -19,7 +19,7 @@ pub struct zkVMClient {
 
 impl zkVMClient {
     pub async fn new(url: Url) -> Result<Self, Error> {
-        const TIMEOUT: Duration = Duration::from_secs(30);
+        const TIMEOUT: Duration = Duration::from_secs(300); // 5mins
         const INTERVAL: Duration = Duration::from_millis(500);
 
         let http_client = reqwest::Client::new();
