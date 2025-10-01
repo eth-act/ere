@@ -2,88 +2,28 @@
 
 use crate::{
     client::{MetaProof, ProverClient},
-    compile_stock_rust::compile_pico_program_stock_rust,
-    error::{CompileError, PicoError, ProveError, VerifyError},
+    compiler::PicoProgram,
+    error::{PicoError, ProveError, VerifyError},
 };
 use pico_p3_field::PrimeField32;
 use pico_vm::{configs::stark_config::KoalaBearPoseidon2, emulator::stdin::EmulatorStdinBuilder};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use sha2::{Digest, Sha256};
 use std::{
-    env, fs,
+    env,
     io::Read,
-    path::Path,
-    process::Command,
     time::{self, Instant},
 };
-use tempfile::tempdir;
 use zkvm_interface::{
-    Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof,
-    ProverResourceType, PublicValues, zkVM, zkVMError,
+    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType,
+    PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
-mod client;
-mod compile_stock_rust;
-mod error;
-
-#[allow(non_camel_case_types)]
-pub struct PICO_TARGET;
-
-impl Compiler for PICO_TARGET {
-    type Error = PicoError;
-
-    type Program = Vec<u8>;
-
-    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        let toolchain = env::var("ERE_GUEST_TOOLCHAIN").unwrap_or_else(|_error| "pico".into());
-        match toolchain.as_str() {
-            "pico" => Ok(compile_pico_program(guest_directory)?),
-            _ => Ok(compile_pico_program_stock_rust(
-                guest_directory,
-                &toolchain,
-            )?),
-        }
-    }
-}
-
-fn compile_pico_program(guest_directory: &Path) -> Result<Vec<u8>, CompileError> {
-    let tempdir = tempdir().map_err(CompileError::Tempdir)?;
-
-    // 1. Check guest path
-    if !guest_directory.exists() {
-        return Err(CompileError::PathNotFound(guest_directory.to_path_buf()));
-    }
-
-    // 2. Run `cargo pico build`
-    let status = Command::new("cargo")
-        .current_dir(guest_directory)
-        .env("RUST_LOG", "info")
-        .args(["pico", "build", "--output-directory"])
-        .arg(tempdir.path())
-        .status()
-        .map_err(CompileError::CargoPicoBuild)?;
-
-    if !status.success() {
-        return Err(CompileError::CargoPicoBuildFailed { status });
-    }
-
-    // 3. Locate the ELF file
-    let elf_path = tempdir.path().join("riscv32im-pico-zkvm-elf");
-
-    if !elf_path.exists() {
-        return Err(CompileError::ElfNotFound(elf_path));
-    }
-
-    // 4. Read the ELF file
-    let elf_bytes = fs::read(&elf_path).map_err(|e| CompileError::ReadElf {
-        path: elf_path,
-        source: e,
-    })?;
-
-    Ok(elf_bytes)
-}
+pub mod client;
+pub mod compiler;
+pub mod error;
 
 #[derive(Serialize, Deserialize)]
 pub struct PicoProofWithPublicValues {
@@ -92,11 +32,11 @@ pub struct PicoProofWithPublicValues {
 }
 
 pub struct ErePico {
-    program: <PICO_TARGET as Compiler>::Program,
+    program: PicoProgram,
 }
 
 impl ErePico {
-    pub fn new(program: <PICO_TARGET as Compiler>::Program, resource: ProverResourceType) -> Self {
+    pub fn new(program: PicoProgram, resource: ProverResourceType) -> Self {
         if !matches!(resource, ProverResourceType::Cpu) {
             panic!("Network or GPU proving not yet implemented for Pico. Use CPU resource type.");
         }
@@ -224,28 +164,26 @@ fn extract_public_values_sha256_digest(proof: &MetaProof) -> Result<[u8; 32], Ve
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::{
+        ErePico,
+        compiler::{PicoProgram, RustRv32imaCustomized},
+    };
     use std::{panic, sync::OnceLock};
     use test_utils::host::{
         BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
+    use zkvm_interface::{Compiler, ProverResourceType, zkVM};
 
-    static BASIC_PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
+    static BASIC_PROGRAM: OnceLock<PicoProgram> = OnceLock::new();
 
-    fn basic_program() -> Vec<u8> {
+    fn basic_program() -> PicoProgram {
         BASIC_PROGRAM
             .get_or_init(|| {
-                PICO_TARGET
+                RustRv32imaCustomized
                     .compile(&testing_guest_directory("pico", "basic"))
                     .unwrap()
             })
             .clone()
-    }
-
-    #[test]
-    fn test_compiler_impl() {
-        let elf_bytes = basic_program();
-        assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
     }
 
     #[test]
@@ -255,17 +193,6 @@ mod tests {
 
         let io = BasicProgramIo::valid();
         run_zkvm_execute(&zkvm, &io);
-    }
-
-    #[test]
-    fn test_execute_nightly() {
-        let guest_directory = testing_guest_directory("pico", "stock_nightly_no_std");
-        let program =
-            compile_pico_program_stock_rust(&guest_directory, &"nightly".to_string()).unwrap();
-        let zkvm = ErePico::new(program, ProverResourceType::Cpu);
-
-        let result = zkvm.execute(&BasicProgramIo::empty());
-        assert!(result.is_ok(), "Pico execution failure");
     }
 
     #[test]
