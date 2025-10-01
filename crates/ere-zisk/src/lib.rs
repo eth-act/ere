@@ -2,39 +2,25 @@
 
 use crate::{
     client::{ZiskOptions, ZiskSdk, ZiskServer},
-    compile::compile_zisk_program,
+    compiler::ZiskProgram,
     error::ZiskError,
 };
 use serde::de::DeserializeOwned;
 use std::{
     io::Read,
-    path::Path,
     sync::{Mutex, MutexGuard},
     time::Instant,
 };
 use zkvm_interface::{
-    Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof,
-    ProverResourceType, PublicValues, zkVM, zkVMError,
+    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType,
+    PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 mod client;
-mod compile;
-mod error;
-
-#[allow(non_camel_case_types)]
-pub struct RV64_IMA_ZISK_ZKVM_ELF;
-
-impl Compiler for RV64_IMA_ZISK_ZKVM_ELF {
-    type Error = ZiskError;
-
-    type Program = Vec<u8>;
-
-    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        compile_zisk_program(guest_directory)
-    }
-}
+pub mod compiler;
+pub mod error;
 
 pub struct EreZisk {
     sdk: ZiskSdk,
@@ -46,7 +32,7 @@ pub struct EreZisk {
 }
 
 impl EreZisk {
-    pub fn new(elf: Vec<u8>, resource: ProverResourceType) -> Result<Self, zkVMError> {
+    pub fn new(elf: ZiskProgram, resource: ProverResourceType) -> Result<Self, zkVMError> {
         if matches!(resource, ProverResourceType::Network(_)) {
             panic!("Network proving not yet implemented for ZisK. Use CPU or GPU resource type.");
         }
@@ -151,11 +137,12 @@ fn serialize_inputs(inputs: &Input) -> Result<Vec<u8>, ZiskError> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::{EreZisk, compiler::RustRv64imaCustomized};
     use std::sync::{Mutex, OnceLock};
     use test_utils::host::{
         BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
+    use zkvm_interface::{Compiler, ProverResourceType, zkVM};
 
     /// It fails if multiple servers created concurrently using the same port,
     /// so we have a lock to avoid that.
@@ -166,7 +153,7 @@ mod tests {
     fn basic_program() -> Vec<u8> {
         BASIC_PROGRAM
             .get_or_init(|| {
-                RV64_IMA_ZISK_ZKVM_ELF
+                RustRv64imaCustomized
                     .compile(&testing_guest_directory("zisk", "basic"))
                     .unwrap()
             })

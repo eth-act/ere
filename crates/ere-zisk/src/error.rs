@@ -31,23 +31,6 @@ pub enum ZiskError {
     },
 
     // Compilation
-    #[error("Program path does not exist or is not a directory: {0}")]
-    InvalidProgramPath(PathBuf),
-    #[error(
-        "Cargo.toml not found in program directory: {program_dir}. Expected at: {manifest_path}"
-    )]
-    CargoTomlMissing {
-        program_dir: PathBuf,
-        manifest_path: PathBuf,
-    },
-    #[error("Could not find `[package].name` in guest Cargo.toml at {path}")]
-    MissingPackageName { path: PathBuf },
-    #[error("Failed to parse guest Cargo.toml at {path}: {source}")]
-    ParseCargoToml {
-        path: PathBuf,
-        #[source]
-        source: toml::de::Error,
-    },
     #[error("Failed to execute `RUSTUP_TOOLCHAIN=zisk rustc --print sysroot`")]
     RustcSysroot(#[source] io::Error),
     #[error("Failed to execute `cargo locate-project --workspace --message-format=plain`")]
@@ -62,6 +45,8 @@ pub enum ZiskError {
         "`RUSTC=$ZISK_RUSTC cargo build --release ...` failed with status: {status} for program at {path}"
     )]
     CargoBuildFailed { status: ExitStatus, path: PathBuf },
+    #[error(transparent)]
+    CompileUtilError(#[from] compile_utils::CompileError),
 
     // Serialization
     #[error("Bincode serialization/deserialization failed: {0}")]
