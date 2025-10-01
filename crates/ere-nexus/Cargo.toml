@@ -9,13 +9,13 @@ license.workspace = true
 bincode.workspace = true
 serde.workspace = true
 thiserror.workspace = true
-toml.workspace = true
 tracing.workspace = true
 
 # Nexus dependencies
 nexus-sdk.workspace = true
 
 # Local dependencies
+compile-utils.workspace = true
 zkvm-interface.workspace = true
 
 [dev-dependencies]

@@ -1,72 +1,33 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
-#![allow(clippy::uninlined_format_args)]
 
-use std::io::Read;
-use std::path::{Path, PathBuf};
-use std::time::Instant;
-
-use nexus_sdk::compile::cargo::CargoPackager;
-use nexus_sdk::compile::{Compile, Compiler as NexusCompiler};
-use nexus_sdk::stwo::seq::Stwo;
-use nexus_sdk::{Local, Prover, Verifiable};
+use crate::{
+    compiler::NexusProgram,
+    error::{NexusError, ProveError, VerifyError},
+};
+use nexus_sdk::{Local, Prover, Verifiable, stwo::seq::Stwo};
 use serde::de::DeserializeOwned;
+use std::{io::Read, time::Instant};
 use tracing::info;
 use zkvm_interface::{
-    Compiler, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType,
-    PublicValues, zkVM, zkVMError,
+    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType, PublicValues,
+    zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
-mod error;
-pub(crate) mod utils;
-
-use crate::error::ProveError;
-use crate::utils::get_cargo_package_name;
-use error::{CompileError, NexusError, VerifyError};
-
-#[allow(non_camel_case_types)]
-pub struct NEXUS_TARGET;
-
-impl Compiler for NEXUS_TARGET {
-    type Error = NexusError;
-
-    type Program = PathBuf;
-
-    fn compile(&self, guest_path: &Path) -> Result<Self::Program, Self::Error> {
-        // 1. Check guest path
-        if !guest_path.exists() {
-            return Err(NexusError::PathNotFound(guest_path.to_path_buf()));
-        }
-        std::env::set_current_dir(guest_path).map_err(|e| CompileError::Client(e.into()))?;
-
-        let package_name = get_cargo_package_name(guest_path)
-            .ok_or(CompileError::Client(Box::from(format!(
-                "Failed to get guest package name, where guest path: {:?}",
-                guest_path
-            ))))
-            .map_err(|e| CompileError::Client(e.into()))?;
-        let mut prover_compiler = NexusCompiler::<CargoPackager>::new(&package_name);
-        let elf_path = prover_compiler
-            .build()
-            .map_err(|e| CompileError::Client(e.into()))?;
-
-        Ok(elf_path)
-    }
-}
+pub mod compiler;
+pub mod error;
 
 pub struct EreNexus {
-    program: <NEXUS_TARGET as Compiler>::Program,
+    program: NexusProgram,
 }
 
 impl EreNexus {
-    pub fn new(
-        program: <NEXUS_TARGET as Compiler>::Program,
-        _resource_type: ProverResourceType,
-    ) -> Self {
+    pub fn new(program: NexusProgram, _resource_type: ProverResourceType) -> Self {
         Self { program }
     }
 }
+
 impl zkVM for EreNexus {
     fn execute(
         &self,
@@ -87,7 +48,7 @@ impl zkVM for EreNexus {
         &self,
         _inputs: &Input,
     ) -> Result<(PublicValues, Proof, zkvm_interface::ProgramProvingReport), zkVMError> {
-        let prover: Stwo<Local> = Stwo::new_from_file(&self.program.to_string_lossy().to_string())
+        let prover: Stwo<Local> = Stwo::new_from_bytes(&self.program)
             .map_err(|e| NexusError::Prove(ProveError::Client(e.into())))
             .map_err(zkVMError::from)?;
 
@@ -116,21 +77,20 @@ impl zkVM for EreNexus {
         let proof: nexus_sdk::stwo::seq::Proof = bincode::deserialize(proof)
             .map_err(|err| NexusError::Verify(VerifyError::Bincode(err)))?;
 
-        let prover: Stwo<Local> = Stwo::new_from_file(&self.program.to_string_lossy().to_string())
+        let prover: Stwo<Local> = Stwo::new_from_bytes(&self.program)
             .map_err(|e| NexusError::Prove(ProveError::Client(e.into())))
             .map_err(zkVMError::from)?;
         let elf = prover.elf.clone(); // save elf for use with verification
-        #[rustfmt::skip]
         proof
-        .verify_expected::<(), ()>(
-            &(),  // no public input
-            nexus_sdk::KnownExitCodes::ExitSuccess as u32,
-            &(),  // no public output
-            &elf, // expected elf (program binary)
-            &[],  // no associated data,
-        )
-        .map_err(|e| NexusError::Verify(VerifyError::Client(e.into())))
-        .map_err(zkVMError::from)?;
+            .verify_expected::<(), ()>(
+                &(), // no public input
+                nexus_sdk::KnownExitCodes::ExitSuccess as u32,
+                &(),  // no public output
+                &elf, // expected elf (program binary)
+                &[],  // no associated data,
+            )
+            .map_err(|e| NexusError::Verify(VerifyError::Client(e.into())))
+            .map_err(zkVMError::from)?;
 
         info!("Verify Succeeded!");
 
@@ -151,33 +111,5 @@ impl zkVM for EreNexus {
     fn deserialize_from<R: Read, T: DeserializeOwned>(&self, _reader: R) -> Result<T, zkVMError> {
         // Issue for tracking: https://github.com/eth-act/ere/issues/63.
         todo!()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::{fs, sync::OnceLock};
-    use test_utils::host::testing_guest_directory;
-
-    static BASIC_PROGRAM: OnceLock<PathBuf> = OnceLock::new();
-
-    fn basic_program() -> PathBuf {
-        BASIC_PROGRAM
-            .get_or_init(|| {
-                NEXUS_TARGET
-                    .compile(&testing_guest_directory("nexus", "basic"))
-                    .unwrap()
-            })
-            .to_path_buf()
-    }
-
-    #[test]
-    fn test_compiler_impl() {
-        let elf_path = basic_program();
-        assert!(
-            fs::metadata(&elf_path).unwrap().len() != 0,
-            "ELF bytes should not be empty."
-        );
     }
 }

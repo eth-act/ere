@@ -18,20 +18,20 @@ pub enum NexusError {
 
     #[error(transparent)]
     Verify(#[from] VerifyError),
-
-    /// Guest program directory does not exist.
-    #[error("guest program directory not found: {0}")]
-    PathNotFound(PathBuf),
-
-    /// Expected ELF file was not produced.
-    #[error("ELF file not found at {0}")]
-    ElfNotFound(PathBuf),
 }
 
 #[derive(Debug, Error)]
 pub enum CompileError {
     #[error("nexus execution failed: {0}")]
     Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
+    /// Guest program directory does not exist.
+    #[error("guest program directory not found: {0}")]
+    PathNotFound(PathBuf),
+    /// Expected ELF file was not produced.
+    #[error("ELF file not found at {0}")]
+    ElfNotFound(PathBuf),
+    #[error(transparent)]
+    CompileUtilError(#[from] compile_utils::CompileError),
 }
 
 #[derive(Debug, Error)]
