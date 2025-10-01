@@ -135,31 +135,31 @@ fn main() -> Result<(), Error> {
 
 fn compile(guest_path: PathBuf, program_path: PathBuf) -> Result<(), Error> {
     #[cfg(feature = "jolt")]
-    let program = ere_jolt::JOLT_TARGET.compile(&guest_path);
+    let program = ere_jolt::compiler::RustRv32imaCustomized.compile(&guest_path);
 
     #[cfg(feature = "miden")]
-    let program = ere_miden::MIDEN_TARGET.compile(&guest_path);
+    let program = ere_miden::compiler::MidenAsm.compile(&guest_path);
 
     #[cfg(feature = "nexus")]
-    let program = ere_nexus::NEXUS_TARGET.compile(&guest_path);
+    let program = ere_nexus::compiler::RustRv32i.compile(&guest_path);
 
     #[cfg(feature = "openvm")]
-    let program = ere_openvm::OPENVM_TARGET.compile(&guest_path);
+    let program = ere_openvm::compiler::RustRv32imaCustomized.compile(&guest_path);
 
     #[cfg(feature = "pico")]
-    let program = ere_pico::PICO_TARGET.compile(&guest_path);
+    let program = ere_pico::compiler::RustRv32imaCustomized.compile(&guest_path);
 
     #[cfg(feature = "risc0")]
-    let program = ere_risc0::RV32_IM_RISC0_ZKVM_ELF.compile(&guest_path);
+    let program = ere_risc0::compiler::RustRv32imaCustomized.compile(&guest_path);
 
     #[cfg(feature = "sp1")]
-    let program = ere_sp1::RV32_IM_SUCCINCT_ZKVM_ELF.compile(&guest_path);
+    let program = ere_sp1::compiler::RustRv32imaCustomized.compile(&guest_path);
 
     #[cfg(feature = "ziren")]
-    let program = ere_ziren::MIPS32R2_ZKM_ZKVM_ELF.compile(&guest_path);
+    let program = ere_ziren::compiler::RustMips32r2Customized.compile(&guest_path);
 
     #[cfg(feature = "zisk")]
-    let program = ere_zisk::RV64_IMA_ZISK_ZKVM_ELF.compile(&guest_path);
+    let program = ere_zisk::compiler::RustRv64imaCustomized.compile(&guest_path);
 
     serde::write(
         &program_path,
