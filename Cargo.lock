@@ -3662,17 +3662,15 @@ dependencies = [
 name = "ere-dockerized"
 version = "0.0.12"
 dependencies = [
- "anyhow",
  "bincode 1.3.3",
  "build-utils",
  "bytemuck",
- "ere-server",
+ "ere-cli",
  "risc0-zkvm",
  "serde",
  "tempfile",
  "test-utils",
  "thiserror 2.0.12",
- "tokio",
  "tracing",
  "zkvm-interface",
 ]
