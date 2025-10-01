@@ -357,6 +357,9 @@ impl zkVM for EreDockerizedzkVM {
             .rm()
             .inherit_env("RUST_LOG")
             .inherit_env("NO_COLOR")
+            .inherit_env("RISC0_PPROF_OUT")
+            .inherit_env("RISC0_DEV_MODE")
+            .inherit_env("RISC0_INFO")
             .volume(tempdir.path(), "/workspace")
             .exec([
                 "execute",
@@ -382,6 +385,15 @@ impl zkVM for EreDockerizedzkVM {
         let report = bincode::deserialize(&report_bytes)
             .map_err(|err| CommonError::serilization(err, "Failed to deserialize report"))
             .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
+
+        let prof_file_out_path = PathBuf::from(std::env::var("RISC0_PPROF_OUT").unwrap());
+        let prof_file_out_name = prof_file_out_path.file_name().unwrap();
+        let prof_file_out_path_host = PathBuf::from(tempdir.path().join(prof_file_out_name));
+
+        if fs::exists(&prof_file_out_path_host).unwrap() {
+            fs::copy(prof_file_out_path_host, env::current_dir().unwrap().join(prof_file_out_name)).expect("Cannot copy pprof result file");
+        }
+
         Ok((public_values, report))
     }
 
