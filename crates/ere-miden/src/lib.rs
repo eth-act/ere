@@ -1,9 +1,8 @@
-pub mod compile;
-pub mod error;
-pub mod io;
-
-use self::error::{ExecuteError, MidenError, VerifyError};
-use self::io::{generate_miden_inputs, outputs_to_public_values};
+use crate::{
+    compiler::MidenProgram,
+    error::{ExecuteError, MidenError, VerifyError},
+    io::{generate_miden_inputs, outputs_to_public_values},
+};
 use miden_core::{
     Program,
     utils::{Deserializable, Serializable},
@@ -23,13 +22,9 @@ use zkvm_interface::{
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
-#[allow(non_camel_case_types)]
-pub struct MIDEN_TARGET;
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct MidenProgram {
-    pub program_bytes: Vec<u8>,
-}
+pub mod compiler;
+pub mod error;
+mod io;
 
 #[derive(Serialize, Deserialize)]
 struct MidenProofBundle {
@@ -44,11 +39,7 @@ pub struct EreMiden {
 
 impl EreMiden {
     pub fn new(program: MidenProgram, _resource: ProverResourceType) -> Result<Self, MidenError> {
-        let program = Program::read_from_bytes(&program.program_bytes)
-            .map_err(ExecuteError::ProgramDeserialization)
-            .map_err(MidenError::Execute)?;
-
-        Ok(Self { program })
+        Ok(Self { program: program.0 })
     }
 
     fn setup_host() -> Result<DefaultHost, MidenError> {
@@ -166,12 +157,15 @@ impl zkVM for EreMiden {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::{
+        EreMiden,
+        compiler::{MidenAsm, MidenProgram},
+    };
     use test_utils::host::testing_guest_directory;
-    use zkvm_interface::Compiler;
+    use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
 
     fn load_miden_program(guest_name: &str) -> MidenProgram {
-        MIDEN_TARGET
+        MidenAsm
             .compile(&testing_guest_directory("miden", guest_name))
             .unwrap()
     }

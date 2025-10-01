@@ -1,14 +1,16 @@
 use crate::{
-    MIDEN_TARGET, MidenProgram,
+    compiler::MidenProgram,
     error::{CompileError, MidenError},
 };
 use miden_assembly::Assembler;
-use miden_core::utils::Serializable;
 use miden_stdlib::StdLibrary;
 use std::{fs, path::Path};
 use zkvm_interface::Compiler;
 
-impl Compiler for MIDEN_TARGET {
+/// Compiler for Miden assembly guest program.
+pub struct MidenAsm;
+
+impl Compiler for MidenAsm {
     type Error = MidenError;
     type Program = MidenProgram;
 
@@ -43,22 +45,20 @@ impl Compiler for MIDEN_TARGET {
             .assemble_program(&source)
             .map_err(|e| CompileError::AssemblyCompilation(e.to_string()))?;
 
-        Ok(MidenProgram {
-            program_bytes: program.to_bytes(),
-        })
+        Ok(MidenProgram(program))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::compiler::MidenAsm;
     use test_utils::host::testing_guest_directory;
     use zkvm_interface::Compiler;
 
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("miden", "fib");
-        let program = MIDEN_TARGET.compile(&guest_directory).unwrap();
-        assert!(!program.program_bytes.is_empty());
+        let program = MidenAsm.compile(&guest_directory).unwrap();
+        assert!(program.0.num_procedures() > 0);
     }
 }
