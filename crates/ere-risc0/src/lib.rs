@@ -1,29 +1,22 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use crate::{
-    compile::{Risc0Program, compile_risc0_program},
-    compile_stock_rust::compile_risc0_program_stock_rust,
-    error::Risc0Error,
-    output::deserialize_from,
-};
+use crate::{compiler::Risc0Program, output::deserialize_from};
 use borsh::{BorshDeserialize, BorshSerialize};
 use risc0_zkvm::{
     DEFAULT_MAX_PO2, DefaultProver, ExecutorEnv, ExecutorEnvBuilder, ExternalProver, InnerReceipt,
     Journal, ProverOpts, Receipt, ReceiptClaim, SuccinctReceipt, default_executor, default_prover,
 };
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
-use std::{env, io::Read, ops::RangeInclusive, path::Path, rc::Rc, time::Instant};
+use std::{env, io::Read, ops::RangeInclusive, rc::Rc, time::Instant};
 use zkvm_interface::{
-    Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof,
-    ProverResourceType, PublicValues, zkVM, zkVMError,
+    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType,
+    PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
-mod compile;
-mod compile_stock_rust;
-
-mod error;
+pub mod compiler;
+pub mod error;
 mod output;
 
 /// Default logarithmic segment size from [`DEFAULT_SEGMENT_LIMIT_PO2`].
@@ -51,26 +44,6 @@ const DEFAULT_KECCAK_PO2: usize = 17;
 ///
 /// [`KECCAK_PO2_RANGE`]: https://github.com/risc0/risc0/blob/v3.0.3/risc0/circuit/keccak/src/lib.rs#L29.
 const KECCAK_PO2_RANGE: RangeInclusive<usize> = 14..=18;
-
-#[allow(non_camel_case_types)]
-pub struct RV32_IM_RISC0_ZKVM_ELF;
-
-impl Compiler for RV32_IM_RISC0_ZKVM_ELF {
-    type Error = Risc0Error;
-
-    type Program = Risc0Program;
-
-    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        let toolchain = env::var("ERE_GUEST_TOOLCHAIN").unwrap_or_else(|_error| "risc0".into());
-        match toolchain.as_str() {
-            "risc0" => Ok(compile_risc0_program(guest_directory)?),
-            _ => Ok(compile_risc0_program_stock_rust(
-                guest_directory,
-                &toolchain,
-            )?),
-        }
-    }
-}
 
 #[derive(Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 pub struct Risc0ProofWithPublicValues {
@@ -100,17 +73,14 @@ impl From<Risc0ProofWithPublicValues> for Receipt {
 }
 
 pub struct EreRisc0 {
-    program: <RV32_IM_RISC0_ZKVM_ELF as Compiler>::Program,
+    program: Risc0Program,
     resource: ProverResourceType,
     segment_po2: usize,
     keccak_po2: usize,
 }
 
 impl EreRisc0 {
-    pub fn new(
-        program: <RV32_IM_RISC0_ZKVM_ELF as Compiler>::Program,
-        resource: ProverResourceType,
-    ) -> Result<Self, zkVMError> {
+    pub fn new(program: Risc0Program, resource: ProverResourceType) -> Result<Self, zkVMError> {
         if matches!(resource, ProverResourceType::Network(_)) {
             panic!(
                 "Network proving not yet implemented for RISC Zero. Use CPU or GPU resource type."
@@ -267,18 +237,22 @@ fn serialize_inputs(env: &mut ExecutorEnvBuilder, inputs: &Input) -> Result<(), 
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::{
+        EreRisc0,
+        compiler::{Risc0Program, RustRv32imaCustomized},
+    };
     use std::sync::OnceLock;
     use test_utils::host::{
         BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
+    use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
 
     static BASIC_PROGRAM: OnceLock<Risc0Program> = OnceLock::new();
 
     fn basic_program() -> Risc0Program {
         BASIC_PROGRAM
             .get_or_init(|| {
-                RV32_IM_RISC0_ZKVM_ELF
+                RustRv32imaCustomized
                     .compile(&testing_guest_directory("risc0", "basic"))
                     .unwrap()
             })
@@ -292,17 +266,6 @@ mod tests {
 
         let io = BasicProgramIo::valid();
         run_zkvm_execute(&zkvm, &io);
-    }
-
-    #[test]
-    fn test_execute_nightly() {
-        let guest_directory = testing_guest_directory("risc0", "stock_nightly_no_std");
-        let program =
-            compile_risc0_program_stock_rust(&guest_directory, &"nightly".to_string()).unwrap();
-        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
-
-        let result = zkvm.execute(&BasicProgramIo::empty());
-        assert!(result.is_ok(), "Risc0 execution failure");
     }
 
     #[test]
@@ -344,7 +307,7 @@ mod tests {
 
     #[test]
     fn test_aligned_allocs() {
-        let program = RV32_IM_RISC0_ZKVM_ELF
+        let program = RustRv32imaCustomized
             .compile(&testing_guest_directory("risc0", "allocs_alignment"))
             .unwrap();
 

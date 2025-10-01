@@ -18,7 +18,7 @@ pub enum CompileError {
     #[error("`risc0_build::build_package` succeeded but failed to find guest")]
     Risc0BuildMissingGuest,
     #[error("ELF binary image calculation failure : {0}")]
-    ImageIDCalculationFailure(#[from] anyhow::Error),
+    ImageIDCalculationFailure(anyhow::Error),
     #[error(transparent)]
     CompileUtilError(#[from] compile_utils::CompileError),
 }
