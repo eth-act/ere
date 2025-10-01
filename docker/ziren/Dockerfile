@@ -2,12 +2,6 @@ ARG BASE_IMAGE_TAG=ere-base:latest
 
 FROM ${BASE_IMAGE_TAG}
 
-
-# Install protobuf-compiler because cargo-ziren requires
-RUN apt-get update && apt-get install -y --no-install-recommends protobuf-compiler \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
 # Install go because cargo-ziren requires (no way to turn off)
 RUN curl -fsSL https://golang.org/dl/go1.23.1.linux-amd64.tar.gz | tar -C /usr/local -xzf -
 

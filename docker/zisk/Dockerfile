@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libomp-dev \
     libgmp-dev \
     nlohmann-json3-dev \
-    protobuf-compiler \
+    # protobuf-compiler is in ere-base
     uuid-dev \
     libgrpc++-dev \
     libsecp256k1-dev \
