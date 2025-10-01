@@ -3684,8 +3684,6 @@ dependencies = [
  "common",
  "compile-utils",
  "jolt",
- "jolt-core",
- "jolt-sdk",
  "serde",
  "tempfile",
  "test-utils",
@@ -3717,6 +3715,7 @@ version = "0.0.12"
 dependencies = [
  "bincode 1.3.3",
  "build-utils",
+ "compile-utils",
  "nexus-sdk",
  "serde",
  "test-utils",
@@ -3742,7 +3741,6 @@ dependencies = [
  "test-utils",
  "thiserror 2.0.12",
  "toml 0.8.23",
- "tracing",
  "zkvm-interface",
 ]
 
@@ -3833,7 +3831,7 @@ version = "0.0.12"
 dependencies = [
  "bincode 1.3.3",
  "build-utils",
- "cargo_metadata 0.19.2",
+ "compile-utils",
  "serde",
  "test-utils",
  "thiserror 2.0.12",
@@ -3850,6 +3848,7 @@ dependencies = [
  "blake3",
  "build-utils",
  "bytemuck",
+ "compile-utils",
  "serde",
  "strum 0.27.2",
  "tempfile",
@@ -10154,10 +10153,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "22505a5c94da8e3b7c2996394d1c933236c4d743e81a410bcca4e6989fc066a4"
 dependencies = [
  "bytes",
- "heck 0.5.0",
- "itertools 0.12.1",
+ "heck 0.4.1",
+ "itertools 0.10.5",
  "log",
- "multimap 0.10.1",
+ "multimap 0.8.3",
  "once_cell",
  "petgraph 0.6.5",
  "prettyplease 0.2.32",
@@ -10208,7 +10207,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "81bddcdb20abf9501610992b6759a4c888aef7d1a7247ef75e2404275ac24af1"
 dependencies = [
  "anyhow",
- "itertools 0.12.1",
+ "itertools 0.10.5",
  "proc-macro2",
  "quote",
  "syn 2.0.101",
@@ -10511,9 +10510,9 @@ dependencies = [
 
 [[package]]
 name = "rangemap"
-version = "1.5.1"
+version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f60fcc7d6849342eff22c4350c8b9a989ee8ceabc4b481253e8946b9fe83d684"
+checksum = "f93e7e49bb0bf967717f7bd674458b3d6b0c5f48ec7e3038166026a69fc22223"
 dependencies = [
  "serde",
 ]
@@ -12818,9 +12817,9 @@ dependencies = [
 
 [[package]]
 name = "symbolic-common"
-version = "12.16.0"
+version = "12.16.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c5199e46f23c77c611aa2a383b2f72721dfee4fb2bf85979eea1e0f26ba6e35"
+checksum = "d03f433c9befeea460a01d750e698aa86caf86dcfbd77d552885cd6c89d52f50"
 dependencies = [
  "debugid",
  "memmap2",
@@ -12830,9 +12829,9 @@ dependencies = [
 
 [[package]]
 name = "symbolic-demangle"
-version = "12.16.0"
+version = "12.16.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa3c03956e32254f74e461a330b9522a2689686d80481708fb2014780d8d3959"
+checksum = "13d359ef6192db1760a34321ec4f089245ede4342c27e59be99642f12a859de8"
 dependencies = [
  "cpp_demangle",
  "rustc-demangle",

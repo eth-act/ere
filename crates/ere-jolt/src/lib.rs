@@ -1,82 +1,28 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use crate::error::{CompileError, JoltError, ProveError, VerifyError};
+use crate::{
+    compiler::JoltProgram,
+    error::{JoltError, ProveError, VerifyError},
+    jolt_methods::{preprocess_prover, preprocess_verifier, prove_generic, verify_generic},
+};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
-use compile_stock_rust::compile_jolt_program_stock_rust;
-use compile_utils::cargo_metadata;
 use jolt::{JoltHyperKZGProof, JoltProverPreprocessing, JoltVerifierPreprocessing};
-use jolt_core::host::Program;
-use jolt_methods::{preprocess_prover, preprocess_verifier, prove_generic, verify_generic};
-use jolt_sdk::host::DEFAULT_TARGET_DIR;
 use serde::de::DeserializeOwned;
 use std::{
-    env,
-    env::set_current_dir,
-    fs,
+    env, fs,
     io::{Cursor, Read},
-    path::Path,
 };
 use tempfile::TempDir;
 use zkvm_interface::{
-    Compiler, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType,
-    PublicValues, zkVM, zkVMError,
+    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType, PublicValues,
+    zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
-mod compile_stock_rust;
-mod error;
+
+pub mod compiler;
+pub mod error;
 mod jolt_methods;
-
-#[allow(non_camel_case_types)]
-pub struct JOLT_TARGET;
-
-impl Compiler for JOLT_TARGET {
-    type Error = JoltError;
-
-    type Program = Vec<u8>;
-
-    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        let toolchain = env::var("ERE_GUEST_TOOLCHAIN").unwrap_or_else(|_error| "jolt".into());
-        match toolchain.as_str() {
-            "jolt" => Ok(compile_jolt_program(guest_directory)?),
-            _ => Ok(compile_jolt_program_stock_rust(
-                guest_directory,
-                &toolchain,
-            )?),
-        }
-    }
-}
-
-fn compile_jolt_program(guest_directory: &Path) -> Result<Vec<u8>, JoltError> {
-    // Change current directory for `Program::build` to build guest program.
-    set_current_dir(guest_directory).map_err(|source| CompileError::SetCurrentDirFailed {
-        source,
-        path: guest_directory.to_path_buf(),
-    })?;
-
-    let package_name = cargo_metadata(guest_directory)
-        .map_err(CompileError::CompileUtilError)?
-        .root_package()
-        .unwrap()
-        .name
-        .clone();
-
-    // Note that if this fails, it will panic, hence we need to catch it.
-    let elf_path = std::panic::catch_unwind(|| {
-        let mut program = Program::new(&package_name);
-        program.set_std(true);
-        program.build(DEFAULT_TARGET_DIR);
-        program.elf.unwrap()
-    })
-    .map_err(|_| CompileError::BuildFailed)?;
-
-    let elf = fs::read(&elf_path).map_err(|source| CompileError::ReadElfFailed {
-        source,
-        path: elf_path.to_path_buf(),
-    })?;
-
-    Ok(elf)
-}
 
 #[derive(CanonicalSerialize, CanonicalDeserialize)]
 pub struct EreJoltProof {
@@ -85,14 +31,14 @@ pub struct EreJoltProof {
 }
 
 pub struct EreJolt {
-    elf: Vec<u8>,
+    elf: JoltProgram,
     prover_preprocessing: JoltProverPreprocessing<4, jolt::F, jolt::PCS, jolt::ProofTranscript>,
     verifier_preprocessing: JoltVerifierPreprocessing<4, jolt::F, jolt::PCS, jolt::ProofTranscript>,
     _resource: ProverResourceType,
 }
 
 impl EreJolt {
-    pub fn new(elf: Vec<u8>, _resource: ProverResourceType) -> Result<Self, zkVMError> {
+    pub fn new(elf: JoltProgram, _resource: ProverResourceType) -> Result<Self, zkVMError> {
         let (_tempdir, program) = program(&elf)?;
         let prover_preprocessing = preprocess_prover(&program);
         let verifier_preprocessing = preprocess_verifier(&program);
@@ -178,47 +124,11 @@ impl zkVM for EreJolt {
 /// file, and set the elf path for `program`, so methods like `decode`, `trace`
 /// and `trace_analyze` that depend on elf path will work.
 pub fn program(elf: &[u8]) -> Result<(TempDir, jolt::host::Program), zkVMError> {
-    let tempdir = TempDir::new().map_err(|err| zkVMError::Other(err.into()))?;
+    let tempdir = TempDir::new().map_err(zkVMError::other)?;
     let elf_path = tempdir.path().join("guest.elf");
-    fs::write(&elf_path, elf).map_err(|err| zkVMError::Other(err.into()))?;
+    fs::write(&elf_path, elf).map_err(zkVMError::other)?;
     // Set a dummy package name because we don't need to compile anymore.
-    let mut program = Program::new("");
+    let mut program = jolt::host::Program::new("");
     program.elf = Some(elf_path);
     Ok((tempdir, program))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::sync::OnceLock;
-    use test_utils::host::{BasicProgramIo, testing_guest_directory};
-
-    static BASIC_PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
-
-    fn basic_program() -> Vec<u8> {
-        BASIC_PROGRAM
-            .get_or_init(|| {
-                JOLT_TARGET
-                    .compile(&testing_guest_directory("jolt", "basic"))
-                    .unwrap()
-            })
-            .clone()
-    }
-
-    #[test]
-    fn test_compiler_impl() {
-        let elf_bytes = basic_program();
-        assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
-    }
-
-    #[test]
-    fn test_execute_nightly() {
-        let guest_directory = testing_guest_directory("jolt", "stock_nightly_no_std");
-        let program =
-            compile_jolt_program_stock_rust(&guest_directory, &"nightly".to_string()).unwrap();
-        let zkvm = EreJolt::new(program, ProverResourceType::Cpu).unwrap();
-
-        let result = zkvm.execute(&BasicProgramIo::empty());
-        assert!(result.is_ok(), "Jolt execution failure");
-    }
 }

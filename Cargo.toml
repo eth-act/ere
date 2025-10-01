@@ -64,8 +64,6 @@ twirp-build = "0.9.0"
 ark-serialize = "0.5.0"
 common = { git = "https://github.com/a16z/jolt.git", rev = "55b9830a3944dde55d33a55c42522b81dd49f87a" }
 jolt = { git = "https://github.com/a16z/jolt.git", rev = "55b9830a3944dde55d33a55c42522b81dd49f87a" }
-jolt-core = { git = "https://github.com/a16z/jolt.git", rev = "55b9830a3944dde55d33a55c42522b81dd49f87a" }
-jolt-sdk = { git = "https://github.com/a16z/jolt.git", rev = "55b9830a3944dde55d33a55c42522b81dd49f87a" }
 
 # Miden dependencies
 miden-assembly = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.17.1" }

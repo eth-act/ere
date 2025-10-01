@@ -1,5 +1,5 @@
 use ark_serialize::SerializationError;
-use jolt_core::utils::errors::ProofVerifyError;
+use jolt::jolt_core::utils::errors::ProofVerifyError;
 use std::{io, path::PathBuf};
 use thiserror::Error;
 use zkvm_interface::zkVMError;

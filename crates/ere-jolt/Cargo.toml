@@ -14,8 +14,6 @@ thiserror.workspace = true
 ark-serialize = { workspace = true, features = ["derive"] }
 common.workspace = true
 jolt = { workspace = true, features = ["host"] }
-jolt-core = { workspace = true, features = ["host"] }
-jolt-sdk = { workspace = true, features = ["host"] }
 
 # Local dependencies
 compile-utils.workspace = true
