@@ -7,7 +7,6 @@ license.workspace = true
 
 [dependencies]
 bincode.workspace = true
-cargo_metadata.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
@@ -16,6 +15,7 @@ tracing.workspace = true
 zkm-sdk = { workspace = true }
 
 # Local dependencies
+compile-utils.workspace = true
 zkvm-interface = { workspace = true }
 
 [dev-dependencies]

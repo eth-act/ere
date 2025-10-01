@@ -1,114 +1,34 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use crate::error::{CompileError, ExecuteError, ProveError, VerifyError, ZirenError};
-use cargo_metadata::MetadataCommand;
-use serde::de::DeserializeOwned;
-use std::{
-    fs,
-    io::Read,
-    path::{Path, PathBuf},
-    process::Command,
-    time::Instant,
+use crate::{
+    compiler::ZirenProgram,
+    error::{ExecuteError, ProveError, VerifyError, ZirenError},
 };
+use serde::de::DeserializeOwned;
+use std::{io::Read, time::Instant};
 use tracing::info;
 use zkm_sdk::{
     CpuProver, Prover, ZKMProofKind, ZKMProofWithPublicValues, ZKMProvingKey, ZKMStdin,
     ZKMVerifyingKey,
 };
 use zkvm_interface::{
-    Compiler, Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof,
-    ProverResourceType, PublicValues, zkVM, zkVMError,
+    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType,
+    PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
-mod error;
 
-const ZKM_TOOLCHAIN: &str = "zkm";
-
-#[allow(non_camel_case_types)]
-pub struct MIPS32R2_ZKM_ZKVM_ELF;
-
-impl Compiler for MIPS32R2_ZKM_ZKVM_ELF {
-    type Error = CompileError;
-
-    type Program = Vec<u8>;
-
-    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        let metadata = MetadataCommand::new().current_dir(guest_directory).exec()?;
-        let package = metadata
-            .root_package()
-            .ok_or(CompileError::MissingRootPackage)?;
-
-        let rustc = {
-            let output = Command::new("rustc")
-                .env("RUSTUP_TOOLCHAIN", ZKM_TOOLCHAIN)
-                .args(["--print", "sysroot"])
-                .output()
-                .map_err(CompileError::RustcSysrootFailed)?;
-
-            if !output.status.success() {
-                return Err(CompileError::RustcSysrootExitNonZero {
-                    status: output.status,
-                    stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-                    stderr: String::from_utf8_lossy(&output.stderr).to_string(),
-                });
-            }
-
-            PathBuf::from(String::from_utf8_lossy(&output.stdout).trim())
-                .join("bin")
-                .join("rustc")
-        };
-
-        // Use `cargo ziren build` instead of using crate `zkm-build`, because
-        // it exits if the underlying `cargo build` fails, and there is no way
-        // to recover.
-        let output = Command::new("cargo")
-            .current_dir(guest_directory)
-            .env("RUSTC", rustc)
-            .env("ZIREN_ZKM_CC", "mipsel-zkm-zkvm-elf-gcc")
-            .args(["ziren", "build"])
-            .output()
-            .map_err(CompileError::CargoZirenBuildFailed)?;
-
-        if !output.status.success() {
-            return Err(CompileError::CargoZirenBuildExitNonZero {
-                status: output.status,
-                stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-                stderr: String::from_utf8_lossy(&output.stderr).to_string(),
-            });
-        }
-
-        let elf_path = String::from_utf8_lossy(&output.stdout)
-            .lines()
-            .find_map(|line| {
-                let line = line.strip_prefix("cargo:rustc-env=ZKM_ELF_")?;
-                let (package_name, elf_path) = line.split_once("=")?;
-                (package_name == package.name).then(|| PathBuf::from(elf_path))
-            })
-            .ok_or_else(|| CompileError::GuestNotFound {
-                name: package.name.clone(),
-            })?;
-
-        let elf = fs::read(&elf_path).map_err(|source| CompileError::ReadFile {
-            path: elf_path,
-            source,
-        })?;
-
-        Ok(elf)
-    }
-}
+pub mod compiler;
+pub mod error;
 
 pub struct EreZiren {
-    program: <MIPS32R2_ZKM_ZKVM_ELF as Compiler>::Program,
+    program: ZirenProgram,
     pk: ZKMProvingKey,
     vk: ZKMVerifyingKey,
 }
 
 impl EreZiren {
-    pub fn new(
-        program: <MIPS32R2_ZKM_ZKVM_ELF as Compiler>::Program,
-        resource: ProverResourceType,
-    ) -> Self {
+    pub fn new(program: ZirenProgram, resource: ProverResourceType) -> Self {
         if matches!(
             resource,
             ProverResourceType::Gpu | ProverResourceType::Network(_)
@@ -212,18 +132,19 @@ fn serialize_inputs(stdin: &mut ZKMStdin, inputs: &Input) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::{EreZiren, compiler::RustMips32r2Customized};
     use std::{panic, sync::OnceLock};
     use test_utils::host::{
         BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
+    use zkvm_interface::{Compiler, ProverResourceType, zkVM};
 
     static BASIC_PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
 
     fn basic_program() -> Vec<u8> {
         BASIC_PROGRAM
             .get_or_init(|| {
-                MIPS32R2_ZKM_ZKVM_ELF
+                RustMips32r2Customized
                     .compile(&testing_guest_directory("ziren", "basic"))
                     .unwrap()
             })

@@ -26,10 +26,6 @@ pub enum ZirenError {
 
 #[derive(Debug, Error)]
 pub enum CompileError {
-    #[error("`cargo metadata` failed: {0}")]
-    MetadataCommand(#[from] cargo_metadata::Error),
-    #[error("Failed to find root package")]
-    MissingRootPackage,
     #[error("`RUSTUP_TOOLCHAIN=zkm rustc --print sysroot` failed to execute: {0}")]
     RustcSysrootFailed(#[source] io::Error),
     #[error(
@@ -58,6 +54,8 @@ pub enum CompileError {
         #[source]
         source: std::io::Error,
     },
+    #[error(transparent)]
+    CompileUtilError(#[from] compile_utils::CompileError),
 }
 
 #[derive(Debug, Error)]
