@@ -47,6 +47,12 @@
 - Nexus
 - Miden
 
+## Prerequisites
+
+The following dependencies are required:
+
+- `protobuf-compiler`
+
 ## Quick Start
 
 This guide assumes you have Rust and Cargo installed. If not, please refer to the [Rust installation guide](https://www.rust-lang.org/tools/install).
