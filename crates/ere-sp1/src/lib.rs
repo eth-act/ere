@@ -1,26 +1,27 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use std::{io::Read, path::Path, time::Instant};
-
+use crate::{
+    compiler::SP1Program,
+    error::{ExecuteError, ProveError, SP1Error, VerifyError},
+};
 use serde::de::DeserializeOwned;
 use sp1_sdk::{
     CpuProver, CudaProver, NetworkProver, Prover, ProverClient, SP1ProofWithPublicValues,
     SP1ProvingKey, SP1Stdin, SP1VerifyingKey,
 };
+use std::{io::Read, time::Instant};
 use tracing::info;
 use zkvm_interface::{
-    Compiler, Input, InputItem, NetworkProverConfig, ProgramExecutionReport, ProgramProvingReport,
-    Proof, ProverResourceType, PublicValues, zkVM, zkVMError,
+    Input, InputItem, NetworkProverConfig, ProgramExecutionReport, ProgramProvingReport, Proof,
+    ProverResourceType, PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
-mod compile;
-mod compile_stock_rust;
+pub mod compiler;
+pub mod error;
 
-mod error;
-use error::{ExecuteError, ProveError, SP1Error, VerifyError};
-
+#[allow(clippy::large_enum_variant)]
 enum ProverType {
     Cpu(CpuProver),
     Gpu(CudaProver),
@@ -28,10 +29,7 @@ enum ProverType {
 }
 
 impl ProverType {
-    fn setup(
-        &self,
-        program: &<RV32_IM_SUCCINCT_ZKVM_ELF as Compiler>::Program,
-    ) -> (SP1ProvingKey, SP1VerifyingKey) {
+    fn setup(&self, program: &SP1Program) -> (SP1ProvingKey, SP1VerifyingKey) {
         match self {
             ProverType::Cpu(cpu_prover) => cpu_prover.setup(program),
             ProverType::Gpu(cuda_prover) => cuda_prover.setup(program),
@@ -41,7 +39,7 @@ impl ProverType {
 
     fn execute(
         &self,
-        program: &<RV32_IM_SUCCINCT_ZKVM_ELF as Compiler>::Program,
+        program: &SP1Program,
         input: &SP1Stdin,
     ) -> Result<(sp1_sdk::SP1PublicValues, sp1_sdk::ExecutionReport), SP1Error> {
         let cpu_executor_builder = match self {
@@ -83,10 +81,8 @@ impl ProverType {
     }
 }
 
-#[allow(non_camel_case_types)]
-pub struct RV32_IM_SUCCINCT_ZKVM_ELF;
 pub struct EreSP1 {
-    program: <RV32_IM_SUCCINCT_ZKVM_ELF as Compiler>::Program,
+    program: SP1Program,
     /// Proving key
     pk: SP1ProvingKey,
     /// Verification key
@@ -101,18 +97,6 @@ pub struct EreSP1 {
     //
     // Eventually, this should be fixed in the SP1 SDK and we can create the `client` in the `new(...)` method.
     // For more context see: https://github.com/eth-act/zkevm-benchmark-workload/issues/54
-}
-
-impl Compiler for RV32_IM_SUCCINCT_ZKVM_ELF {
-    type Error = SP1Error;
-
-    type Program = Vec<u8>;
-
-    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        let toolchain =
-            std::env::var("ERE_GUEST_TOOLCHAIN").unwrap_or_else(|_error| "succinct".into());
-        compile::compile(guest_directory, &toolchain).map_err(SP1Error::from)
-    }
 }
 
 impl EreSP1 {
@@ -148,10 +132,7 @@ impl EreSP1 {
         }
     }
 
-    pub fn new(
-        program: <RV32_IM_SUCCINCT_ZKVM_ELF as Compiler>::Program,
-        resource: ProverResourceType,
-    ) -> Self {
+    pub fn new(program: SP1Program, resource: ProverResourceType) -> Self {
         let (pk, vk) = Self::create_client(&resource).setup(&program);
 
         Self {
@@ -249,19 +230,19 @@ fn serialize_inputs(stdin: &mut SP1Stdin, inputs: &Input) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::compile::compile;
+    use crate::{EreSP1, compiler::RustRv32imaCustomized};
     use std::{panic, sync::OnceLock};
     use test_utils::host::{
         BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
+    use zkvm_interface::{Compiler, NetworkProverConfig, ProverResourceType, zkVM};
 
     static BASIC_PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
 
     fn basic_program() -> Vec<u8> {
         BASIC_PROGRAM
             .get_or_init(|| {
-                RV32_IM_SUCCINCT_ZKVM_ELF
+                RustRv32imaCustomized
                     .compile(&testing_guest_directory("sp1", "basic"))
                     .unwrap()
             })
@@ -275,15 +256,6 @@ mod tests {
 
         let io = BasicProgramIo::valid();
         run_zkvm_execute(&zkvm, &io);
-    }
-
-    #[test]
-    fn test_execute_nightly() {
-        let guest_directory = testing_guest_directory("sp1", "stock_nightly_no_std");
-        let program = compile(&guest_directory, &"nightly".to_string()).unwrap();
-        let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
-
-        zkvm.execute(&Input::new()).unwrap();
     }
 
     #[test]
