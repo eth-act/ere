@@ -28,7 +28,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openmpi-bin \
     openmpi-common \
     libclang-dev \
-    clang && \
+    clang \
+    # Needed for /usr/include/google/protobuf/timestamp.proto
+    libprotobuf-dev && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # If current environment is in CI or not.
