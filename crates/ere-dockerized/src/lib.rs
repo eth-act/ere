@@ -74,6 +74,7 @@ use std::{
     str::FromStr,
 };
 use tempfile::TempDir;
+use tracing::info;
 use zkvm_interface::{
     Compiler, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType,
     PublicValues, zkVM, zkVMError,
@@ -390,11 +391,11 @@ impl zkVM for EreDockerizedzkVM {
         let prof_file_out_name = prof_file_out_path.file_name().unwrap();
         let prof_file_out_path_host = PathBuf::from(tempdir.path().join(prof_file_out_name));
 
-        println!("Copying pprof result file to {}", env::current_dir().unwrap().display());
+        info!("Copying pprof result file to {}", env::current_dir().unwrap().display());
         if fs::exists(&prof_file_out_path_host).unwrap() {
             fs::copy(prof_file_out_path_host, env::current_dir().unwrap().join(prof_file_out_name)).expect("Cannot copy pprof result file");
         }
-        else { println!("pprof result file does not exist"); }
+        else { info!("pprof result file does not exist"); }
 
         Ok((public_values, report))
     }
