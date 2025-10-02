@@ -22,7 +22,6 @@ pub type RomDigest = [u64; 4];
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
 pub enum ZiskOption {
     Port,
-    ChunkSizeBits,
     UnlockMappedMemory, // Should be set if locked memory is not enough
     MinimalMemory,
     // GPU options
@@ -38,7 +37,6 @@ impl ZiskOption {
     fn env_var_key(&self) -> &'static str {
         match self {
             Self::Port => "ZISK_PORT",
-            Self::ChunkSizeBits => "ZISK_CHUNK_SIZE_BITS",
             Self::UnlockMappedMemory => "ZISK_UNLOCK_MAPPED_MEMORY",
             Self::MinimalMemory => "ZISK_MINIMAL_MEMORY",
             Self::Preallocate => "ZISK_PREALLOCATE",
@@ -59,11 +57,9 @@ impl ZiskOption {
             | Self::MinimalMemory
             | Self::Preallocate
             | Self::SharedTables => true,
-            Self::Port
-            | Self::ChunkSizeBits
-            | Self::MaxStreams
-            | Self::NumberThreadsWitness
-            | Self::MaxWitnessStored => false,
+            Self::Port | Self::MaxStreams | Self::NumberThreadsWitness | Self::MaxWitnessStored => {
+                false
+            }
         }
     }
 
@@ -71,7 +67,6 @@ impl ZiskOption {
     fn key(&self) -> &'static str {
         match self {
             Self::Port => "--port",
-            Self::ChunkSizeBits => "--chunk-size-bits",
             Self::UnlockMappedMemory => "--unlock-mapped-memory",
             // NOTE: Use snake case for `prove-client` command
             // Issue for tracking: https://github.com/eth-act/ere/issues/151.
@@ -114,7 +109,6 @@ impl ZiskOptions {
     fn server_args(&self) -> impl Iterator<Item = &str> {
         self.args([
             ZiskOption::Port,
-            ZiskOption::ChunkSizeBits,
             ZiskOption::UnlockMappedMemory,
             ZiskOption::Preallocate,
             ZiskOption::SharedTables,

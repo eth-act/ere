@@ -32,7 +32,7 @@ ensure_tool_installed "cargo" "as cargo-zisk is a cargo subcommand"
 
 # Step 1: Download and run the script that installs the ziskup binary itself.
 # Export SETUP_KEY=proving to ensure no interactive options in `ziskup`.
-export ZISK_VERSION="0.11.0"
+export ZISK_VERSION="0.12.0"
 export SETUP_KEY=${SETUP_KEY:=proving}
 curl "https://raw.githubusercontent.com/0xPolygonHermez/zisk/main/ziskup/install.sh" | bash
 unset SETUP_KEY
@@ -62,7 +62,7 @@ fi
 # Step 3: Build cargo-zisk-gpu from source with GPU features enabled (skip if in CI)
 if [ -z $CI ]; then
     TEMP_DIR=$(mktemp -d)
-    git clone https://github.com/han0110/zisk.git --single-branch --branch "feature/override-cuda-arch" "$TEMP_DIR/zisk"
+    git clone https://github.com/0xPolygonHermez/zisk.git --depth 1 --branch "v$ZISK_VERSION" "$TEMP_DIR/zisk"
     cd "$TEMP_DIR/zisk"
     cargo build --release --features gpu
     cp ./target/release/cargo-zisk "${HOME}/.zisk/bin/cargo-zisk-gpu"
