@@ -2227,7 +2227,7 @@ dependencies = [
 
 [[package]]
 name = "build-utils"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "cargo_metadata 0.19.2",
  "thiserror 2.0.12",
@@ -2591,7 +2591,7 @@ dependencies = [
 
 [[package]]
 name = "compile-utils"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "cargo_metadata 0.19.2",
  "tempfile",
@@ -3639,7 +3639,7 @@ dependencies = [
 
 [[package]]
 name = "ere-cli"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
@@ -3660,7 +3660,7 @@ dependencies = [
 
 [[package]]
 name = "ere-dockerized"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "bincode 1.3.3",
  "build-utils",
@@ -3677,7 +3677,7 @@ dependencies = [
 
 [[package]]
 name = "ere-jolt"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "ark-serialize 0.5.0",
  "build-utils",
@@ -3693,7 +3693,7 @@ dependencies = [
 
 [[package]]
 name = "ere-miden"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "bincode 1.3.3",
  "build-utils",
@@ -3711,7 +3711,7 @@ dependencies = [
 
 [[package]]
 name = "ere-nexus"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "bincode 1.3.3",
  "build-utils",
@@ -3726,7 +3726,7 @@ dependencies = [
 
 [[package]]
 name = "ere-openvm"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "build-utils",
  "compile-utils",
@@ -3745,7 +3745,7 @@ dependencies = [
 
 [[package]]
 name = "ere-pico"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
@@ -3763,7 +3763,7 @@ dependencies = [
 
 [[package]]
 name = "ere-risc0"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "anyhow",
  "borsh",
@@ -3782,7 +3782,7 @@ dependencies = [
 
 [[package]]
 name = "ere-server"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
@@ -3810,7 +3810,7 @@ dependencies = [
 
 [[package]]
 name = "ere-sp1"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "bincode 1.3.3",
  "build-utils",
@@ -3826,7 +3826,7 @@ dependencies = [
 
 [[package]]
 name = "ere-ziren"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "bincode 1.3.3",
  "build-utils",
@@ -3841,7 +3841,7 @@ dependencies = [
 
 [[package]]
 name = "ere-zisk"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "bincode 1.3.3",
  "blake3",
@@ -13047,7 +13047,7 @@ dependencies = [
 
 [[package]]
 name = "test-utils"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "bincode 1.3.3",
  "rand 0.9.2",
@@ -15541,7 +15541,7 @@ dependencies = [
 
 [[package]]
 name = "zkvm-interface"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "auto_impl",
  "bincode 1.3.3",
