@@ -111,15 +111,16 @@ impl zkVM for EreOpenVM {
         serialize_inputs(&mut stdin, inputs);
 
         let start = Instant::now();
-        let public_values = self
+        let (public_values, (_cost, cycles)) = self
             .cpu_sdk()?
-            .execute(self.app_exe.clone(), stdin)
+            .execute_metered_cost(self.app_exe.clone(), stdin)
             .map_err(|e| OpenVMError::from(ExecuteError::Execute(e)))?;
 
         Ok((
             public_values,
             ProgramExecutionReport {
                 execution_duration: start.elapsed(),
+                total_num_cycles: cycles,
                 ..Default::default()
             },
         ))
