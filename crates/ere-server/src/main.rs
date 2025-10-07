@@ -17,7 +17,7 @@ use twirp::{
 };
 use zkvm_interface::{ProverResourceType, zkVM};
 
-// Compile-time check to ensure exactly one backend feature is enabled for CLI mode
+// Compile-time check to ensure exactly one zkVM feature is enabled for `ere-server`
 const _: () = {
     if cfg!(feature = "server") {
         assert!(
@@ -31,7 +31,7 @@ const _: () = {
                 + cfg!(feature = "ziren") as u8
                 + cfg!(feature = "zisk") as u8)
                 == 1,
-            "Exactly one zkVM backend feature must be enabled for CLI mode"
+            "Exactly one zkVM feature must be enabled for `ere-server`"
         );
     }
 };
