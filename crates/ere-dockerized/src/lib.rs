@@ -8,13 +8,19 @@
 //!
 //! ## Docker image building
 //!
-//! It builds 3 Docker images in sequence if they don't exist:
+//! It builds 4 Docker images in sequence if they don't exist:
 //! 1. `ere-base:{version}` - Base image with common dependencies
 //! 2. `ere-base-{zkvm}:{version}` - zkVM-specific base image with the zkVM SDK
-//! 3. `ere-cli-{zkvm}:{version}` - CLI image with the `ere-cli` binary built
-//!    with the selected zkVM feature
+//! 3. `ere-compiler-{zkvm}:{version}` - Compiler image with the `ere-compiler`
+//!    binary built with the selected zkVM feature
+//! 4. `ere-server-{zkvm}:{version}` - Server image with the `ere-server` binary
+//!    built with the selected zkVM feature
 //!
-//! To force rebuild all images, set the environment variable `ERE_FORCE_REBUILD_DOCKER_IMAGE=true`.
+//! When [`ProverResourceType::Gpu`] is selected, the image with GPU support
+//! will be built and tagged with specific suffix.
+//!
+//! To force rebuild all images, set the environment variable
+//! `ERE_FORCE_REBUILD_DOCKER_IMAGE` to non-empty value.
 //!
 //! ## Example
 //!
@@ -60,9 +66,10 @@
 
 use crate::{
     cuda::cuda_arch,
-    docker::{DockerBuildCmd, DockerRunCmd, docker_image_exists},
+    docker::{DockerBuildCmd, DockerRunCmd, docker_image_exists, stop_docker_container},
     error::{CommonError, CompileError, DockerizedError, ExecuteError, ProveError, VerifyError},
 };
+use ere_server::client::{Url, zkVMClient};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::{
     env,
@@ -74,6 +81,7 @@ use std::{
     str::FromStr,
 };
 use tempfile::TempDir;
+use tracing::error;
 use zkvm_interface::{
     Compiler, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType,
     PublicValues, zkVM, zkVMError,
@@ -87,6 +95,9 @@ pub mod docker;
 pub mod error;
 pub mod input;
 pub mod output;
+
+/// Offset of port used for `ere-server` for [`ErezkVM`]s.
+const ERE_SERVER_PORT_OFFSET: u16 = 4174;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ErezkVM {
@@ -114,91 +125,193 @@ impl ErezkVM {
         }
     }
 
-    pub fn base_tag(&self, version: &str) -> String {
-        format!("ere-base:{version}")
+    /// Tag of images in format of `{version}{suffix}`.
+    fn image_tag(&self, version: &str, gpu: bool) -> String {
+        let suffix = match (gpu, self) {
+            // Only the following zkVMs requires CUDA setup in the base image
+            // when GPU support is required.
+            (true, Self::OpenVM | Self::Risc0 | Self::Zisk) => "-cuda",
+            _ => "",
+        };
+        format!("{version}{suffix}")
     }
 
-    pub fn base_zkvm_tag(&self, version: &str) -> String {
-        format!("ere-base-{self}:{version}")
+    pub fn base_image(&self, version: &str, gpu: bool) -> String {
+        format!("ere-base:{}", self.image_tag(version, gpu))
     }
 
-    pub fn cli_zkvm_tag(&self, version: &str) -> String {
-        format!("ere-cli-{self}:{version}")
+    pub fn base_zkvm_image(&self, version: &str, gpu: bool) -> String {
+        format!("ere-base-{self}:{}", self.image_tag(version, gpu))
     }
 
-    /// This method builds 3 Docker images in sequence:
+    pub fn compiler_zkvm_image(&self, version: &str) -> String {
+        format!("ere-compiler-{self}:{}", self.image_tag(version, false))
+    }
+
+    pub fn server_zkvm_image(&self, version: &str, gpu: bool) -> String {
+        format!("ere-server-{self}:{}", self.image_tag(version, gpu))
+    }
+
+    /// This method builds 4 Docker images in sequence:
     /// 1. `ere-base:{version}`: Base image with common dependencies
     /// 2. `ere-base-{zkvm}:{version}`: zkVM-specific base image with the zkVM SDK
-    /// 3. `ere-cli-{zkvm}:{version}`: CLI image with the `ere-cli` binary built with feature `{zkvm}`
+    /// 3. `ere-compiler-{zkvm}:{version}` - Compiler image with the `ere-compiler`
+    ///    binary built with the selected zkVM feature
+    /// 4. `ere-server-{zkvm}:{version}` - Server image with the `ere-server` binary
+    ///    built with the selected zkVM feature
+    ///
+    /// When [`ProverResourceType::Gpu`] is selected, the image with GPU support
+    /// will be built and tagged with specific suffix.
     ///
     /// Images are cached and only rebuilt if they don't exist or if the
-    /// `ERE_FORCE_REBUILD_DOCKER_IMAGE=true` environment variable is set.
-    pub fn build_docker_image(&self) -> Result<(), CommonError> {
+    /// `ERE_FORCE_REBUILD_DOCKER_IMAGE` environment variable is set.
+    pub fn build_docker_image(&self, gpu: bool) -> Result<(), CommonError> {
         let workspace_dir = workspace_dir();
+        let docker_dir = workspace_dir.join("docker");
 
-        let force_rebuild = env::var("ERE_FORCE_REBUILD_DOCKER_IMAGE")
-            .ok()
-            .and_then(|s| s.parse::<bool>().ok())
-            .unwrap_or_default();
+        let force_rebuild = env::var_os("ERE_FORCE_REBUILD_DOCKER_IMAGE").is_some();
 
-        if force_rebuild || !docker_image_exists(self.base_tag(CRATE_VERSION))? {
-            DockerBuildCmd::new()
-                .file(
-                    workspace_dir
-                        .join("docker")
-                        .join("base")
-                        .join("Dockerfile.base"),
-                )
-                .tag(self.base_tag(CRATE_VERSION))
-                .tag(self.base_tag("latest"))
-                .exec(&workspace_dir)
-                .map_err(CommonError::DockerBuildCmd)?;
-        }
-
-        if force_rebuild || !docker_image_exists(self.base_zkvm_tag(CRATE_VERSION))? {
+        // Build `ere-base`
+        if force_rebuild || !docker_image_exists(self.base_image(CRATE_VERSION, gpu))? {
             let mut cmd = DockerBuildCmd::new()
-                .file(
-                    workspace_dir
-                        .join("docker")
-                        .join(self.as_str())
-                        .join("Dockerfile"),
-                )
-                .tag(self.base_zkvm_tag(CRATE_VERSION))
-                .tag(self.base_zkvm_tag("latest"))
-                .build_arg("BASE_IMAGE_TAG", self.base_tag(CRATE_VERSION));
+                .file(docker_dir.join("base").join("Dockerfile.base"))
+                .tag(self.base_image(CRATE_VERSION, gpu))
+                .tag(self.base_image("latest", gpu));
 
-            let cuda_arch = cuda_arch();
-            match self {
-                ErezkVM::OpenVM => {
-                    // OpenVM takes only the numeric part.
-                    if let Some(cuda_arch) = cuda_arch {
-                        cmd = cmd.build_arg("CUDA_ARCH", cuda_arch.replace("sm_", ""))
-                    }
-                }
-                ErezkVM::Zisk => {
-                    if let Some(cuda_arch) = cuda_arch {
-                        cmd = cmd.build_arg("CUDA_ARCH", cuda_arch)
-                    }
-                }
-                _ => {}
+            if gpu {
+                cmd = cmd.build_arg("CUDA", "1");
             }
 
             cmd.exec(&workspace_dir)
                 .map_err(CommonError::DockerBuildCmd)?;
         }
 
-        if force_rebuild || !docker_image_exists(self.cli_zkvm_tag(CRATE_VERSION))? {
+        // Build `ere-base-{zkvm}`
+        if force_rebuild || !docker_image_exists(self.base_zkvm_image(CRATE_VERSION, gpu))? {
+            let mut cmd = DockerBuildCmd::new()
+                .file(docker_dir.join(self.as_str()).join("Dockerfile.base"))
+                .tag(self.base_zkvm_image(CRATE_VERSION, gpu))
+                .tag(self.base_zkvm_image("latest", gpu))
+                .build_arg("BASE_IMAGE", self.base_image(CRATE_VERSION, gpu));
+
+            if gpu {
+                cmd = cmd.build_arg("CUDA", "1");
+
+                let cuda_arch = cuda_arch();
+                match self {
+                    ErezkVM::OpenVM => {
+                        if let Some(cuda_arch) = cuda_arch {
+                            // OpenVM takes only the numeric part.
+                            cmd = cmd.build_arg("CUDA_ARCH", cuda_arch.replace("sm_", ""))
+                        }
+                    }
+                    ErezkVM::Risc0 | ErezkVM::Zisk => {
+                        if let Some(cuda_arch) = cuda_arch {
+                            cmd = cmd.build_arg("CUDA_ARCH", cuda_arch)
+                        }
+                    }
+                    _ => {}
+                }
+            }
+
+            cmd.exec(&workspace_dir)
+                .map_err(CommonError::DockerBuildCmd)?;
+        }
+
+        // Build `ere-compiler-{zkvm}`
+        if force_rebuild || !docker_image_exists(self.compiler_zkvm_image(CRATE_VERSION))? {
             DockerBuildCmd::new()
-                .file(workspace_dir.join("docker").join("cli").join("Dockerfile"))
-                .tag(self.cli_zkvm_tag(CRATE_VERSION))
-                .tag(self.cli_zkvm_tag("latest"))
-                .build_arg("BASE_ZKVM_IMAGE_TAG", self.base_zkvm_tag(CRATE_VERSION))
-                .build_arg("ZKVM", self.as_str())
+                .file(docker_dir.join(self.as_str()).join("Dockerfile.compiler"))
+                .tag(self.compiler_zkvm_image(CRATE_VERSION))
+                .tag(self.compiler_zkvm_image("latest"))
+                .build_arg("BASE_ZKVM_IMAGE", self.base_zkvm_image(CRATE_VERSION, gpu))
                 .exec(&workspace_dir)
                 .map_err(CommonError::DockerBuildCmd)?;
         }
 
+        // Build `ere-server-{zkvm}`
+        if force_rebuild || !docker_image_exists(self.server_zkvm_image(CRATE_VERSION, gpu))? {
+            let mut cmd = DockerBuildCmd::new()
+                .file(docker_dir.join(self.as_str()).join("Dockerfile.server"))
+                .tag(self.server_zkvm_image(CRATE_VERSION, gpu))
+                .tag(self.server_zkvm_image("latest", gpu))
+                .build_arg("BASE_ZKVM_IMAGE", self.base_zkvm_image(CRATE_VERSION, gpu));
+
+            if gpu {
+                cmd = cmd.build_arg("CUDA", "1");
+            }
+
+            cmd.exec(&workspace_dir)
+                .map_err(CommonError::DockerBuildCmd)?;
+        }
+
         Ok(())
+    }
+
+    fn server_port(&self) -> u16 {
+        ERE_SERVER_PORT_OFFSET + *self as u16
+    }
+
+    fn spawn_server(
+        &self,
+        program: &SerializedProgram,
+        resource: &ProverResourceType,
+    ) -> Result<String, CommonError> {
+        let port = self.server_port().to_string();
+        let name = format!("ere-server-{self}-{port}");
+        let gpu = matches!(resource, ProverResourceType::Gpu);
+        let mut cmd = DockerRunCmd::new(self.server_zkvm_image(CRATE_VERSION, gpu))
+            .rm()
+            .inherit_env("RUST_LOG")
+            .inherit_env("NO_COLOR")
+            .publish(&port, &port)
+            .name(&name);
+
+        // zkVM specific options
+        cmd = match self {
+            ErezkVM::Risc0 => cmd
+                .inherit_env("RISC0_SEGMENT_PO2")
+                .inherit_env("RISC0_KECCAK_PO2"),
+            // ZisK uses shared memory to exchange data between processes, it
+            // requires at least 8G shared memory, here we set 16G for safety.
+            ErezkVM::Zisk => cmd
+                .option("shm-size", "16G")
+                .option("ulimit", "memlock=-1:-1")
+                .inherit_env("ZISK_PORT")
+                .inherit_env("ZISK_CHUNK_SIZE_BITS")
+                .inherit_env("ZISK_UNLOCK_MAPPED_MEMORY")
+                .inherit_env("ZISK_MINIMAL_MEMORY")
+                .inherit_env("ZISK_PREALLOCATE")
+                .inherit_env("ZISK_SHARED_TABLES")
+                .inherit_env("ZISK_MAX_STREAMS")
+                .inherit_env("ZISK_NUMBER_THREADS_WITNESS")
+                .inherit_env("ZISK_MAX_WITNESS_STORED"),
+            _ => cmd,
+        };
+
+        // zkVM specific options when using GPU
+        if gpu {
+            cmd = match self {
+                ErezkVM::OpenVM => cmd.gpus("all"),
+                // SP1's and Risc0's GPU proving requires Docker to start GPU prover
+                // service, to give the client access to the prover service, we need
+                // to use the host networking driver.
+                // The `--cuda` flags will be set when the GPU prover service is
+                // spin up, so we don't need to set here.
+                ErezkVM::SP1 => cmd.mount_docker_socket().network("host"),
+                ErezkVM::Risc0 => cmd.gpus("all").inherit_env("RISC0_DEFAULT_PROVER_NUM_GPUS"),
+                ErezkVM::Zisk => cmd.gpus("all"),
+                _ => cmd,
+            }
+        }
+
+        let args = iter::empty()
+            .chain(["--port", &port])
+            .chain(resource.to_args());
+        cmd.spawn(args, &program.0)
+            .map_err(CommonError::DockerRunCmd)?;
+
+        Ok(name)
     }
 }
 
@@ -233,7 +346,7 @@ pub struct EreDockerizedCompiler {
 
 impl EreDockerizedCompiler {
     pub fn new(zkvm: ErezkVM, mount_directory: impl AsRef<Path>) -> Result<Self, CommonError> {
-        zkvm.build_docker_image()?;
+        zkvm.build_docker_image(false)?;
         Ok(Self {
             zkvm,
             mount_directory: mount_directory.as_ref().to_path_buf(),
@@ -265,12 +378,13 @@ impl Compiler for EreDockerizedCompiler {
         let tempdir = TempDir::new()
             .map_err(|err| CommonError::io(err, "Failed to create temporary directory"))?;
 
-        let mut cmd = DockerRunCmd::new(self.zkvm.cli_zkvm_tag(CRATE_VERSION))
+        let mut cmd = DockerRunCmd::new(self.zkvm.compiler_zkvm_image(CRATE_VERSION))
             .rm()
             .inherit_env("RUST_LOG")
             .inherit_env("NO_COLOR")
+            .inherit_env("ERE_RUST_TOOLCHAIN")
             .volume(&self.mount_directory, "/guest")
-            .volume(tempdir.path(), "/guest-output");
+            .volume(tempdir.path(), "/output");
 
         cmd = match self.zkvm {
             // OpenVM allows to select Rust toolchain for guest compilation.
@@ -279,11 +393,10 @@ impl Compiler for EreDockerizedCompiler {
         };
 
         cmd.exec([
-            "compile",
             "--guest-path",
             guest_path_in_docker.to_string_lossy().as_ref(),
-            "--program-path",
-            "/guest-output/program",
+            "--output-path",
+            "/output/program",
         ])
         .map_err(CommonError::DockerRunCmd)?;
 
@@ -305,6 +418,16 @@ pub struct EreDockerizedzkVM {
     zkvm: ErezkVM,
     program: SerializedProgram,
     resource: ProverResourceType,
+    server_container_name: String,
+    client: zkVMClient,
+}
+
+impl Drop for EreDockerizedzkVM {
+    fn drop(&mut self) {
+        if let Err(err) = stop_docker_container(&self.server_container_name) {
+            error!("{err}");
+        }
+    }
 }
 
 impl EreDockerizedzkVM {
@@ -313,11 +436,19 @@ impl EreDockerizedzkVM {
         program: SerializedProgram,
         resource: ProverResourceType,
     ) -> Result<Self, zkVMError> {
-        zkvm.build_docker_image()?;
+        zkvm.build_docker_image(matches!(resource, ProverResourceType::Gpu))?;
+
+        let server_container_name = zkvm.spawn_server(&program, &resource)?;
+
+        let url = Url::parse(&format!("http://127.0.0.1:{}", zkvm.server_port())).unwrap();
+        let client = block_on(zkVMClient::new(url)).map_err(zkVMError::other)?;
+
         Ok(Self {
             zkvm,
             program,
             resource,
+            server_container_name,
+            client,
         })
     }
 
@@ -336,52 +467,14 @@ impl EreDockerizedzkVM {
 
 impl zkVM for EreDockerizedzkVM {
     fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
-        let tempdir = TempDir::new()
-            .map_err(|err| CommonError::io(err, "Failed to create temporary directory"))
+        let serialized_input = self
+            .zkvm
+            .serialize_inputs(inputs)
             .map_err(|err| DockerizedError::Execute(ExecuteError::Common(err)))?;
 
-        fs::write(tempdir.path().join("program"), &self.program.0)
-            .map_err(|err| CommonError::io(err, "Failed to write program"))
-            .map_err(|err| DockerizedError::Execute(ExecuteError::Common(err)))?;
+        let (public_values, report) = block_on(self.client.execute(serialized_input))
+            .map_err(|err| DockerizedError::Execute(ExecuteError::Client(err)))?;
 
-        fs::write(
-            tempdir.path().join("input"),
-            self.zkvm
-                .serialize_inputs(inputs)
-                .map_err(|err| DockerizedError::Execute(ExecuteError::Common(err)))?,
-        )
-        .map_err(|err| CommonError::io(err, "Failed to write input"))
-        .map_err(|err| DockerizedError::Execute(ExecuteError::Common(err)))?;
-
-        DockerRunCmd::new(self.zkvm.cli_zkvm_tag(CRATE_VERSION))
-            .rm()
-            .inherit_env("RUST_LOG")
-            .inherit_env("NO_COLOR")
-            .volume(tempdir.path(), "/workspace")
-            .exec([
-                "execute",
-                "--program-path",
-                "/workspace/program",
-                "--input-path",
-                "/workspace/input",
-                "--public-values-path",
-                "/workspace/public_values",
-                "--report-path",
-                "/workspace/report",
-            ])
-            .map_err(CommonError::DockerRunCmd)
-            .map_err(|err| DockerizedError::Execute(ExecuteError::Common(err)))?;
-
-        let public_values = fs::read(tempdir.path().join("public_values"))
-            .map_err(|err| CommonError::io(err, "Failed to read public_values"))
-            .map_err(|err| DockerizedError::Execute(ExecuteError::Common(err)))?;
-        let report_bytes = fs::read(tempdir.path().join("report"))
-            .map_err(|err| CommonError::io(err, "Failed to read report"))
-            .map_err(|err| DockerizedError::Execute(ExecuteError::Common(err)))?;
-
-        let report = bincode::deserialize(&report_bytes)
-            .map_err(|err| CommonError::serilization(err, "Failed to deserialize report"))
-            .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
         Ok((public_values, report))
     }
 
@@ -389,133 +482,20 @@ impl zkVM for EreDockerizedzkVM {
         &self,
         inputs: &Input,
     ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
-        let tempdir = TempDir::new()
-            .map_err(|err| CommonError::io(err, "Failed to create temporary directory"))
+        let serialized_input = self
+            .zkvm
+            .serialize_inputs(inputs)
             .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
 
-        fs::write(tempdir.path().join("program"), &self.program.0)
-            .map_err(|err| CommonError::io(err, "Failed to write program"))
-            .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
-        fs::write(
-            tempdir.path().join("input"),
-            self.zkvm
-                .serialize_inputs(inputs)
-                .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?,
-        )
-        .map_err(|err| CommonError::io(err, "Failed to write input"))
-        .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
+        let (public_values, proof, report) = block_on(self.client.prove(serialized_input))
+            .map_err(|err| DockerizedError::Prove(ProveError::Client(err)))?;
 
-        let mut cmd = DockerRunCmd::new(self.zkvm.cli_zkvm_tag(CRATE_VERSION))
-            .rm()
-            .inherit_env("RUST_LOG")
-            .inherit_env("NO_COLOR")
-            .volume(tempdir.path(), "/workspace");
-
-        // zkVM specific options
-        cmd = match self.zkvm {
-            ErezkVM::Risc0 => cmd
-                .inherit_env("RISC0_SEGMENT_PO2")
-                .inherit_env("RISC0_KECCAK_PO2"),
-            // ZisK uses shared memory to exchange data between processes, it
-            // requires at least 8G shared memory, here we set 16G for safety.
-            ErezkVM::Zisk => cmd
-                .option("shm-size", "16G")
-                .option("ulimit", "memlock=-1:-1")
-                .inherit_env("ZISK_PORT")
-                .inherit_env("ZISK_CHUNK_SIZE_BITS")
-                .inherit_env("ZISK_UNLOCK_MAPPED_MEMORY")
-                .inherit_env("ZISK_MINIMAL_MEMORY")
-                .inherit_env("ZISK_PREALLOCATE")
-                .inherit_env("ZISK_SHARED_TABLES")
-                .inherit_env("ZISK_MAX_STREAMS")
-                .inherit_env("ZISK_NUMBER_THREADS_WITNESS")
-                .inherit_env("ZISK_MAX_WITNESS_STORED"),
-            _ => cmd,
-        };
-
-        // zkVM specific options when using GPU
-        if matches!(self.resource, ProverResourceType::Gpu) {
-            cmd = match self.zkvm {
-                ErezkVM::OpenVM => cmd.gpus("all"),
-                // SP1's and Risc0's GPU proving requires Docker to start GPU prover
-                // service, to give the client access to the prover service, we need
-                // to use the host networking driver.
-                // The `--gpus` flags will be set when the GPU prover service is
-                // spin up, so we don't need to set here.
-                ErezkVM::SP1 => cmd.mount_docker_socket().network("host"),
-                ErezkVM::Risc0 => cmd.gpus("all").inherit_env("RISC0_DEFAULT_PROVER_NUM_GPUS"),
-                ErezkVM::Zisk => cmd.gpus("all"),
-                _ => cmd,
-            }
-        }
-
-        cmd.exec(
-            iter::empty()
-                .chain([
-                    "prove",
-                    "--program-path",
-                    "/workspace/program",
-                    "--input-path",
-                    "/workspace/input",
-                    "--public-values-path",
-                    "/workspace/public_values",
-                    "--proof-path",
-                    "/workspace/proof",
-                    "--report-path",
-                    "/workspace/report",
-                ])
-                .chain(self.resource.to_args()),
-        )
-        .map_err(CommonError::DockerRunCmd)
-        .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
-
-        let public_values = fs::read(tempdir.path().join("public_values"))
-            .map_err(|err| CommonError::io(err, "Failed to read public_values"))
-            .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
-        let proof = fs::read(tempdir.path().join("proof"))
-            .map_err(|err| CommonError::io(err, "Failed to read proof"))
-            .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
-        let report_bytes = fs::read(tempdir.path().join("report"))
-            .map_err(|err| CommonError::io(err, "Failed to read report"))
-            .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
-        let report = bincode::deserialize(&report_bytes)
-            .map_err(|err| CommonError::serilization(err, "Failed to deserialize report"))
-            .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
         Ok((public_values, proof, report))
     }
 
     fn verify(&self, proof: &[u8]) -> Result<PublicValues, zkVMError> {
-        let tempdir = TempDir::new()
-            .map_err(|err| CommonError::io(err, "Failed to create temporary directory"))
-            .map_err(|err| DockerizedError::Verify(VerifyError::Common(err)))?;
-
-        fs::write(tempdir.path().join("program"), &self.program.0)
-            .map_err(|err| CommonError::io(err, "Failed to write program"))
-            .map_err(|err| DockerizedError::Verify(VerifyError::Common(err)))?;
-        fs::write(tempdir.path().join("proof"), proof)
-            .map_err(|err| CommonError::io(err, "Failed to write proof"))
-            .map_err(|err| DockerizedError::Verify(VerifyError::Common(err)))?;
-
-        DockerRunCmd::new(self.zkvm.cli_zkvm_tag(CRATE_VERSION))
-            .rm()
-            .inherit_env("RUST_LOG")
-            .inherit_env("NO_COLOR")
-            .volume(tempdir.path(), "/workspace")
-            .exec([
-                "verify",
-                "--program-path",
-                "/workspace/program",
-                "--proof-path",
-                "/workspace/proof",
-                "--public-values-path",
-                "/workspace/public_values",
-            ])
-            .map_err(CommonError::DockerRunCmd)
-            .map_err(|err| DockerizedError::Verify(VerifyError::Common(err)))?;
-
-        let public_values = fs::read(tempdir.path().join("public_values"))
-            .map_err(|err| CommonError::io(err, "Failed to read public_values"))
-            .map_err(|err| DockerizedError::Verify(VerifyError::Common(err)))?;
+        let public_values = block_on(self.client.verify(proof))
+            .map_err(|err| DockerizedError::Verify(VerifyError::Client(err)))?;
 
         Ok(public_values)
     }
@@ -530,6 +510,13 @@ impl zkVM for EreDockerizedzkVM {
 
     fn deserialize_from<R: Read, T: DeserializeOwned>(&self, reader: R) -> Result<T, zkVMError> {
         self.zkvm.deserialize_from(reader)
+    }
+}
+
+fn block_on<T>(future: impl Future<Output = T>) -> T {
+    match tokio::runtime::Handle::try_current() {
+        Ok(handle) => handle.block_on(future),
+        Err(_) => tokio::runtime::Runtime::new().unwrap().block_on(future),
     }
 }
 
@@ -548,9 +535,35 @@ mod test {
     };
     use zkvm_interface::{Compiler, ProverResourceType};
 
-    // TODO: Test other ere-{zkvm} when they are end-to-end ready:
-    //       - ere-jolt
-    //       - ere-nexus
+    #[test]
+    fn dockerized_jolt() {
+        let zkvm = ErezkVM::Jolt;
+
+        let guest_directory = testing_guest_directory(zkvm.as_str(), "basic");
+        let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
+            .unwrap()
+            .compile(&guest_directory)
+            .unwrap();
+
+        assert!(!program.0.is_empty(), "Program should not be empty");
+
+        // TODO: Test `EreDockerizedzkVM` when it's ready.
+    }
+
+    #[test]
+    fn dockerized_nexus() {
+        let zkvm = ErezkVM::Nexus;
+
+        let guest_directory = testing_guest_directory(zkvm.as_str(), "basic");
+        let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
+            .unwrap()
+            .compile(&guest_directory)
+            .unwrap();
+
+        assert!(!program.0.is_empty(), "Program should not be empty");
+
+        // TODO: Test `EreDockerizedzkVM` when it's ready.
+    }
 
     #[test]
     fn dockerized_openvm() {

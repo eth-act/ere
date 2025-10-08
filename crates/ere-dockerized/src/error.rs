@@ -46,18 +46,24 @@ pub enum CompileError {
 pub enum ExecuteError {
     #[error(transparent)]
     Common(#[from] CommonError),
+    #[error("Execute request failed: {0}")]
+    Client(#[from] anyhow::Error),
 }
 
 #[derive(Debug, Error)]
 pub enum ProveError {
     #[error(transparent)]
     Common(#[from] CommonError),
+    #[error("Prove request failed: {0}")]
+    Client(#[from] anyhow::Error),
 }
 
 #[derive(Debug, Error)]
 pub enum VerifyError {
     #[error(transparent)]
     Common(#[from] CommonError),
+    #[error("Verify request failed: {0}")]
+    Client(#[from] anyhow::Error),
 }
 
 #[derive(Debug, Error)]
@@ -74,6 +80,8 @@ pub enum CommonError {
     DockerBuildCmd(io::Error),
     #[error("Failed to execute `docker run`: {0}")]
     DockerRunCmd(io::Error),
+    #[error("Failed to execute `docker container`: {0}")]
+    DockerContainerCmd(io::Error),
     #[error("{context}: {source}")]
     Serialization {
         #[source]

@@ -2,9 +2,9 @@ use crate::error::CommonError;
 use std::{
     env,
     fmt::{self, Display, Formatter},
-    io,
+    io::{self, Write},
     path::Path,
-    process::Command,
+    process::{Child, Command, Stdio},
 };
 
 pub const DOCKER_SOCKET: &str = "/var/run/docker.sock";
@@ -113,6 +113,13 @@ impl DockerRunCmd {
         self
     }
 
+    pub fn publish(self, host: impl AsRef<str>, container: impl AsRef<str>) -> Self {
+        self.option(
+            "publish",
+            format!("{}:{}", host.as_ref(), container.as_ref()),
+        )
+    }
+
     pub fn volume(self, host: impl AsRef<Path>, container: impl AsRef<Path>) -> Self {
         self.option(
             "volume",
@@ -137,6 +144,10 @@ impl DockerRunCmd {
         self.option("network", name)
     }
 
+    pub fn name(self, name: impl AsRef<str>) -> Self {
+        self.option("name", name)
+    }
+
     /// Inherit environment variable `key` if it's set and valid.
     pub fn inherit_env(self, key: impl AsRef<str>) -> Self {
         let key = key.as_ref();
@@ -148,6 +159,31 @@ impl DockerRunCmd {
 
     pub fn rm(self) -> Self {
         self.flag("rm")
+    }
+
+    pub fn spawn(
+        mut self,
+        commands: impl IntoIterator<Item: AsRef<str>>,
+        stdin: &[u8],
+    ) -> Result<Child, io::Error> {
+        self = self.flag("interactive");
+
+        let mut cmd = Command::new("docker");
+        cmd.arg("run");
+        for option in self.options {
+            cmd.args(option.to_args());
+        }
+        cmd.arg(self.image);
+        for command in commands {
+            cmd.arg(command.as_ref());
+        }
+
+        let mut child = cmd.stdin(Stdio::piped()).spawn()?;
+
+        // Write all to stdin then drop to close the pipe.
+        child.stdin.take().unwrap().write_all(stdin)?;
+
+        Ok(child)
     }
 
     pub fn exec(self, commands: impl IntoIterator<Item: AsRef<str>>) -> Result<(), io::Error> {
@@ -171,6 +207,22 @@ impl DockerRunCmd {
 
         Ok(())
     }
+}
+
+pub fn stop_docker_container(container_name: impl AsRef<str>) -> Result<(), CommonError> {
+    let output = Command::new("docker")
+        .args(["container", "stop", container_name.as_ref()])
+        .output()
+        .map_err(CommonError::DockerContainerCmd)?;
+
+    if String::from_utf8_lossy(&output.stdout).starts_with("Error") {
+        return Err(CommonError::DockerContainerCmd(io::Error::other(format!(
+            "Failed to stop container {}",
+            container_name.as_ref()
+        ))));
+    }
+
+    Ok(())
 }
 
 pub fn docker_image_exists(image: impl AsRef<str>) -> Result<bool, CommonError> {

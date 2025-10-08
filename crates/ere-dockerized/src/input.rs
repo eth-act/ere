@@ -1,5 +1,5 @@
 use crate::{ErezkVM, error::CommonError};
-use ere_cli::serde::SerializableInputItem;
+use ere_server::input::{SerializedInput, SerializedInputItem};
 use serde::Serialize;
 use zkvm_interface::{Input, InputItem};
 
@@ -50,28 +50,21 @@ impl ErezkVM {
         }
     }
 
-    pub fn serialize_inputs(&self, inputs: &Input) -> Result<Vec<u8>, CommonError> {
-        bincode::serialize(
-            &inputs
-                .iter()
-                .map(|input| {
-                    Ok(match input {
-                        InputItem::Object(obj) => {
-                            SerializableInputItem::SerializedObject(self.serialize_object(&**obj)?)
-                        }
-                        InputItem::SerializedObject(bytes) => {
-                            SerializableInputItem::SerializedObject(bytes.clone())
-                        }
-                        InputItem::Bytes(bytes) => SerializableInputItem::Bytes(bytes.clone()),
-                    })
+    pub fn serialize_inputs(&self, inputs: &Input) -> Result<SerializedInput, CommonError> {
+        inputs
+            .iter()
+            .map(|input| {
+                Ok(match input {
+                    InputItem::Object(obj) => {
+                        SerializedInputItem::SerializedObject(self.serialize_object(&**obj)?)
+                    }
+                    InputItem::SerializedObject(bytes) => {
+                        SerializedInputItem::SerializedObject(bytes.clone())
+                    }
+                    InputItem::Bytes(bytes) => SerializedInputItem::Bytes(bytes.clone()),
                 })
-                .collect::<Result<Vec<SerializableInputItem>, CommonError>>()?,
-        )
-        .map_err(|err| {
-            CommonError::serilization(
-                err,
-                "Failed to serialize `Vec<SerializableInputItem>` with `bincode`",
-            )
-        })
+            })
+            .collect::<Result<_, _>>()
+            .map(SerializedInput)
     }
 }
