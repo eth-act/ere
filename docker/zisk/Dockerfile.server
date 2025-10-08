@@ -1,0 +1,68 @@
+ARG BASE_ZKVM_IMAGE=ere-base-zisk:latest
+ARG BASE_ZKVM_CUDA_IMAGE=ere-base-zisk:latest-cuda
+ARG RUNTIME_IMAGE=ubuntu:24.04
+ARG RUNTIME_CUDA_IMAGE=nvidia/cuda:12.9.1-runtime-ubuntu24.04
+
+# Whether to enable CUDA feature or not.
+ARG CUDA
+
+FROM $BASE_ZKVM_IMAGE AS base
+FROM $BASE_ZKVM_CUDA_IMAGE AS base_cuda
+FROM base${CUDA:+_cuda} AS build_stage
+
+COPY . /ere
+
+WORKDIR /ere
+
+ARG CUDA
+ARG RUSTFLAGS="-Ctarget-cpu=native"
+
+RUN cargo build --release --package ere-server --bin ere-server --features zisk${CUDA:+,cuda} \
+    && mkdir bin && mv target/release/ere-server bin/ere-server \
+    && cargo clean && rm -rf $CARGO_HOME/registry/src $CARGO_HOME/registry/cache
+
+FROM $RUNTIME_IMAGE AS runtime
+FROM $RUNTIME_CUDA_IMAGE AS runtime_cuda
+FROM runtime${CUDA:+_cuda} AS runtime_stage
+
+# Set DEBIAN_FRONTEND to noninteractive to avoid prompts during package
+# installation when building the image.
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Install ZisK system dependencies (for Ubuntu)
+# Taken from https://0xpolygonhermez.github.io/zisk/getting_started/installation.html
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    xz-utils \
+    jq \
+    curl \
+    build-essential \
+    qemu-system \
+    libomp-dev \
+    libgmp-dev \
+    nlohmann-json3-dev \
+    protobuf-compiler \
+    uuid-dev \
+    libgrpc++-dev \
+    libsecp256k1-dev \
+    libsodium-dev \
+    libpqxx-dev \
+    nasm \
+    libopenmpi-dev \
+    openmpi-bin \
+    openmpi-common \
+    libclang-dev \
+    clang \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Copy ZisK SDK
+COPY --from=build_stage /root/.zisk/bin /root/.zisk/bin
+COPY --from=build_stage /root/.zisk/zisk /root/.zisk/zisk
+COPY --from=build_stage /root/.zisk/provingKey /root/.zisk/provingKey
+
+# Add ZisK SDK to path
+ENV PATH=/root/.zisk/bin:$PATH
+
+# Copy ere-server
+COPY --from=build_stage /ere/bin/ere-server /ere/bin/ere-server
+
+ENTRYPOINT ["/ere/bin/ere-server"]

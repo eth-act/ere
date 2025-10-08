@@ -59,8 +59,8 @@ else
     exit 1
 fi
 
-# Step 3: Build cargo-zisk-cuda from source with `gpu` feature enabled (skip if in CI)
-if [ -z $CI ]; then
+# Step 3: Build cargo-zisk-cuda from source with `gpu` feature enabled
+if [ -n "$CUDA" ]; then
     TEMP_DIR=$(mktemp -d)
     git clone https://github.com/0xPolygonHermez/zisk.git --depth 1 --branch "v$ZISK_VERSION" "$TEMP_DIR/zisk"
     cd "$TEMP_DIR/zisk"
