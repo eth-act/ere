@@ -1,6 +1,12 @@
 ARG BASE_IMAGE=ubuntu:24.04
+ARG BASE_CUDA_IMAGE=nvidia/cuda:12.9.1-devel-ubuntu24.04
 
-FROM $BASE_IMAGE
+# Whether to enable CUDA feature or not.
+ARG CUDA
+
+FROM $BASE_IMAGE AS base
+FROM $BASE_CUDA_IMAGE AS base_cuda
+FROM base${CUDA:+_cuda}
 
 # Free uid 1000 for later usage, see https://bugs.launchpad.net/cloud-images/+bug/2005129
 # for more details.
