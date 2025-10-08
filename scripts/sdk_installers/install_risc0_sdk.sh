@@ -82,8 +82,8 @@ echo "The rzup installer might have updated your shell configuration files (e.g.
 echo "To ensure rzup and Risc0 tools are available in your current shell session if this was a new installation,"
 echo "you may need to source your shell profile (e.g., 'source ~/.bashrc') or open a new terminal." 
 
-# Build r0vm from source with CUDA features enabled (skip if in CI)
-if [ -z $CI ]; then
+# Build r0vm from source with `cuda` feature enabled
+if [ -n "$CUDA" ]; then
     CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}"
     RISC0_BIN_DIR="$HOME/.risc0/extensions/v$RISC0_VERSION-cargo-risczero-x86_64-unknown-linux-gnu"
 

@@ -1,0 +1,42 @@
+ARG BASE_IMAGE=ere-base:latest
+ARG BASE_CUDA_IMAGE=ere-base:latest-cuda
+
+# Whether to enable CUDA feature or not.
+ARG CUDA
+
+FROM $BASE_IMAGE AS base
+FROM $BASE_CUDA_IMAGE AS base_cuda
+FROM base${CUDA:+_cuda}
+
+ARG CUDA
+
+# Install protoc with same version as https://github.com/risc0/risc0/blob/v3.0.3/bento/dockerfiles/agent.dockerfile#L24-L26.
+# Only install when argument `CUDA` is set, in order to build `r0vm-cuda`.
+RUN [ -n "$CUDA" ] && \
+    (curl -o protoc.zip -L https://github.com/protocolbuffers/protobuf/releases/download/v31.1/protoc-31.1-linux-x86_64.zip \
+    && unzip protoc.zip -d /usr/local) || true
+
+# Default to build for RTX 50 series
+ARG CUDA_ARCH=sm_120
+ARG NVCC_APPEND_FLAGS="--generate-code arch=compute_${CUDA_ARCH#sm_},code=sm_${CUDA_ARCH#sm_}"
+ENV NVCC_APPEND_FLAGS=${NVCC_APPEND_FLAGS}
+
+# Copy and run the Risc0 SDK installer script
+COPY --chmod=755 scripts/sdk_installers/install_risc0_sdk.sh /tmp/install_risc0_sdk.sh
+
+# The install_risc0_sdk.sh script will respect these ENV variables.
+ENV RISC0_VERSION="3.0.3" \
+    RISC0_CPP_VERSION="2024.1.5" \
+    RISC0_RUST_VERSION="1.88.0"
+
+# Run the Risc0 SDK installation script
+# It will use the RISC0_VERSION, RISC0_CPP_VERSION and RISC0_RUST_VERSION defined above.
+RUN /tmp/install_risc0_sdk.sh && rm /tmp/install_risc0_sdk.sh
+
+# Verify Risc0 installation (script also does this, but good for Dockerfile sanity)
+RUN echo "Verifying Risc0 installation in Dockerfile (post-script)..." && cargo risczero --version
+
+# Add `rust-src` component to enable std build for nightly rust.
+RUN rustup +nightly component add rust-src
+
+CMD ["/bin/bash"]
