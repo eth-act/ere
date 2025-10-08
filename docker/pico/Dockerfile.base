@@ -1,0 +1,29 @@
+ARG BASE_IMAGE=ere-base:latest
+
+FROM $BASE_IMAGE
+
+# The ere-base image provides Rust, Cargo, and common tools.
+# We operate as root for SDK installation.
+
+# Define the Pico toolchain for convenience in subsequent commands if needed, though cargo pico should use it.
+ENV PICO_TOOLCHAIN_VERSION="nightly-2025-08-04"
+
+# Set default toolchain
+RUN rustup default "$PICO_TOOLCHAIN_VERSION"
+
+# Copy the Pico SDK installer script from the workspace context
+COPY --chmod=755 scripts/sdk_installers/install_pico_sdk.sh /tmp/install_pico_sdk.sh
+
+# Run the Pico SDK installation script.
+# This script installs the specific Rust toolchain (nightly-2025-08-04)
+# and installs pico-cli (as cargo-pico).
+# The CARGO_HOME from ere-base (e.g., /root/.cargo) will be used, and cargo-pico will be in its bin.
+RUN /tmp/install_pico_sdk.sh && rm /tmp/install_pico_sdk.sh # Clean up the script
+
+# Verify Pico installation
+RUN echo "Verifying Pico installation in Dockerfile (post-script)..." && cargo pico --version
+
+# Add `rust-src` component to enable std build for nightly rust.
+RUN rustup +nightly component add rust-src
+
+CMD ["/bin/bash"]
