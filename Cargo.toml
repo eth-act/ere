@@ -16,7 +16,6 @@ members = [
     # zkVM interface
     "crates/zkvm-interface",
     # CLI and dockerized zkVM
-    "crates/ere-cli",
     "crates/ere-compiler",
     "crates/ere-dockerized",
     "crates/ere-server",
@@ -106,7 +105,6 @@ build-utils = { path = "crates/build-utils" }
 compile-utils = { path = "crates/compile-utils" }
 test-utils = { path = "crates/test-utils" }
 ere-compiler = { path = "crates/ere-compiler" }
-ere-cli = { path = "crates/ere-cli", default-features = false }
 ere-dockerized = { path = "crates/ere-dockerized" }
 ere-server = { path = "crates/ere-server" }
 ere-jolt = { path = "crates/ere-jolt", default-features = false }

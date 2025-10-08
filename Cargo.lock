@@ -3638,27 +3638,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ere-cli"
-version = "0.0.13"
-dependencies = [
- "anyhow",
- "bincode 1.3.3",
- "clap",
- "ere-jolt",
- "ere-miden",
- "ere-nexus",
- "ere-openvm",
- "ere-pico",
- "ere-risc0",
- "ere-sp1",
- "ere-ziren",
- "ere-zisk",
- "serde",
- "tracing-subscriber 0.3.19",
- "zkvm-interface",
-]
-
-[[package]]
 name = "ere-compiler"
 version = "0.0.13"
 dependencies = [
@@ -3683,15 +3662,17 @@ dependencies = [
 name = "ere-dockerized"
 version = "0.0.13"
 dependencies = [
+ "anyhow",
  "bincode 1.3.3",
  "build-utils",
  "bytemuck",
- "ere-cli",
+ "ere-server",
  "risc0-zkvm",
  "serde",
  "tempfile",
  "test-utils",
  "thiserror 2.0.12",
+ "tokio",
  "tracing",
  "zkvm-interface",
 ]
