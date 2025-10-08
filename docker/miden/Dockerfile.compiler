@@ -1,0 +1,19 @@
+ARG BASE_ZKVM_IMAGE=ere-base-miden:latest
+ARG RUNTIME_IMAGE=ubuntu:24.04
+
+FROM $BASE_ZKVM_IMAGE AS build_stage
+
+COPY . /ere
+
+WORKDIR /ere
+
+RUN cargo build --release --package ere-compiler --bin ere-compiler --features miden \
+    && mkdir bin && mv target/release/ere-compiler bin/ere-compiler \
+    && cargo clean && rm -rf $CARGO_HOME/registry/src $CARGO_HOME/registry/cache
+
+FROM $RUNTIME_IMAGE AS runtime_stage
+
+# Copy ere-compiler
+COPY --from=build_stage /ere/bin/ere-compiler /ere/bin/ere-compiler
+
+ENTRYPOINT ["/ere/bin/ere-compiler"]
