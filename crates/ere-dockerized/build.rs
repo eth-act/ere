@@ -21,6 +21,7 @@ fn generate_crate_version() {
 fn generate_zkvm_sdk_version_impl() {
     let [
         jolt_version,
+        miden_version,
         nexus_version,
         openvm_version,
         pico_version,
@@ -29,6 +30,7 @@ fn generate_zkvm_sdk_version_impl() {
         ziren_version,
     ] = [
         "jolt-sdk",
+        "miden-core",
         "nexus-sdk",
         "openvm-sdk",
         "pico-vm",
@@ -50,6 +52,7 @@ fn generate_zkvm_sdk_version_impl() {
     pub fn sdk_version(&self) -> &'static str {{
         match self {{
             Self::Jolt => "{jolt_version}",
+            Self::Miden => "{miden_version}",
             Self::Nexus => "{nexus_version}",
             Self::OpenVM => "{openvm_version}",
             Self::Pico => "{pico_version}",

@@ -11,6 +11,9 @@ impl ErezkVM {
         match self {
             // Issue for tracking: https://github.com/eth-act/ere/issues/4.
             Self::Jolt => todo!(),
+            Self::Miden => bincode::serialize(obj).map_err(|err| {
+                CommonError::serilization(err, "Failed to serialize object with `bincode`")
+            }),
             // Issue for tracking: https://github.com/eth-act/ere/issues/63.
             Self::Nexus => todo!(),
             // FIXME: Instead of using `openvm::serde::to_vec`, we use Risc0's

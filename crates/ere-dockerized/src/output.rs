@@ -14,6 +14,7 @@ impl ErezkVM {
         match self {
             // Issue for tracking: https://github.com/eth-act/ere/issues/4.
             Self::Jolt => todo!(),
+            Self::Miden => bincode::deserialize_from(reader).map_err(zkVMError::other),
             // Issue for tracking: https://github.com/eth-act/ere/issues/63.
             Self::Nexus => todo!(),
             Self::OpenVM => unimplemented!("no native serialization in this platform"),

@@ -102,6 +102,7 @@ const ERE_SERVER_PORT_OFFSET: u16 = 4174;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ErezkVM {
     Jolt,
+    Miden,
     Nexus,
     OpenVM,
     Pico,
@@ -115,6 +116,7 @@ impl ErezkVM {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Jolt => "jolt",
+            Self::Miden => "miden",
             Self::Nexus => "nexus",
             Self::OpenVM => "openvm",
             Self::Pico => "pico",
@@ -321,6 +323,7 @@ impl FromStr for ErezkVM {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
             "jolt" => Self::Jolt,
+            "miden" => Self::Miden,
             "nexus" => Self::Nexus,
             "openvm" => Self::OpenVM,
             "pico" => Self::Pico,
@@ -540,6 +543,21 @@ mod test {
         let zkvm = ErezkVM::Jolt;
 
         let guest_directory = testing_guest_directory(zkvm.as_str(), "basic");
+        let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
+            .unwrap()
+            .compile(&guest_directory)
+            .unwrap();
+
+        assert!(!program.0.is_empty(), "Program should not be empty");
+
+        // TODO: Test `EreDockerizedzkVM` when it's ready.
+    }
+
+    #[test]
+    fn dockerized_miden() {
+        let zkvm = ErezkVM::Miden;
+
+        let guest_directory = testing_guest_directory(zkvm.as_str(), "fib");
         let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
             .unwrap()
             .compile(&guest_directory)
