@@ -1,0 +1,34 @@
+ARG BASE_IMAGE=ere-base:latest
+ARG BASE_CUDA_IMAGE=ere-base:latest-cuda
+
+# Whether to enable CUDA feature or not.
+ARG CUDA
+
+FROM $BASE_IMAGE AS base
+FROM $BASE_CUDA_IMAGE AS base_cuda
+FROM base${CUDA:+_cuda}
+
+# The ere-base image provides Rust, Cargo, and common tools.
+# We operate as root for SDK installation.
+
+ARG CUDA
+
+# Default to build for RTX 50 series
+ARG CUDA_ARCH=120
+ENV CUDA_ARCH=$CUDA_ARCH
+
+# Copy the OpenVM SDK installer script from the workspace context
+COPY --chmod=755 scripts/sdk_installers/install_openvm_sdk.sh /tmp/install_openvm_sdk.sh
+
+# Run the OpenVM SDK installation script.
+# This script installs a specific toolchain
+# and installs cargo-openvm.
+RUN /tmp/install_openvm_sdk.sh && rm /tmp/install_openvm_sdk.sh
+
+# Verify cargo-openvm is accessible with the correct toolchain
+RUN cargo openvm --version
+
+# Add `rust-src` component to enable std build for nightly rust.
+RUN rustup +nightly component add rust-src
+
+CMD ["/bin/bash"]
