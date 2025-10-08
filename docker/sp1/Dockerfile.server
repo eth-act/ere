@@ -1,0 +1,24 @@
+ARG BASE_ZKVM_IMAGE=ere-base-sp1:latest
+ARG RUNTIME_IMAGE=ubuntu:24.04
+
+FROM $BASE_ZKVM_IMAGE AS build_stage
+
+COPY . /ere
+
+WORKDIR /ere
+
+ARG RUSTFLAGS="-Ctarget-cpu=native"
+
+RUN cargo build --release --package ere-server --bin ere-server --features sp1 \
+    && mkdir bin && mv target/release/ere-server bin/ere-server \
+    && cargo clean && rm -rf $CARGO_HOME/registry/src $CARGO_HOME/registry/cache
+
+FROM $RUNTIME_IMAGE AS runtime_stage
+
+# Add Docker CLI
+COPY --from=docker:cli /usr/local/bin/docker /usr/local/bin/docker
+
+# Copy ere-server
+COPY --from=build_stage /ere/bin/ere-server /ere/bin/ere-server
+
+ENTRYPOINT ["/ere/bin/ere-server"]

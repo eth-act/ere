@@ -1,6 +1,6 @@
-ARG BASE_IMAGE_TAG=ere-base:latest
+ARG BASE_IMAGE=ere-base:latest
 
-FROM ${BASE_IMAGE_TAG}
+FROM $BASE_IMAGE
 
 ARG USERNAME=ere_user
 
@@ -29,7 +29,7 @@ RUN rustup +nightly component add rust-src
 # Add Docker CLI
 COPY --from=docker:cli /usr/local/bin/docker /usr/local/bin/docker
 
-CMD ["/bin/bash"]
-
 # TODO:  Maybe we use root to install it in ere_user and then switch back to ere_user for security
 # USER ${USERNAME} # Switch to non-root user again
+
+CMD ["/bin/bash"]
