@@ -8,8 +8,10 @@ use crate::{
 use anyhow::{Context, Error, bail};
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
-use twirp::{Client, Request, reqwest, url::Url};
+use twirp::{Client, Request, reqwest};
 use zkvm_interface::{ProgramExecutionReport, ProgramProvingReport, Proof, PublicValues};
+
+pub use twirp::url::Url;
 
 /// zkVM client of the `zkVMServer`.
 #[allow(non_camel_case_types)]
