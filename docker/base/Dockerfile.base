@@ -1,5 +1,6 @@
-ARG UBUNTU_VERSION=24.04
-FROM ubuntu:${UBUNTU_VERSION}
+ARG BASE_IMAGE=ubuntu:24.04
+
+FROM $BASE_IMAGE
 
 # Free uid 1000 for later usage, see https://bugs.launchpad.net/cloud-images/+bug/2005129
 # for more details.
@@ -10,8 +11,7 @@ RUN userdel -r ubuntu
 ARG DEBIAN_FRONTEND=noninteractive
 
 # Install common dependencies and build tools
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     clang \
     cmake \
@@ -26,9 +26,7 @@ RUN apt-get update && \
     openssl \
     libssl-dev \
     protobuf-compiler \
-    # Clean up apt cache
-    && apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install rustup.
 # RUST_VERSION can be 1.86, stable, nightly, etc
@@ -58,4 +56,4 @@ WORKDIR /app
 RUN rustc --version
 RUN cargo --version
 
-CMD ["/bin/bash"] 
+CMD ["/bin/bash"]

@@ -9,8 +9,8 @@ pub enum InputItem {
     /// A serialized object with zkvm specific serializer.
     ///
     /// This is only for `ere-dockerized` to serialize the inputs to be able to
-    /// pass to `ere-cli` to do the actual action, in normal case this should be
-    /// avoided, instead [`InputItem::Object`] should be used.
+    /// pass to `ere-server` to do the actual action, in normal case this should
+    /// be avoided, instead [`InputItem::Object`] should be used.
     SerializedObject(Vec<u8>),
     /// Serialized bytes with opaque serializer (e.g. bincode)
     Bytes(Vec<u8>),
