@@ -1,6 +1,6 @@
-ARG BASE_IMAGE_TAG=ere-base:latest
+ARG BASE_IMAGE=ere-base:latest
 
-FROM ${BASE_IMAGE_TAG}
+FROM $BASE_IMAGE
 
 # Install go because cargo-ziren requires (no way to turn off)
 RUN curl -fsSL https://golang.org/dl/go1.23.1.linux-amd64.tar.gz | tar -C /usr/local -xzf -
