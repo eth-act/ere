@@ -245,11 +245,11 @@ impl ZiskSdk {
         let (cargo_zisk, witness_lib_path) = match self.resource {
             ProverResourceType::Cpu => ("cargo-zisk", None),
             ProverResourceType::Gpu => (
-                "cargo-zisk-gpu",
+                "cargo-zisk-cuda",
                 Some(
                     dot_zisk_dir_path()
                         .join("bin")
-                        .join("libzisk_witness_gpu.so"),
+                        .join("libzisk_witness_cuda.so"),
                 ),
             ),
             ProverResourceType::Network(_) => {
