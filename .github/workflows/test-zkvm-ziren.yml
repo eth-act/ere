@@ -16,5 +16,4 @@ jobs:
       zkvm: ziren
       toolchain: nightly
       test_ere_dockerized: true
-      default_features: true
       test_options: ''
