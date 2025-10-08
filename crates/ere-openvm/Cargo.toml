@@ -29,7 +29,7 @@ test-utils = { workspace = true, features = ["host"] }
 build-utils.workspace = true
 
 [features]
-default = ["cuda"]
+default = []
 cuda = ["openvm-sdk/cuda"]
 
 [lints]
