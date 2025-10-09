@@ -1,7 +1,7 @@
 use std::{io, path::PathBuf, process::ExitStatus};
 use thiserror::Error;
 use zkm_sdk::ZKMProofKind;
-use zkvm_interface::zkVMError;
+use zkvm_interface::{ProofKind, zkVMError};
 
 impl From<ZirenError> for zkVMError {
     fn from(value: ZirenError) -> Self {
@@ -78,8 +78,8 @@ pub enum VerifyError {
     #[error("Deserialising proof with `bincode` failed: {0}")]
     Bincode(#[from] bincode::Error),
 
-    #[error("Expect to get Compressed proof, but got: {}", 0.to_string())]
-    InvalidProofKind(ZKMProofKind),
+    #[error("Invalid proof kind, expected: {}, got: {}", 0.to_string(), 1.to_string() )]
+    InvalidProofKind(ProofKind, ZKMProofKind),
 
     #[error("Ziren verification failed: {0}")]
     Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
