@@ -518,7 +518,7 @@ impl zkVM for EreDockerizedzkVM {
 
 fn block_on<T>(future: impl Future<Output = T>) -> T {
     match tokio::runtime::Handle::try_current() {
-        Ok(handle) => handle.block_on(future),
+        Ok(handle) => tokio::task::block_in_place(|| handle.block_on(future)),
         Err(_) => tokio::runtime::Runtime::new().unwrap().block_on(future),
     }
 }
