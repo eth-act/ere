@@ -6,14 +6,14 @@ use crate::{
 };
 use serde::de::DeserializeOwned;
 use sp1_sdk::{
-    CpuProver, CudaProver, NetworkProver, Prover, ProverClient, SP1ProofWithPublicValues,
-    SP1ProvingKey, SP1Stdin, SP1VerifyingKey,
+    CpuProver, CudaProver, NetworkProver, Prover, ProverClient, SP1ProofMode,
+    SP1ProofWithPublicValues, SP1ProvingKey, SP1Stdin, SP1VerifyingKey,
 };
 use std::{io::Read, time::Instant};
 use tracing::info;
 use zkvm_interface::{
     Input, InputItem, NetworkProverConfig, ProgramExecutionReport, ProgramProvingReport, Proof,
-    ProverResourceType, PublicValues, zkVM, zkVMError,
+    ProofKind, ProverResourceType, PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -52,17 +52,17 @@ impl ProverType {
             .run()
             .map_err(|e| SP1Error::Execute(ExecuteError::Client(e.into())))
     }
+
     fn prove(
         &self,
         pk: &SP1ProvingKey,
         input: &SP1Stdin,
+        mode: SP1ProofMode,
     ) -> Result<SP1ProofWithPublicValues, SP1Error> {
         match self {
-            ProverType::Cpu(cpu_prover) => cpu_prover.prove(pk, input).compressed().run(),
-            ProverType::Gpu(cuda_prover) => cuda_prover.prove(pk, input).compressed().run(),
-            ProverType::Network(network_prover) => {
-                network_prover.prove(pk, input).compressed().run()
-            }
+            ProverType::Cpu(cpu_prover) => cpu_prover.prove(pk, input).mode(mode).run(),
+            ProverType::Gpu(cuda_prover) => cuda_prover.prove(pk, input).mode(mode).run(),
+            ProverType::Network(network_prover) => network_prover.prove(pk, input).mode(mode).run(),
         }
         .map_err(|e| SP1Error::Prove(ProveError::Client(e.into())))
     }
@@ -168,33 +168,56 @@ impl zkVM for EreSP1 {
 
     fn prove(
         &self,
-        inputs: &zkvm_interface::Input,
+        inputs: &Input,
+        proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, zkvm_interface::ProgramProvingReport), zkVMError> {
         info!("Generating proof…");
 
         let mut stdin = SP1Stdin::new();
         serialize_inputs(&mut stdin, inputs);
 
+        let mode = match proof_kind {
+            ProofKind::Compressed => SP1ProofMode::Compressed,
+            ProofKind::Groth16 => SP1ProofMode::Groth16,
+        };
+
         let client = Self::create_client(&self.resource);
         let start = std::time::Instant::now();
-        let proof_with_inputs = client.prove(&self.pk, &stdin)?;
+        let proof = client.prove(&self.pk, &stdin, mode)?;
         let proving_time = start.elapsed();
 
-        let bytes = bincode::serialize(&proof_with_inputs)
-            .map_err(|err| SP1Error::Prove(ProveError::Bincode(err)))?;
+        let public_values = proof.public_values.to_vec();
+        let proof = Proof::from_bytes(
+            proof_kind,
+            bincode::serialize(&proof).map_err(|err| SP1Error::Prove(ProveError::Bincode(err)))?,
+        );
 
         Ok((
-            proof_with_inputs.public_values.to_vec(),
-            bytes,
+            public_values,
+            proof,
             ProgramProvingReport::new(proving_time),
         ))
     }
 
-    fn verify(&self, proof: &[u8]) -> Result<PublicValues, zkVMError> {
+    fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
         info!("Verifying proof…");
 
-        let proof: SP1ProofWithPublicValues = bincode::deserialize(proof)
+        let proof_kind = ProofKind::from(proof);
+
+        let proof: SP1ProofWithPublicValues = bincode::deserialize(proof.as_bytes())
             .map_err(|err| SP1Error::Verify(VerifyError::Bincode(err)))?;
+        let inner_proof_kind = SP1ProofMode::from(&proof.proof);
+
+        if !matches!(
+            (proof_kind, inner_proof_kind),
+            (ProofKind::Compressed, SP1ProofMode::Compressed)
+                | (ProofKind::Groth16, SP1ProofMode::Groth16)
+        ) {
+            return Err(SP1Error::Verify(VerifyError::InvalidProofKind(
+                proof_kind,
+                inner_proof_kind,
+            )))?;
+        }
 
         let client = Self::create_client(&self.resource);
         client.verify(&proof, &self.vk).map_err(zkVMError::from)?;
@@ -235,7 +258,7 @@ mod tests {
     use test_utils::host::{
         BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
-    use zkvm_interface::{Compiler, NetworkProverConfig, ProverResourceType, zkVM};
+    use zkvm_interface::{Compiler, NetworkProverConfig, ProofKind, ProverResourceType, zkVM};
 
     static BASIC_PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
 
@@ -296,7 +319,7 @@ mod tests {
             BasicProgramIo::invalid_type,
             BasicProgramIo::invalid_data,
         ] {
-            panic::catch_unwind(|| zkvm.prove(&inputs_gen())).unwrap_err();
+            panic::catch_unwind(|| zkvm.prove(&inputs_gen(), ProofKind::default())).unwrap_err();
         }
     }
 
