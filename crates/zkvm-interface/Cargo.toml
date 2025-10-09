@@ -10,6 +10,7 @@ auto_impl.workspace = true
 erased-serde.workspace = true
 indexmap = { workspace = true, features = ["serde"] }
 serde = { workspace = true, features = ["derive"] }
+strum = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
 
 # Optional dependencies
