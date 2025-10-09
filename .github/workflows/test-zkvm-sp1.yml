@@ -15,5 +15,3 @@ jobs:
     with:
       zkvm: sp1
       toolchain: 1.86.0
-      test_ere_dockerized: true
-      test_options: ''

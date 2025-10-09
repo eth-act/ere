@@ -15,5 +15,3 @@ jobs:
     with:
       zkvm: pico
       toolchain: nightly-2025-08-04
-      test_ere_dockerized: true
-      test_options: ''

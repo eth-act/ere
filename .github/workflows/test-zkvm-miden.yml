@@ -15,5 +15,3 @@ jobs:
     with:
       zkvm: miden
       toolchain: 1.88.0
-      test_ere_dockerized: true
-      test_options: ""

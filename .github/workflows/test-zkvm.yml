@@ -12,17 +12,17 @@ on:
         required: false
         type: string
         default: 1.86.0
-      test_ere_dockerized:
-        description: 'Whether test ere-dockerized with the selected zkVM or not'
+      free_up_disk_space:
+        description: 'Whether free up disk space or not'
         required: false
         type: boolean
-        default: true
-      # Remove when we use larger runners, currently only needed to skip some zisk test
-      test_options:
-        description: 'Cargo test options when testing via Docker'
+        default: false
+      # Remove when we use larger runners, currently only needed to skip for zisk
+      skip_prove_test:
+        description: 'Whether to skip prove test and ere-dockerized test or not'
         required: false
-        type: string
-        default: ''
+        type: boolean
+        default: false
 
 env:
   CARGO_TERM_COLOR: always
@@ -41,6 +41,15 @@ jobs:
       compiler_zkvm_image: ${{ steps.image_tag.outputs.compiler_zkvm_image }}
       server_zkvm_image: ${{ steps.image_tag.outputs.server_zkvm_image }}
     steps:
+      - name: Free up disk space
+        if: ${{ inputs.free_up_disk_space }}
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/hostedtoolcache
+          df -h /
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -139,6 +148,15 @@ jobs:
     needs: build_image
     runs-on: ubuntu-latest
     steps:
+      - name: Free up disk space
+        if: ${{ inputs.free_up_disk_space }}
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/hostedtoolcache
+          df -h /
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -162,7 +180,6 @@ jobs:
               --file docker/${{ inputs.zkvm }}/Dockerfile.base \
               --tag ${{ needs.build_image.outputs.base_zkvm_image }} \
               --build-arg BASE_IMAGE=${{ needs.build_image.outputs.base_image }} \
-              --build-arg CI=1 \
               .
           fi
 
@@ -194,6 +211,15 @@ jobs:
     needs: build_image
     runs-on: ubuntu-latest
     steps:
+      - name: Free up disk space
+        if: ${{ inputs.free_up_disk_space }}
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/hostedtoolcache
+          df -h /
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -217,7 +243,6 @@ jobs:
               --file docker/${{ inputs.zkvm }}/Dockerfile.base \
               --tag ${{ needs.build_image.outputs.base_zkvm_image }} \
               --build-arg BASE_IMAGE=${{ needs.build_image.outputs.base_image }} \
-              --build-arg CI=1 \
               .
           fi
 
@@ -238,7 +263,7 @@ jobs:
           CARGO_BUILD_CMD="cargo test --release --package ere-${{ inputs.zkvm }} --no-run --message-format json"
           EXEC=\$(RUSTFLAGS=-Ctarget-cpu=native \$CARGO_BUILD_CMD \
             | jq -r 'select(.executable) | select(.package_id | contains("ere-${{ inputs.zkvm }}")) | .executable')
-          \$EXEC ${{ inputs.test_options }}
+          \$EXEC ${{ inputs.skip_prove_test && '--skip prove' || ''  }}
 
           chown -R $(id -u):$(id -g) ~/.cargo
           chown -R $(id -u):$(id -g) target
@@ -247,9 +272,18 @@ jobs:
   test_ere_dockerized:
     name: Test ere-dockerized with the selected zkVM
     needs: build_image
-    if: ${{ inputs.test_ere_dockerized }}
+    if: ${{ ! inputs.skip_prove_test }}
     runs-on: ubuntu-latest
     steps:
+      - name: Free up disk space
+        if: ${{ inputs.free_up_disk_space }}
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/hostedtoolcache
+          df -h /
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -286,7 +320,6 @@ jobs:
               --file docker/${{ inputs.zkvm }}/Dockerfile.base \
               --tag ${{ needs.build_image.outputs.base_zkvm_image }} \
               --build-arg BASE_IMAGE=${{ needs.build_image.outputs.base_image }} \
-              --build-arg CI=1 \
               .
           fi
 
