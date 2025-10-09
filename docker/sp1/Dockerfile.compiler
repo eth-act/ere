@@ -17,6 +17,7 @@ FROM $RUNTIME_IMAGE AS runtime_stage
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     ca-certificates \
+    clang \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy Rust
