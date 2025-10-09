@@ -27,7 +27,7 @@
 //! ```rust,no_run
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! use ere_dockerized::{EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM};
-//! use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
+//! use zkvm_interface::{Compiler, Input, ProofKind, ProverResourceType, zkVM};
 //! use std::path::Path;
 //!
 //! // The zkVM we plan to use
@@ -52,7 +52,7 @@
 //! println!("Execution cycles: {}", execution_report.total_num_cycles);
 //!
 //! // Generate proof
-//! let (public_values, proof, proving_report) = zkvm.prove(&inputs)?;
+//! let (public_values, proof, proving_report) = zkvm.prove(&inputs, ProofKind::Compressed)?;
 //! println!("Proof generated in: {:?}", proving_report.proving_time);
 //!
 //! // Verify proof
@@ -83,8 +83,8 @@ use std::{
 use tempfile::TempDir;
 use tracing::error;
 use zkvm_interface::{
-    Compiler, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType,
-    PublicValues, zkVM, zkVMError,
+    Compiler, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResourceType, PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/crate_version.rs"));
@@ -484,19 +484,21 @@ impl zkVM for EreDockerizedzkVM {
     fn prove(
         &self,
         inputs: &Input,
+        proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
         let serialized_input = self
             .zkvm
             .serialize_inputs(inputs)
             .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
 
-        let (public_values, proof, report) = block_on(self.client.prove(serialized_input))
-            .map_err(|err| DockerizedError::Prove(ProveError::Client(err)))?;
+        let (public_values, proof, report) =
+            block_on(self.client.prove(serialized_input, proof_kind))
+                .map_err(|err| DockerizedError::Prove(ProveError::Client(err)))?;
 
         Ok((public_values, proof, report))
     }
 
-    fn verify(&self, proof: &[u8]) -> Result<PublicValues, zkVMError> {
+    fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
         let public_values = block_on(self.client.verify(proof))
             .map_err(|err| DockerizedError::Verify(VerifyError::Client(err)))?;
 
