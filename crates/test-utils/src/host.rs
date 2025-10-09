@@ -1,7 +1,7 @@
 use crate::guest::{BasicProgramCore, BasicStruct};
 use rand::{Rng, rng};
 use std::{fmt::Debug, io::Read, marker::PhantomData, path::PathBuf};
-use zkvm_interface::{Input, PublicValues, zkVM};
+use zkvm_interface::{Input, ProofKind, PublicValues, zkVM};
 
 fn workspace() -> PathBuf {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -36,7 +36,7 @@ pub fn run_zkvm_execute(zkvm: &impl zkVM, io: &impl Io) -> PublicValues {
 
 pub fn run_zkvm_prove(zkvm: &impl zkVM, io: &impl Io) -> PublicValues {
     let (prover_public_values, proof, _report) = zkvm
-        .prove(&io.inputs())
+        .prove(&io.inputs(), ProofKind::default())
         .expect("prove should not fail with valid input");
 
     let verifier_public_values = zkvm
