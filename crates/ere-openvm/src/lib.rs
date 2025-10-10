@@ -176,7 +176,7 @@ impl zkVM for EreOpenVM {
 
     fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
         let Proof::Compressed(proof) = proof else {
-            panic!("Only Compressed proof kind is supported.");
+            return Err(zkVMError::other("Only Compressed proof kind is supported."));
         };
 
         let proof = VmStarkProof::<SC>::decode(&mut proof.as_slice())

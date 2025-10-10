@@ -109,7 +109,7 @@ impl zkVM for EreZisk {
 
     fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
         let Proof::Compressed(proof) = proof else {
-            panic!("Only Compressed proof kind is supported.");
+            return Err(zkVMError::other("Only Compressed proof kind is supported."));
         };
 
         Ok(self.sdk.verify(proof)?)

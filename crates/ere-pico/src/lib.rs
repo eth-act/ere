@@ -103,7 +103,9 @@ impl zkVM for ErePico {
 
     fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
         let Proof::Compressed(proof) = proof else {
-            panic!("Only Compressed proof kind is implemented.");
+            return Err(zkVMError::other(
+                "Only Compressed proof kind is implemented.",
+            ));
         };
 
         let client = self.client();
