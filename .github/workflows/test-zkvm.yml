@@ -41,17 +41,12 @@ jobs:
       compiler_zkvm_image: ${{ steps.image_tag.outputs.compiler_zkvm_image }}
       server_zkvm_image: ${{ steps.image_tag.outputs.server_zkvm_image }}
     steps:
-      - name: Free up disk space
-        if: ${{ inputs.free_up_disk_space }}
-        run: |
-          df -h /
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/hostedtoolcache
-          df -h /
-
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Free up disk space
+        if: ${{ inputs.free_up_disk_space }}
+        run: bash .github/scripts/free-up-disk-space.sh
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -148,17 +143,12 @@ jobs:
     needs: build_image
     runs-on: ubuntu-latest
     steps:
-      - name: Free up disk space
-        if: ${{ inputs.free_up_disk_space }}
-        run: |
-          df -h /
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/hostedtoolcache
-          df -h /
-
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Free up disk space
+        if: ${{ inputs.free_up_disk_space }}
+        run: bash .github/scripts/free-up-disk-space.sh
 
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
@@ -211,17 +201,12 @@ jobs:
     needs: build_image
     runs-on: ubuntu-latest
     steps:
-      - name: Free up disk space
-        if: ${{ inputs.free_up_disk_space }}
-        run: |
-          df -h /
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/hostedtoolcache
-          df -h /
-
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Free up disk space
+        if: ${{ inputs.free_up_disk_space }}
+        run: bash .github/scripts/free-up-disk-space.sh
 
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
@@ -275,17 +260,12 @@ jobs:
     if: ${{ ! inputs.skip_prove_test }}
     runs-on: ubuntu-latest
     steps:
-      - name: Free up disk space
-        if: ${{ inputs.free_up_disk_space }}
-        run: |
-          df -h /
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/hostedtoolcache
-          df -h /
-
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Free up disk space
+        if: ${{ inputs.free_up_disk_space }}
+        run: bash .github/scripts/free-up-disk-space.sh
 
       - name: Install protoc
         run: |
