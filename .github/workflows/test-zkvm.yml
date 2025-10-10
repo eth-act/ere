@@ -239,7 +239,6 @@ jobs:
   test_ere_dockerized:
     name: Test ere-dockerized with the selected zkVM
     needs: build_image
-    if: ${{ ! inputs.skip_prove_test }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -294,4 +293,6 @@ jobs:
           docker image tag ${{ needs.build_image.outputs.server_zkvm_image }} ere-server-${{ inputs.zkvm }}:${{ needs.build_image.outputs.image_tag }}
 
       - name: Run cargo test for ere-${{ inputs.zkvm }} via ere-dockerized
-        run: cargo test --release --package ere-dockerized -- ${{ inputs.zkvm }}
+        run: |
+          cargo test --release --package ere-dockerized \
+            -- ${{ inputs.zkvm }} ${{ inputs.skip_prove_test && '--skip prove' || ''  }}
