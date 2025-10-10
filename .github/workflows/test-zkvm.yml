@@ -229,10 +229,8 @@ jobs:
           cat <<EOF | $DOCKER_CMD
           set -e -o pipefail
 
-          CARGO_BUILD_CMD="cargo test --release --package ere-${{ inputs.zkvm }} --no-run --message-format json"
-          EXEC=\$(RUSTFLAGS=-Ctarget-cpu=native \$CARGO_BUILD_CMD \
-            | jq -r 'select(.executable) | select(.package_id | contains("ere-${{ inputs.zkvm }}")) | .executable')
-          \$EXEC ${{ inputs.skip_prove_test && '--skip prove' || ''  }}
+          cargo test --release --package ere-${{ inputs.zkvm }} \
+            -- ${{ inputs.skip_prove_test && '--skip prove' || ''  }}
 
           chown -R $(id -u):$(id -g) ~/.cargo
           chown -R $(id -u):$(id -g) target
