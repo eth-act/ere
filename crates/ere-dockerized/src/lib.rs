@@ -445,6 +445,7 @@ impl Compiler for EreDockerizedCompiler {
 
 struct ServerContainer {
     name: String,
+    #[allow(dead_code)]
     tempdir: TempDir,
 }
 
@@ -460,6 +461,7 @@ pub struct EreDockerizedzkVM {
     zkvm: ErezkVM,
     program: SerializedProgram,
     resource: ProverResourceType,
+    #[allow(dead_code)]
     server_container: ServerContainer,
     client: zkVMClient,
 }
