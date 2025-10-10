@@ -14,8 +14,8 @@ use std::{
 };
 use tempfile::TempDir;
 use zkvm_interface::{
-    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType, PublicValues,
-    zkVM, zkVMError,
+    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
+    PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -72,7 +72,12 @@ impl zkVM for EreJolt {
     fn prove(
         &self,
         inputs: &Input,
+        proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, zkvm_interface::ProgramProvingReport), zkVMError> {
+        if proof_kind != ProofKind::Compressed {
+            panic!("Only Compressed proof kind is supported.");
+        }
+
         let (_tempdir, program) = program(&self.elf)?;
 
         let now = std::time::Instant::now();
@@ -89,13 +94,17 @@ impl zkVM for EreJolt {
 
         Ok((
             public_values,
-            proof_bytes,
+            Proof::Compressed(proof_bytes),
             ProgramProvingReport::new(elapsed),
         ))
     }
 
-    fn verify(&self, proof_bytes: &[u8]) -> Result<PublicValues, zkVMError> {
-        let proof = EreJoltProof::deserialize_compressed(&mut Cursor::new(proof_bytes))
+    fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
+        let Proof::Compressed(proof) = proof else {
+            return Err(zkVMError::other("Only Compressed proof kind is supported."));
+        };
+
+        let proof = EreJoltProof::deserialize_compressed(&mut Cursor::new(proof))
             .map_err(|err| JoltError::Verify(VerifyError::Serialization(err)))?;
 
         verify_generic(proof, self.verifier_preprocessing.clone()).map_err(JoltError::Verify)?;

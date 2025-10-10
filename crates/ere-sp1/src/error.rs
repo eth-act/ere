@@ -1,7 +1,8 @@
 use std::{path::PathBuf, process::ExitStatus};
 
+use sp1_sdk::SP1ProofMode;
 use thiserror::Error;
-use zkvm_interface::zkVMError;
+use zkvm_interface::{ProofKind, zkVMError};
 
 impl From<SP1Error> for zkVMError {
     fn from(value: SP1Error) -> Self {
@@ -79,6 +80,9 @@ pub enum ProveError {
 pub enum VerifyError {
     #[error("Deserialising proof failed: {0}")]
     Bincode(#[from] bincode::Error),
+
+    #[error("Invalid proof kind, expected: {}, got: {}", 0.to_string(), 1.to_string() )]
+    InvalidProofKind(ProofKind, SP1ProofMode),
 
     #[error("SP1 SDK verification failed: {0}")]
     Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),

@@ -12,8 +12,8 @@ use std::{
     time::Instant,
 };
 use zkvm_interface::{
-    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType,
-    PublicValues, zkVM, zkVMError,
+    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResourceType, PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -85,7 +85,12 @@ impl zkVM for EreZisk {
     fn prove(
         &self,
         inputs: &Input,
+        proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
+        if proof_kind != ProofKind::Compressed {
+            panic!("Only Compressed proof kind is supported.");
+        }
+
         let mut server = self.server()?;
         let server = server.as_mut().expect("server initialized");
 
@@ -97,12 +102,16 @@ impl zkVM for EreZisk {
 
         Ok((
             public_values,
-            proof,
+            Proof::Compressed(proof),
             ProgramProvingReport::new(proving_time),
         ))
     }
 
-    fn verify(&self, proof: &[u8]) -> Result<PublicValues, zkVMError> {
+    fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
+        let Proof::Compressed(proof) = proof else {
+            return Err(zkVMError::other("Only Compressed proof kind is supported."));
+        };
+
         Ok(self.sdk.verify(proof)?)
     }
 
@@ -142,7 +151,7 @@ mod tests {
     use test_utils::host::{
         BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
-    use zkvm_interface::{Compiler, ProverResourceType, zkVM};
+    use zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
 
     /// It fails if multiple servers created concurrently using the same port,
     /// so we have a lock to avoid that.
@@ -206,7 +215,7 @@ mod tests {
             BasicProgramIo::invalid_type(),
             BasicProgramIo::invalid_data(),
         ] {
-            zkvm.prove(&inputs).unwrap_err();
+            zkvm.prove(&inputs, ProofKind::default()).unwrap_err();
         }
     }
 }

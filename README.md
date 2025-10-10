@@ -82,7 +82,7 @@ ere-sp1        = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.12" }
 ```rust
 // main.rs
 use ere_sp1::{EreSP1, RV32_IM_SUCCINCT_ZKVM_ELF};
-use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
+use zkvm_interface::{Compiler, Input, ProofKind, ProverResourceType, zkVM};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let guest_directory = std::path::Path::new("workspace/guest");
@@ -99,13 +99,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     io.write(42u32);
 
     // Execute
-    let _report = zkvm.execute(&io)?;
+    let (public_values, report) = zkvm.execute(&io)?;
 
     // Prove
-    let (proof, _report) = zkvm.prove(&io)?;
+    let (public_values, proof, report) = zkvm.prove(&io, ProofKind::Compressed)?;
 
     // Verify
-    zkvm.verify(&proof)?;
+    let public_values = zkvm.verify(&proof)?;
 
     Ok(())
 }
@@ -129,7 +129,7 @@ ere-dockerized = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.12" }
 ```rust
 // main.rs
 use ere_dockerized::{EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM};
-use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
+use zkvm_interface::{Compiler, Input, ProofKind, ProverResourceType, zkVM};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let guest_directory = std::path::Path::new("workspace/guest");
@@ -146,13 +146,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     io.write(42u32);
 
     // Execute
-    let _report = zkvm.execute(&io)?;
+    let (public_values, report) = zkvm.execute(&io)?;
 
     // Prove
-    let (proof, _report) = zkvm.prove(&io)?;
+    let (public_values, proof, report) = zkvm.prove(&io, ProofKind::Compressed)?;
 
     // Verify
-    zkvm.verify(&proof)?;
+    let public_values = zkvm.verify(&proof)?;
 
     Ok(())
 }

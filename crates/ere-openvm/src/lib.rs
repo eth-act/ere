@@ -19,8 +19,8 @@ use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
 use serde::de::DeserializeOwned;
 use std::{env, io::Read, path::PathBuf, sync::Arc, time::Instant};
 use zkvm_interface::{
-    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType,
-    PublicValues, zkVM, zkVMError,
+    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResourceType, PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -128,7 +128,12 @@ impl zkVM for EreOpenVM {
     fn prove(
         &self,
         inputs: &Input,
+        proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, zkvm_interface::ProgramProvingReport), zkVMError> {
+        if proof_kind != ProofKind::Compressed {
+            panic!("Only Compressed proof kind is supported.");
+        }
+
         let mut stdin = StdIn::default();
         serialize_inputs(&mut stdin, inputs);
 
@@ -164,13 +169,17 @@ impl zkVM for EreOpenVM {
 
         Ok((
             public_values,
-            proof_bytes,
+            Proof::Compressed(proof_bytes),
             ProgramProvingReport::new(elapsed),
         ))
     }
 
-    fn verify(&self, mut proof: &[u8]) -> Result<PublicValues, zkVMError> {
-        let proof = VmStarkProof::<SC>::decode(&mut proof)
+    fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
+        let Proof::Compressed(proof) = proof else {
+            return Err(zkVMError::other("Only Compressed proof kind is supported."));
+        };
+
+        let proof = VmStarkProof::<SC>::decode(&mut proof.as_slice())
             .map_err(|e| OpenVMError::from(VerifyError::DeserializeProof(e)))?;
 
         CpuSdk::verify_proof(&self.agg_vk, self.app_commit, &proof)
@@ -232,7 +241,7 @@ mod tests {
     use test_utils::host::{
         BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
-    use zkvm_interface::{Compiler, ProverResourceType, zkVM};
+    use zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
 
     fn basic_program() -> OpenVMProgram {
         static PROGRAM: OnceLock<OpenVMProgram> = OnceLock::new();
@@ -287,7 +296,7 @@ mod tests {
             BasicProgramIo::invalid_type(),
             BasicProgramIo::invalid_data(),
         ] {
-            zkvm.prove(&inputs).unwrap_err();
+            zkvm.prove(&inputs, ProofKind::default()).unwrap_err();
         }
     }
 }

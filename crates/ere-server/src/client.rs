@@ -9,7 +9,9 @@ use anyhow::{Context, Error, bail};
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
 use twirp::{Client, Request, reqwest};
-use zkvm_interface::{ProgramExecutionReport, ProgramProvingReport, Proof, PublicValues};
+use zkvm_interface::{
+    ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, PublicValues,
+};
 
 pub use twirp::url::Url;
 
@@ -71,10 +73,14 @@ impl zkVMClient {
     pub async fn prove(
         &self,
         input: SerializedInput,
+        proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, ProgramProvingReport), Error> {
         let input = bincode::serialize(&input).with_context(|| "Failed to serialize input")?;
 
-        let request = Request::new(ProveRequest { input });
+        let request = Request::new(ProveRequest {
+            input,
+            proof_kind: proof_kind as i32,
+        });
 
         let response = self
             .client
@@ -91,12 +97,13 @@ impl zkVMClient {
         let report: ProgramProvingReport = bincode::deserialize(&report)
             .with_context(|| "Failed to deserialize proving report")?;
 
-        Ok((public_values, proof, report))
+        Ok((public_values, Proof::from_bytes(proof_kind, proof), report))
     }
 
-    pub async fn verify(&self, proof: &[u8]) -> Result<PublicValues, Error> {
+    pub async fn verify(&self, proof: &Proof) -> Result<PublicValues, Error> {
         let request = Request::new(VerifyRequest {
-            proof: proof.to_vec(),
+            proof: proof.as_bytes().to_vec(),
+            proof_kind: ProofKind::from(proof) as i32,
         });
 
         let response = self

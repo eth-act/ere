@@ -34,6 +34,9 @@ ENV PATH=/usr/local/cargo/bin:$PATH
 # Copy Risc0 SDK
 COPY --from=build_stage /root/.risc0/extensions /root/.risc0/extensions
 
+# Add Docker CLI (only needed for Groth16 proof kind)
+COPY --from=docker:cli /usr/local/bin/docker /usr/local/bin/docker
+
 # Copy ere-server
 COPY --from=build_stage /ere/bin/ere-server /ere/bin/ere-server
 

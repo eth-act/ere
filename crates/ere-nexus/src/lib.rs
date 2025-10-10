@@ -9,8 +9,8 @@ use serde::de::DeserializeOwned;
 use std::{io::Read, time::Instant};
 use tracing::info;
 use zkvm_interface::{
-    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType, PublicValues,
-    zkVM, zkVMError,
+    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
+    PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -47,7 +47,12 @@ impl zkVM for EreNexus {
     fn prove(
         &self,
         _inputs: &Input,
+        proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, zkvm_interface::ProgramProvingReport), zkVMError> {
+        if proof_kind != ProofKind::Compressed {
+            panic!("Only Compressed proof kind is supported.");
+        }
+
         let prover: Stwo<Local> = Stwo::new_from_bytes(&self.program)
             .map_err(|e| NexusError::Prove(ProveError::Client(e.into())))
             .map_err(zkVMError::from)?;
@@ -68,10 +73,18 @@ impl zkVM for EreNexus {
         // TODO: Public values
         let public_values = Vec::new();
 
-        Ok((public_values, bytes, ProgramProvingReport::new(elapsed)))
+        Ok((
+            public_values,
+            Proof::Compressed(bytes),
+            ProgramProvingReport::new(elapsed),
+        ))
     }
 
-    fn verify(&self, proof: &[u8]) -> Result<PublicValues, zkVMError> {
+    fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
+        let Proof::Compressed(proof) = proof else {
+            return Err(zkVMError::other("Only Compressed proof kind is supported."));
+        };
+
         info!("Verifying proof...");
 
         let proof: nexus_sdk::stwo::seq::Proof = bincode::deserialize(proof)

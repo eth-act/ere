@@ -15,8 +15,8 @@ use std::{
     time::{self, Instant},
 };
 use zkvm_interface::{
-    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType,
-    PublicValues, zkVM, zkVMError,
+    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResourceType, PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -71,7 +71,12 @@ impl zkVM for ErePico {
     fn prove(
         &self,
         inputs: &Input,
+        proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, zkvm_interface::ProgramProvingReport), zkVMError> {
+        if proof_kind != ProofKind::Compressed {
+            panic!("Only Compressed proof kind is implemented.");
+        }
+
         let client = self.client();
 
         let mut stdin = client.new_stdin_builder();
@@ -91,12 +96,18 @@ impl zkVM for ErePico {
 
         Ok((
             public_values,
-            proof_bytes,
+            Proof::Compressed(proof_bytes),
             ProgramProvingReport::new(elapsed),
         ))
     }
 
-    fn verify(&self, proof: &[u8]) -> Result<PublicValues, zkVMError> {
+    fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
+        let Proof::Compressed(proof) = proof else {
+            return Err(zkVMError::other(
+                "Only Compressed proof kind is implemented.",
+            ));
+        };
+
         let client = self.client();
 
         let proof: PicoProofWithPublicValues = bincode::deserialize(proof)
@@ -172,7 +183,7 @@ mod tests {
     use test_utils::host::{
         BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
-    use zkvm_interface::{Compiler, ProverResourceType, zkVM};
+    use zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
 
     static BASIC_PROGRAM: OnceLock<PicoProgram> = OnceLock::new();
 
@@ -228,7 +239,7 @@ mod tests {
             BasicProgramIo::invalid_type,
             BasicProgramIo::invalid_data,
         ] {
-            panic::catch_unwind(|| zkvm.prove(&inputs_gen())).unwrap_err();
+            panic::catch_unwind(|| zkvm.prove(&inputs_gen(), ProofKind::default())).unwrap_err();
         }
     }
 }

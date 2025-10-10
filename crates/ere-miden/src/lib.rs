@@ -16,8 +16,8 @@ use miden_verifier::verify as miden_verify;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::{env, io::Read, time::Instant};
 use zkvm_interface::{
-    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType, PublicValues,
-    zkVM, zkVMError,
+    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
+    PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -83,7 +83,12 @@ impl zkVM for EreMiden {
     fn prove(
         &self,
         inputs: &Input,
+        proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
+        if proof_kind != ProofKind::Compressed {
+            panic!("Only Compressed proof kind is supported.");
+        }
+
         let (stack_inputs, advice_inputs) = generate_miden_inputs(inputs)?;
         let mut host = Self::setup_host()?;
 
@@ -112,12 +117,16 @@ impl zkVM for EreMiden {
 
         Ok((
             public_values,
-            proof_bytes,
+            Proof::Compressed(proof_bytes),
             ProgramProvingReport::new(start.elapsed()),
         ))
     }
 
-    fn verify(&self, proof: &[u8]) -> Result<PublicValues, zkVMError> {
+    fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
+        let Proof::Compressed(proof) = proof else {
+            return Err(zkVMError::other("Only Compressed proof kind is supported."));
+        };
+
         let bundle: MidenProofBundle = bincode::deserialize(proof)
             .map_err(|e| MidenError::Verify(VerifyError::BundleDeserialization(e)))?;
 
@@ -162,7 +171,7 @@ mod tests {
         compiler::{MidenAsm, MidenProgram},
     };
     use test_utils::host::testing_guest_directory;
-    use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
+    use zkvm_interface::{Compiler, Input, ProofKind, ProverResourceType, zkVM};
 
     fn load_miden_program(guest_name: &str) -> MidenProgram {
         MidenAsm
@@ -184,7 +193,7 @@ mod tests {
         inputs.write(const_b);
 
         // Prove
-        let (prover_public_values, proof, _) = zkvm.prove(&inputs).unwrap();
+        let (prover_public_values, proof, _) = zkvm.prove(&inputs, ProofKind::default()).unwrap();
 
         // Verify
         let verifier_public_values = zkvm.verify(&proof).unwrap();
@@ -211,7 +220,7 @@ mod tests {
         inputs.write(n_iterations);
 
         // Prove
-        let (prover_public_values, proof, _) = zkvm.prove(&inputs).unwrap();
+        let (prover_public_values, proof, _) = zkvm.prove(&inputs, ProofKind::default()).unwrap();
 
         // Verify
         let verifier_public_values = zkvm.verify(&proof).unwrap();

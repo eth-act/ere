@@ -12,8 +12,8 @@ use zkm_sdk::{
     ZKMVerifyingKey,
 };
 use zkvm_interface::{
-    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResourceType,
-    PublicValues, zkVM, zkVMError,
+    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResourceType, PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -64,38 +64,55 @@ impl zkVM for EreZiren {
     fn prove(
         &self,
         inputs: &Input,
+        proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
         info!("Generating proof…");
 
         let mut stdin = ZKMStdin::new();
         serialize_inputs(&mut stdin, inputs);
 
+        let inner_proof_kind = match proof_kind {
+            ProofKind::Compressed => ZKMProofKind::Compressed,
+            ProofKind::Groth16 => ZKMProofKind::Groth16,
+        };
+
         let start = std::time::Instant::now();
         let proof = CpuProver::new()
-            .prove(&self.pk, stdin, ZKMProofKind::Compressed)
+            .prove(&self.pk, stdin, inner_proof_kind)
             .map_err(|err| ZirenError::Prove(ProveError::Client(err.into())))?;
         let proving_time = start.elapsed();
 
-        let bytes = bincode::serialize(&proof)
-            .map_err(|err| ZirenError::Prove(ProveError::Bincode(err)))?;
+        let public_values = proof.public_values.to_vec();
+        let proof = Proof::from_bytes(
+            proof_kind,
+            bincode::serialize(&proof)
+                .map_err(|err| ZirenError::Prove(ProveError::Bincode(err)))?,
+        );
 
         Ok((
-            proof.public_values.to_vec(),
-            bytes,
+            public_values,
+            proof,
             ProgramProvingReport::new(proving_time),
         ))
     }
 
-    fn verify(&self, proof: &[u8]) -> Result<PublicValues, zkVMError> {
+    fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
         info!("Verifying proof…");
 
-        let proof: ZKMProofWithPublicValues = bincode::deserialize(proof)
-            .map_err(|err| ZirenError::Verify(VerifyError::Bincode(err)))?;
+        let proof_kind = ProofKind::from(proof);
 
-        let proof_kind = ZKMProofKind::from(&proof.proof);
-        if !matches!(proof_kind, ZKMProofKind::Compressed) {
+        let proof: ZKMProofWithPublicValues = bincode::deserialize(proof.as_bytes())
+            .map_err(|err| ZirenError::Verify(VerifyError::Bincode(err)))?;
+        let inner_proof_kind = ZKMProofKind::from(&proof.proof);
+
+        if !matches!(
+            (proof_kind, inner_proof_kind),
+            (ProofKind::Compressed, ZKMProofKind::Compressed)
+                | (ProofKind::Groth16, ZKMProofKind::Groth16)
+        ) {
             return Err(ZirenError::Verify(VerifyError::InvalidProofKind(
                 proof_kind,
+                inner_proof_kind,
             )))?;
         }
 
@@ -137,7 +154,7 @@ mod tests {
     use test_utils::host::{
         BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
-    use zkvm_interface::{Compiler, ProverResourceType, zkVM};
+    use zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
 
     static BASIC_PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
 
@@ -202,7 +219,7 @@ mod tests {
             BasicProgramIo::invalid_type,
             BasicProgramIo::invalid_data,
         ] {
-            panic::catch_unwind(|| zkvm.prove(&inputs_gen())).unwrap_err();
+            panic::catch_unwind(|| zkvm.prove(&inputs_gen(), ProofKind::default())).unwrap_err();
         }
     }
 }

@@ -131,6 +131,10 @@ impl DockerRunCmd {
         )
     }
 
+    pub fn env(self, key: impl AsRef<str>, value: impl AsRef<str>) -> Self {
+        self.option("env", format!("{}={}", key.as_ref(), value.as_ref()))
+    }
+
     /// Mounts `/var/run/docker.sock` to allow Docker-out-of-Docker (DooD).
     pub fn mount_docker_socket(self) -> Self {
         self.volume(DOCKER_SOCKET, DOCKER_SOCKET)
@@ -152,7 +156,7 @@ impl DockerRunCmd {
     pub fn inherit_env(self, key: impl AsRef<str>) -> Self {
         let key = key.as_ref();
         match env::var(key) {
-            Ok(val) => self.option("env", format!("{key}={val}")),
+            Ok(val) => self.env(key, val),
             Err(_) => self,
         }
     }
