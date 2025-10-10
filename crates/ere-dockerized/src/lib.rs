@@ -258,7 +258,7 @@ impl ErezkVM {
         &self,
         program: &SerializedProgram,
         resource: &ProverResourceType,
-    ) -> Result<String, CommonError> {
+    ) -> Result<ServerContainer, CommonError> {
         let port = self.server_port().to_string();
         let name = format!("ere-server-{self}-{port}");
         let gpu = matches!(resource, ProverResourceType::Gpu);
@@ -295,11 +295,9 @@ impl ErezkVM {
         if gpu {
             cmd = match self {
                 ErezkVM::OpenVM => cmd.gpus("all"),
-                // SP1's and Risc0's GPU proving requires Docker to start GPU prover
-                // service, to give the client access to the prover service, we need
-                // to use the host networking driver.
-                // The `--cuda` flags will be set when the GPU prover service is
-                // spin up, so we don't need to set here.
+                // SP1 runs docker command to spin up the server to do GPU
+                // proving, to give the client access to the prover service, we
+                // need to use the host networking driver.
                 ErezkVM::SP1 => cmd.mount_docker_socket().network("host"),
                 ErezkVM::Risc0 => cmd.gpus("all").inherit_env("RISC0_DEFAULT_PROVER_NUM_GPUS"),
                 ErezkVM::Zisk => cmd.gpus("all"),
@@ -307,13 +305,41 @@ impl ErezkVM {
             }
         }
 
+        let tempdir = TempDir::new()
+            .map_err(|err| CommonError::io(err, "Failed to create temporary directory"))?;
+
+        // zkVM specific options needed for proving Groth16 proof.
+        cmd = match self {
+            // Risc0 and SP1 runs docker command to prove Groth16 proof, and
+            // they pass the input by mounting temporary directory. Here we
+            // create a temporary directory and mount it on the top level, so
+            // the volume could be shared, and override `TMPDIR` so we don't
+            // need to mount the whole `/tmp`.
+            ErezkVM::Risc0 => cmd
+                .mount_docker_socket()
+                .env("TMPDIR", tempdir.path().to_string_lossy())
+                .volume(tempdir.path(), tempdir.path()),
+            ErezkVM::SP1 => {
+                let groth16_circuit_path = home_dir().join(".sp1").join("circuits").join("groth16");
+                cmd.mount_docker_socket()
+                    .env(
+                        "SP1_GROTH16_CIRCUIT_PATH",
+                        groth16_circuit_path.to_string_lossy(),
+                    )
+                    .env("TMPDIR", tempdir.path().to_string_lossy())
+                    .volume(tempdir.path(), tempdir.path())
+                    .volume(&groth16_circuit_path, &groth16_circuit_path)
+            }
+            _ => cmd,
+        };
+
         let args = iter::empty()
             .chain(["--port", &port])
             .chain(resource.to_args());
         cmd.spawn(args, &program.0)
             .map_err(CommonError::DockerRunCmd)?;
 
-        Ok(name)
+        Ok(ServerContainer { name, tempdir })
     }
 }
 
@@ -417,20 +443,25 @@ impl Compiler for EreDockerizedCompiler {
     }
 }
 
+struct ServerContainer {
+    name: String,
+    tempdir: TempDir,
+}
+
+impl Drop for ServerContainer {
+    fn drop(&mut self) {
+        if let Err(err) = stop_docker_container(&self.name) {
+            error!("{err}");
+        }
+    }
+}
+
 pub struct EreDockerizedzkVM {
     zkvm: ErezkVM,
     program: SerializedProgram,
     resource: ProverResourceType,
-    server_container_name: String,
+    server_container: ServerContainer,
     client: zkVMClient,
-}
-
-impl Drop for EreDockerizedzkVM {
-    fn drop(&mut self) {
-        if let Err(err) = stop_docker_container(&self.server_container_name) {
-            error!("{err}");
-        }
-    }
 }
 
 impl EreDockerizedzkVM {
@@ -441,7 +472,7 @@ impl EreDockerizedzkVM {
     ) -> Result<Self, zkVMError> {
         zkvm.build_docker_image(matches!(resource, ProverResourceType::Gpu))?;
 
-        let server_container_name = zkvm.spawn_server(&program, &resource)?;
+        let server_container = zkvm.spawn_server(&program, &resource)?;
 
         let url = Url::parse(&format!("http://127.0.0.1:{}", zkvm.server_port())).unwrap();
         let client = block_on(zkVMClient::new(url)).map_err(zkVMError::other)?;
@@ -450,7 +481,7 @@ impl EreDockerizedzkVM {
             zkvm,
             program,
             resource,
-            server_container_name,
+            server_container,
             client,
         })
     }
@@ -530,6 +561,10 @@ fn workspace_dir() -> PathBuf {
     dir.pop();
     dir.pop();
     dir.canonicalize().unwrap()
+}
+
+fn home_dir() -> PathBuf {
+    PathBuf::from(std::env::var("HOME").expect("env `$HOME` should be set"))
 }
 
 #[cfg(test)]
