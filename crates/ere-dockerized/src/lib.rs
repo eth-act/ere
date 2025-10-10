@@ -532,156 +532,113 @@ fn workspace_dir() -> PathBuf {
 
 #[cfg(test)]
 mod test {
-    use crate::{EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM, workspace_dir};
-    use test_utils::host::{
-        BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
-    };
-    use zkvm_interface::{Compiler, ProverResourceType};
+    macro_rules! test_compile {
+        ($zkvm:ident, $program:literal) => {
+            use crate::{
+                EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM, SerializedProgram, workspace_dir,
+            };
+            use std::sync::{Mutex, MutexGuard, OnceLock};
+            use test_utils::host::*;
+            use zkvm_interface::{Compiler, ProverResourceType};
 
-    #[test]
-    fn dockerized_jolt() {
-        let zkvm = ErezkVM::Jolt;
+            fn program() -> &'static SerializedProgram {
+                static PROGRAM: OnceLock<SerializedProgram> = OnceLock::new();
+                PROGRAM.get_or_init(|| {
+                    let zkvm = ErezkVM::$zkvm;
+                    let guest_directory = testing_guest_directory(zkvm.as_str(), $program);
+                    EreDockerizedCompiler::new(zkvm, workspace_dir())
+                        .unwrap()
+                        .compile(&guest_directory)
+                        .unwrap()
+                })
+            }
 
-        let guest_directory = testing_guest_directory(zkvm.as_str(), "basic");
-        let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
-            .unwrap()
-            .compile(&guest_directory)
-            .unwrap();
+            #[allow(dead_code)]
+            fn zkvm() -> (MutexGuard<'static, ()>, EreDockerizedzkVM) {
+                static LOCK: Mutex<()> = Mutex::new(());
+                let guard = LOCK.lock().unwrap();
+                let zkvm = ErezkVM::$zkvm;
+                let zkvm = EreDockerizedzkVM::new(zkvm, program().clone(), ProverResourceType::Cpu)
+                    .unwrap();
+                (guard, zkvm)
+            }
 
-        assert!(!program.0.is_empty(), "Program should not be empty");
+            #[test]
+            fn test_compile() {
+                let program = program();
 
-        // TODO: Test `EreDockerizedzkVM` when it's ready.
+                assert!(!program.0.is_empty(), "Program should not be empty");
+            }
+        };
     }
 
-    #[test]
-    fn dockerized_miden() {
-        let zkvm = ErezkVM::Miden;
-
-        let guest_directory = testing_guest_directory(zkvm.as_str(), "fib");
-        let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
-            .unwrap()
-            .compile(&guest_directory)
-            .unwrap();
-
-        assert!(!program.0.is_empty(), "Program should not be empty");
-
-        // TODO: Test `EreDockerizedzkVM` when it's ready.
+    macro_rules! test_execute {
+        ($zkvm:ident, $io:expr) => {
+            #[test]
+            fn test_execute() {
+                let (_guard, zkvm) = zkvm();
+                run_zkvm_execute(&zkvm, &$io);
+                drop(zkvm);
+            }
+        };
     }
 
-    #[test]
-    fn dockerized_nexus() {
-        let zkvm = ErezkVM::Nexus;
-
-        let guest_directory = testing_guest_directory(zkvm.as_str(), "basic");
-        let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
-            .unwrap()
-            .compile(&guest_directory)
-            .unwrap();
-
-        assert!(!program.0.is_empty(), "Program should not be empty");
-
-        // TODO: Test `EreDockerizedzkVM` when it's ready.
+    macro_rules! test_prove {
+        ($zkvm:ident, $io:expr) => {
+            #[test]
+            fn test_prove() {
+                let (_guard, zkvm) = zkvm();
+                run_zkvm_prove(&zkvm, &$io);
+                drop(zkvm);
+            }
+        };
     }
 
-    #[test]
-    fn dockerized_openvm() {
-        let zkvm = ErezkVM::OpenVM;
-
-        let guest_directory = testing_guest_directory(zkvm.as_str(), "basic");
-        let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
-            .unwrap()
-            .compile(&guest_directory)
-            .unwrap();
-
-        let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
-
-        let io = BasicProgramIo::valid().into_output_hashed_io();
-        run_zkvm_execute(&zkvm, &io);
-        run_zkvm_prove(&zkvm, &io);
+    mod jolt {
+        test_compile!(Jolt, "basic");
     }
 
-    #[test]
-    fn dockerized_pico() {
-        let zkvm = ErezkVM::Pico;
-
-        let guest_directory = testing_guest_directory(zkvm.as_str(), "basic");
-        let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
-            .unwrap()
-            .compile(&guest_directory)
-            .unwrap();
-
-        let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
-
-        let io = BasicProgramIo::valid();
-        run_zkvm_execute(&zkvm, &io);
-        run_zkvm_prove(&zkvm, &io);
+    mod miden {
+        test_compile!(Miden, "fib");
     }
 
-    #[test]
-    fn dockerized_risc0() {
-        let zkvm = ErezkVM::Risc0;
-
-        let guest_directory = testing_guest_directory(zkvm.as_str(), "basic");
-        let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
-            .unwrap()
-            .compile(&guest_directory)
-            .unwrap();
-
-        let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
-
-        let io = BasicProgramIo::valid();
-        run_zkvm_execute(&zkvm, &io);
-        run_zkvm_prove(&zkvm, &io);
+    mod nexus {
+        test_compile!(Nexus, "basic");
     }
 
-    #[test]
-    fn dockerized_sp1() {
-        let zkvm = ErezkVM::SP1;
-
-        let guest_directory = testing_guest_directory(zkvm.as_str(), "basic");
-        let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
-            .unwrap()
-            .compile(&guest_directory)
-            .unwrap();
-
-        let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
-
-        let io = BasicProgramIo::valid();
-        run_zkvm_execute(&zkvm, &io);
-        run_zkvm_prove(&zkvm, &io);
+    mod openvm {
+        test_compile!(OpenVM, "basic");
+        test_execute!(OpenVM, BasicProgramIo::valid().into_output_hashed_io());
+        test_prove!(OpenVM, BasicProgramIo::valid().into_output_hashed_io());
     }
 
-    #[test]
-    fn dockerized_ziren() {
-        let zkvm = ErezkVM::Ziren;
-
-        let guest_directory = testing_guest_directory(zkvm.as_str(), "basic");
-        let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
-            .unwrap()
-            .compile(&guest_directory)
-            .unwrap();
-
-        let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
-
-        let io = BasicProgramIo::valid();
-        run_zkvm_execute(&zkvm, &io);
-        run_zkvm_prove(&zkvm, &io);
+    mod pico {
+        test_compile!(Pico, "basic");
+        test_execute!(Pico, BasicProgramIo::valid());
+        test_prove!(Pico, BasicProgramIo::valid());
     }
 
-    #[test]
-    fn dockerized_zisk() {
-        let zkvm = ErezkVM::Zisk;
+    mod risc0 {
+        test_compile!(Risc0, "basic");
+        test_execute!(Risc0, BasicProgramIo::valid());
+        test_prove!(Risc0, BasicProgramIo::valid());
+    }
 
-        let guest_directory = testing_guest_directory(zkvm.as_str(), "basic");
-        let program = EreDockerizedCompiler::new(zkvm, workspace_dir())
-            .unwrap()
-            .compile(&guest_directory)
-            .unwrap();
+    mod sp1 {
+        test_compile!(SP1, "basic");
+        test_execute!(SP1, BasicProgramIo::valid());
+        test_prove!(SP1, BasicProgramIo::valid());
+    }
 
-        let zkvm = EreDockerizedzkVM::new(zkvm, program, ProverResourceType::Cpu).unwrap();
+    mod ziren {
+        test_compile!(Ziren, "basic");
+        test_execute!(Ziren, BasicProgramIo::valid());
+        test_prove!(Ziren, BasicProgramIo::valid());
+    }
 
-        let io = BasicProgramIo::valid().into_output_hashed_io();
-        run_zkvm_execute(&zkvm, &io);
-        run_zkvm_prove(&zkvm, &io);
+    mod zisk {
+        test_compile!(Zisk, "basic");
+        test_execute!(Zisk, BasicProgramIo::valid().into_output_hashed_io());
+        test_prove!(Zisk, BasicProgramIo::valid().into_output_hashed_io());
     }
 }
