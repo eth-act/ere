@@ -83,7 +83,7 @@ impl zkVM for EreZiren {
         let proving_time = start.elapsed();
 
         let public_values = proof.public_values.to_vec();
-        let proof = Proof::from_bytes(
+        let proof = Proof::new(
             proof_kind,
             bincode::serialize(&proof)
                 .map_err(|err| ZirenError::Prove(ProveError::Bincode(err)))?,
@@ -99,7 +99,7 @@ impl zkVM for EreZiren {
     fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
         info!("Verifying proof…");
 
-        let proof_kind = ProofKind::from(proof);
+        let proof_kind = proof.kind();
 
         let proof: ZKMProofWithPublicValues = bincode::deserialize(proof.as_bytes())
             .map_err(|err| ZirenError::Verify(VerifyError::Bincode(err)))?;

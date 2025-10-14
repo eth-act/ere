@@ -156,7 +156,7 @@ impl zkVM for EreRisc0 {
         let proving_time = now.elapsed();
 
         let public_values = prove_info.receipt.journal.bytes.clone();
-        let proof = Proof::from_bytes(
+        let proof = Proof::new(
             proof_kind,
             borsh::to_vec(&prove_info.receipt).map_err(zkVMError::other)?,
         );
@@ -169,7 +169,7 @@ impl zkVM for EreRisc0 {
     }
 
     fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
-        let proof_kind = ProofKind::from(proof);
+        let proof_kind = proof.kind();
 
         let receipt: Receipt = borsh::from_slice(proof.as_bytes()).map_err(zkVMError::other)?;
 

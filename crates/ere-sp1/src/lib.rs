@@ -187,7 +187,7 @@ impl zkVM for EreSP1 {
         let proving_time = start.elapsed();
 
         let public_values = proof.public_values.to_vec();
-        let proof = Proof::from_bytes(
+        let proof = Proof::new(
             proof_kind,
             bincode::serialize(&proof).map_err(|err| SP1Error::Prove(ProveError::Bincode(err)))?,
         );
@@ -202,7 +202,7 @@ impl zkVM for EreSP1 {
     fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
         info!("Verifying proof…");
 
-        let proof_kind = ProofKind::from(proof);
+        let proof_kind = proof.kind();
 
         let proof: SP1ProofWithPublicValues = bincode::deserialize(proof.as_bytes())
             .map_err(|err| SP1Error::Verify(VerifyError::Bincode(err)))?;

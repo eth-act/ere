@@ -55,8 +55,9 @@ impl<T: 'static + zkVM + Send + Sync> ZkvmService for zkVMServer<T> {
         let input = bincode::deserialize::<SerializedInput>(&request.input)
             .map_err(|_| invalid_argument("failed to deserialize input"))?
             .into();
-        let proof_kind = ProofKind::try_from(request.proof_kind)
-            .map_err(|v| invalid_argument(format!("invalid proof kind: {v}")))?;
+        let proof_kind = ProofKind::from_repr(request.proof_kind as usize).ok_or_else(|| {
+            invalid_argument(format!("invalid proof kind: {}", request.proof_kind))
+        })?;
 
         let (public_values, proof, report) = self
             .zkvm
@@ -76,12 +77,13 @@ impl<T: 'static + zkVM + Send + Sync> ZkvmService for zkVMServer<T> {
     ) -> twirp::Result<Response<VerifyResponse>> {
         let request = request.into_body();
 
-        let proof_kind = ProofKind::try_from(request.proof_kind)
-            .map_err(|v| invalid_argument(format!("invalid proof kind: {v}")))?;
+        let proof_kind = ProofKind::from_repr(request.proof_kind as usize).ok_or_else(|| {
+            invalid_argument(format!("invalid proof kind: {}", request.proof_kind))
+        })?;
 
         let public_values = self
             .zkvm
-            .verify(&Proof::from_bytes(proof_kind, request.proof))
+            .verify(&Proof::new(proof_kind, request.proof))
             .map_err(|err| invalid_argument(format!("failed to verify: {err:?}")))?;
 
         Ok(Response::new(VerifyResponse { public_values }))

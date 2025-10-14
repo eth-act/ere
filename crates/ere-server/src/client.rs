@@ -97,13 +97,13 @@ impl zkVMClient {
         let report: ProgramProvingReport = bincode::deserialize(&report)
             .with_context(|| "Failed to deserialize proving report")?;
 
-        Ok((public_values, Proof::from_bytes(proof_kind, proof), report))
+        Ok((public_values, Proof::new(proof_kind, proof), report))
     }
 
     pub async fn verify(&self, proof: &Proof) -> Result<PublicValues, Error> {
         let request = Request::new(VerifyRequest {
             proof: proof.as_bytes().to_vec(),
-            proof_kind: ProofKind::from(proof) as i32,
+            proof_kind: proof.kind() as i32,
         });
 
         let response = self
