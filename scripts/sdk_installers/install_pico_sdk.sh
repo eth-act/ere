@@ -39,7 +39,7 @@ rustup component add rust-src --toolchain "${PICO_TOOLCHAIN_VERSION}"
 # Install pico-cli using the specified toolchain
 # cargo-pico is a cargo subcommand, typically installed to $HOME/.cargo/bin
 echo "Installing pico-cli from GitHub repository (brevis-network/pico)..."
-cargo "+${PICO_TOOLCHAIN_VERSION}" install --git https://github.com/brevis-network/pico pico-cli --tag "$PICO_CLI_VERSION_TAG"
+cargo "+${PICO_TOOLCHAIN_VERSION}" install --git https://github.com/brevis-network/pico pico-cli --tag "$PICO_CLI_VERSION_TAG" --locked
 
 # Verify pico-cli installation
 echo "Verifying pico-cli installation..."
