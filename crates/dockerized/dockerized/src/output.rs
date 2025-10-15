@@ -3,7 +3,7 @@ use ere_zkvm_interface::zkVMError;
 use serde::de::DeserializeOwned;
 use std::io::Read;
 
-#[path = "../../zkvm/risc0/src/output.rs"]
+#[path = "../../../zkvm/risc0/src/output.rs"]
 mod ere_risc0_output;
 
 impl ErezkVM {

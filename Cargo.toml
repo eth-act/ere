@@ -13,9 +13,9 @@ members = [
     "crates/zkvm/ziren",
     "crates/zkvm/zisk",
     # Dockerized zkVM
-    "crates/compiler",
-    "crates/dockerized",
-    "crates/server",
+    "crates/dockerized/compiler",
+    "crates/dockerized/dockerized",
+    "crates/dockerized/server",
     # Utils
     "crates/build-utils",
     "crates/compile-utils",
@@ -113,9 +113,9 @@ ere-sp1 = { path = "crates/zkvm/sp1", default-features = false }
 ere-ziren = { path = "crates/zkvm/ziren", default-features = false }
 ere-zisk = { path = "crates/zkvm/zisk", default-features = false }
 
-ere-compiler = { path = "crates/compiler" }
-ere-dockerized = { path = "crates/dockerized" }
-ere-server = { path = "crates/server" }
+ere-compiler = { path = "crates/dockerized/compiler" }
+ere-dockerized = { path = "crates/dockerized/dockerized" }
+ere-server = { path = "crates/dockerized/server" }
 
 ere-build-utils = { path = "crates/build-utils" }
 ere-compile-utils = { path = "crates/compile-utils" }
