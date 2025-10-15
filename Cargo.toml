@@ -1,24 +1,25 @@
 [workspace]
 members = [
+    # zkVM interface
+    "crates/zkvm-interface",
+    # zkVMs
+    "crates/zkvm/jolt",
+    "crates/zkvm/miden",
+    "crates/zkvm/nexus",
+    "crates/zkvm/openvm",
+    "crates/zkvm/pico",
+    "crates/zkvm/risc0",
+    "crates/zkvm/sp1",
+    "crates/zkvm/ziren",
+    "crates/zkvm/zisk",
+    # Dockerized zkVM
+    "crates/compiler",
+    "crates/dockerized",
+    "crates/server",
+    # Utils
     "crates/build-utils",
     "crates/compile-utils",
     "crates/test-utils",
-    # zkVMs
-    "crates/ere-jolt",
-    "crates/ere-miden",
-    "crates/ere-nexus",
-    "crates/ere-openvm",
-    "crates/ere-pico",
-    "crates/ere-risc0",
-    "crates/ere-sp1",
-    "crates/ere-ziren",
-    "crates/ere-zisk",
-    # zkVM interface
-    "crates/zkvm-interface",
-    # CLI and dockerized zkVM
-    "crates/ere-compiler",
-    "crates/ere-dockerized",
-    "crates/ere-server",
 ]
 resolver = "2"
 
@@ -101,21 +102,24 @@ zkm-sdk = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.1.4" }
 
 # Local dependencies
 zkvm-interface = { path = "crates/zkvm-interface" }
+
+ere-jolt = { path = "crates/zkvm/jolt", default-features = false }
+ere-miden = { path = "crates/zkvm/miden", default-features = false }
+ere-nexus = { path = "crates/zkvm/nexus", default-features = false }
+ere-openvm = { path = "crates/zkvm/openvm", default-features = false }
+ere-pico = { path = "crates/zkvm/pico", default-features = false }
+ere-risc0 = { path = "crates/zkvm/risc0", default-features = false }
+ere-sp1 = { path = "crates/zkvm/sp1", default-features = false }
+ere-ziren = { path = "crates/zkvm/ziren", default-features = false }
+ere-zisk = { path = "crates/zkvm/zisk", default-features = false }
+
+ere-compiler = { path = "crates/compiler" }
+ere-dockerized = { path = "crates/dockerized" }
+ere-server = { path = "crates/server" }
+
 build-utils = { path = "crates/build-utils" }
 compile-utils = { path = "crates/compile-utils" }
 test-utils = { path = "crates/test-utils" }
-ere-compiler = { path = "crates/ere-compiler" }
-ere-dockerized = { path = "crates/ere-dockerized" }
-ere-server = { path = "crates/ere-server" }
-ere-jolt = { path = "crates/ere-jolt", default-features = false }
-ere-miden = { path = "crates/ere-miden", default-features = false }
-ere-nexus = { path = "crates/ere-nexus", default-features = false }
-ere-openvm = { path = "crates/ere-openvm", default-features = false }
-ere-pico = { path = "crates/ere-pico", default-features = false }
-ere-risc0 = { path = "crates/ere-risc0", default-features = false }
-ere-sp1 = { path = "crates/ere-sp1", default-features = false }
-ere-ziren = { path = "crates/ere-ziren", default-features = false }
-ere-zisk = { path = "crates/ere-zisk", default-features = false }
 
 [patch.crates-io]
 # These patches are only needed by Jolt
