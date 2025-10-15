@@ -562,6 +562,7 @@ fn workspace_dir() -> PathBuf {
     let mut dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     dir.pop();
     dir.pop();
+    dir.pop();
     dir.canonicalize().unwrap()
 }
 
