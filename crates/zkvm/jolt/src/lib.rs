@@ -6,6 +6,10 @@ use crate::{
     jolt_methods::{preprocess_prover, preprocess_verifier, prove_generic, verify_generic},
 };
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
+use ere_zkvm_interface::{
+    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
+    PublicValues, zkVM, zkVMError,
+};
 use jolt::{JoltHyperKZGProof, JoltProverPreprocessing, JoltVerifierPreprocessing};
 use serde::de::DeserializeOwned;
 use std::{
@@ -13,10 +17,6 @@ use std::{
     io::{Cursor, Read},
 };
 use tempfile::TempDir;
-use zkvm_interface::{
-    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
-    PublicValues, zkVM, zkVMError,
-};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
@@ -55,7 +55,7 @@ impl zkVM for EreJolt {
     fn execute(
         &self,
         _inputs: &Input,
-    ) -> Result<(PublicValues, zkvm_interface::ProgramExecutionReport), zkVMError> {
+    ) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
         let (_tempdir, program) = program(&self.elf)?;
 
         // TODO: Check how to pass private input to jolt, issue for tracking:
@@ -73,7 +73,7 @@ impl zkVM for EreJolt {
         &self,
         inputs: &Input,
         proof_kind: ProofKind,
-    ) -> Result<(PublicValues, Proof, zkvm_interface::ProgramProvingReport), zkVMError> {
+    ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
         if proof_kind != ProofKind::Compressed {
             panic!("Only Compressed proof kind is supported.");
         }

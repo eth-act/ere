@@ -2,9 +2,9 @@ use crate::{
     compiler::OpenVMProgram,
     error::{CompileError, OpenVMError},
 };
+use ere_zkvm_interface::Compiler;
 use openvm_build::GuestOptions;
 use std::{fs, path::Path};
-use zkvm_interface::Compiler;
 
 /// Compiler for Rust guest program to RV32IMA architecture, using customized
 /// target `riscv32im-risc0-zkvm-elf`.
@@ -42,8 +42,8 @@ impl Compiler for RustRv32imaCustomized {
 #[cfg(test)]
 mod tests {
     use crate::compiler::RustRv32imaCustomized;
-    use test_utils::host::testing_guest_directory;
-    use zkvm_interface::Compiler;
+    use ere_test_utils::host::testing_guest_directory;
+    use ere_zkvm_interface::Compiler;
 
     #[test]
     fn test_compile() {

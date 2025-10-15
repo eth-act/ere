@@ -5,15 +5,15 @@ use crate::{
     compiler::ZiskProgram,
     error::ZiskError,
 };
+use ere_zkvm_interface::{
+    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResourceType, PublicValues, zkVM, zkVMError,
+};
 use serde::de::DeserializeOwned;
 use std::{
     io::Read,
     sync::{Mutex, MutexGuard},
     time::Instant,
-};
-use zkvm_interface::{
-    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -147,11 +147,11 @@ fn serialize_inputs(inputs: &Input) -> Result<Vec<u8>, ZiskError> {
 #[cfg(test)]
 mod tests {
     use crate::{EreZisk, compiler::RustRv64imaCustomized};
-    use std::sync::{Mutex, OnceLock};
-    use test_utils::host::{
+    use ere_test_utils::host::{
         BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
-    use zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
+    use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
+    use std::sync::{Mutex, OnceLock};
 
     /// It fails if multiple servers created concurrently using the same port,
     /// so we have a lock to avoid that.

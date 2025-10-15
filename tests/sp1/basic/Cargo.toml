@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 sp1-zkvm = "5.2.1"
-test-utils = { path = "../../../crates/test-utils" }
+ere-test-utils = { path = "../../../crates/test-utils" }

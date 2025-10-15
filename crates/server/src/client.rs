@@ -6,12 +6,12 @@ use crate::{
     input::SerializedInput,
 };
 use anyhow::{Context, Error, bail};
+use ere_zkvm_interface::{
+    ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, PublicValues,
+};
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
 use twirp::{Client, Request, reqwest};
-use zkvm_interface::{
-    ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, PublicValues,
-};
 
 pub use twirp::url::Url;
 

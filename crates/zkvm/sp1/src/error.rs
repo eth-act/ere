@@ -1,8 +1,8 @@
 use std::{path::PathBuf, process::ExitStatus};
 
+use ere_zkvm_interface::{ProofKind, zkVMError};
 use sp1_sdk::SP1ProofMode;
 use thiserror::Error;
-use zkvm_interface::{ProofKind, zkVMError};
 
 impl From<SP1Error> for zkVMError {
     fn from(value: SP1Error) -> Self {
@@ -58,7 +58,7 @@ pub enum CompileError {
         source: std::io::Error,
     },
     #[error(transparent)]
-    CompileUtilError(#[from] compile_utils::CompileError),
+    CompileUtilError(#[from] ere_compile_utils::CompileError),
 }
 
 #[derive(Debug, Error)]

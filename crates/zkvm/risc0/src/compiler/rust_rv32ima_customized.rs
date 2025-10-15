@@ -2,11 +2,11 @@ use crate::{
     compiler::Risc0Program,
     error::{CompileError, Risc0Error},
 };
-use compile_utils::cargo_metadata;
+use ere_compile_utils::cargo_metadata;
+use ere_zkvm_interface::Compiler;
 use risc0_build::GuestOptions;
 use std::path::Path;
 use tracing::info;
-use zkvm_interface::Compiler;
 
 /// Compiler for Rust guest program to RV32IMA architecture, using customized
 /// Rust toolchain of Risc0.
@@ -51,8 +51,8 @@ impl Compiler for RustRv32imaCustomized {
 #[cfg(test)]
 mod tests {
     use crate::compiler::RustRv32imaCustomized;
-    use test_utils::host::testing_guest_directory;
-    use zkvm_interface::Compiler;
+    use ere_test_utils::host::testing_guest_directory;
+    use ere_zkvm_interface::Compiler;
 
     #[test]
     fn test_compile() {

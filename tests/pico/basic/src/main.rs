@@ -1,7 +1,7 @@
 #![no_main]
 
 use pico_sdk::io::{commit, commit_bytes, read_as, read_vec};
-use test_utils::guest::{BasicProgramCore, BasicStruct};
+use ere_test_utils::guest::{BasicProgramCore, BasicStruct};
 
 pico_sdk::entrypoint!(main);
 

@@ -1,16 +1,16 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 use crate::{compiler::Risc0Program, output::deserialize_from};
+use ere_zkvm_interface::{
+    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResourceType, PublicValues, zkVM, zkVMError,
+};
 use risc0_zkvm::{
     DEFAULT_MAX_PO2, DefaultProver, ExecutorEnv, ExecutorEnvBuilder, ExternalProver, InnerReceipt,
     ProverOpts, Receipt, default_executor, default_prover,
 };
 use serde::de::DeserializeOwned;
 use std::{env, io::Read, ops::RangeInclusive, rc::Rc, time::Instant};
-use zkvm_interface::{
-    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMError,
-};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
@@ -231,11 +231,11 @@ mod tests {
         EreRisc0,
         compiler::{Risc0Program, RustRv32imaCustomized},
     };
-    use std::sync::OnceLock;
-    use test_utils::host::{
+    use ere_test_utils::host::{
         BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
-    use zkvm_interface::{Compiler, Input, ProofKind, ProverResourceType, zkVM};
+    use ere_zkvm_interface::{Compiler, Input, ProofKind, ProverResourceType, zkVM};
+    use std::sync::OnceLock;
 
     static BASIC_PROGRAM: OnceLock<Risc0Program> = OnceLock::new();
 

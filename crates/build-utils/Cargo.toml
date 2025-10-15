@@ -1,5 +1,5 @@
 [package]
-name = "build-utils"
+name = "ere-build-utils"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

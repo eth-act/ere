@@ -1,7 +1,7 @@
+use ere_zkvm_interface::{ProofKind, zkVMError};
 use std::{io, path::PathBuf, process::ExitStatus};
 use thiserror::Error;
 use zkm_sdk::ZKMProofKind;
-use zkvm_interface::{ProofKind, zkVMError};
 
 impl From<ZirenError> for zkVMError {
     fn from(value: ZirenError) -> Self {
@@ -55,7 +55,7 @@ pub enum CompileError {
         source: std::io::Error,
     },
     #[error(transparent)]
-    CompileUtilError(#[from] compile_utils::CompileError),
+    CompileUtilError(#[from] ere_compile_utils::CompileError),
 }
 
 #[derive(Debug, Error)]

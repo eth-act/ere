@@ -1,10 +1,10 @@
 use crate::{EreJoltProof, error::VerifyError};
 use common::constants::{DEFAULT_MAX_BYTECODE_SIZE, DEFAULT_MAX_TRACE_LENGTH, DEFAULT_MEMORY_SIZE};
+use ere_zkvm_interface::Input;
 use jolt::{
     Jolt, JoltHyperKZGProof, JoltProverPreprocessing, JoltVerifierPreprocessing, MemoryConfig,
     MemoryLayout, RV32IJoltVM, tracer::JoltDevice,
 };
-use zkvm_interface::Input;
 
 pub fn preprocess_prover(
     program: &jolt::host::Program,

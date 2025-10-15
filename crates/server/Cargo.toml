@@ -29,7 +29,7 @@ ere-risc0 = { workspace = true, optional = true }
 ere-sp1 = { workspace = true, optional = true }
 ere-ziren = { workspace = true, optional = true }
 ere-zisk = { workspace = true, optional = true }
-zkvm-interface = { workspace = true, features = ["clap"] }
+ere-zkvm-interface = { workspace = true, features = ["clap"] }
 
 [dev-dependencies]
 
@@ -42,7 +42,7 @@ twirp-build.workspace = true
 
 [features]
 default = []
-server = ["dep:clap", "tower-http", "tracing", "dep:tracing-subscriber", "tokio/macros", "tokio/rt-multi-thread", "tokio/signal"]
+server = ["dep:clap", "dep:tower-http", "dep:tracing", "dep:tracing-subscriber", "tokio/macros", "tokio/rt-multi-thread", "tokio/signal"]
 
 # zkVM
 jolt = ["dep:ere-jolt", "server"]

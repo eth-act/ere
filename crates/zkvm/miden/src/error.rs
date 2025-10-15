@@ -1,9 +1,9 @@
+use ere_zkvm_interface::zkVMError;
 use miden_core::utils::DeserializationError;
 use miden_processor::ExecutionError;
 use miden_verifier::VerificationError;
 use std::path::PathBuf;
 use thiserror::Error;
-use zkvm_interface::zkVMError;
 
 impl From<MidenError> for zkVMError {
     fn from(value: MidenError) -> Self {

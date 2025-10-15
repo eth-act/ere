@@ -1,7 +1,7 @@
+use ere_zkvm_interface::zkVMError;
 use risc0_zkvm::serde::{Deserializer, Error, WordRead};
 use serde::de::{DeserializeOwned, Error as _};
 use std::io::Read;
-use zkvm_interface::zkVMError;
 
 pub fn deserialize_from<R: Read, T: DeserializeOwned>(reader: R) -> Result<T, zkVMError> {
     struct WordReadAdapter<R>(R);

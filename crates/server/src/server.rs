@@ -5,8 +5,8 @@ use crate::{
     },
     input::SerializedInput,
 };
+use ere_zkvm_interface::{Proof, ProofKind, zkVM};
 use twirp::{Request, Response, async_trait::async_trait, invalid_argument};
-use zkvm_interface::{Proof, ProofKind, zkVM};
 
 pub use api::router;
 

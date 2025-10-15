@@ -2,10 +2,10 @@ use crate::{
     compiler::JoltProgram,
     error::{CompileError, JoltError},
 };
-use compile_utils::cargo_metadata;
+use ere_compile_utils::cargo_metadata;
+use ere_zkvm_interface::Compiler;
 use jolt::host::DEFAULT_TARGET_DIR;
 use std::{env::set_current_dir, fs, path::Path};
-use zkvm_interface::Compiler;
 
 /// Compiler for Rust guest program to RV32IMA architecture, using customized
 /// Rust toolchain of Jolt.
@@ -47,8 +47,8 @@ impl Compiler for RustRv32imaCustomized {
 #[cfg(test)]
 mod tests {
     use crate::{EreJolt, compiler::RustRv32imaCustomized};
-    use test_utils::host::testing_guest_directory;
-    use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
+    use ere_test_utils::host::testing_guest_directory;
+    use ere_zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
 
     #[test]
     fn test_compile() {

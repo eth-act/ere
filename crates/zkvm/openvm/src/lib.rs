@@ -4,6 +4,10 @@ use crate::{
     compiler::OpenVMProgram,
     error::{CommonError, ExecuteError, OpenVMError, ProveError, VerifyError},
 };
+use ere_zkvm_interface::{
+    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResourceType, PublicValues, zkVM, zkVMError,
+};
 use openvm_circuit::arch::instructions::exe::VmExe;
 use openvm_continuations::verifier::internal::types::VmStarkProof;
 use openvm_sdk::{
@@ -18,10 +22,6 @@ use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
 use serde::de::DeserializeOwned;
 use std::{env, io::Read, path::PathBuf, sync::Arc, time::Instant};
-use zkvm_interface::{
-    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMError,
-};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
@@ -103,10 +103,7 @@ impl EreOpenVM {
 }
 
 impl zkVM for EreOpenVM {
-    fn execute(
-        &self,
-        inputs: &Input,
-    ) -> Result<(PublicValues, zkvm_interface::ProgramExecutionReport), zkVMError> {
+    fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
         let mut stdin = StdIn::default();
         serialize_inputs(&mut stdin, inputs);
 
@@ -129,7 +126,7 @@ impl zkVM for EreOpenVM {
         &self,
         inputs: &Input,
         proof_kind: ProofKind,
-    ) -> Result<(PublicValues, Proof, zkvm_interface::ProgramProvingReport), zkVMError> {
+    ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
         if proof_kind != ProofKind::Compressed {
             panic!("Only Compressed proof kind is supported.");
         }
@@ -237,11 +234,11 @@ mod tests {
         EreOpenVM,
         compiler::{OpenVMProgram, RustRv32imaCustomized},
     };
-    use std::sync::OnceLock;
-    use test_utils::host::{
+    use ere_test_utils::host::{
         BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
-    use zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
+    use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
+    use std::sync::OnceLock;
 
     fn basic_program() -> OpenVMProgram {
         static PROGRAM: OnceLock<OpenVMProgram> = OnceLock::new();

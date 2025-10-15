@@ -1,9 +1,9 @@
 use crate::ErezkVM;
+use ere_zkvm_interface::zkVMError;
 use serde::de::DeserializeOwned;
 use std::io::Read;
-use zkvm_interface::zkVMError;
 
-#[path = "../../ere-risc0/src/output.rs"]
+#[path = "../../zkvm/risc0/src/output.rs"]
 mod ere_risc0_output;
 
 impl ErezkVM {

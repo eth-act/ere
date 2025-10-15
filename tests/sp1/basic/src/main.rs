@@ -1,6 +1,6 @@
 #![no_main]
 
-use test_utils::guest::{BasicProgramCore, BasicStruct};
+use ere_test_utils::guest::{BasicProgramCore, BasicStruct};
 
 sp1_zkvm::entrypoint!(main);
 

@@ -2,10 +2,10 @@ use crate::{
     compiler::NexusProgram,
     error::{CompileError, NexusError},
 };
-use compile_utils::cargo_metadata;
+use ere_compile_utils::cargo_metadata;
+use ere_zkvm_interface::Compiler;
 use nexus_sdk::compile::{Compile, Compiler as NexusCompiler, cargo::CargoPackager};
 use std::{fs, path::Path};
-use zkvm_interface::Compiler;
 
 /// Compiler for Rust guest program to RV32I architecture.
 pub struct RustRv32i;
@@ -39,8 +39,8 @@ impl Compiler for RustRv32i {
 #[cfg(test)]
 mod tests {
     use crate::compiler::RustRv32i;
-    use test_utils::host::testing_guest_directory;
-    use zkvm_interface::Compiler;
+    use ere_test_utils::host::testing_guest_directory;
+    use ere_zkvm_interface::Compiler;
 
     #[test]
     fn test_compile() {

@@ -2226,15 +2226,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "build-utils"
-version = "0.0.13"
-dependencies = [
- "cargo_metadata 0.19.2",
- "thiserror 2.0.12",
- "tracing",
-]
-
-[[package]]
 name = "bumpalo"
 version = "3.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2587,15 +2578,6 @@ dependencies = [
  "strum 0.26.3",
  "strum_macros 0.26.4",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "compile-utils"
-version = "0.0.13"
-dependencies = [
- "cargo_metadata 0.19.2",
- "tempfile",
- "thiserror 2.0.12",
 ]
 
 [[package]]
@@ -3638,6 +3620,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "ere-build-utils"
+version = "0.0.13"
+dependencies = [
+ "cargo_metadata 0.19.2",
+ "thiserror 2.0.12",
+ "tracing",
+]
+
+[[package]]
+name = "ere-compile-utils"
+version = "0.0.13"
+dependencies = [
+ "cargo_metadata 0.19.2",
+ "tempfile",
+ "thiserror 2.0.12",
+]
+
+[[package]]
 name = "ere-compiler"
 version = "0.0.13"
 dependencies = [
@@ -3653,9 +3653,9 @@ dependencies = [
  "ere-sp1",
  "ere-ziren",
  "ere-zisk",
+ "ere-zkvm-interface",
  "serde",
  "tracing-subscriber 0.3.19",
- "zkvm-interface",
 ]
 
 [[package]]
@@ -3664,17 +3664,17 @@ version = "0.0.13"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
- "build-utils",
  "bytemuck",
+ "ere-build-utils",
  "ere-server",
+ "ere-test-utils",
+ "ere-zkvm-interface",
  "risc0-zkvm",
  "serde",
  "tempfile",
- "test-utils",
  "thiserror 2.0.12",
  "tokio",
  "tracing",
- "zkvm-interface",
 ]
 
 [[package]]
@@ -3682,15 +3682,15 @@ name = "ere-jolt"
 version = "0.0.13"
 dependencies = [
  "ark-serialize 0.5.0",
- "build-utils",
  "common",
- "compile-utils",
+ "ere-build-utils",
+ "ere-compile-utils",
+ "ere-test-utils",
+ "ere-zkvm-interface",
  "jolt",
  "serde",
  "tempfile",
- "test-utils",
  "thiserror 2.0.12",
- "zkvm-interface",
 ]
 
 [[package]]
@@ -3698,7 +3698,9 @@ name = "ere-miden"
 version = "0.0.13"
 dependencies = [
  "bincode 1.3.3",
- "build-utils",
+ "ere-build-utils",
+ "ere-test-utils",
+ "ere-zkvm-interface",
  "miden-assembly",
  "miden-core",
  "miden-processor",
@@ -3706,9 +3708,7 @@ dependencies = [
  "miden-stdlib",
  "miden-verifier",
  "serde",
- "test-utils",
  "thiserror 2.0.12",
- "zkvm-interface",
 ]
 
 [[package]]
@@ -3716,22 +3716,24 @@ name = "ere-nexus"
 version = "0.0.13"
 dependencies = [
  "bincode 1.3.3",
- "build-utils",
- "compile-utils",
+ "ere-build-utils",
+ "ere-compile-utils",
+ "ere-test-utils",
+ "ere-zkvm-interface",
  "nexus-sdk",
  "serde",
- "test-utils",
  "thiserror 2.0.12",
  "tracing",
- "zkvm-interface",
 ]
 
 [[package]]
 name = "ere-openvm"
 version = "0.0.13"
 dependencies = [
- "build-utils",
- "compile-utils",
+ "ere-build-utils",
+ "ere-compile-utils",
+ "ere-test-utils",
+ "ere-zkvm-interface",
  "openvm-build",
  "openvm-circuit",
  "openvm-continuations",
@@ -3739,10 +3741,8 @@ dependencies = [
  "openvm-stark-sdk",
  "openvm-transpiler",
  "serde",
- "test-utils",
  "thiserror 2.0.12",
  "toml 0.8.23",
- "zkvm-interface",
 ]
 
 [[package]]
@@ -3751,16 +3751,16 @@ version = "0.0.13"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
- "build-utils",
- "compile-utils",
+ "ere-build-utils",
+ "ere-compile-utils",
+ "ere-test-utils",
+ "ere-zkvm-interface",
  "p3-field 0.1.0 (git+https://github.com/brevis-network/Plonky3.git?rev=a4d376b)",
  "pico-vm",
  "serde",
  "sha2",
  "tempfile",
- "test-utils",
  "thiserror 2.0.12",
- "zkvm-interface",
 ]
 
 [[package]]
@@ -3769,17 +3769,17 @@ version = "0.0.13"
 dependencies = [
  "anyhow",
  "borsh",
- "build-utils",
  "bytemuck",
- "compile-utils",
+ "ere-build-utils",
+ "ere-compile-utils",
+ "ere-test-utils",
+ "ere-zkvm-interface",
  "risc0-binfmt",
  "risc0-build",
  "risc0-zkvm",
  "serde",
- "test-utils",
  "thiserror 2.0.12",
  "tracing",
- "zkvm-interface",
 ]
 
 [[package]]
@@ -3798,6 +3798,7 @@ dependencies = [
  "ere-sp1",
  "ere-ziren",
  "ere-zisk",
+ "ere-zkvm-interface",
  "prost 0.13.5",
  "prost-build 0.13.5",
  "serde",
@@ -3807,7 +3808,6 @@ dependencies = [
  "tracing-subscriber 0.3.19",
  "twirp",
  "twirp-build",
- "zkvm-interface",
 ]
 
 [[package]]
@@ -3815,15 +3815,26 @@ name = "ere-sp1"
 version = "0.0.13"
 dependencies = [
  "bincode 1.3.3",
- "build-utils",
- "compile-utils",
+ "ere-build-utils",
+ "ere-compile-utils",
+ "ere-test-utils",
+ "ere-zkvm-interface",
  "serde",
  "sp1-sdk",
  "tempfile",
- "test-utils",
  "thiserror 2.0.12",
  "tracing",
- "zkvm-interface",
+]
+
+[[package]]
+name = "ere-test-utils"
+version = "0.0.13"
+dependencies = [
+ "bincode 1.3.3",
+ "ere-zkvm-interface",
+ "rand 0.9.2",
+ "serde",
+ "sha2",
 ]
 
 [[package]]
@@ -3831,14 +3842,14 @@ name = "ere-ziren"
 version = "0.0.13"
 dependencies = [
  "bincode 1.3.3",
- "build-utils",
- "compile-utils",
+ "ere-build-utils",
+ "ere-compile-utils",
+ "ere-test-utils",
+ "ere-zkvm-interface",
  "serde",
- "test-utils",
  "thiserror 2.0.12",
  "tracing",
  "zkm-sdk",
- "zkvm-interface",
 ]
 
 [[package]]
@@ -3847,16 +3858,31 @@ version = "0.0.13"
 dependencies = [
  "bincode 1.3.3",
  "blake3",
- "build-utils",
  "bytemuck",
- "compile-utils",
+ "ere-build-utils",
+ "ere-compile-utils",
+ "ere-test-utils",
+ "ere-zkvm-interface",
  "serde",
  "strum 0.27.2",
  "tempfile",
- "test-utils",
  "thiserror 2.0.12",
  "tracing",
- "zkvm-interface",
+]
+
+[[package]]
+name = "ere-zkvm-interface"
+version = "0.0.13"
+dependencies = [
+ "auto_impl",
+ "bincode 1.3.3",
+ "clap",
+ "erased-serde",
+ "indexmap 2.10.0",
+ "serde",
+ "serde_json",
+ "strum 0.27.2",
+ "thiserror 2.0.12",
 ]
 
 [[package]]
@@ -13048,17 +13074,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "test-utils"
-version = "0.0.13"
-dependencies = [
- "bincode 1.3.3",
- "rand 0.9.2",
- "serde",
- "sha2",
- "zkvm-interface",
-]
-
-[[package]]
 name = "textwrap"
 version = "0.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -15539,21 +15554,6 @@ dependencies = [
  "sha2",
  "zkm-lib",
  "zkm-primitives",
-]
-
-[[package]]
-name = "zkvm-interface"
-version = "0.0.13"
-dependencies = [
- "auto_impl",
- "bincode 1.3.3",
- "clap",
- "erased-serde",
- "indexmap 2.10.0",
- "serde",
- "serde_json",
- "strum 0.27.2",
- "thiserror 2.0.12",
 ]
 
 [[package]]

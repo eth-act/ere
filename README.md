@@ -73,7 +73,7 @@ bash scripts/sdk_installers/install_sp1_sdk.sh
 ```toml
 # Cargo.toml
 [dependencies]
-zkvm-interface = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.12" }
+ere-zkvm-interface = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.12" }
 ere-sp1        = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.12" }
 ```
 
@@ -82,7 +82,7 @@ ere-sp1        = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.12" }
 ```rust
 // main.rs
 use ere_sp1::{EreSP1, RV32_IM_SUCCINCT_ZKVM_ELF};
-use zkvm_interface::{Compiler, Input, ProofKind, ProverResourceType, zkVM};
+use ere_zkvm_interface::{Compiler, Input, ProofKind, ProverResourceType, zkVM};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let guest_directory = std::path::Path::new("workspace/guest");
@@ -120,7 +120,7 @@ Use Docker for zkVM operations without installing SDKs locally. Only requires Do
 ```toml
 # Cargo.toml
 [dependencies]
-zkvm-interface = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.12" }
+ere-zkvm-interface = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.12" }
 ere-dockerized = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.12" }
 ```
 
@@ -129,7 +129,7 @@ ere-dockerized = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.12" }
 ```rust
 // main.rs
 use ere_dockerized::{EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM};
-use zkvm_interface::{Compiler, Input, ProofKind, ProverResourceType, zkVM};
+use ere_zkvm_interface::{Compiler, Input, ProofKind, ProverResourceType, zkVM};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let guest_directory = std::path::Path::new("workspace/guest");
@@ -162,18 +162,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```
 crates/
-  zkvm-interface/     ← core traits & types
-  ere-{backend}/      ← backend adapters (sp1, openvm, …)
-tests/                ← guest programs & integration tests
+  zkvm-interface/       ← core traits & types
+  zkvm/{backend}/       ← backend adapters (sp1, openvm, …)
+tests/                  ← guest programs & integration tests
 scripts/sdk_installers/ ← SDK install helpers
-docker/               ← Dockerfiles & build contexts
+docker/                 ← Dockerfiles & build contexts
 ```
 
 ## Architecture
 
 ### The Interface
 
-`zkvm-interface` exposes two core traits:
+`ere-zkvm-interface` exposes two core traits:
 
 * **Compiler** – compile a guest project into the correct zkVM artifact. For most this will be a RISCV ELF binary or some type that wraps it and includes extra metadata such as a proving and verifying key.
 * **zkVM** – execute, prove & verify that artifact. A zkVM instance is created for specific `program`, where the `program` comes from the `Compiler`.

@@ -5,6 +5,10 @@ use crate::{
     compiler::PicoProgram,
     error::{PicoError, ProveError, VerifyError},
 };
+use ere_zkvm_interface::{
+    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResourceType, PublicValues, zkVM, zkVMError,
+};
 use pico_p3_field::PrimeField32;
 use pico_vm::{configs::stark_config::KoalaBearPoseidon2, emulator::stdin::EmulatorStdinBuilder};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -13,10 +17,6 @@ use std::{
     env,
     io::Read,
     time::{self, Instant},
-};
-use zkvm_interface::{
-    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -72,7 +72,14 @@ impl zkVM for ErePico {
         &self,
         inputs: &Input,
         proof_kind: ProofKind,
-    ) -> Result<(PublicValues, Proof, zkvm_interface::ProgramProvingReport), zkVMError> {
+    ) -> Result<
+        (
+            PublicValues,
+            Proof,
+            ere_zkvm_interface::ProgramProvingReport,
+        ),
+        zkVMError,
+    > {
         if proof_kind != ProofKind::Compressed {
             panic!("Only Compressed proof kind is implemented.");
         }
@@ -179,11 +186,11 @@ mod tests {
         ErePico,
         compiler::{PicoProgram, RustRv32imaCustomized},
     };
-    use std::{panic, sync::OnceLock};
-    use test_utils::host::{
+    use ere_test_utils::host::{
         BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
-    use zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
+    use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
+    use std::{panic, sync::OnceLock};
 
     static BASIC_PROGRAM: OnceLock<PicoProgram> = OnceLock::new();
 

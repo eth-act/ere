@@ -1,5 +1,5 @@
 use openvm::io::{read, read_vec, reveal_bytes32};
-use test_utils::guest::{BasicProgramCore, BasicStruct};
+use ere_test_utils::guest::{BasicProgramCore, BasicStruct};
 
 fn main() {
     // Read `bytes`.

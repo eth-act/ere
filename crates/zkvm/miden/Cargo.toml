@@ -6,10 +6,9 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-bincode = { workspace = true }
+bincode.workspace = true
 serde = { workspace = true, features = ["derive"] }
-thiserror = { workspace = true }
-zkvm-interface = { workspace = true }
+thiserror.workspace = true
 
 # Miden
 miden-assembly = { workspace = true, features = ["std"] }
@@ -17,13 +16,16 @@ miden-core = { workspace = true, features = ["std"] }
 miden-processor = { workspace = true, features = ["std"] }
 miden-prover = { workspace = true, features = ["std"] }
 miden-stdlib = { workspace = true, features = ["std"] }
-miden-verifier = { workspace = true }
+miden-verifier.workspace = true
+
+# Local dependencies
+ere-zkvm-interface.workspace = true
 
 [dev-dependencies]
-test-utils = { workspace = true, features = ["host"] }
+ere-test-utils = { workspace = true, features = ["host"] }
 
 [build-dependencies]
-build-utils.workspace = true
+ere-build-utils.workspace = true
 
 [lints]
 workspace = true

@@ -20,5 +20,5 @@ pub enum CompileError {
     #[error("ELF binary image calculation failure : {0}")]
     ImageIDCalculationFailure(anyhow::Error),
     #[error(transparent)]
-    CompileUtilError(#[from] compile_utils::CompileError),
+    CompileUtilError(#[from] ere_compile_utils::CompileError),
 }

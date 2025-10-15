@@ -1,11 +1,11 @@
 use crate::compiler::Risc0Program;
 use crate::error::{CompileError, Risc0Error};
-use compile_utils::CargoBuildCmd;
+use ere_compile_utils::CargoBuildCmd;
+use ere_zkvm_interface::Compiler;
 use risc0_binfmt::ProgramBinary;
 use std::env;
 use std::path::Path;
 use tracing::info;
-use zkvm_interface::Compiler;
 
 // TODO: Make this with `zkos` package building to avoid binary file storing in repo.
 // File taken from https://github.com/risc0/risc0/blob/v3.0.3/risc0/zkos/v1compat/elfs/v1compat.elf
@@ -65,8 +65,8 @@ impl Compiler for RustRv32ima {
 #[cfg(test)]
 mod tests {
     use crate::{EreRisc0, compiler::RustRv32ima};
-    use test_utils::host::testing_guest_directory;
-    use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
+    use ere_test_utils::host::testing_guest_directory;
+    use ere_zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
 
     #[test]
     fn test_compile() {

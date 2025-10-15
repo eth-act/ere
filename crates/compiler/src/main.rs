@@ -1,9 +1,9 @@
 use anyhow::{Context, Error};
 use clap::Parser;
+use ere_zkvm_interface::Compiler;
 use serde::Serialize;
 use std::{env, fs::File, path::PathBuf};
 use tracing_subscriber::EnvFilter;
-use zkvm_interface::Compiler;
 
 // Compile-time check to ensure exactly one zkVM feature is enabled for `ere-compiler`
 const _: () = {

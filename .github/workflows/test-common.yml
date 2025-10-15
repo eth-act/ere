@@ -17,16 +17,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - crate: build-utils
-            run_test: true
-          - crate: compile-utils
-            run_test: true
-          - crate: test-utils
-            run_test: true
-          - crate: zkvm-interface
+          - crate: ere-zkvm-interface
             run_test: true
           - crate: ere-dockerized
             run_test: false # They are run in per-zkVM workflows
+          - crate: ere-build-utils
+            run_test: true
+          - crate: ere-compile-utils
+            run_test: true
+          - crate: ere-test-utils
+            run_test: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

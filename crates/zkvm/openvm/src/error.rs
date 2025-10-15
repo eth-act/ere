@@ -1,7 +1,7 @@
+use ere_zkvm_interface::zkVMError;
 use openvm_sdk::{SdkError, commit::AppExecutionCommit};
 use std::{io, path::PathBuf};
 use thiserror::Error;
-use zkvm_interface::zkVMError;
 
 impl From<OpenVMError> for zkVMError {
     fn from(value: OpenVMError) -> Self {
@@ -45,7 +45,7 @@ pub enum CompileError {
     #[error("Failed to deserialize OpenVM's config file: {0}")]
     DeserializeConfigFailed(toml::de::Error),
     #[error(transparent)]
-    CompileUtilError(#[from] compile_utils::CompileError),
+    CompileUtilError(#[from] ere_compile_utils::CompileError),
 }
 
 #[derive(Debug, Error)]

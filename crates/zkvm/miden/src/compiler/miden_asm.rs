@@ -2,10 +2,10 @@ use crate::{
     compiler::MidenProgram,
     error::{CompileError, MidenError},
 };
+use ere_zkvm_interface::Compiler;
 use miden_assembly::Assembler;
 use miden_stdlib::StdLibrary;
 use std::{fs, path::Path};
-use zkvm_interface::Compiler;
 
 /// Compiler for Miden assembly guest program.
 pub struct MidenAsm;
@@ -52,8 +52,8 @@ impl Compiler for MidenAsm {
 #[cfg(test)]
 mod tests {
     use crate::compiler::MidenAsm;
-    use test_utils::host::testing_guest_directory;
-    use zkvm_interface::Compiler;
+    use ere_test_utils::host::testing_guest_directory;
+    use ere_zkvm_interface::Compiler;
 
     #[test]
     fn test_compile() {

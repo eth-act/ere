@@ -1,6 +1,6 @@
+use ere_zkvm_interface::zkVMError;
 use std::path::PathBuf;
 use thiserror::Error;
-use zkvm_interface::zkVMError;
 
 impl From<NexusError> for zkVMError {
     fn from(value: NexusError) -> Self {
@@ -31,7 +31,7 @@ pub enum CompileError {
     #[error("ELF file not found at {0}")]
     ElfNotFound(PathBuf),
     #[error(transparent)]
-    CompileUtilError(#[from] compile_utils::CompileError),
+    CompileUtilError(#[from] ere_compile_utils::CompileError),
 }
 
 #[derive(Debug, Error)]

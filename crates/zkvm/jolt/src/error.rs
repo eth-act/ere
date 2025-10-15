@@ -1,8 +1,8 @@
 use ark_serialize::SerializationError;
+use ere_zkvm_interface::zkVMError;
 use jolt::jolt_core::utils::errors::ProofVerifyError;
 use std::{io, path::PathBuf};
 use thiserror::Error;
-use zkvm_interface::zkVMError;
 
 impl From<JoltError> for zkVMError {
     fn from(value: JoltError) -> Self {
@@ -34,7 +34,7 @@ pub enum CompileError {
     #[error("Failed to set current directory to {path}: {source}")]
     SetCurrentDirFailed { source: io::Error, path: PathBuf },
     #[error(transparent)]
-    CompileUtilError(#[from] compile_utils::CompileError),
+    CompileUtilError(#[from] ere_compile_utils::CompileError),
 }
 
 #[derive(Debug, Error)]

@@ -1,6 +1,7 @@
 use anyhow::{Context, Error};
 use clap::Parser;
 use ere_server::server::{router, zkVMServer};
+use ere_zkvm_interface::{ProverResourceType, zkVM};
 use std::{
     io::{self, Read},
     net::{Ipv4Addr, SocketAddr},
@@ -15,7 +16,6 @@ use twirp::{
     reqwest::StatusCode,
     server::not_found_handler,
 };
-use zkvm_interface::{ProverResourceType, zkVM};
 
 // Compile-time check to ensure exactly one zkVM feature is enabled for `ere-server`
 const _: () = {

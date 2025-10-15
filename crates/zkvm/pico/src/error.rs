@@ -1,6 +1,6 @@
+use ere_zkvm_interface::zkVMError;
 use std::{io, path::PathBuf, process::ExitStatus};
 use thiserror::Error;
-use zkvm_interface::zkVMError;
 
 impl From<PicoError> for zkVMError {
     fn from(value: PicoError) -> Self {
@@ -47,7 +47,7 @@ pub enum CompileError {
         source: io::Error,
     },
     #[error(transparent)]
-    CompileUtilError(#[from] compile_utils::CompileError),
+    CompileUtilError(#[from] ere_compile_utils::CompileError),
 }
 
 #[derive(Debug, Error)]

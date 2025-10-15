@@ -7,4 +7,4 @@ edition = "2024"
 
 [dependencies]
 pico-sdk = { git = "https://github.com/brevis-network/pico", tag = "v1.1.7" }
-test-utils = { path = "../../../crates/test-utils" }
+ere-test-utils = { path = "../../../crates/test-utils" }

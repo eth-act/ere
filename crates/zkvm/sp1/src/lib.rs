@@ -4,6 +4,10 @@ use crate::{
     compiler::SP1Program,
     error::{ExecuteError, ProveError, SP1Error, VerifyError},
 };
+use ere_zkvm_interface::{
+    Input, InputItem, NetworkProverConfig, ProgramExecutionReport, ProgramProvingReport, Proof,
+    ProofKind, ProverResourceType, PublicValues, zkVM, zkVMError,
+};
 use serde::de::DeserializeOwned;
 use sp1_sdk::{
     CpuProver, CudaProver, NetworkProver, Prover, ProverClient, SP1ProofMode,
@@ -11,10 +15,6 @@ use sp1_sdk::{
 };
 use std::{io::Read, time::Instant};
 use tracing::info;
-use zkvm_interface::{
-    Input, InputItem, NetworkProverConfig, ProgramExecutionReport, ProgramProvingReport, Proof,
-    ProofKind, ProverResourceType, PublicValues, zkVM, zkVMError,
-};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
@@ -145,10 +145,7 @@ impl EreSP1 {
 }
 
 impl zkVM for EreSP1 {
-    fn execute(
-        &self,
-        inputs: &Input,
-    ) -> Result<(PublicValues, zkvm_interface::ProgramExecutionReport), zkVMError> {
+    fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
         let mut stdin = SP1Stdin::new();
         serialize_inputs(&mut stdin, inputs);
 
@@ -170,7 +167,7 @@ impl zkVM for EreSP1 {
         &self,
         inputs: &Input,
         proof_kind: ProofKind,
-    ) -> Result<(PublicValues, Proof, zkvm_interface::ProgramProvingReport), zkVMError> {
+    ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
         info!("Generating proof…");
 
         let mut stdin = SP1Stdin::new();
@@ -254,11 +251,11 @@ fn serialize_inputs(stdin: &mut SP1Stdin, inputs: &Input) {
 #[cfg(test)]
 mod tests {
     use crate::{EreSP1, compiler::RustRv32imaCustomized};
-    use std::{panic, sync::OnceLock};
-    use test_utils::host::{
+    use ere_test_utils::host::{
         BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
-    use zkvm_interface::{Compiler, NetworkProverConfig, ProofKind, ProverResourceType, zkVM};
+    use ere_zkvm_interface::{Compiler, NetworkProverConfig, ProofKind, ProverResourceType, zkVM};
+    use std::{panic, sync::OnceLock};
 
     static BASIC_PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
 

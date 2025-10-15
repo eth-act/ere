@@ -1,7 +1,7 @@
 use crate::guest::{BasicProgramCore, BasicStruct};
+use ere_zkvm_interface::{Input, ProofKind, PublicValues, zkVM};
 use rand::{Rng, rng};
 use std::{fmt::Debug, io::Read, marker::PhantomData, path::PathBuf};
-use zkvm_interface::{Input, ProofKind, PublicValues, zkVM};
 
 fn workspace() -> PathBuf {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));

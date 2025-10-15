@@ -1,5 +1,5 @@
 [package]
-name = "test-utils"
+name = "ere-test-utils"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -12,11 +12,11 @@ serde = { workspace = true, features = ["derive"] }
 sha2.workspace = true
 
 # Local dependencies
-zkvm-interface = { workspace = true, optional = true }
+ere-zkvm-interface = { workspace = true, optional = true }
 
 [lints]
 workspace = true
 
 [features]
 default = []
-host = ["dep:rand", "dep:zkvm-interface"]
+host = ["dep:rand", "dep:ere-zkvm-interface"]

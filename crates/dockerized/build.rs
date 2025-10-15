@@ -1,4 +1,4 @@
-use build_utils::{detect_sdk_version, detect_self_crate_version};
+use ere_build_utils::{detect_sdk_version, detect_self_crate_version};
 use std::{env, fs, path::Path};
 
 fn main() {

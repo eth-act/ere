@@ -1,6 +1,6 @@
+use ere_zkvm_interface::zkVMError;
 use std::{io, path::PathBuf};
 use thiserror::Error;
-use zkvm_interface::zkVMError;
 
 impl From<DockerizedError> for zkVMError {
     fn from(value: DockerizedError) -> Self {

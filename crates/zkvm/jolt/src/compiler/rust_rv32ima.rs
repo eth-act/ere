@@ -2,9 +2,9 @@ use crate::{
     compiler::JoltProgram,
     error::{CompileError, JoltError},
 };
-use compile_utils::CargoBuildCmd;
+use ere_compile_utils::CargoBuildCmd;
+use ere_zkvm_interface::Compiler;
 use std::{env, path::Path};
-use zkvm_interface::Compiler;
 
 const TARGET_TRIPLE: &str = "riscv32ima-unknown-none-elf";
 // According to https://github.com/a16z/jolt/blob/55b9830a3944dde55d33a55c42522b81dd49f87a/jolt-core/src/host/mod.rs#L95
@@ -59,8 +59,8 @@ impl Compiler for RustRv32ima {
 #[cfg(test)]
 mod tests {
     use crate::{EreJolt, compiler::RustRv32ima};
-    use test_utils::host::testing_guest_directory;
-    use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
+    use ere_test_utils::host::testing_guest_directory;
+    use ere_zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
 
     #[test]
     fn test_compile() {

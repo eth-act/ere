@@ -2,13 +2,13 @@ use crate::{
     compiler::ZirenProgram,
     error::{CompileError, ZirenError},
 };
-use compile_utils::cargo_metadata;
+use ere_compile_utils::cargo_metadata;
+use ere_zkvm_interface::Compiler;
 use std::{
     fs,
     path::{Path, PathBuf},
     process::Command,
 };
-use zkvm_interface::Compiler;
 
 const ZKM_TOOLCHAIN: &str = "zkm";
 
@@ -87,8 +87,8 @@ impl Compiler for RustMips32r2Customized {
 #[cfg(test)]
 mod tests {
     use crate::compiler::RustMips32r2Customized;
-    use test_utils::host::testing_guest_directory;
-    use zkvm_interface::Compiler;
+    use ere_test_utils::host::testing_guest_directory;
+    use ere_zkvm_interface::Compiler;
 
     #[test]
     fn test_compile() {

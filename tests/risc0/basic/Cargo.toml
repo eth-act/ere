@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 risc0-zkvm = { version = "3.0.3", default-features = false, features = ["std", "unstable"] }
-test-utils = { path = "../../../crates/test-utils" }
+ere-test-utils = { path = "../../../crates/test-utils" }

@@ -22,7 +22,7 @@ ere-risc0 = { workspace = true, optional = true }
 ere-sp1 = { workspace = true, optional = true }
 ere-ziren = { workspace = true, optional = true }
 ere-zisk = { workspace = true, optional = true }
-zkvm-interface.workspace = true
+ere-zkvm-interface.workspace = true
 
 [dev-dependencies]
 

@@ -16,14 +16,14 @@ common.workspace = true
 jolt = { workspace = true, features = ["host"] }
 
 # Local dependencies
-compile-utils.workspace = true
-zkvm-interface.workspace = true
+ere-compile-utils.workspace = true
+ere-zkvm-interface.workspace = true
 
 [dev-dependencies]
-test-utils = { workspace = true, features = ["host"] }
+ere-test-utils = { workspace = true, features = ["host"] }
 
 [build-dependencies]
-build-utils.workspace = true
+ere-build-utils.workspace = true
 
 [lints]
 workspace = true

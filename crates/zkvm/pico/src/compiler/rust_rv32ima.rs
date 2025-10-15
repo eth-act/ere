@@ -2,9 +2,9 @@ use crate::{
     compiler::PicoProgram,
     error::{CompileError, PicoError},
 };
-use compile_utils::CargoBuildCmd;
+use ere_compile_utils::CargoBuildCmd;
+use ere_zkvm_interface::Compiler;
 use std::{env, path::Path};
-use zkvm_interface::Compiler;
 
 const TARGET_TRIPLE: &str = "riscv32ima-unknown-none-elf";
 // According to https://github.com/brevis-network/pico/blob/v1.1.7/sdk/cli/src/build/build.rs#L104
@@ -54,8 +54,8 @@ impl Compiler for RustRv32ima {
 #[cfg(test)]
 mod tests {
     use crate::{ErePico, compiler::RustRv32ima};
-    use test_utils::host::testing_guest_directory;
-    use zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
+    use ere_test_utils::host::testing_guest_directory;
+    use ere_zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
 
     #[test]
     fn test_compile() {

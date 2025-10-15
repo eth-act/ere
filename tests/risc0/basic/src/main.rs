@@ -1,5 +1,5 @@
 use risc0_zkvm::guest::env;
-use test_utils::guest::{BasicProgramCore, BasicStruct};
+use ere_test_utils::guest::{BasicProgramCore, BasicStruct};
 
 fn main() {
     // Read `bytes`.

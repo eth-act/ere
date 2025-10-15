@@ -1,5 +1,5 @@
+use ere_zkvm_interface::{Input, InputItem};
 use serde::{Deserialize, Serialize};
-use zkvm_interface::{Input, InputItem};
 
 #[derive(Serialize, Deserialize)]
 pub struct SerializedInput(pub Vec<SerializedInputItem>);

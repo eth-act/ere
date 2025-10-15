@@ -101,7 +101,7 @@ sp1-sdk = "5.2.1"
 zkm-sdk = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.1.4" }
 
 # Local dependencies
-zkvm-interface = { path = "crates/zkvm-interface" }
+ere-zkvm-interface = { path = "crates/zkvm-interface" }
 
 ere-jolt = { path = "crates/zkvm/jolt", default-features = false }
 ere-miden = { path = "crates/zkvm/miden", default-features = false }
@@ -117,9 +117,9 @@ ere-compiler = { path = "crates/compiler" }
 ere-dockerized = { path = "crates/dockerized" }
 ere-server = { path = "crates/server" }
 
-build-utils = { path = "crates/build-utils" }
-compile-utils = { path = "crates/compile-utils" }
-test-utils = { path = "crates/test-utils" }
+ere-build-utils = { path = "crates/build-utils" }
+ere-compile-utils = { path = "crates/compile-utils" }
+ere-test-utils = { path = "crates/test-utils" }
 
 [patch.crates-io]
 # These patches are only needed by Jolt

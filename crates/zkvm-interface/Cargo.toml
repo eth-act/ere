@@ -1,5 +1,5 @@
 [package]
-name = "zkvm-interface"
+name = "ere-zkvm-interface"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

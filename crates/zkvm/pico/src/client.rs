@@ -3,6 +3,7 @@
 // on chain. Issue for tracking: https://github.com/eth-act/ere/issues/140.
 
 use anyhow::{Error, Ok, Result};
+use ere_zkvm_interface::PublicValues;
 use pico_vm::{
     compiler::riscv::program::Program,
     configs::{config::StarkGenericConfig, stark_config::KoalaBearPoseidon2},
@@ -16,7 +17,6 @@ use pico_vm::{
         ProverChain, RiscvProver,
     },
 };
-use zkvm_interface::PublicValues;
 
 pub type SC = KoalaBearPoseidon2;
 pub type MetaProof = proof::MetaProof<SC>;

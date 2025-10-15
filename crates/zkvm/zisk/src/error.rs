@@ -1,8 +1,8 @@
 use crate::client::RomDigest;
 use bytemuck::PodCastError;
+use ere_zkvm_interface::zkVMError;
 use std::{io, path::PathBuf, process::ExitStatus};
 use thiserror::Error;
-use zkvm_interface::zkVMError;
 
 impl From<ZiskError> for zkVMError {
     fn from(value: ZiskError) -> Self {
@@ -46,7 +46,7 @@ pub enum ZiskError {
     )]
     CargoBuildFailed { status: ExitStatus, path: PathBuf },
     #[error(transparent)]
-    CompileUtilError(#[from] compile_utils::CompileError),
+    CompileUtilError(#[from] ere_compile_utils::CompileError),
 
     // Serialization
     #[error("Bincode serialization/deserialization failed: {0}")]

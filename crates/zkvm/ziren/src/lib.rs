@@ -4,16 +4,16 @@ use crate::{
     compiler::ZirenProgram,
     error::{ExecuteError, ProveError, VerifyError, ZirenError},
 };
+use ere_zkvm_interface::{
+    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResourceType, PublicValues, zkVM, zkVMError,
+};
 use serde::de::DeserializeOwned;
 use std::{io::Read, time::Instant};
 use tracing::info;
 use zkm_sdk::{
     CpuProver, Prover, ZKMProofKind, ZKMProofWithPublicValues, ZKMProvingKey, ZKMStdin,
     ZKMVerifyingKey,
-};
-use zkvm_interface::{
-    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMError,
 };
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -150,11 +150,11 @@ fn serialize_inputs(stdin: &mut ZKMStdin, inputs: &Input) {
 #[cfg(test)]
 mod tests {
     use crate::{EreZiren, compiler::RustMips32r2Customized};
-    use std::{panic, sync::OnceLock};
-    use test_utils::host::{
+    use ere_test_utils::host::{
         BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
     };
-    use zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
+    use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
+    use std::{panic, sync::OnceLock};
 
     static BASIC_PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
 
@@ -179,7 +179,7 @@ mod tests {
 
     #[test]
     fn test_execute_invalid_inputs() {
-        type F = fn() -> zkvm_interface::Input;
+        type F = fn() -> ere_zkvm_interface::Input;
 
         let program = basic_program();
         let zkvm = EreZiren::new(program, ProverResourceType::Cpu);

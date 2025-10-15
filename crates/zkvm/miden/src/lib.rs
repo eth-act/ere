@@ -3,6 +3,10 @@ use crate::{
     error::{ExecuteError, MidenError, VerifyError},
     io::{generate_miden_inputs, outputs_to_public_values},
 };
+use ere_zkvm_interface::{
+    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
+    PublicValues, zkVM, zkVMError,
+};
 use miden_core::{
     Program,
     utils::{Deserializable, Serializable},
@@ -15,10 +19,6 @@ use miden_stdlib::StdLibrary;
 use miden_verifier::verify as miden_verify;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::{env, io::Read, time::Instant};
-use zkvm_interface::{
-    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
-    PublicValues, zkVM, zkVMError,
-};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
@@ -170,8 +170,8 @@ mod tests {
         EreMiden,
         compiler::{MidenAsm, MidenProgram},
     };
-    use test_utils::host::testing_guest_directory;
-    use zkvm_interface::{Compiler, Input, ProofKind, ProverResourceType, zkVM};
+    use ere_test_utils::host::testing_guest_directory;
+    use ere_zkvm_interface::{Compiler, Input, ProofKind, ProverResourceType, zkVM};
 
     fn load_miden_program(guest_name: &str) -> MidenProgram {
         MidenAsm

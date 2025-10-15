@@ -2,10 +2,10 @@ use crate::{
     compiler::SP1Program,
     error::{CompileError, SP1Error},
 };
+use ere_zkvm_interface::Compiler;
 use std::{fs, path::Path, process::Command};
 use tempfile::tempdir;
 use tracing::info;
-use zkvm_interface::Compiler;
 
 /// Compiler for Rust guest program to RV32IMA architecture, using customized
 /// Rust toolchain of Succinct.
@@ -83,8 +83,8 @@ impl Compiler for RustRv32imaCustomized {
 #[cfg(test)]
 mod tests {
     use crate::compiler::RustRv32imaCustomized;
-    use test_utils::host::testing_guest_directory;
-    use zkvm_interface::Compiler;
+    use ere_test_utils::host::testing_guest_directory;
+    use ere_zkvm_interface::Compiler;
 
     #[test]
     fn test_compile() {

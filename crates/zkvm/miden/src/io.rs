@@ -1,8 +1,8 @@
 use crate::error::{ExecuteError, MidenError};
+use ere_zkvm_interface::{Input, InputItem, PublicValues};
 use miden_processor::{AdviceInputs, StackInputs, StackOutputs};
-use zkvm_interface::{Input, InputItem, PublicValues};
 
-/// Returns Miden compatible inputs from `zkvm_interface::Input`.
+/// Returns Miden compatible inputs from `ere_zkvm_interface::Input`.
 ///
 /// All inputs are serialized and concatenated, then placed onto the advice tape.
 /// The stack is left empty.

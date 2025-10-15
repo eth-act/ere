@@ -4,14 +4,14 @@ use crate::{
     compiler::NexusProgram,
     error::{NexusError, ProveError, VerifyError},
 };
+use ere_zkvm_interface::{
+    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
+    PublicValues, zkVM, zkVMError,
+};
 use nexus_sdk::{Local, Prover, Verifiable, stwo::seq::Stwo};
 use serde::de::DeserializeOwned;
 use std::{io::Read, time::Instant};
 use tracing::info;
-use zkvm_interface::{
-    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
-    PublicValues, zkVM, zkVMError,
-};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
@@ -32,7 +32,7 @@ impl zkVM for EreNexus {
     fn execute(
         &self,
         _inputs: &Input,
-    ) -> Result<(PublicValues, zkvm_interface::ProgramExecutionReport), zkVMError> {
+    ) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
         // TODO: Serialize inputs by `postcard` and make sure there is no double serailization.
         // Issue for tracking: https://github.com/eth-act/ere/issues/63.
 
@@ -48,7 +48,7 @@ impl zkVM for EreNexus {
         &self,
         _inputs: &Input,
         proof_kind: ProofKind,
-    ) -> Result<(PublicValues, Proof, zkvm_interface::ProgramProvingReport), zkVMError> {
+    ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
         if proof_kind != ProofKind::Compressed {
             panic!("Only Compressed proof kind is supported.");
         }

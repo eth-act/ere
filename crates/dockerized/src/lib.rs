@@ -27,7 +27,7 @@
 //! ```rust,no_run
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! use ere_dockerized::{EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM};
-//! use zkvm_interface::{Compiler, Input, ProofKind, ProverResourceType, zkVM};
+//! use ere_zkvm_interface::{Compiler, Input, ProofKind, ProverResourceType, zkVM};
 //! use std::path::Path;
 //!
 //! // The zkVM we plan to use
@@ -70,6 +70,10 @@ use crate::{
     error::{CommonError, CompileError, DockerizedError, ExecuteError, ProveError, VerifyError},
 };
 use ere_server::client::{Url, zkVMClient};
+use ere_zkvm_interface::{
+    Compiler, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResourceType, PublicValues, zkVM, zkVMError,
+};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::{
     env,
@@ -82,10 +86,6 @@ use std::{
 };
 use tempfile::TempDir;
 use tracing::error;
-use zkvm_interface::{
-    Compiler, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMError,
-};
 
 include!(concat!(env!("OUT_DIR"), "/crate_version.rs"));
 include!(concat!(env!("OUT_DIR"), "/zkvm_sdk_version_impl.rs"));
@@ -576,9 +576,9 @@ mod test {
             use crate::{
                 EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM, SerializedProgram, workspace_dir,
             };
+            use ere_test_utils::host::*;
+            use ere_zkvm_interface::{Compiler, ProverResourceType};
             use std::sync::{Mutex, MutexGuard, OnceLock};
-            use test_utils::host::*;
-            use zkvm_interface::{Compiler, ProverResourceType};
 
             fn program() -> &'static SerializedProgram {
                 static PROGRAM: OnceLock<SerializedProgram> = OnceLock::new();

@@ -1,7 +1,7 @@
 use crate::{ErezkVM, error::CommonError};
 use ere_server::input::{SerializedInput, SerializedInputItem};
+use ere_zkvm_interface::{Input, InputItem};
 use serde::Serialize;
-use zkvm_interface::{Input, InputItem};
 
 impl ErezkVM {
     pub fn serialize_object(
