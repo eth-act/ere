@@ -1,22 +1,22 @@
-use openvm::io::{read, read_vec, reveal_bytes32};
-use ere_test_utils::guest::{BasicProgramCore, BasicStruct};
+use ere_test_utils::{
+    guest::{Digest, Platform, Sha256},
+    program::{basic::BasicProgram, Program},
+};
+use openvm::io::{read_vec, reveal_bytes32};
+
+struct OpenVMPlatform;
+
+impl Platform for OpenVMPlatform {
+    fn read_input() -> Vec<u8> {
+        read_vec()
+    }
+
+    fn write_output(output: &[u8]) {
+        let digest = Sha256::digest(output);
+        reveal_bytes32(digest.into());
+    }
+}
 
 fn main() {
-    // Read `bytes`.
-    let bytes = read_vec();
-
-    // Read `basic_struct`.
-    let basic_struct = read::<BasicStruct>();
-
-    // Check `bytes` length is as expected.
-    assert_eq!(bytes.len(), BasicProgramCore::BYTES_LENGTH);
-
-    // Do some computation on `bytes` and `basic_struct`.
-    let outputs = BasicProgramCore::outputs((bytes, basic_struct));
-
-    // Hash `outputs` into digest.
-    let digest = BasicProgramCore::sha256_outputs(outputs);
-
-    // Write `digest`
-    reveal_bytes32(digest);
+    BasicProgram::run::<OpenVMPlatform>();
 }

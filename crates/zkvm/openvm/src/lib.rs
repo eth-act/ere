@@ -5,8 +5,8 @@ use crate::{
     error::{CommonError, ExecuteError, OpenVMError, ProveError, VerifyError},
 };
 use ere_zkvm_interface::{
-    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMError,
+    ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
+    PublicValues, zkVM, zkVMError,
 };
 use openvm_circuit::arch::instructions::exe::VmExe;
 use openvm_continuations::verifier::internal::types::VmStarkProof;
@@ -20,8 +20,7 @@ use openvm_sdk::{
 };
 use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
-use serde::de::DeserializeOwned;
-use std::{env, io::Read, path::PathBuf, sync::Arc, time::Instant};
+use std::{env, path::PathBuf, sync::Arc, time::Instant};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
@@ -103,9 +102,9 @@ impl EreOpenVM {
 }
 
 impl zkVM for EreOpenVM {
-    fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
+    fn execute(&self, input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
         let mut stdin = StdIn::default();
-        serialize_inputs(&mut stdin, inputs);
+        stdin.write_bytes(input);
 
         let start = Instant::now();
         let public_values = self
@@ -124,7 +123,7 @@ impl zkVM for EreOpenVM {
 
     fn prove(
         &self,
-        inputs: &Input,
+        input: &[u8],
         proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
         if proof_kind != ProofKind::Compressed {
@@ -132,7 +131,7 @@ impl zkVM for EreOpenVM {
         }
 
         let mut stdin = StdIn::default();
-        serialize_inputs(&mut stdin, inputs);
+        stdin.write_bytes(input);
 
         let now = std::time::Instant::now();
         let (proof, app_commit) = match self.resource {
@@ -194,21 +193,6 @@ impl zkVM for EreOpenVM {
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
     }
-
-    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, _: R) -> Result<T, zkVMError> {
-        unimplemented!("no native serialization in this platform")
-    }
-}
-
-fn serialize_inputs(stdin: &mut StdIn, inputs: &Input) {
-    for input in inputs.iter() {
-        match input {
-            InputItem::Object(obj) => stdin.write(obj),
-            InputItem::SerializedObject(bytes) | InputItem::Bytes(bytes) => {
-                stdin.write_bytes(bytes)
-            }
-        }
-    }
 }
 
 /// Extract public values in bytes from field elements.
@@ -234,8 +218,9 @@ mod tests {
         EreOpenVM,
         compiler::{OpenVMProgram, RustRv32imaCustomized},
     };
-    use ere_test_utils::host::{
-        BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+    use ere_test_utils::{
+        host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
+        program::basic::BasicProgramInput,
     };
     use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
     use std::sync::OnceLock;
@@ -256,21 +241,17 @@ mod tests {
         let program = basic_program();
         let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
 
-        let io = BasicProgramIo::valid().into_output_hashed_io();
-        run_zkvm_execute(&zkvm, &io);
+        let test_case = BasicProgramInput::valid().into_output_sha256();
+        run_zkvm_execute(&zkvm, &test_case);
     }
 
     #[test]
-    fn test_execute_invalid_inputs() {
+    fn test_execute_invalid_input() {
         let program = basic_program();
         let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
 
-        for inputs in [
-            BasicProgramIo::empty(),
-            BasicProgramIo::invalid_type(),
-            BasicProgramIo::invalid_data(),
-        ] {
-            zkvm.execute(&inputs).unwrap_err();
+        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+            zkvm.execute(&input).unwrap_err();
         }
     }
 
@@ -279,21 +260,17 @@ mod tests {
         let program = basic_program();
         let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
 
-        let io = BasicProgramIo::valid().into_output_hashed_io();
-        run_zkvm_prove(&zkvm, &io);
+        let test_case = BasicProgramInput::valid().into_output_sha256();
+        run_zkvm_prove(&zkvm, &test_case);
     }
 
     #[test]
-    fn test_prove_invalid_inputs() {
+    fn test_prove_invalid_input() {
         let program = basic_program();
         let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
 
-        for inputs in [
-            BasicProgramIo::empty(),
-            BasicProgramIo::invalid_type(),
-            BasicProgramIo::invalid_data(),
-        ] {
-            zkvm.prove(&inputs, ProofKind::default()).unwrap_err();
+        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+            zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }
     }
 }
