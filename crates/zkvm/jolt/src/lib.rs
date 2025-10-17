@@ -7,15 +7,11 @@ use crate::{
 };
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ere_zkvm_interface::{
-    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
+    ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
     PublicValues, zkVM, zkVMError,
 };
 use jolt::{JoltHyperKZGProof, JoltProverPreprocessing, JoltVerifierPreprocessing};
-use serde::de::DeserializeOwned;
-use std::{
-    env, fs,
-    io::{Cursor, Read},
-};
+use std::{env, fs, io::Cursor};
 use tempfile::TempDir;
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -52,10 +48,7 @@ impl EreJolt {
 }
 
 impl zkVM for EreJolt {
-    fn execute(
-        &self,
-        _inputs: &Input,
-    ) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
+    fn execute(&self, _input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
         let (_tempdir, program) = program(&self.elf)?;
 
         // TODO: Check how to pass private input to jolt, issue for tracking:
@@ -71,7 +64,7 @@ impl zkVM for EreJolt {
 
     fn prove(
         &self,
-        inputs: &Input,
+        input: &[u8],
         proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
         if proof_kind != ProofKind::Compressed {
@@ -81,7 +74,7 @@ impl zkVM for EreJolt {
         let (_tempdir, program) = program(&self.elf)?;
 
         let now = std::time::Instant::now();
-        let proof = prove_generic(&program, self.prover_preprocessing.clone(), inputs);
+        let proof = prove_generic(&program, self.prover_preprocessing.clone(), input);
         let elapsed = now.elapsed();
 
         let mut proof_bytes = Vec::new();
@@ -121,11 +114,6 @@ impl zkVM for EreJolt {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
-    }
-
-    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, _reader: R) -> Result<T, zkVMError> {
-        // Issue for tracking: https://github.com/eth-act/ere/issues/4.
-        todo!()
     }
 }
 

@@ -48,7 +48,7 @@ impl Compiler for RustRv32imaCustomized {
 mod tests {
     use crate::{EreJolt, compiler::RustRv32imaCustomized};
     use ere_test_utils::host::testing_guest_directory;
-    use ere_zkvm_interface::{Compiler, Input, ProverResourceType, zkVM};
+    use ere_zkvm_interface::{Compiler, ProverResourceType, zkVM};
 
     #[test]
     fn test_compile() {
@@ -63,6 +63,6 @@ mod tests {
         let program = RustRv32imaCustomized.compile(&guest_directory).unwrap();
         let zkvm = EreJolt::new(program, ProverResourceType::Cpu).unwrap();
 
-        zkvm.execute(&Input::new()).unwrap();
+        zkvm.execute(&[]).unwrap();
     }
 }

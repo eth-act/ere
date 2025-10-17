@@ -1,6 +1,5 @@
 use crate::{EreJoltProof, error::VerifyError};
 use common::constants::{DEFAULT_MAX_BYTECODE_SIZE, DEFAULT_MAX_TRACE_LENGTH, DEFAULT_MEMORY_SIZE};
-use ere_zkvm_interface::Input;
 use jolt::{
     Jolt, JoltHyperKZGProof, JoltProverPreprocessing, JoltVerifierPreprocessing, MemoryConfig,
     MemoryLayout, RV32IJoltVM, tracer::JoltDevice,
@@ -43,7 +42,7 @@ pub fn preprocess_verifier(
 pub fn prove_generic(
     program: &jolt::host::Program,
     preprocessing: JoltProverPreprocessing<4, jolt::F, jolt::PCS, jolt::ProofTranscript>,
-    _inputs: &Input,
+    _input: &[u8],
 ) -> EreJoltProof {
     let mut program = program.clone();
 
