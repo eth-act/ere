@@ -2,12 +2,9 @@
 #![allow(clippy::double_parens)]
 
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
-use std::{io::Read, path::Path};
+use std::path::Path;
 use strum::{EnumDiscriminants, EnumIs, EnumTryAs, FromRepr};
 use thiserror::Error;
-
-mod input;
-pub use input::{Input, InputItem};
 
 mod reports;
 pub use reports::{ProgramExecutionReport, ProgramProvingReport};
@@ -144,13 +141,13 @@ impl Proof {
 /// Note that a zkVM instance is created for specific program, each zkVM
 /// implementation will have their own construction function.
 pub trait zkVM {
-    /// Executes the program with the provided inputs.
-    fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError>;
+    /// Executes the program with the given input.
+    fn execute(&self, input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError>;
 
-    /// Creates a proof of the program execution with given inputs.
+    /// Creates a proof of the program execution with given input.
     fn prove(
         &self,
-        inputs: &Input,
+        input: &[u8],
         proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError>;
 
@@ -164,17 +161,4 @@ pub trait zkVM {
 
     /// Returns the version of the zkVM SDK (e.g. 0.1.0)
     fn sdk_version(&self) -> &'static str;
-
-    /// Deserializes an object from a [`Read`]er.
-    ///
-    /// If a guest program has multiple objects committed/revealed, one can do
-    /// the following to extract them in sequence:
-    ///
-    /// ```ignore
-    /// let public_values = zkvm.verify(&proof)?;
-    /// let mut reader = public_values.as_slice();
-    /// let v0: T = zkvm.deserialize_from(&mut reader)?;
-    /// let v1: U = zkvm.deserialize_from(&mut reader)?;
-    /// ```
-    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, reader: R) -> Result<T, zkVMError>;
 }
