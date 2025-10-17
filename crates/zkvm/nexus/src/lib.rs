@@ -204,12 +204,23 @@ mod tests {
     use std::sync::OnceLock;
 
     static BASIC_PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
+    static FIB_PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
 
     fn basic_program() -> Vec<u8> {
         BASIC_PROGRAM
             .get_or_init(|| {
                 RustRv32i
                     .compile(&testing_guest_directory("nexus", "basic"))
+                    .unwrap()
+            })
+            .clone()
+    }
+
+    fn fib_program() -> Vec<u8> {
+        FIB_PROGRAM
+            .get_or_init(|| {
+                RustRv32i
+                    .compile(&testing_guest_directory("nexus", "fib"))
                     .unwrap()
             })
             .clone()
@@ -268,14 +279,9 @@ mod tests {
             n: u32,
         }
 
-        // Compile fibonacci program
-        let fib_program = RustRv32i
-            .compile(&testing_guest_directory("nexus", "fib"))
-            .expect("Failed to compile fibonacci program");
+        let program = fib_program();
+        let zkvm = EreNexus::new(program, ProverResourceType::Cpu);
 
-        let zkvm = EreNexus::new(fib_program, ProverResourceType::Cpu);
-
-        // Test fib(10) = 55
         let mut input = Input::new();
         input.write(FibInput { n: 10 });
 
@@ -286,7 +292,6 @@ mod tests {
             .expect("Failed to deserialize output");
         assert_eq!(result, 55, "fib(10) should be 55");
 
-        // Test fib(0) = 0
         let mut input = Input::new();
         input.write(FibInput { n: 0 });
 
@@ -296,7 +301,6 @@ mod tests {
             .expect("Failed to deserialize output");
         assert_eq!(result, 0, "fib(0) should be 0");
 
-        // Test fib(1) = 1
         let mut input = Input::new();
         input.write(FibInput { n: 1 });
 

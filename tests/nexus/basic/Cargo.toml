@@ -1,7 +1,7 @@
 [package]
 name = "ere-nexus-guest"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
 nexus-rt = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.4" }
