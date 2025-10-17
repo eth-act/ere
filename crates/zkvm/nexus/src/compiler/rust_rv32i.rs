@@ -4,7 +4,7 @@ use crate::{
 };
 use ere_compile_utils::CargoBuildCmd;
 use ere_zkvm_interface::Compiler;
-use std::{env, path::Path};
+use std::path::Path;
 
 const TARGET_TRIPLE: &str = "riscv32i-unknown-none-elf";
 // Linker script from nexus-sdk
@@ -25,10 +25,11 @@ impl Compiler for RustRv32i {
     type Program = NexusProgram;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        let toolchain = env::var("ERE_RUST_TOOLCHAIN").unwrap_or_else(|_| "nightly".into());
         let elf = CargoBuildCmd::new()
             .linker_script(Some(LINKER_SCRIPT))
-            .toolchain(toolchain)
+            // Target won't compile correctly if we don't pin this version
+            // https://github.com/nexus-xyz/nexus-zkvm/blob/main/rust-toolchain.toml
+            .toolchain("nightly-2025-04-06")
             .build_options(CARGO_BUILD_OPTIONS)
             .rustflags(RUSTFLAGS)
             .exec(guest_directory, TARGET_TRIPLE)
