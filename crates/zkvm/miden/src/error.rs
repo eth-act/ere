@@ -51,7 +51,7 @@ pub enum ExecuteError {
     #[error("Invalid input format: {0}")]
     InvalidInput(String),
     #[error("Serialization failed")]
-    Serialization(#[from] bincode::Error),
+    Serialization(#[from] bincode::error::EncodeError),
     #[error("Failed to deserialize Miden program")]
     ProgramDeserialization(#[from] DeserializationError),
 }
@@ -62,8 +62,8 @@ pub enum ProveError {
     Proving(#[from] ExecutionError),
     #[error("Invalid input format: {0}")]
     InvalidInput(String),
-    #[error("Serialization failed")]
-    Serialization(#[from] bincode::Error),
+    #[error("Output serialization failed")]
+    OutputSerialization(#[from] bincode::error::EncodeError),
 }
 
 #[derive(Debug, Error)]
@@ -73,5 +73,7 @@ pub enum VerifyError {
     #[error("Proof or associated data deserialization failed")]
     MidenDeserialization(#[from] DeserializationError),
     #[error("Proof bundle deserialization failed")]
-    BundleDeserialization(#[from] bincode::Error),
+    BundleDeserialization(#[from] bincode::error::DecodeError),
+    #[error("Output serialization failed")]
+    OutputSerialization(#[from] bincode::error::EncodeError),
 }
