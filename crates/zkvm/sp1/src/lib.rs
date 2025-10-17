@@ -5,15 +5,14 @@ use crate::{
     error::{ExecuteError, ProveError, SP1Error, VerifyError},
 };
 use ere_zkvm_interface::{
-    Input, InputItem, NetworkProverConfig, ProgramExecutionReport, ProgramProvingReport, Proof,
-    ProofKind, ProverResourceType, PublicValues, zkVM, zkVMError,
+    NetworkProverConfig, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResourceType, PublicValues, zkVM, zkVMError,
 };
-use serde::de::DeserializeOwned;
 use sp1_sdk::{
     CpuProver, CudaProver, NetworkProver, Prover, ProverClient, SP1ProofMode,
     SP1ProofWithPublicValues, SP1ProvingKey, SP1Stdin, SP1VerifyingKey,
 };
-use std::{io::Read, time::Instant};
+use std::time::Instant;
 use tracing::info;
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -145,9 +144,9 @@ impl EreSP1 {
 }
 
 impl zkVM for EreSP1 {
-    fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
+    fn execute(&self, input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
         let mut stdin = SP1Stdin::new();
-        serialize_inputs(&mut stdin, inputs);
+        stdin.write_slice(input);
 
         let client = Self::create_client(&self.resource);
         let start = Instant::now();
@@ -165,13 +164,13 @@ impl zkVM for EreSP1 {
 
     fn prove(
         &self,
-        inputs: &Input,
+        input: &[u8],
         proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
         info!("Generating proof…");
 
         let mut stdin = SP1Stdin::new();
-        serialize_inputs(&mut stdin, inputs);
+        stdin.write_slice(input);
 
         let mode = match proof_kind {
             ProofKind::Compressed => SP1ProofMode::Compressed,
@@ -186,7 +185,8 @@ impl zkVM for EreSP1 {
         let public_values = proof.public_values.to_vec();
         let proof = Proof::new(
             proof_kind,
-            bincode::serialize(&proof).map_err(|err| SP1Error::Prove(ProveError::Bincode(err)))?,
+            bincode::serde::encode_to_vec(&proof, bincode::config::legacy())
+                .map_err(|err| SP1Error::Prove(ProveError::Bincode(err)))?,
         );
 
         Ok((
@@ -201,8 +201,9 @@ impl zkVM for EreSP1 {
 
         let proof_kind = proof.kind();
 
-        let proof: SP1ProofWithPublicValues = bincode::deserialize(proof.as_bytes())
-            .map_err(|err| SP1Error::Verify(VerifyError::Bincode(err)))?;
+        let (proof, _): (SP1ProofWithPublicValues, _) =
+            bincode::serde::decode_from_slice(proof.as_bytes(), bincode::config::legacy())
+                .map_err(|err| SP1Error::Verify(VerifyError::Bincode(err)))?;
         let inner_proof_kind = SP1ProofMode::from(&proof.proof);
 
         if !matches!(
@@ -231,28 +232,14 @@ impl zkVM for EreSP1 {
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
     }
-
-    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, reader: R) -> Result<T, zkVMError> {
-        bincode::deserialize_from(reader).map_err(zkVMError::other)
-    }
-}
-
-fn serialize_inputs(stdin: &mut SP1Stdin, inputs: &Input) {
-    for input in inputs.iter() {
-        match input {
-            InputItem::Object(obj) => stdin.write(obj),
-            InputItem::SerializedObject(bytes) | InputItem::Bytes(bytes) => {
-                stdin.write_slice(bytes)
-            }
-        }
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::{EreSP1, compiler::RustRv32imaCustomized};
-    use ere_test_utils::host::{
-        BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+    use ere_test_utils::{
+        host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
+        program::basic::BasicProgramInput,
     };
     use ere_zkvm_interface::{Compiler, NetworkProverConfig, ProofKind, ProverResourceType, zkVM};
     use std::{panic, sync::OnceLock};
@@ -274,21 +261,17 @@ mod tests {
         let program = basic_program();
         let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
 
-        let io = BasicProgramIo::valid();
-        run_zkvm_execute(&zkvm, &io);
+        let test_case = BasicProgramInput::valid();
+        run_zkvm_execute(&zkvm, &test_case);
     }
 
     #[test]
-    fn test_execute_invalid_inputs() {
+    fn test_execute_invalid_input() {
         let program = basic_program();
         let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
 
-        for inputs in [
-            BasicProgramIo::empty(),
-            BasicProgramIo::invalid_type(),
-            BasicProgramIo::invalid_data(),
-        ] {
-            zkvm.execute(&inputs).unwrap_err();
+        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+            zkvm.execute(&input).unwrap_err();
         }
     }
 
@@ -297,26 +280,19 @@ mod tests {
         let program = basic_program();
         let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
 
-        let io = BasicProgramIo::valid();
-        run_zkvm_prove(&zkvm, &io);
+        let test_case = BasicProgramInput::valid();
+        run_zkvm_prove(&zkvm, &test_case);
     }
 
     #[test]
-    fn test_prove_invalid_inputs() {
+    fn test_prove_invalid_input() {
         let program = basic_program();
         let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
 
-        // On invalid inputs SP1 prove will panics, the issue for tracking:
-        // https://github.com/eth-act/ere/issues/16.
-        //
-        // Note that we iterate on methods because `InputItem::Object` doesn't
-        // implement `RefUnwindSafe`.
-        for inputs_gen in [
-            BasicProgramIo::empty,
-            BasicProgramIo::invalid_type,
-            BasicProgramIo::invalid_data,
-        ] {
-            panic::catch_unwind(|| zkvm.prove(&inputs_gen(), ProofKind::default())).unwrap_err();
+        // When guest panics SP1 prove will also panics.
+        // Issue for tracking: https://github.com/eth-act/ere/issues/172.
+        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+            panic::catch_unwind(|| zkvm.prove(&input, ProofKind::default())).unwrap_err();
         }
     }
 
@@ -337,7 +313,7 @@ mod tests {
         let program = basic_program();
         let zkvm = EreSP1::new(program, ProverResourceType::Network(network_config));
 
-        let io = BasicProgramIo::valid();
-        run_zkvm_prove(&zkvm, &io);
+        let test_case = BasicProgramInput::valid();
+        run_zkvm_prove(&zkvm, &test_case);
     }
 }

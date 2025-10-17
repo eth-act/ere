@@ -73,13 +73,13 @@ pub enum ProveError {
     Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
 
     #[error("Serialising proof with `bincode` failed: {0}")]
-    Bincode(#[from] bincode::Error),
+    Bincode(#[from] bincode::error::EncodeError),
 }
 
 #[derive(Debug, Error)]
 pub enum VerifyError {
     #[error("Deserialising proof failed: {0}")]
-    Bincode(#[from] bincode::Error),
+    Bincode(#[from] bincode::error::DecodeError),
 
     #[error("Invalid proof kind, expected: {}, got: {}", 0.to_string(), 1.to_string() )]
     InvalidProofKind(ProofKind, SP1ProofMode),
