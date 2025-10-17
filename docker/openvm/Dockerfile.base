@@ -14,8 +14,10 @@ FROM base${CUDA:+_cuda}
 ARG CUDA
 
 # Default to build for RTX 50 series
-ARG CUDA_ARCH=120
-ENV CUDA_ARCH=$CUDA_ARCH
+ARG CUDA_ARCH=sm_120
+
+# Env variable read by OpenVM crate `cuda-builder`, need to persist it for building `ere-openvm`.
+ENV CUDA_ARCH=${CUDA_ARCH#sm_}
 
 # Copy the OpenVM SDK installer script from the workspace context
 COPY --chmod=755 scripts/sdk_installers/install_openvm_sdk.sh /tmp/install_openvm_sdk.sh

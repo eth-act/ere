@@ -43,7 +43,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Default to build for RTX 50 series
 ARG CUDA_ARCH=sm_120
-ENV CUDA_ARCH=$CUDA_ARCH
 
 # Copy the ZisK SDK installer script from the workspace context
 COPY --chmod=755 scripts/sdk_installers/install_zisk_sdk.sh /tmp/install_zisk_sdk.sh

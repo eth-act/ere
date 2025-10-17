@@ -195,13 +195,7 @@ impl ErezkVM {
 
                 let cuda_arch = cuda_arch();
                 match self {
-                    ErezkVM::OpenVM => {
-                        if let Some(cuda_arch) = cuda_arch {
-                            // OpenVM takes only the numeric part.
-                            cmd = cmd.build_arg("CUDA_ARCH", cuda_arch.replace("sm_", ""))
-                        }
-                    }
-                    ErezkVM::Risc0 | ErezkVM::Zisk => {
+                    ErezkVM::OpenVM | ErezkVM::Risc0 | ErezkVM::Zisk => {
                         if let Some(cuda_arch) = cuda_arch {
                             cmd = cmd.build_arg("CUDA_ARCH", cuda_arch)
                         }
