@@ -23,4 +23,7 @@ RUN /tmp/install_nexus_sdk.sh && rm /tmp/install_nexus_sdk.sh # Clean up the scr
 # Verify Nexus installation
 RUN echo "Verifying Nexus installation in Dockerfile (post-script)..." && cargo-nexus --version
 
+# Add `rust-src` component to enable std build for nightly rust.
+RUN rustup +nightly component add rust-src
+
 CMD ["/bin/bash"]
