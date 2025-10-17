@@ -82,7 +82,7 @@ ere-sp1        = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.12" }
 ```rust
 // main.rs
 use ere_sp1::{EreSP1, RV32_IM_SUCCINCT_ZKVM_ELF};
-use ere_zkvm_interface::{Compiler, Input, ProofKind, ProverResourceType, zkVM};
+use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let guest_directory = std::path::Path::new("workspace/guest");
@@ -94,15 +94,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create zkVM instance
     let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
 
-    // Prepare inputs
-    let mut io = Input::new();
-    io.write(42u32);
+    // Serialize input
+    let input = 42u32.to_le_bytes();
 
     // Execute
-    let (public_values, report) = zkvm.execute(&io)?;
+    let (public_values, report) = zkvm.execute(&input)?;
 
     // Prove
-    let (public_values, proof, report) = zkvm.prove(&io, ProofKind::Compressed)?;
+    let (public_values, proof, report) = zkvm.prove(&input, ProofKind::Compressed)?;
 
     // Verify
     let public_values = zkvm.verify(&proof)?;
@@ -129,7 +128,7 @@ ere-dockerized = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.12" }
 ```rust
 // main.rs
 use ere_dockerized::{EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM};
-use ere_zkvm_interface::{Compiler, Input, ProofKind, ProverResourceType, zkVM};
+use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let guest_directory = std::path::Path::new("workspace/guest");
@@ -141,15 +140,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create zkVM instance
     let zkvm = EreDockerizedzkVM::new(ErezkVM::SP1, program, ProverResourceType::Cpu)?;
 
-    // Prepare inputs
-    let mut io = Input::new();
-    io.write(42u32);
+    // Serialize input
+    let input = 42u32.to_le_bytes();
 
     // Execute
-    let (public_values, report) = zkvm.execute(&io)?;
+    let (public_values, report) = zkvm.execute(&input)?;
 
     // Prove
-    let (public_values, proof, report) = zkvm.prove(&io, ProofKind::Compressed)?;
+    let (public_values, proof, report) = zkvm.prove(&input, ProofKind::Compressed)?;
 
     // Verify
     let public_values = zkvm.verify(&proof)?;
@@ -184,7 +182,7 @@ Each `ere-{backend}` crate implements the above traits for its zkVM.
 
 ### Input Handling
 
-The `Input` type supports both chunked (`Vec<Vec<u8>>`) and contiguous (`Vec<u8>`) modes to satisfy differing backend APIs.
+The input is opaque to `zkVM` and will be passed as is, de/serialization needed to be handled by guest/host themselves.
 
 ## Contributing
 
