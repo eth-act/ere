@@ -5,8 +5,8 @@ use crate::{
     error::{NexusError, ProveError, VerifyError},
 };
 use ere_zkvm_interface::{
-    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMError,
+    ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
+    PublicValues, zkVM, zkVMError,
 };
 use nexus_core::nvm::{self, ElfFile};
 use nexus_sdk::{
@@ -14,8 +14,8 @@ use nexus_sdk::{
     stwo::seq::{Proof as NexusProof, Stwo},
 };
 use nexus_vm::trace::Trace;
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
-use std::{io::Read, time::Instant};
+use serde::{Deserialize, Serialize};
+use std::time::Instant;
 use tracing::info;
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -34,24 +34,25 @@ pub struct EreNexus {
 }
 
 impl EreNexus {
-    pub fn new(elf: NexusProgram, _resource_type: ProverResourceType) -> Self {
+    pub fn new(elf: NexusProgram, resource: ProverResourceType) -> Self {
+        if !matches!(resource, ProverResourceType::Cpu) {
+            panic!("Network or GPU proving not yet implemented for Nexus. Use CPU resource type.");
+        }
         Self { elf }
     }
 }
 
 impl zkVM for EreNexus {
-    fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
+    fn execute(&self, input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
         let elf = ElfFile::from_bytes(&self.elf)
             .map_err(|e| NexusError::Prove(ProveError::Client(e.into())))?;
 
-        let input_bytes = serialize_inputs(inputs)?;
-
         // Nexus sdk does not provide a trace, so we need to use core `nvm`
         // Encoding is copied directly from `prove_with_input`
-        let mut private_encoded = if input_bytes.is_empty() {
+        let mut private_encoded = if input.is_empty() {
             Vec::new()
         } else {
-            postcard::to_stdvec_cobs(&input_bytes)
+            postcard::to_stdvec_cobs(&input)
                 .map_err(|e| NexusError::Prove(ProveError::Postcard(e.to_string())))?
         };
 
@@ -64,24 +65,25 @@ impl zkVM for EreNexus {
         let start = Instant::now();
         let (view, trace) = nvm::k_trace(elf, &[], &[], private_encoded.as_slice(), 1)
             .map_err(|e| NexusError::Prove(ProveError::Client(e.into())))?;
+        let execution_duration = start.elapsed();
 
         let public_values = view
-            .public_output::<Vec<u8>>()
+            .public_output()
             .map_err(|e| NexusError::Prove(ProveError::Client(e.into())))?;
 
         Ok((
             public_values,
             ProgramExecutionReport {
                 total_num_cycles: trace.get_num_steps() as u64,
-                region_cycles: Default::default(), // not available
-                execution_duration: start.elapsed(),
+                execution_duration,
+                ..Default::default()
             },
         ))
     }
 
     fn prove(
         &self,
-        inputs: &Input,
+        input: &[u8],
         proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
         if proof_kind != ProofKind::Compressed {
@@ -94,29 +96,28 @@ impl zkVM for EreNexus {
         let prover =
             Stwo::new(&elf).map_err(|e| NexusError::Prove(ProveError::Client(e.into())))?;
 
-        let input_bytes = serialize_inputs(inputs)?;
-
         let start = Instant::now();
         let (view, proof) = prover
-            .prove_with_input::<Vec<u8>, ()>(&input_bytes, &())
+            .prove_with_input(&input, &())
             .map_err(|e| NexusError::Prove(ProveError::Client(e.into())))?;
+        let proving_time = start.elapsed();
 
         let public_values = view
-            .public_output::<Vec<u8>>()
+            .public_output()
             .map_err(|e| NexusError::Prove(ProveError::Client(e.into())))?;
 
         let proof_bundle = NexusProofBundle {
             proof,
-            public_values: public_values.clone(),
+            public_values,
         };
 
-        let proof_bytes = bincode::serialize(&proof_bundle)
+        let proof_bytes = bincode::serde::encode_to_vec(&proof_bundle, bincode::config::legacy())
             .map_err(|err| NexusError::Prove(ProveError::Bincode(err)))?;
 
         Ok((
-            public_values,
+            proof_bundle.public_values,
             Proof::Compressed(proof_bytes),
-            ProgramProvingReport::new(start.elapsed()),
+            ProgramProvingReport::new(proving_time),
         ))
     }
 
@@ -127,8 +128,9 @@ impl zkVM for EreNexus {
 
         info!("Verifying proof...");
 
-        let proof_bundle = bincode::deserialize::<NexusProofBundle>(proof)
-            .map_err(|err| NexusError::Verify(VerifyError::Bincode(err)))?;
+        let (proof_bundle, _): (NexusProofBundle, _) =
+            bincode::serde::decode_from_slice(proof, bincode::config::legacy())
+                .map_err(|err| NexusError::Verify(VerifyError::Bincode(err)))?;
 
         proof_bundle
             .proof
@@ -153,68 +155,24 @@ impl zkVM for EreNexus {
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
     }
-
-    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, reader: R) -> Result<T, zkVMError> {
-        let mut buf = vec![0; 1 << 20]; // allocate 1MiB as buffer.
-        let (value, _) = postcard::from_io((reader, &mut buf)).map_err(zkVMError::other)?;
-        Ok(value)
-    }
-}
-
-/// Serializes nexus program inputs
-pub fn serialize_inputs(inputs: &Input) -> Result<Vec<u8>, NexusError> {
-    inputs
-        .iter()
-        .try_fold(Vec::new(), |mut acc, item| -> Result<Vec<u8>, NexusError> {
-            match item {
-                InputItem::Object(obj) => {
-                    let buffer = postcard::to_allocvec(obj.as_ref())
-                        .map_err(|e| NexusError::Prove(ProveError::Postcard(e.to_string())))?;
-                    acc.extend_from_slice(&buffer);
-                    Ok(acc)
-                }
-                InputItem::SerializedObject(bytes) => {
-                    acc.extend_from_slice(bytes);
-                    Ok(acc)
-                }
-                InputItem::Bytes(bytes) => {
-                    let buffer = postcard::to_allocvec(bytes)
-                        .map_err(|e| NexusError::Prove(ProveError::Postcard(e.to_string())))?;
-                    acc.extend_from_slice(&buffer);
-                    Ok(acc)
-                }
-            }
-        })
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{EreNexus, compiler::RustRv32i};
-    use ere_test_utils::host::{
-        BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+    use crate::{EreNexus, NexusProgram, compiler::RustRv32i};
+    use ere_test_utils::{
+        host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
+        program::basic::BasicProgramInput,
     };
-    use ere_zkvm_interface::{Compiler, Input, ProofKind, ProverResourceType, zkVM};
-    use serde::{Deserialize, Serialize};
+    use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
     use std::sync::OnceLock;
 
-    static BASIC_PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
-    static FIB_PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
-
-    fn basic_program() -> Vec<u8> {
-        BASIC_PROGRAM
+    fn basic_program() -> NexusProgram {
+        static PROGRAM: OnceLock<NexusProgram> = OnceLock::new();
+        PROGRAM
             .get_or_init(|| {
                 RustRv32i
                     .compile(&testing_guest_directory("nexus", "basic"))
-                    .unwrap()
-            })
-            .clone()
-    }
-
-    fn fib_program() -> Vec<u8> {
-        FIB_PROGRAM
-            .get_or_init(|| {
-                RustRv32i
-                    .compile(&testing_guest_directory("nexus", "fib"))
                     .unwrap()
             })
             .clone()
@@ -225,21 +183,17 @@ mod tests {
         let program = basic_program();
         let zkvm = EreNexus::new(program, ProverResourceType::Cpu);
 
-        let io = BasicProgramIo::valid();
-        run_zkvm_execute(&zkvm, &io);
+        let test_case = BasicProgramInput::valid();
+        run_zkvm_execute(&zkvm, &test_case);
     }
 
     #[test]
-    fn test_execute_invalid_inputs() {
+    fn test_execute_invalid_input() {
         let program = basic_program();
         let zkvm = EreNexus::new(program, ProverResourceType::Cpu);
 
-        for inputs in [
-            BasicProgramIo::empty(),
-            BasicProgramIo::invalid_type(),
-            BasicProgramIo::invalid_data(),
-        ] {
-            zkvm.execute(&inputs).unwrap_err();
+        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+            zkvm.execute(&input).unwrap_err();
         }
     }
 
@@ -248,60 +202,17 @@ mod tests {
         let program = basic_program();
         let zkvm = EreNexus::new(program, ProverResourceType::Cpu);
 
-        let io = BasicProgramIo::valid();
-        run_zkvm_prove(&zkvm, &io);
+        let test_case = BasicProgramInput::valid();
+        run_zkvm_prove(&zkvm, &test_case);
     }
 
     #[test]
-    fn test_prove_invalid_inputs() {
+    fn test_prove_invalid_input() {
         let program = basic_program();
         let zkvm = EreNexus::new(program, ProverResourceType::Cpu);
 
-        for inputs in [
-            BasicProgramIo::empty(),
-            BasicProgramIo::invalid_type(),
-            BasicProgramIo::invalid_data(),
-        ] {
-            zkvm.prove(&inputs, ProofKind::default()).unwrap_err();
+        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+            zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }
-    }
-
-    #[test]
-    fn test_fibonacci() {
-        #[derive(Serialize, Deserialize)]
-        struct FibInput {
-            n: u32,
-        }
-
-        let program = fib_program();
-        let zkvm = EreNexus::new(program, ProverResourceType::Cpu);
-
-        let mut input = Input::new();
-        input.write(FibInput { n: 10 });
-
-        let (public_values, _report) = zkvm.execute(&input).expect("Execution failed");
-
-        let result: u32 = zkvm
-            .deserialize_from(&public_values[..])
-            .expect("Failed to deserialize output");
-        assert_eq!(result, 55, "fib(10) should be 55");
-
-        let mut input = Input::new();
-        input.write(FibInput { n: 0 });
-
-        let (public_values, _report) = zkvm.execute(&input).expect("Execution failed");
-        let result: u32 = zkvm
-            .deserialize_from(&public_values[..])
-            .expect("Failed to deserialize output");
-        assert_eq!(result, 0, "fib(0) should be 0");
-
-        let mut input = Input::new();
-        input.write(FibInput { n: 1 });
-
-        let (public_values, _report) = zkvm.execute(&input).expect("Execution failed");
-        let result: u32 = zkvm
-            .deserialize_from(&public_values[..])
-            .expect("Failed to deserialize output");
-        assert_eq!(result, 1, "fib(1) should be 1");
     }
 }

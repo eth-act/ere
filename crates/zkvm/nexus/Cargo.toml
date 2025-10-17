@@ -6,15 +6,15 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-bincode.workspace = true
+bincode = { workspace = true, features = ["alloc", "serde"] }
 postcard.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 
 # Nexus dependencies
-nexus-sdk.workspace = true
 nexus-core.workspace = true
+nexus-sdk.workspace = true
 nexus-vm.workspace = true
 
 # Local dependencies

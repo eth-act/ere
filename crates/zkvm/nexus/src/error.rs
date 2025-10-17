@@ -39,7 +39,7 @@ pub enum ProveError {
     #[error("nexus execution failed: {0}")]
     Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
     #[error("Serialising proof with `bincode` failed: {0}")]
-    Bincode(#[from] bincode::Error),
+    Bincode(#[from] bincode::error::EncodeError),
     #[error("Serialising input with `postcard` failed: {0}")]
     Postcard(String),
 }
@@ -49,5 +49,5 @@ pub enum VerifyError {
     #[error("nexus verification failed: {0}")]
     Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
     #[error("Deserialising proof failed: {0}")]
-    Bincode(#[from] bincode::Error),
+    Bincode(#[from] bincode::error::DecodeError),
 }
