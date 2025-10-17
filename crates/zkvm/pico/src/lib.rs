@@ -6,16 +6,14 @@ use crate::{
     error::{PicoError, ProveError, VerifyError},
 };
 use ere_zkvm_interface::{
-    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMError,
+    ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
+    PublicValues, zkVM, zkVMError,
 };
 use pico_p3_field::PrimeField32;
-use pico_vm::{configs::stark_config::KoalaBearPoseidon2, emulator::stdin::EmulatorStdinBuilder};
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
     env,
-    io::Read,
     time::{self, Instant},
 };
 
@@ -49,11 +47,11 @@ impl ErePico {
 }
 
 impl zkVM for ErePico {
-    fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
+    fn execute(&self, input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
         let client = self.client();
 
         let mut stdin = client.new_stdin_builder();
-        serialize_inputs(&mut stdin, inputs);
+        stdin.write_slice(input);
 
         let start = Instant::now();
         let (total_num_cycles, public_values) = client.execute(stdin);
@@ -70,7 +68,7 @@ impl zkVM for ErePico {
 
     fn prove(
         &self,
-        inputs: &Input,
+        input: &[u8],
         proof_kind: ProofKind,
     ) -> Result<
         (
@@ -87,7 +85,7 @@ impl zkVM for ErePico {
         let client = self.client();
 
         let mut stdin = client.new_stdin_builder();
-        serialize_inputs(&mut stdin, inputs);
+        stdin.write_slice(input);
 
         let now = time::Instant::now();
         let (public_values, proof) = client
@@ -95,10 +93,13 @@ impl zkVM for ErePico {
             .map_err(|err| PicoError::Prove(ProveError::Client(err)))?;
         let elapsed = now.elapsed();
 
-        let proof_bytes = bincode::serialize(&PicoProofWithPublicValues {
-            proof,
-            public_values: public_values.clone(),
-        })
+        let proof_bytes = bincode::serde::encode_to_vec(
+            &PicoProofWithPublicValues {
+                proof,
+                public_values: public_values.clone(),
+            },
+            bincode::config::legacy(),
+        )
         .map_err(|err| PicoError::Prove(ProveError::Bincode(err)))?;
 
         Ok((
@@ -117,8 +118,9 @@ impl zkVM for ErePico {
 
         let client = self.client();
 
-        let proof: PicoProofWithPublicValues = bincode::deserialize(proof)
-            .map_err(|err| PicoError::Verify(VerifyError::Bincode(err)))?;
+        let (proof, _): (PicoProofWithPublicValues, _) =
+            bincode::serde::decode_from_slice(proof, bincode::config::legacy())
+                .map_err(|err| PicoError::Verify(VerifyError::Bincode(err)))?;
 
         client
             .verify(&proof.proof)
@@ -139,21 +141,6 @@ impl zkVM for ErePico {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
-    }
-
-    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, reader: R) -> Result<T, zkVMError> {
-        bincode::deserialize_from(reader).map_err(zkVMError::other)
-    }
-}
-
-fn serialize_inputs(stdin: &mut EmulatorStdinBuilder<Vec<u8>, KoalaBearPoseidon2>, inputs: &Input) {
-    for input in inputs.iter() {
-        match input {
-            InputItem::Object(serialize) => stdin.write(serialize),
-            InputItem::SerializedObject(items) | InputItem::Bytes(items) => {
-                stdin.write_slice(items)
-            }
-        }
     }
 }
 
@@ -186,8 +173,9 @@ mod tests {
         ErePico,
         compiler::{PicoProgram, RustRv32imaCustomized},
     };
-    use ere_test_utils::host::{
-        BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+    use ere_test_utils::{
+        host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
+        program::basic::BasicProgramInput,
     };
     use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
     use std::{panic, sync::OnceLock};
@@ -209,21 +197,19 @@ mod tests {
         let program = basic_program();
         let zkvm = ErePico::new(program, ProverResourceType::Cpu);
 
-        let io = BasicProgramIo::valid();
-        run_zkvm_execute(&zkvm, &io);
+        let test_case = BasicProgramInput::valid();
+        run_zkvm_execute(&zkvm, &test_case);
     }
 
     #[test]
-    fn test_execute_invalid_inputs() {
+    fn test_execute_invalid_input() {
         let program = basic_program();
         let zkvm = ErePico::new(program, ProverResourceType::Cpu);
 
-        for inputs_gen in [
-            BasicProgramIo::empty,
-            BasicProgramIo::invalid_type,
-            BasicProgramIo::invalid_data,
-        ] {
-            panic::catch_unwind(|| zkvm.execute(&inputs_gen())).unwrap_err();
+        // When guest panics Pico execute will also panics.
+        // Issue for tracking: https://github.com/eth-act/ere/issues/172.
+        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+            panic::catch_unwind(|| zkvm.execute(&input)).unwrap_err();
         }
     }
 
@@ -232,21 +218,19 @@ mod tests {
         let program = basic_program();
         let zkvm = ErePico::new(program, ProverResourceType::Cpu);
 
-        let io = BasicProgramIo::valid();
-        run_zkvm_prove(&zkvm, &io);
+        let test_case = BasicProgramInput::valid();
+        run_zkvm_prove(&zkvm, &test_case);
     }
 
     #[test]
-    fn test_prove_invalid_inputs() {
+    fn test_prove_invalid_input() {
         let program = basic_program();
         let zkvm = ErePico::new(program, ProverResourceType::Cpu);
 
-        for inputs_gen in [
-            BasicProgramIo::empty,
-            BasicProgramIo::invalid_type,
-            BasicProgramIo::invalid_data,
-        ] {
-            panic::catch_unwind(|| zkvm.prove(&inputs_gen(), ProofKind::default())).unwrap_err();
+        // When guest panics Pico prove will also panics.
+        // Issue for tracking: https://github.com/eth-act/ere/issues/172.
+        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+            panic::catch_unwind(|| zkvm.prove(&input, ProofKind::default())).unwrap_err();
         }
     }
 }

@@ -1,24 +1,25 @@
 #![no_main]
 
-use pico_sdk::io::{commit, commit_bytes, read_as, read_vec};
-use ere_test_utils::guest::{BasicProgramCore, BasicStruct};
+use ere_test_utils::{
+    guest::Platform,
+    program::{basic::BasicProgram, Program},
+};
+use pico_sdk::io::{commit_bytes, read_vec};
 
 pico_sdk::entrypoint!(main);
 
+struct PicoPlatform;
+
+impl Platform for PicoPlatform {
+    fn read_input() -> Vec<u8> {
+        read_vec()
+    }
+
+    fn write_output(output: &[u8]) {
+        commit_bytes(output);
+    }
+}
+
 pub fn main() {
-    // Read `bytes`.
-    let bytes = read_vec();
-
-    // Read `basic_struct`.
-    let basic_struct = read_as::<BasicStruct>();
-
-    // Check `bytes` length is as expected.
-    assert_eq!(bytes.len(), BasicProgramCore::BYTES_LENGTH);
-
-    // Do some computation on `bytes` and `basic_struct`.
-    let (rev_bytes, basic_struct_output) = BasicProgramCore::outputs((bytes, basic_struct));
-
-    // Write `rev_bytes` and `basic_struct_output`
-    commit_bytes(&rev_bytes);
-    commit(&basic_struct_output);
+    BasicProgram::run::<PicoPlatform>();
 }

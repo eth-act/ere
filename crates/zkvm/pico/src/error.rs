@@ -61,7 +61,7 @@ pub enum ProveError {
     #[error("Pico proving failed: {0}")]
     Client(anyhow::Error),
     #[error("Serialising proof with `bincode` failed: {0}")]
-    Bincode(#[from] bincode::Error),
+    Bincode(#[from] bincode::error::EncodeError),
 }
 
 #[derive(Debug, Error)]
@@ -69,7 +69,7 @@ pub enum VerifyError {
     #[error("Pico verifying failed: {0}")]
     Client(anyhow::Error),
     #[error("Deserialising proof with `bincode` failed: {0}")]
-    Bincode(#[from] bincode::Error),
+    Bincode(#[from] bincode::error::DecodeError),
     #[error("Invalid base proof length {0}, expected 1")]
     InvalidBaseProofLength(usize),
     #[error("Invalid public values length {0}, expected at least 32")]
