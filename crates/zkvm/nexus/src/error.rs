@@ -40,6 +40,8 @@ pub enum ProveError {
     Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
     #[error("Serialising proof with `bincode` failed: {0}")]
     Bincode(#[from] bincode::Error),
+    #[error("Serialising input with `postcard` failed: {0}")]
+    Postcard(String),
 }
 
 #[derive(Debug, Error)]

@@ -7,12 +7,15 @@ license.workspace = true
 
 [dependencies]
 bincode.workspace = true
+postcard.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 
 # Nexus dependencies
 nexus-sdk.workspace = true
+nexus-core.workspace = true
+nexus-vm.workspace = true
 
 # Local dependencies
 ere-compile-utils.workspace = true
