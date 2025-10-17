@@ -67,7 +67,7 @@ pub enum ExecuteError {
 #[derive(Debug, Error)]
 pub enum ProveError {
     #[error("Serialising proof with `bincode` failed: {0}")]
-    Bincode(#[from] bincode::Error),
+    Bincode(#[from] bincode::error::EncodeError),
 
     #[error("Ziren proving failed: {0}")]
     Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
@@ -76,7 +76,7 @@ pub enum ProveError {
 #[derive(Debug, Error)]
 pub enum VerifyError {
     #[error("Deserialising proof with `bincode` failed: {0}")]
-    Bincode(#[from] bincode::Error),
+    Bincode(#[from] bincode::error::DecodeError),
 
     #[error("Invalid proof kind, expected: {}, got: {}", 0.to_string(), 1.to_string() )]
     InvalidProofKind(ProofKind, ZKMProofKind),

@@ -5,11 +5,10 @@ use crate::{
     error::{ExecuteError, ProveError, VerifyError, ZirenError},
 };
 use ere_zkvm_interface::{
-    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMError,
+    ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
+    PublicValues, zkVM, zkVMError,
 };
-use serde::de::DeserializeOwned;
-use std::{io::Read, time::Instant};
+use std::time::Instant;
 use tracing::info;
 use zkm_sdk::{
     CpuProver, Prover, ZKMProofKind, ZKMProofWithPublicValues, ZKMProvingKey, ZKMStdin,
@@ -41,9 +40,9 @@ impl EreZiren {
 }
 
 impl zkVM for EreZiren {
-    fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
+    fn execute(&self, input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
         let mut stdin = ZKMStdin::new();
-        serialize_inputs(&mut stdin, inputs);
+        stdin.write_slice(input);
 
         let start = Instant::now();
         let (public_inputs, exec_report) = CpuProver::new()
@@ -63,13 +62,13 @@ impl zkVM for EreZiren {
 
     fn prove(
         &self,
-        inputs: &Input,
+        input: &[u8],
         proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
         info!("Generating proof…");
 
         let mut stdin = ZKMStdin::new();
-        serialize_inputs(&mut stdin, inputs);
+        stdin.write_slice(input);
 
         let inner_proof_kind = match proof_kind {
             ProofKind::Compressed => ZKMProofKind::Compressed,
@@ -85,7 +84,7 @@ impl zkVM for EreZiren {
         let public_values = proof.public_values.to_vec();
         let proof = Proof::new(
             proof_kind,
-            bincode::serialize(&proof)
+            bincode::serde::encode_to_vec(&proof, bincode::config::legacy())
                 .map_err(|err| ZirenError::Prove(ProveError::Bincode(err)))?,
         );
 
@@ -101,8 +100,9 @@ impl zkVM for EreZiren {
 
         let proof_kind = proof.kind();
 
-        let proof: ZKMProofWithPublicValues = bincode::deserialize(proof.as_bytes())
-            .map_err(|err| ZirenError::Verify(VerifyError::Bincode(err)))?;
+        let (proof, _): (ZKMProofWithPublicValues, _) =
+            bincode::serde::decode_from_slice(proof.as_bytes(), bincode::config::legacy())
+                .map_err(|err| ZirenError::Verify(VerifyError::Bincode(err)))?;
         let inner_proof_kind = ZKMProofKind::from(&proof.proof);
 
         if !matches!(
@@ -130,28 +130,14 @@ impl zkVM for EreZiren {
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
     }
-
-    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, reader: R) -> Result<T, zkVMError> {
-        bincode::deserialize_from(reader).map_err(zkVMError::other)
-    }
-}
-
-fn serialize_inputs(stdin: &mut ZKMStdin, inputs: &Input) {
-    for input in inputs.iter() {
-        match input {
-            InputItem::Object(obj) => stdin.write(obj),
-            InputItem::SerializedObject(bytes) | InputItem::Bytes(bytes) => {
-                stdin.write_slice(bytes)
-            }
-        }
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::{EreZiren, compiler::RustMips32r2Customized};
-    use ere_test_utils::host::{
-        BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+    use ere_test_utils::{
+        host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
+        program::basic::BasicProgramInput,
     };
     use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
     use std::{panic, sync::OnceLock};
@@ -173,30 +159,17 @@ mod tests {
         let program = basic_program();
         let zkvm = EreZiren::new(program, ProverResourceType::Cpu);
 
-        let io = BasicProgramIo::valid();
-        run_zkvm_execute(&zkvm, &io);
+        let test_case = BasicProgramInput::valid();
+        run_zkvm_execute(&zkvm, &test_case);
     }
 
     #[test]
-    fn test_execute_invalid_inputs() {
-        type F = fn() -> ere_zkvm_interface::Input;
-
+    fn test_execute_invalid_input() {
         let program = basic_program();
         let zkvm = EreZiren::new(program, ProverResourceType::Cpu);
 
-        // Note that for some invalid cases the execution panics, but some not.
-        for (inputs_gen, should_panic) in [
-            // For empty input (insufficient input), the syscall reading input causes host to panics.
-            (BasicProgramIo::empty as F, true),
-            // For invalid type/data, the guest panics but handled properly by the host.
-            (BasicProgramIo::invalid_type as F, false),
-            (BasicProgramIo::invalid_data as F, false),
-        ] {
-            if should_panic {
-                panic::catch_unwind(|| zkvm.execute(&inputs_gen())).unwrap_err();
-            } else {
-                zkvm.execute(&inputs_gen()).unwrap_err();
-            }
+        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+            zkvm.execute(&input).unwrap_err();
         }
     }
 
@@ -205,21 +178,19 @@ mod tests {
         let program = basic_program();
         let zkvm = EreZiren::new(program, ProverResourceType::Cpu);
 
-        let io = BasicProgramIo::valid();
-        run_zkvm_prove(&zkvm, &io);
+        let test_case = BasicProgramInput::valid();
+        run_zkvm_prove(&zkvm, &test_case);
     }
 
     #[test]
-    fn test_prove_invalid_inputs() {
+    fn test_prove_invalid_input() {
         let program = basic_program();
         let zkvm = EreZiren::new(program, ProverResourceType::Cpu);
 
-        for inputs_gen in [
-            BasicProgramIo::empty,
-            BasicProgramIo::invalid_type,
-            BasicProgramIo::invalid_data,
-        ] {
-            panic::catch_unwind(|| zkvm.prove(&inputs_gen(), ProofKind::default())).unwrap_err();
+        // When guest panics Ziren prove will also panics.
+        // Issue for tracking: https://github.com/eth-act/ere/issues/172.
+        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+            panic::catch_unwind(|| zkvm.prove(&input, ProofKind::default())).unwrap_err();
         }
     }
 }
