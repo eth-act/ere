@@ -10,7 +10,7 @@ use ere_zkvm_interface::{
 };
 use nexus_core::nvm::{self, ElfFile};
 use nexus_sdk::{
-    Prover, Verifiable, Viewable,
+    KnownExitCodes, Prover, Verifiable, Viewable,
     stwo::seq::{Proof as NexusProof, Stwo},
 };
 use nexus_vm::trace::Trace;
@@ -136,7 +136,7 @@ impl zkVM for EreNexus {
             .proof
             .verify_expected_from_program_bytes::<(), Vec<u8>>(
                 &(),
-                0,
+                KnownExitCodes::ExitSuccess as u32,
                 &proof_bundle.public_values,
                 &proof_bundle.elf_bytes,
                 &[],
