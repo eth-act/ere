@@ -7,16 +7,11 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
-bincode.workspace = true
 serde = { workspace = true, features = ["derive"] }
 tempfile.workspace = true
 thiserror.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread"] }
 tracing.workspace = true
-
-# Needed for Risc0 and OpenVM input serialization.
-bytemuck.workspace = true
-risc0-zkvm.workspace = true
 
 # Local dependencies
 ere-zkvm-interface = { workspace = true, features = ["clap"] }

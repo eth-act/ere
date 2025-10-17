@@ -42,8 +42,9 @@ fn main() -> Result<(), Error> {
 
     let program = compile(args.guest_path)?;
 
-    let output = File::create(args.output_path).with_context(|| "Failed to create output")?;
-    bincode::serialize_into(output, &program).with_context(|| "Failed to serialize program")?;
+    let mut output = File::create(args.output_path).with_context(|| "Failed to create output")?;
+    bincode::serde::encode_into_std_write(&program, &mut output, bincode::config::legacy())
+        .with_context(|| "Failed to serialize program")?;
 
     Ok(())
 }

@@ -1,9 +1,6 @@
-use crate::{
-    api::{
-        ExecuteRequest, ExecuteResponse, ProveRequest, ProveResponse, VerifyRequest,
-        VerifyResponse, ZkvmService,
-    },
-    input::SerializedInput,
+use crate::api::{
+    ExecuteRequest, ExecuteResponse, ProveRequest, ProveResponse, VerifyRequest, VerifyResponse,
+    ZkvmService,
 };
 use anyhow::{Context, Error, bail};
 use ere_zkvm_interface::{
@@ -47,10 +44,8 @@ impl zkVMClient {
 
     pub async fn execute(
         &self,
-        input: SerializedInput,
+        input: Vec<u8>,
     ) -> Result<(PublicValues, ProgramExecutionReport), Error> {
-        let input = bincode::serialize(&input).with_context(|| "Failed to serialize input")?;
-
         let request = Request::new(ExecuteRequest { input });
 
         let response = self
@@ -64,19 +59,18 @@ impl zkVMClient {
             report,
         } = response.into_body();
 
-        let report: ProgramExecutionReport = bincode::deserialize(&report)
-            .with_context(|| "Failed to deserialize execution report")?;
+        let (report, _): (ProgramExecutionReport, _) =
+            bincode::serde::decode_from_slice(&report, bincode::config::legacy())
+                .with_context(|| "Failed to deserialize execution report")?;
 
         Ok((public_values, report))
     }
 
     pub async fn prove(
         &self,
-        input: SerializedInput,
+        input: Vec<u8>,
         proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, ProgramProvingReport), Error> {
-        let input = bincode::serialize(&input).with_context(|| "Failed to serialize input")?;
-
         let request = Request::new(ProveRequest {
             input,
             proof_kind: proof_kind as i32,
@@ -94,8 +88,9 @@ impl zkVMClient {
             report,
         } = response.into_body();
 
-        let report: ProgramProvingReport = bincode::deserialize(&report)
-            .with_context(|| "Failed to deserialize proving report")?;
+        let (report, _): (ProgramProvingReport, _) =
+            bincode::serde::decode_from_slice(&report, bincode::config::legacy())
+                .with_context(|| "Failed to deserialize proving report")?;
 
         Ok((public_values, Proof::new(proof_kind, proof), report))
     }

@@ -7,7 +7,7 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
-bincode.workspace = true
+bincode = { workspace = true, features = ["std", "serde"] }
 clap = { workspace = true, features = ["derive"] }
 serde.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter"] }

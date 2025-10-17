@@ -27,7 +27,7 @@
 //! ```rust,no_run
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! use ere_dockerized::{EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM};
-//! use ere_zkvm_interface::{Compiler, Input, ProofKind, ProverResourceType, zkVM};
+//! use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
 //! use std::path::Path;
 //!
 //! // The zkVM we plan to use
@@ -42,17 +42,15 @@
 //! let resource = ProverResourceType::Cpu;
 //! let zkvm = EreDockerizedzkVM::new(zkvm, program, resource)?;
 //!
-//! // Prepare inputs
-//! let mut inputs = Input::new();
-//! inputs.write(42u32);
-//! inputs.write(100u16);
+//! // Serialize input
+//! let input = 42u32.to_le_bytes();
 //!
 //! // Execute program
-//! let (public_values, execution_report) = zkvm.execute(&inputs)?;
+//! let (public_values, execution_report) = zkvm.execute(&input)?;
 //! println!("Execution cycles: {}", execution_report.total_num_cycles);
 //!
 //! // Generate proof
-//! let (public_values, proof, proving_report) = zkvm.prove(&inputs, ProofKind::Compressed)?;
+//! let (public_values, proof, proving_report) = zkvm.prove(&input, ProofKind::Compressed)?;
 //! println!("Proof generated in: {:?}", proving_report.proving_time);
 //!
 //! // Verify proof
@@ -71,16 +69,14 @@ use crate::{
 };
 use ere_server::client::{Url, zkVMClient};
 use ere_zkvm_interface::{
-    Compiler, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMError,
+    Compiler, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
+    PublicValues, zkVM, zkVMError,
 };
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde::{Deserialize, Serialize};
 use std::{
     env,
     fmt::{self, Display, Formatter},
-    fs,
-    io::Read,
-    iter,
+    fs, iter,
     path::{Path, PathBuf},
     str::FromStr,
 };
@@ -93,8 +89,6 @@ include!(concat!(env!("OUT_DIR"), "/zkvm_sdk_version_impl.rs"));
 pub mod cuda;
 pub mod docker;
 pub mod error;
-pub mod input;
-pub mod output;
 
 /// Offset of port used for `ere-server` for [`ErezkVM`]s.
 const ERE_SERVER_PORT_OFFSET: u16 = 4174;
@@ -502,13 +496,8 @@ impl EreDockerizedzkVM {
 }
 
 impl zkVM for EreDockerizedzkVM {
-    fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
-        let serialized_input = self
-            .zkvm
-            .serialize_inputs(inputs)
-            .map_err(|err| DockerizedError::Execute(ExecuteError::Common(err)))?;
-
-        let (public_values, report) = block_on(self.client.execute(serialized_input))
+    fn execute(&self, input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
+        let (public_values, report) = block_on(self.client.execute(input.to_vec()))
             .map_err(|err| DockerizedError::Execute(ExecuteError::Client(err)))?;
 
         Ok((public_values, report))
@@ -516,16 +505,11 @@ impl zkVM for EreDockerizedzkVM {
 
     fn prove(
         &self,
-        inputs: &Input,
+        input: &[u8],
         proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
-        let serialized_input = self
-            .zkvm
-            .serialize_inputs(inputs)
-            .map_err(|err| DockerizedError::Prove(ProveError::Common(err)))?;
-
         let (public_values, proof, report) =
-            block_on(self.client.prove(serialized_input, proof_kind))
+            block_on(self.client.prove(input.to_vec(), proof_kind))
                 .map_err(|err| DockerizedError::Prove(ProveError::Client(err)))?;
 
         Ok((public_values, proof, report))
@@ -544,10 +528,6 @@ impl zkVM for EreDockerizedzkVM {
 
     fn sdk_version(&self) -> &'static str {
         self.zkvm.sdk_version()
-    }
-
-    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, reader: R) -> Result<T, zkVMError> {
-        self.zkvm.deserialize_from(reader)
     }
 }
 
@@ -572,14 +552,16 @@ fn home_dir() -> PathBuf {
 
 #[cfg(test)]
 mod test {
+    use crate::{
+        EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM, SerializedProgram, workspace_dir,
+    };
+    use ere_test_utils::{host::*, program::basic::BasicProgramInput};
+    use ere_zkvm_interface::{Compiler, ProverResourceType};
+    use std::sync::{Mutex, MutexGuard, OnceLock};
+
     macro_rules! test_compile {
         ($zkvm:ident, $program:literal) => {
-            use crate::{
-                EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM, SerializedProgram, workspace_dir,
-            };
-            use ere_test_utils::host::*;
-            use ere_zkvm_interface::{Compiler, ProverResourceType};
-            use std::sync::{Mutex, MutexGuard, OnceLock};
+            use super::*;
 
             fn program() -> &'static SerializedProgram {
                 static PROGRAM: OnceLock<SerializedProgram> = OnceLock::new();
@@ -648,37 +630,37 @@ mod test {
 
     mod openvm {
         test_compile!(OpenVM, "basic");
-        test_execute!(OpenVM, BasicProgramIo::valid().into_output_hashed_io());
-        test_prove!(OpenVM, BasicProgramIo::valid().into_output_hashed_io());
+        test_execute!(OpenVM, BasicProgramInput::valid().into_output_sha256());
+        test_prove!(OpenVM, BasicProgramInput::valid().into_output_sha256());
     }
 
     mod pico {
         test_compile!(Pico, "basic");
-        test_execute!(Pico, BasicProgramIo::valid());
-        test_prove!(Pico, BasicProgramIo::valid());
+        test_execute!(Pico, BasicProgramInput::valid());
+        test_prove!(Pico, BasicProgramInput::valid());
     }
 
     mod risc0 {
         test_compile!(Risc0, "basic");
-        test_execute!(Risc0, BasicProgramIo::valid());
-        test_prove!(Risc0, BasicProgramIo::valid());
+        test_execute!(Risc0, BasicProgramInput::valid());
+        test_prove!(Risc0, BasicProgramInput::valid());
     }
 
     mod sp1 {
         test_compile!(SP1, "basic");
-        test_execute!(SP1, BasicProgramIo::valid());
-        test_prove!(SP1, BasicProgramIo::valid());
+        test_execute!(SP1, BasicProgramInput::valid());
+        test_prove!(SP1, BasicProgramInput::valid());
     }
 
     mod ziren {
         test_compile!(Ziren, "basic");
-        test_execute!(Ziren, BasicProgramIo::valid());
-        test_prove!(Ziren, BasicProgramIo::valid());
+        test_execute!(Ziren, BasicProgramInput::valid());
+        test_prove!(Ziren, BasicProgramInput::valid());
     }
 
     mod zisk {
         test_compile!(Zisk, "basic");
-        test_execute!(Zisk, BasicProgramIo::valid().into_output_hashed_io());
-        test_prove!(Zisk, BasicProgramIo::valid().into_output_hashed_io());
+        test_execute!(Zisk, BasicProgramInput::valid().into_output_sha256());
+        test_prove!(Zisk, BasicProgramInput::valid().into_output_sha256());
     }
 }

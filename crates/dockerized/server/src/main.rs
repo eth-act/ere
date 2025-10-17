@@ -108,8 +108,8 @@ async fn shutdown_signal() {
 }
 
 fn construct_zkvm(program: Vec<u8>, resource: ProverResourceType) -> Result<impl zkVM, Error> {
-    let program =
-        bincode::deserialize(&program).with_context(|| "Failed to deserialize program")?;
+    let (program, _) = bincode::serde::decode_from_slice(&program, bincode::config::legacy())
+        .with_context(|| "Failed to deserialize program")?;
 
     #[cfg(feature = "jolt")]
     let zkvm = ere_jolt::EreJolt::new(program, resource);
