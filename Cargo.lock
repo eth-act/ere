@@ -3663,13 +3663,10 @@ name = "ere-dockerized"
 version = "0.0.13"
 dependencies = [
  "anyhow",
- "bincode 2.0.1",
- "bytemuck",
  "ere-build-utils",
  "ere-server",
  "ere-test-utils",
  "ere-zkvm-interface",
- "risc0-zkvm",
  "serde",
  "tempfile",
  "thiserror 2.0.12",
@@ -3696,7 +3693,6 @@ dependencies = [
  "ere-test-utils",
  "ere-zkvm-interface",
  "jolt",
- "serde",
  "tempfile",
  "thiserror 2.0.12",
 ]
