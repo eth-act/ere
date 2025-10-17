@@ -6,6 +6,5 @@ edition = "2021"
 [workspace]
 
 [dependencies]
-bincode = "1.3.3"
 ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.12.0" }
 ere-test-utils = { path = "../../../crates/test-utils" }

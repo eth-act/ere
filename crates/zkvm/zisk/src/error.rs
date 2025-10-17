@@ -49,8 +49,10 @@ pub enum ZiskError {
     CompileUtilError(#[from] ere_compile_utils::CompileError),
 
     // Serialization
-    #[error("Bincode serialization/deserialization failed: {0}")]
-    Bincode(#[from] bincode::Error),
+    #[error("Bincode encode failed: {0}")]
+    BincodeEncode(#[from] bincode::error::EncodeError),
+    #[error("Bincode decode failed: {0}")]
+    BincodeDecode(#[from] bincode::error::DecodeError),
 
     // Execution
     #[error("Failed to execute `ziskemu`: {0}")]

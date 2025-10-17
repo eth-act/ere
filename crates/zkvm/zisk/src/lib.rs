@@ -6,12 +6,10 @@ use crate::{
     error::ZiskError,
 };
 use ere_zkvm_interface::{
-    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMError,
+    ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
+    PublicValues, zkVM, zkVMError,
 };
-use serde::de::DeserializeOwned;
 use std::{
-    io::Read,
     sync::{Mutex, MutexGuard},
     time::Instant,
 };
@@ -65,11 +63,9 @@ impl EreZisk {
 }
 
 impl zkVM for EreZisk {
-    fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
-        let input_bytes = serialize_inputs(inputs)?;
-
+    fn execute(&self, input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
         let start = Instant::now();
-        let (public_values, total_num_cycles) = self.sdk.execute(&input_bytes)?;
+        let (public_values, total_num_cycles) = self.sdk.execute(input)?;
         let execution_duration = start.elapsed();
 
         Ok((
@@ -84,7 +80,7 @@ impl zkVM for EreZisk {
 
     fn prove(
         &self,
-        inputs: &Input,
+        input: &[u8],
         proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
         if proof_kind != ProofKind::Compressed {
@@ -94,10 +90,8 @@ impl zkVM for EreZisk {
         let mut server = self.server()?;
         let server = server.as_mut().expect("server initialized");
 
-        let input_bytes = serialize_inputs(inputs)?;
-
         let start = Instant::now();
-        let (public_values, proof) = server.prove(&input_bytes)?;
+        let (public_values, proof) = server.prove(input)?;
         let proving_time = start.elapsed();
 
         Ok((
@@ -122,33 +116,14 @@ impl zkVM for EreZisk {
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
     }
-
-    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, _: R) -> Result<T, zkVMError> {
-        unimplemented!("no native serialization in this platform")
-    }
-}
-
-/// Serialize `Input` into sequence of bytes.
-///
-/// Because ZisK doesn't provide stdin API so we need to handle multiple inputs,
-/// the current approach naively serializes each `InputItem` individually, then
-/// concat them into single `Vec<u8>`.
-fn serialize_inputs(inputs: &Input) -> Result<Vec<u8>, ZiskError> {
-    inputs.iter().try_fold(Vec::new(), |mut acc, item| {
-        match item {
-            InputItem::Object(obj) => bincode::serialize_into(&mut acc, &**obj)?,
-            InputItem::SerializedObject(bytes) => acc.extend(bytes),
-            InputItem::Bytes(bytes) => bincode::serialize_into(&mut acc, bytes)?,
-        };
-        Ok(acc)
-    })
 }
 
 #[cfg(test)]
 mod tests {
     use crate::{EreZisk, compiler::RustRv64imaCustomized};
-    use ere_test_utils::host::{
-        BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+    use ere_test_utils::{
+        host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
+        program::basic::BasicProgramInput,
     };
     use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
     use std::sync::{Mutex, OnceLock};
@@ -174,21 +149,17 @@ mod tests {
         let program = basic_program();
         let zkvm = EreZisk::new(program, ProverResourceType::Cpu).unwrap();
 
-        let io = BasicProgramIo::valid().into_output_hashed_io();
-        run_zkvm_execute(&zkvm, &io);
+        let test_case = BasicProgramInput::valid().into_output_sha256();
+        run_zkvm_execute(&zkvm, &test_case);
     }
 
     #[test]
-    fn test_execute_invalid_inputs() {
+    fn test_execute_invalid_input() {
         let program = basic_program();
         let zkvm = EreZisk::new(program, ProverResourceType::Cpu).unwrap();
 
-        for inputs in [
-            BasicProgramIo::empty(),
-            BasicProgramIo::invalid_type(),
-            BasicProgramIo::invalid_data(),
-        ] {
-            zkvm.execute(&inputs).unwrap_err();
+        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+            zkvm.execute(&input).unwrap_err();
         }
     }
 
@@ -199,23 +170,19 @@ mod tests {
 
         let _guard = PROVE_LOCK.lock().unwrap();
 
-        let io = BasicProgramIo::valid().into_output_hashed_io();
-        run_zkvm_prove(&zkvm, &io);
+        let test_case = BasicProgramInput::valid().into_output_sha256();
+        run_zkvm_prove(&zkvm, &test_case);
     }
 
     #[test]
-    fn test_prove_invalid_inputs() {
+    fn test_prove_invalid_input() {
         let program = basic_program();
         let zkvm = EreZisk::new(program, ProverResourceType::Cpu).unwrap();
 
         let _guard = PROVE_LOCK.lock().unwrap();
 
-        for inputs in [
-            BasicProgramIo::empty(),
-            BasicProgramIo::invalid_type(),
-            BasicProgramIo::invalid_data(),
-        ] {
-            zkvm.prove(&inputs, ProofKind::default()).unwrap_err();
+        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+            zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }
     }
 }

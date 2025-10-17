@@ -6,10 +6,9 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-bincode.workspace = true
+bincode = { workspace = true, features = ["alloc", "serde"] }
 blake3.workspace = true
 bytemuck.workspace = true
-serde = { workspace = true, features = ["derive"] }
 strum = { workspace = true, features = ["derive"] }
 tempfile.workspace = true
 thiserror.workspace = true
