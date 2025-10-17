@@ -8,8 +8,7 @@ license.workspace = true
 [dependencies]
 anyhow.workspace = true
 borsh.workspace = true
-bytemuck.workspace = true
-serde = { workspace = true, features = ["derive", "rc"] }
+serde = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
 tracing.workspace = true
 
@@ -23,6 +22,7 @@ ere-compile-utils.workspace = true
 ere-zkvm-interface.workspace = true
 
 [dev-dependencies]
+ere-io-serde.workspace = true
 ere-test-utils = { workspace = true, features = ["host"] }
 
 [build-dependencies]

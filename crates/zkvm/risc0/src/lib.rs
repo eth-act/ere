@@ -1,22 +1,20 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use crate::{compiler::Risc0Program, output::deserialize_from};
+use crate::compiler::Risc0Program;
 use ere_zkvm_interface::{
-    Input, InputItem, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMError,
+    ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
+    PublicValues, zkVM, zkVMError,
 };
 use risc0_zkvm::{
-    DEFAULT_MAX_PO2, DefaultProver, ExecutorEnv, ExecutorEnvBuilder, ExternalProver, InnerReceipt,
-    ProverOpts, Receipt, default_executor, default_prover,
+    DEFAULT_MAX_PO2, DefaultProver, ExecutorEnv, ExternalProver, InnerReceipt, ProverOpts, Receipt,
+    default_executor, default_prover,
 };
-use serde::de::DeserializeOwned;
-use std::{env, io::Read, ops::RangeInclusive, rc::Rc, time::Instant};
+use std::{env, ops::RangeInclusive, rc::Rc, time::Instant};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 pub mod compiler;
 pub mod error;
-mod output;
 
 /// Default logarithmic segment size from [`DEFAULT_SEGMENT_LIMIT_PO2`].
 ///
@@ -84,11 +82,12 @@ impl EreRisc0 {
 }
 
 impl zkVM for EreRisc0 {
-    fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
+    fn execute(&self, input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
         let executor = default_executor();
-        let mut env = ExecutorEnv::builder();
-        serialize_inputs(&mut env, inputs).map_err(zkVMError::other)?;
-        let env = env.build().map_err(zkVMError::other)?;
+        let env = ExecutorEnv::builder()
+            .write_slice(input)
+            .build()
+            .map_err(zkVMError::other)?;
 
         let start = Instant::now();
         let session_info = executor
@@ -109,7 +108,7 @@ impl zkVM for EreRisc0 {
 
     fn prove(
         &self,
-        inputs: &Input,
+        input: &[u8],
         proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
         let prover = match self.resource {
@@ -135,9 +134,8 @@ impl zkVM for EreRisc0 {
             }
         };
 
-        let mut env = ExecutorEnv::builder();
-        serialize_inputs(&mut env, inputs).map_err(zkVMError::other)?;
-        let env = env
+        let env = ExecutorEnv::builder()
+            .write_slice(input)
             .segment_limit_po2(self.segment_po2 as _)
             .keccak_max_po2(self.keccak_po2 as _)
             .map_err(zkVMError::other)?
@@ -199,30 +197,6 @@ impl zkVM for EreRisc0 {
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
     }
-
-    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, reader: R) -> Result<T, zkVMError> {
-        deserialize_from(reader)
-    }
-}
-
-fn serialize_inputs(env: &mut ExecutorEnvBuilder, inputs: &Input) -> Result<(), anyhow::Error> {
-    for input in inputs.iter() {
-        match input {
-            // Corresponding to `env.read::<T>()`.
-            InputItem::Object(obj) => env.write(obj)?,
-            // Corresponding to `env.read::<T>()`.
-            //
-            // Note that we call `write_slice` to append the bytes to the inputs
-            // directly, to avoid double serailization.
-            InputItem::SerializedObject(bytes) => env.write_slice(bytes),
-            // Corresponding to `env.read_frame()`.
-            //
-            // Note that `write_frame` is different from `write_slice`, it
-            // prepends the `bytes.len().to_le_bytes()`.
-            InputItem::Bytes(bytes) => env.write_frame(bytes),
-        };
-    }
-    Ok(())
 }
 
 #[cfg(test)]
@@ -231,10 +205,11 @@ mod tests {
         EreRisc0,
         compiler::{Risc0Program, RustRv32imaCustomized},
     };
-    use ere_test_utils::host::{
-        BasicProgramIo, run_zkvm_execute, run_zkvm_prove, testing_guest_directory,
+    use ere_test_utils::{
+        host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
+        program::basic::BasicProgramInput,
     };
-    use ere_zkvm_interface::{Compiler, Input, ProofKind, ProverResourceType, zkVM};
+    use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
     use std::sync::OnceLock;
 
     static BASIC_PROGRAM: OnceLock<Risc0Program> = OnceLock::new();
@@ -254,21 +229,17 @@ mod tests {
         let program = basic_program();
         let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
-        let io = BasicProgramIo::valid();
-        run_zkvm_execute(&zkvm, &io);
+        let test_case = BasicProgramInput::valid();
+        run_zkvm_execute(&zkvm, &test_case);
     }
 
     #[test]
-    fn test_execute_invalid_inputs() {
+    fn test_execute_invalid_input() {
         let program = basic_program();
         let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
-        for inputs in [
-            BasicProgramIo::empty(),
-            BasicProgramIo::invalid_type(),
-            BasicProgramIo::invalid_data(),
-        ] {
-            zkvm.execute(&inputs).unwrap_err();
+        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+            zkvm.execute(&input).unwrap_err();
         }
     }
 
@@ -277,21 +248,17 @@ mod tests {
         let program = basic_program();
         let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
-        let io = BasicProgramIo::valid();
-        run_zkvm_prove(&zkvm, &io);
+        let test_case = BasicProgramInput::valid();
+        run_zkvm_prove(&zkvm, &test_case);
     }
 
     #[test]
-    fn test_prove_invalid_inputs() {
+    fn test_prove_invalid_input() {
         let program = basic_program();
         let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
-        for inputs in [
-            BasicProgramIo::empty(),
-            BasicProgramIo::invalid_type(),
-            BasicProgramIo::invalid_data(),
-        ] {
-            zkvm.prove(&inputs, ProofKind::default()).unwrap_err();
+        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+            zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }
     }
 
@@ -301,11 +268,10 @@ mod tests {
             .compile(&testing_guest_directory("risc0", "allocs_alignment"))
             .unwrap();
 
-        for i in 1..=16_usize {
+        for i in 1..=16_u32 {
             let zkvm = EreRisc0::new(program.clone(), ProverResourceType::Cpu).unwrap();
 
-            let mut input = Input::new();
-            input.write(i);
+            let input = i.to_le_bytes();
 
             if i.is_power_of_two() {
                 zkvm.execute(&input)
