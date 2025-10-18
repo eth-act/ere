@@ -1,0 +1,10 @@
+[package]
+name = "ere-test-airbender-guest"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+riscv_common = { git = "https://github.com/matter-labs/zksync-airbender", features = ["custom_allocator"], tag = "v0.5.0" }
+ere-test-utils = { path = "../../../crates/test-utils" }
+
+[workspace]
