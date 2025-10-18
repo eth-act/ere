@@ -3621,7 +3621,7 @@ dependencies = [
 
 [[package]]
 name = "ere-build-utils"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "cargo_metadata 0.19.2",
  "thiserror 2.0.12",
@@ -3630,7 +3630,7 @@ dependencies = [
 
 [[package]]
 name = "ere-compile-utils"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "cargo_metadata 0.19.2",
  "tempfile",
@@ -3639,7 +3639,7 @@ dependencies = [
 
 [[package]]
 name = "ere-compiler"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -3660,7 +3660,7 @@ dependencies = [
 
 [[package]]
 name = "ere-dockerized"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "anyhow",
  "ere-build-utils",
@@ -3676,7 +3676,7 @@ dependencies = [
 
 [[package]]
 name = "ere-io-serde"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "bincode 2.0.1",
  "serde",
@@ -3684,7 +3684,7 @@ dependencies = [
 
 [[package]]
 name = "ere-jolt"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "ark-serialize 0.5.0",
  "common",
@@ -3699,7 +3699,7 @@ dependencies = [
 
 [[package]]
 name = "ere-miden"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "bincode 2.0.1",
  "ere-build-utils",
@@ -3717,7 +3717,7 @@ dependencies = [
 
 [[package]]
 name = "ere-nexus"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "bincode 2.0.1",
  "ere-build-utils",
@@ -3735,7 +3735,7 @@ dependencies = [
 
 [[package]]
 name = "ere-openvm"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "ere-build-utils",
  "ere-compile-utils",
@@ -3754,7 +3754,7 @@ dependencies = [
 
 [[package]]
 name = "ere-pico"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -3772,7 +3772,7 @@ dependencies = [
 
 [[package]]
 name = "ere-risc0"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "anyhow",
  "borsh",
@@ -3791,7 +3791,7 @@ dependencies = [
 
 [[package]]
 name = "ere-server"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -3819,7 +3819,7 @@ dependencies = [
 
 [[package]]
 name = "ere-sp1"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "bincode 2.0.1",
  "ere-build-utils",
@@ -3834,7 +3834,7 @@ dependencies = [
 
 [[package]]
 name = "ere-test-utils"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "ere-io-serde",
  "ere-zkvm-interface",
@@ -3845,7 +3845,7 @@ dependencies = [
 
 [[package]]
 name = "ere-ziren"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "bincode 2.0.1",
  "ere-build-utils",
@@ -3859,7 +3859,7 @@ dependencies = [
 
 [[package]]
 name = "ere-zisk"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "bincode 2.0.1",
  "blake3",
@@ -3876,7 +3876,7 @@ dependencies = [
 
 [[package]]
 name = "ere-zkvm-interface"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "auto_impl",
  "bincode 2.0.1",
