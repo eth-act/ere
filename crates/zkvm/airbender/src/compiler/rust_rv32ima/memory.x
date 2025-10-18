@@ -1,0 +1,15 @@
+/* Copied from https://github.com/matter-labs/zksync-airbender/blob/v0.5.0/examples/scripts/lds/memory.x */
+
+MEMORY
+{
+  ROM (rx): ORIGIN = 0, LENGTH = 2M
+  RAM (rwa!x) : ORIGIN = 2M, LENGTH = 1022M
+}
+
+REGION_ALIAS("REGION_TEXT", ROM);
+REGION_ALIAS("REGION_RODATA", ROM);
+REGION_ALIAS("REGION_DATAINIT", ROM);
+REGION_ALIAS("REGION_STACK", RAM);
+REGION_ALIAS("REGION_DATA", RAM);
+REGION_ALIAS("REGION_BSS", RAM);
+REGION_ALIAS("REGION_HEAP", RAM);
