@@ -27,7 +27,7 @@ impl Compiler for RustRv32i {
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
         let elf = CargoBuildCmd::new()
             .linker_script(Some(LINKER_SCRIPT))
-            // Target won't compile correctly if we don't pin this version
+            // The compiled ELF will be incompatible with Nexus VM if we don't pin this version
             // https://github.com/nexus-xyz/nexus-zkvm/blob/main/rust-toolchain.toml
             .toolchain("nightly-2025-04-06")
             .build_options(CARGO_BUILD_OPTIONS)

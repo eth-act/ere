@@ -1,7 +1,7 @@
 ENTRY(_start);
 
 /* nb: when proving we will rebuild the memory model based on the first
-      pass' usages, so there is no cost for a "suboptimal" layout here */
+       pass' usages, so there is no cost for a "suboptimal" layout here */
 
 SECTIONS
 {

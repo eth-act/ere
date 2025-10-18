@@ -26,23 +26,22 @@ pub mod error;
 #[derive(Serialize, Deserialize)]
 pub struct NexusProofBundle {
     proof: NexusProof,
-    elf_bytes: Vec<u8>,
     public_values: Vec<u8>,
 }
 
 pub struct EreNexus {
-    program: NexusProgram,
+    elf: NexusProgram,
 }
 
 impl EreNexus {
-    pub fn new(program: NexusProgram, _resource_type: ProverResourceType) -> Self {
-        Self { program }
+    pub fn new(elf: NexusProgram, _resource_type: ProverResourceType) -> Self {
+        Self { elf }
     }
 }
 
 impl zkVM for EreNexus {
     fn execute(&self, inputs: &Input) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
-        let elf = ElfFile::from_bytes(&self.program)
+        let elf = ElfFile::from_bytes(&self.elf)
             .map_err(|e| NexusError::Prove(ProveError::Client(e.into())))?;
 
         let input_bytes = serialize_inputs(inputs)?;
@@ -89,7 +88,7 @@ impl zkVM for EreNexus {
             panic!("Only Compressed proof kind is supported.");
         }
 
-        let elf = ElfFile::from_bytes(&self.program)
+        let elf = ElfFile::from_bytes(&self.elf)
             .map_err(|e| NexusError::Prove(ProveError::Client(e.into())))?;
 
         let prover =
@@ -108,7 +107,6 @@ impl zkVM for EreNexus {
 
         let proof_bundle = NexusProofBundle {
             proof,
-            elf_bytes: self.program.clone(),
             public_values: public_values.clone(),
         };
 
@@ -138,7 +136,7 @@ impl zkVM for EreNexus {
                 &(),
                 KnownExitCodes::ExitSuccess as u32,
                 &proof_bundle.public_values,
-                &proof_bundle.elf_bytes,
+                &self.elf,
                 &[],
             )
             .map_err(|e| NexusError::Verify(VerifyError::Client(e.into())))?;
@@ -156,14 +154,10 @@ impl zkVM for EreNexus {
         SDK_VERSION
     }
 
-    fn deserialize_from<R: Read, T: DeserializeOwned>(
-        &self,
-        mut reader: R,
-    ) -> Result<T, zkVMError> {
-        let mut bytes = Vec::new();
-        reader.read_to_end(&mut bytes).map_err(zkVMError::other)?;
-
-        postcard::from_bytes(&bytes).map_err(zkVMError::other)
+    fn deserialize_from<R: Read, T: DeserializeOwned>(&self, reader: R) -> Result<T, zkVMError> {
+        let mut buf = vec![0; 1 << 20]; // allocate 1MiB as buffer.
+        let (value, _) = postcard::from_io((reader, &mut buf)).map_err(zkVMError::other)?;
+        Ok(value)
     }
 }
 
