@@ -5,7 +5,6 @@ edition = "2021"
 
 [dependencies]
 nexus-rt = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.4" }
-postcard = { version = "1.0", default-features = false, features = ["alloc"] }
 ere-test-utils = { path = "../../../crates/test-utils" }
 
 [workspace]

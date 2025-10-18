@@ -620,6 +620,8 @@ mod test {
 
     mod nexus {
         test_compile!(Nexus, "basic");
+        test_execute!(Nexus, BasicProgramInput::valid());
+        test_prove!(Nexus, BasicProgramInput::valid());
     }
 
     mod openvm {
