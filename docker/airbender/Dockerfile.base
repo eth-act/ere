@@ -1,0 +1,35 @@
+ARG BASE_IMAGE=ere-base:latest
+ARG BASE_CUDA_IMAGE=ere-base:latest-cuda
+
+# Whether to enable CUDA feature or not.
+ARG CUDA
+
+FROM $BASE_IMAGE AS base
+FROM $BASE_CUDA_IMAGE AS base_cuda
+FROM base${CUDA:+_cuda}
+
+# Set default toolchain to nightly
+RUN rustup default nightly
+
+ARG CUDA
+
+# Default to build for RTX 50 series
+ARG CUDA_ARCH=sm_120
+
+# Env read by Airbender crate `gpu_prover`, only taking the numeric part
+ARG CUDAARCHS=${CUDA_ARCH#sm_}
+
+# Copy the Airbender SDK installer script from the workspace context
+COPY --chmod=755 scripts/sdk_installers/install_airbender_sdk.sh /tmp/install_airbender_sdk.sh
+
+# Run the Airbender SDK installation script.
+# This script installs airbender-cli.
+RUN /tmp/install_airbender_sdk.sh && rm /tmp/install_airbender_sdk.sh
+
+# Verify airbender-cli is accessible with the correct toolchain
+RUN airbender-cli --version
+
+# Add `rust-src` component to enable std build for nightly rust.
+RUN rustup component add rust-src
+
+CMD ["/bin/bash"]
