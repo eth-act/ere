@@ -17,7 +17,7 @@ COPY --chmod=755 scripts/sdk_installers/install_pico_sdk.sh /tmp/install_pico_sd
 # Run the Pico SDK installation script.
 # This script installs the specific Rust toolchain (nightly-2025-08-04)
 # and installs pico-cli (as cargo-pico).
-# The CARGO_HOME from ere-base (e.g., /root/.cargo) will be used, and cargo-pico will be in its bin.
+# The CARGO_HOME from ere-base (e.g., /usr/local/cargo) will be used, and cargo-pico will be in its bin.
 RUN /tmp/install_pico_sdk.sh && rm /tmp/install_pico_sdk.sh # Clean up the script
 
 # Verify Pico installation

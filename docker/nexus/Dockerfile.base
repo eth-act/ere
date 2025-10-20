@@ -17,7 +17,7 @@ COPY --chmod=755 scripts/sdk_installers/install_nexus_sdk.sh /tmp/install_nexus_
 # Run the Nexus SDK installation script.
 # This script installs the specific Rust toolchain (nightly-2025-04-06)
 # and installs cargo-nexus
-# The CARGO_HOME from ere-base (e.g., /root/.cargo) will be used, and cargo-nexus will be in its bin.
+# The CARGO_HOME from ere-base (e.g., /usr/local/cargo) will be used, and cargo-nexus will be in its bin.
 RUN /tmp/install_nexus_sdk.sh && rm /tmp/install_nexus_sdk.sh # Clean up the script
 
 # Verify Nexus installation
