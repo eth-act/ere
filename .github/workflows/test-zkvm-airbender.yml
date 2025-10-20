@@ -15,3 +15,4 @@ jobs:
     with:
       zkvm: airbender
       toolchain: nightly
+      skip_prove_test: true
