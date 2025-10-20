@@ -95,6 +95,7 @@ const ERE_SERVER_PORT_OFFSET: u16 = 4174;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ErezkVM {
+    Airbender,
     Jolt,
     Miden,
     Nexus,
@@ -109,6 +110,7 @@ pub enum ErezkVM {
 impl ErezkVM {
     pub fn as_str(&self) -> &'static str {
         match self {
+            Self::Airbender => "airbender",
             Self::Jolt => "jolt",
             Self::Miden => "miden",
             Self::Nexus => "nexus",
@@ -126,7 +128,7 @@ impl ErezkVM {
         let suffix = match (gpu, self) {
             // Only the following zkVMs requires CUDA setup in the base image
             // when GPU support is required.
-            (true, Self::OpenVM | Self::Risc0 | Self::Zisk) => "-cuda",
+            (true, Self::Airbender | Self::OpenVM | Self::Risc0 | Self::Zisk) => "-cuda",
             _ => "",
         };
         format!("{version}{suffix}")
@@ -195,7 +197,7 @@ impl ErezkVM {
 
                 let cuda_arch = cuda_arch();
                 match self {
-                    ErezkVM::OpenVM | ErezkVM::Risc0 | ErezkVM::Zisk => {
+                    Self::Airbender | Self::OpenVM | Self::Risc0 | Self::Zisk => {
                         if let Some(cuda_arch) = cuda_arch {
                             cmd = cmd.build_arg("CUDA_ARCH", cuda_arch)
                         }
@@ -259,12 +261,12 @@ impl ErezkVM {
 
         // zkVM specific options
         cmd = match self {
-            ErezkVM::Risc0 => cmd
+            Self::Risc0 => cmd
                 .inherit_env("RISC0_SEGMENT_PO2")
                 .inherit_env("RISC0_KECCAK_PO2"),
             // ZisK uses shared memory to exchange data between processes, it
             // requires at least 8G shared memory, here we set 16G for safety.
-            ErezkVM::Zisk => cmd
+            Self::Zisk => cmd
                 .option("shm-size", "16G")
                 .option("ulimit", "memlock=-1:-1")
                 .inherit_env("ZISK_PORT")
@@ -282,13 +284,14 @@ impl ErezkVM {
         // zkVM specific options when using GPU
         if gpu {
             cmd = match self {
-                ErezkVM::OpenVM => cmd.gpus("all"),
+                Self::Airbender => cmd.gpus("all"),
+                Self::OpenVM => cmd.gpus("all"),
                 // SP1 runs docker command to spin up the server to do GPU
                 // proving, to give the client access to the prover service, we
                 // need to use the host networking driver.
-                ErezkVM::SP1 => cmd.mount_docker_socket().network("host"),
-                ErezkVM::Risc0 => cmd.gpus("all").inherit_env("RISC0_DEFAULT_PROVER_NUM_GPUS"),
-                ErezkVM::Zisk => cmd.gpus("all"),
+                Self::SP1 => cmd.mount_docker_socket().network("host"),
+                Self::Risc0 => cmd.gpus("all").inherit_env("RISC0_DEFAULT_PROVER_NUM_GPUS"),
+                Self::Zisk => cmd.gpus("all"),
                 _ => cmd,
             }
         }
@@ -303,11 +306,11 @@ impl ErezkVM {
             // create a temporary directory and mount it on the top level, so
             // the volume could be shared, and override `TMPDIR` so we don't
             // need to mount the whole `/tmp`.
-            ErezkVM::Risc0 => cmd
+            Self::Risc0 => cmd
                 .mount_docker_socket()
                 .env("TMPDIR", tempdir.path().to_string_lossy())
                 .volume(tempdir.path(), tempdir.path()),
-            ErezkVM::SP1 => {
+            Self::SP1 => {
                 let groth16_circuit_path = home_dir().join(".sp1").join("circuits").join("groth16");
                 cmd.mount_docker_socket()
                     .env(
@@ -336,6 +339,7 @@ impl FromStr for ErezkVM {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
+            "airbender" => Self::Airbender,
             "jolt" => Self::Jolt,
             "miden" => Self::Miden,
             "nexus" => Self::Nexus,
@@ -608,6 +612,12 @@ mod test {
                 drop(zkvm);
             }
         };
+    }
+
+    mod airbender {
+        test_compile!(Airbender, "basic");
+        test_execute!(Airbender, BasicProgramInput::valid().into_output_sha256());
+        test_prove!(Airbender, BasicProgramInput::valid().into_output_sha256());
     }
 
     mod jolt {

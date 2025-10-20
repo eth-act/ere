@@ -20,6 +20,7 @@ fn generate_crate_version() {
 
 fn generate_zkvm_sdk_version_impl() {
     let [
+        airbender_version,
         jolt_version,
         miden_version,
         nexus_version,
@@ -29,6 +30,7 @@ fn generate_zkvm_sdk_version_impl() {
         sp1_version,
         ziren_version,
     ] = [
+        "execution_utils",
         "jolt-sdk",
         "miden-core",
         "nexus-sdk",
@@ -51,6 +53,7 @@ fn generate_zkvm_sdk_version_impl() {
         r#"impl crate::ErezkVM {{
     pub fn sdk_version(&self) -> &'static str {{
         match self {{
+            Self::Airbender => "{airbender_version}",
             Self::Jolt => "{jolt_version}",
             Self::Miden => "{miden_version}",
             Self::Nexus => "{nexus_version}",

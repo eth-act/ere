@@ -13,6 +13,7 @@ serde.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 # Local dependencies
+ere-airbender = { workspace = true, optional = true }
 ere-jolt = { workspace = true, optional = true }
 ere-miden = { workspace = true, optional = true }
 ere-nexus = { workspace = true, optional = true }
@@ -30,6 +31,7 @@ ere-zkvm-interface.workspace = true
 default = []
 
 # zkVM
+airbender = ["dep:ere-airbender"]
 jolt = ["dep:ere-jolt"]
 miden = ["dep:ere-miden"]
 nexus = ["dep:ere-nexus"]

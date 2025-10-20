@@ -8,7 +8,8 @@ use tracing_subscriber::EnvFilter;
 // Compile-time check to ensure exactly one zkVM feature is enabled for `ere-compiler`
 const _: () = {
     assert!(
-        (cfg!(feature = "jolt") as u8
+        (cfg!(feature = "airbender") as u8
+            + cfg!(feature = "jolt") as u8
             + cfg!(feature = "miden") as u8
             + cfg!(feature = "nexus") as u8
             + cfg!(feature = "openvm") as u8
@@ -50,6 +51,9 @@ fn main() -> Result<(), Error> {
 }
 
 fn compile(guest_path: PathBuf) -> Result<impl Serialize, Error> {
+    #[cfg(feature = "airbender")]
+    let result = ere_airbender::compiler::RustRv32ima.compile(&guest_path);
+
     #[cfg(feature = "jolt")]
     let result = if use_stock_rust() {
         ere_jolt::compiler::RustRv32ima.compile(&guest_path)

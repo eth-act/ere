@@ -21,7 +21,8 @@ use twirp::{
 const _: () = {
     if cfg!(feature = "server") {
         assert!(
-            (cfg!(feature = "jolt") as u8
+            (cfg!(feature = "airbender") as u8
+                + cfg!(feature = "jolt") as u8
                 + cfg!(feature = "miden") as u8
                 + cfg!(feature = "nexus") as u8
                 + cfg!(feature = "openvm") as u8
@@ -110,6 +111,9 @@ async fn shutdown_signal() {
 fn construct_zkvm(program: Vec<u8>, resource: ProverResourceType) -> Result<impl zkVM, Error> {
     let (program, _) = bincode::serde::decode_from_slice(&program, bincode::config::legacy())
         .with_context(|| "Failed to deserialize program")?;
+
+    #[cfg(feature = "airbender")]
+    let zkvm = Ok::<_, Error>(ere_airbender::EreAirbender::new(program, resource));
 
     #[cfg(feature = "jolt")]
     let zkvm = ere_jolt::EreJolt::new(program, resource);
