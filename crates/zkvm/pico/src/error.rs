@@ -54,12 +54,16 @@ pub enum CompileError {
 pub enum ExecuteError {
     #[error("Pico execution failed: {0}")]
     Client(anyhow::Error),
+    #[error("Pico execution panicked: {0}")]
+    Panic(String),
 }
 
 #[derive(Debug, Error)]
 pub enum ProveError {
     #[error("Pico proving failed: {0}")]
     Client(anyhow::Error),
+    #[error("Pico proving panicked: {0}")]
+    Panic(String),
     #[error("Serialising proof with `bincode` failed: {0}")]
     Bincode(#[from] bincode::error::EncodeError),
 }

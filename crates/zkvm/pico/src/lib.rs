@@ -3,19 +3,17 @@
 use crate::{
     client::{MetaProof, ProverClient},
     compiler::PicoProgram,
-    error::{PicoError, ProveError, VerifyError},
+    error::{ExecuteError, PicoError, ProveError, VerifyError},
 };
 use ere_zkvm_interface::{
     ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
     PublicValues, zkVM, zkVMError,
 };
 use pico_p3_field::PrimeField32;
+use pico_vm::emulator::stdin::EmulatorStdinBuilder;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::{
-    env,
-    time::{self, Instant},
-};
+use std::{env, panic, time::Instant};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
@@ -48,19 +46,22 @@ impl ErePico {
 
 impl zkVM for ErePico {
     fn execute(&self, input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
-        let client = self.client();
-
-        let mut stdin = client.new_stdin_builder();
+        let mut stdin = EmulatorStdinBuilder::default();
         stdin.write_slice(input);
 
-        let start = Instant::now();
-        let (total_num_cycles, public_values) = client.execute(stdin);
+        let ((total_num_cycles, public_values), execution_duration) = panic::catch_unwind(|| {
+            let client = self.client();
+            let start = Instant::now();
+            let result = client.execute(stdin);
+            (result, start.elapsed())
+        })
+        .map_err(|err| PicoError::Execute(ExecuteError::Panic(panic_msg(err))))?;
 
         Ok((
             public_values,
             ProgramExecutionReport {
                 total_num_cycles,
-                execution_duration: start.elapsed(),
+                execution_duration,
                 ..Default::default()
             },
         ))
@@ -82,16 +83,17 @@ impl zkVM for ErePico {
             panic!("Only Compressed proof kind is implemented.");
         }
 
-        let client = self.client();
-
-        let mut stdin = client.new_stdin_builder();
+        let mut stdin = EmulatorStdinBuilder::default();
         stdin.write_slice(input);
 
-        let now = time::Instant::now();
-        let (public_values, proof) = client
-            .prove(stdin)
-            .map_err(|err| PicoError::Prove(ProveError::Client(err)))?;
-        let elapsed = now.elapsed();
+        let ((public_values, proof), proving_time) = panic::catch_unwind(|| {
+            let client = self.client();
+            let start = Instant::now();
+            let result = client.prove(stdin)?;
+            Ok((result, start.elapsed()))
+        })
+        .map_err(|err| PicoError::Prove(ProveError::Panic(panic_msg(err))))?
+        .map_err(|err| PicoError::Prove(ProveError::Client(err)))?;
 
         let proof_bytes = bincode::serde::encode_to_vec(
             &PicoProofWithPublicValues {
@@ -105,7 +107,7 @@ impl zkVM for ErePico {
         Ok((
             public_values,
             Proof::Compressed(proof_bytes),
-            ProgramProvingReport::new(elapsed),
+            ProgramProvingReport::new(proving_time),
         ))
     }
 
@@ -167,6 +169,12 @@ fn extract_public_values_sha256_digest(proof: &MetaProof) -> Result<[u8; 32], Ve
         .unwrap())
 }
 
+fn panic_msg(err: Box<dyn std::any::Any + Send + 'static>) -> String {
+    None.or_else(|| err.downcast_ref::<String>().cloned())
+        .or_else(|| err.downcast_ref::<&'static str>().map(ToString::to_string))
+        .unwrap_or_else(|| "unknown panic msg".to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -178,7 +186,7 @@ mod tests {
         program::basic::BasicProgramInput,
     };
     use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
-    use std::{panic, sync::OnceLock};
+    use std::sync::OnceLock;
 
     static BASIC_PROGRAM: OnceLock<PicoProgram> = OnceLock::new();
 
@@ -206,10 +214,8 @@ mod tests {
         let program = basic_program();
         let zkvm = ErePico::new(program, ProverResourceType::Cpu);
 
-        // When guest panics Pico execute will also panics.
-        // Issue for tracking: https://github.com/eth-act/ere/issues/172.
         for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
-            panic::catch_unwind(|| zkvm.execute(&input)).unwrap_err();
+            zkvm.execute(&input).unwrap_err();
         }
     }
 
@@ -227,10 +233,8 @@ mod tests {
         let program = basic_program();
         let zkvm = ErePico::new(program, ProverResourceType::Cpu);
 
-        // When guest panics Pico prove will also panics.
-        // Issue for tracking: https://github.com/eth-act/ere/issues/172.
         for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
-            panic::catch_unwind(|| zkvm.prove(&input, ProofKind::default())).unwrap_err();
+            zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }
     }
 }
