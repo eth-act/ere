@@ -71,6 +71,9 @@ pub enum ProveError {
 
     #[error("Ziren proving failed: {0}")]
     Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
+
+    #[error("Ziren proving panicked: {0}")]
+    Panic(String),
 }
 
 #[derive(Debug, Error)]

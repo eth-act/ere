@@ -8,7 +8,7 @@ use ere_zkvm_interface::{
     ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
     PublicValues, zkVM, zkVMError,
 };
-use std::time::Instant;
+use std::{panic, time::Instant};
 use tracing::info;
 use zkm_sdk::{
     CpuProver, Prover, ZKMProofKind, ZKMProofWithPublicValues, ZKMProvingKey, ZKMStdin,
@@ -76,9 +76,10 @@ impl zkVM for EreZiren {
         };
 
         let start = std::time::Instant::now();
-        let proof = CpuProver::new()
-            .prove(&self.pk, stdin, inner_proof_kind)
-            .map_err(|err| ZirenError::Prove(ProveError::Client(err.into())))?;
+        let proof =
+            panic::catch_unwind(|| CpuProver::new().prove(&self.pk, stdin, inner_proof_kind))
+                .map_err(|err| ZirenError::Prove(ProveError::Panic(panic_msg(err))))?
+                .map_err(|err| ZirenError::Prove(ProveError::Client(err.into())))?;
         let proving_time = start.elapsed();
 
         let public_values = proof.public_values.to_vec();
@@ -132,6 +133,12 @@ impl zkVM for EreZiren {
     }
 }
 
+fn panic_msg(err: Box<dyn std::any::Any + Send + 'static>) -> String {
+    None.or_else(|| err.downcast_ref::<String>().cloned())
+        .or_else(|| err.downcast_ref::<&'static str>().map(ToString::to_string))
+        .unwrap_or_else(|| "unknown panic msg".to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{EreZiren, compiler::RustMips32r2Customized};
@@ -140,7 +147,7 @@ mod tests {
         program::basic::BasicProgramInput,
     };
     use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
-    use std::{panic, sync::OnceLock};
+    use std::sync::OnceLock;
 
     static BASIC_PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
 
@@ -187,10 +194,8 @@ mod tests {
         let program = basic_program();
         let zkvm = EreZiren::new(program, ProverResourceType::Cpu);
 
-        // When guest panics Ziren prove will also panics.
-        // Issue for tracking: https://github.com/eth-act/ere/issues/172.
         for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
-            panic::catch_unwind(|| zkvm.prove(&input, ProofKind::default())).unwrap_err();
+            zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }
     }
 }
