@@ -69,7 +69,7 @@ impl AirbenderSdk {
             });
         }
 
-        // Parse public values from stdout in format of:
+        // Parse public values 8 u32 words (32 bytes) from stdout in format of:
         // `Result: {v0}, {v1}, {v2}, {v3}, {v4}, {v5}, {v6}, {v7}`
         let public_values = output
             .stdout
