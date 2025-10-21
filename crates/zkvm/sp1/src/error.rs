@@ -72,6 +72,9 @@ pub enum ProveError {
     #[error("SP1 SDK proving failed: {0}")]
     Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
 
+    #[error("SP1 proving panicked: {0}")]
+    Panic(String),
+
     #[error("Serialising proof with `bincode` failed: {0}")]
     Bincode(#[from] bincode::error::EncodeError),
 }

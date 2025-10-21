@@ -12,7 +12,7 @@ use sp1_sdk::{
     CpuProver, CudaProver, NetworkProver, Prover, ProverClient, SP1ProofMode,
     SP1ProofWithPublicValues, SP1ProvingKey, SP1Stdin, SP1VerifyingKey,
 };
-use std::time::Instant;
+use std::{panic, time::Instant};
 use tracing::info;
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -177,10 +177,13 @@ impl zkVM for EreSP1 {
             ProofKind::Groth16 => SP1ProofMode::Groth16,
         };
 
-        let client = Self::create_client(&self.resource);
-        let start = std::time::Instant::now();
-        let proof = client.prove(&self.pk, &stdin, mode)?;
-        let proving_time = start.elapsed();
+        let (proof, proving_time) = panic::catch_unwind(|| {
+            let client = Self::create_client(&self.resource);
+            let start = std::time::Instant::now();
+            let proof = client.prove(&self.pk, &stdin, mode)?;
+            Ok::<_, SP1Error>((proof, start.elapsed()))
+        })
+        .map_err(|err| SP1Error::Prove(ProveError::Panic(panic_msg(err))))??;
 
         let public_values = proof.public_values.to_vec();
         let proof = Proof::new(
@@ -234,6 +237,12 @@ impl zkVM for EreSP1 {
     }
 }
 
+fn panic_msg(err: Box<dyn std::any::Any + Send + 'static>) -> String {
+    None.or_else(|| err.downcast_ref::<String>().cloned())
+        .or_else(|| err.downcast_ref::<&'static str>().map(ToString::to_string))
+        .unwrap_or_else(|| "unknown panic msg".to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{EreSP1, compiler::RustRv32imaCustomized};
@@ -242,7 +251,7 @@ mod tests {
         program::basic::BasicProgramInput,
     };
     use ere_zkvm_interface::{Compiler, NetworkProverConfig, ProofKind, ProverResourceType, zkVM};
-    use std::{panic, sync::OnceLock};
+    use std::sync::OnceLock;
 
     static BASIC_PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
 
@@ -289,10 +298,8 @@ mod tests {
         let program = basic_program();
         let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
 
-        // When guest panics SP1 prove will also panics.
-        // Issue for tracking: https://github.com/eth-act/ere/issues/172.
         for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
-            panic::catch_unwind(|| zkvm.prove(&input, ProofKind::default())).unwrap_err();
+            zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }
     }
 
