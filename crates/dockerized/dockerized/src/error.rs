@@ -1,3 +1,4 @@
+use ere_server::client::{TwirpErrorResponse, zkVMClientError};
 use ere_zkvm_interface::zkVMError;
 use std::{io, path::PathBuf};
 use thiserror::Error;
@@ -8,29 +9,19 @@ impl From<DockerizedError> for zkVMError {
     }
 }
 
-impl From<CommonError> for zkVMError {
-    fn from(value: CommonError) -> Self {
-        zkVMError::Other(Box::new(value))
+impl From<zkVMClientError> for DockerizedError {
+    fn from(value: zkVMClientError) -> Self {
+        match value {
+            zkVMClientError::zkVM(err) => DockerizedError::zkVM(err),
+            zkVMClientError::ConnectionTimeout => DockerizedError::ConnectionTimeout,
+            zkVMClientError::Rpc(err) => DockerizedError::Rpc(err),
+        }
     }
 }
 
 #[derive(Debug, Error)]
+#[allow(non_camel_case_types)]
 pub enum DockerizedError {
-    #[error(transparent)]
-    Compile(#[from] CompileError),
-
-    #[error(transparent)]
-    Execute(#[from] ExecuteError),
-
-    #[error(transparent)]
-    Prove(#[from] ProveError),
-
-    #[error(transparent)]
-    Verify(#[from] VerifyError),
-}
-
-#[derive(Debug, Error)]
-pub enum CompileError {
     #[error(
         "Guest directory must be in mounting directory, mounting_directory: {mounting_directory}, guest_directory: {guest_directory}"
     )]
@@ -38,36 +29,6 @@ pub enum CompileError {
         mounting_directory: PathBuf,
         guest_directory: PathBuf,
     },
-    #[error(transparent)]
-    Common(#[from] CommonError),
-}
-
-#[derive(Debug, Error)]
-pub enum ExecuteError {
-    #[error(transparent)]
-    Common(#[from] CommonError),
-    #[error("Execute request failed: {0}")]
-    Client(#[from] anyhow::Error),
-}
-
-#[derive(Debug, Error)]
-pub enum ProveError {
-    #[error(transparent)]
-    Common(#[from] CommonError),
-    #[error("Prove request failed: {0}")]
-    Client(#[from] anyhow::Error),
-}
-
-#[derive(Debug, Error)]
-pub enum VerifyError {
-    #[error(transparent)]
-    Common(#[from] CommonError),
-    #[error("Verify request failed: {0}")]
-    Client(#[from] anyhow::Error),
-}
-
-#[derive(Debug, Error)]
-pub enum CommonError {
     #[error("{context}: {source}")]
     Io {
         #[source]
@@ -82,28 +43,18 @@ pub enum CommonError {
     DockerRunCmd(io::Error),
     #[error("Failed to execute `docker container`: {0}")]
     DockerContainerCmd(io::Error),
-    #[error("{context}: {source}")]
-    Serialization {
-        #[source]
-        source: Box<dyn std::error::Error + Send + Sync + 'static>,
-        context: String,
-    },
+    #[error("zkVM method error: {0}")]
+    zkVM(String),
+    #[error("Connection to zkVM server timeout after 5 minutes")]
+    ConnectionTimeout,
+    #[error("RPC to zkVM server error: {0}")]
+    Rpc(TwirpErrorResponse),
 }
 
-impl CommonError {
+impl DockerizedError {
     pub fn io(source: io::Error, context: impl ToString) -> Self {
         Self::Io {
             source,
-            context: context.to_string(),
-        }
-    }
-
-    pub fn serilization(
-        source: impl Into<Box<dyn std::error::Error + Send + Sync + 'static>>,
-        context: impl ToString,
-    ) -> Self {
-        Self::Serialization {
-            source: source.into(),
             context: context.to_string(),
         }
     }

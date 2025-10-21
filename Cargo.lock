@@ -3786,7 +3786,6 @@ dependencies = [
 name = "ere-dockerized"
 version = "0.0.14"
 dependencies = [
- "anyhow",
  "ere-build-utils",
  "ere-server",
  "ere-test-utils",
@@ -3934,6 +3933,7 @@ dependencies = [
  "prost 0.13.5",
  "prost-build 0.13.5",
  "serde",
+ "thiserror 2.0.12",
  "tokio",
  "tower-http",
  "tracing",

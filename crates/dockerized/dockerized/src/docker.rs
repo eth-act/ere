@@ -1,4 +1,4 @@
-use crate::error::CommonError;
+use crate::error::DockerizedError;
 use std::{
     env,
     fmt::{self, Display, Formatter},
@@ -213,27 +213,26 @@ impl DockerRunCmd {
     }
 }
 
-pub fn stop_docker_container(container_name: impl AsRef<str>) -> Result<(), CommonError> {
+pub fn stop_docker_container(container_name: impl AsRef<str>) -> Result<(), DockerizedError> {
     let output = Command::new("docker")
         .args(["container", "stop", container_name.as_ref()])
         .output()
-        .map_err(CommonError::DockerContainerCmd)?;
+        .map_err(DockerizedError::DockerContainerCmd)?;
 
     if String::from_utf8_lossy(&output.stdout).starts_with("Error") {
-        return Err(CommonError::DockerContainerCmd(io::Error::other(format!(
-            "Failed to stop container {}",
-            container_name.as_ref()
-        ))));
+        return Err(DockerizedError::DockerContainerCmd(io::Error::other(
+            format!("Failed to stop container {}", container_name.as_ref()),
+        )));
     }
 
     Ok(())
 }
 
-pub fn docker_image_exists(image: impl AsRef<str>) -> Result<bool, CommonError> {
+pub fn docker_image_exists(image: impl AsRef<str>) -> Result<bool, DockerizedError> {
     let output = Command::new("docker")
         .args(["images", "--quiet", image.as_ref()])
         .output()
-        .map_err(CommonError::DockerImageCmd)?;
+        .map_err(DockerizedError::DockerImageCmd)?;
     // If image exists, image id will be printed hence stdout will be non-empty.
     Ok(!output.stdout.is_empty())
 }

@@ -18,6 +18,13 @@ message ExecuteRequest {
 }
 
 message ExecuteResponse {
+    oneof result {
+        ExecuteOk ok = 1;
+        string err = 2;
+    }
+}
+
+message ExecuteOk {
     bytes public_values = 1;
     bytes report = 2;
 }
@@ -28,6 +35,13 @@ message ProveRequest {
 }
 
 message ProveResponse {
+    oneof result {
+        ProveOk ok = 1;
+        string err = 2;
+    }
+}
+
+message ProveOk {
     bytes public_values = 1;
     bytes proof = 2;
     bytes report = 3;
@@ -39,5 +53,12 @@ message VerifyRequest {
 }
 
 message VerifyResponse {
+    oneof result {
+        VerifyOk ok = 1;
+        string err = 2;
+    }
+}
+
+message VerifyOk {
     bytes public_values = 1;
 }

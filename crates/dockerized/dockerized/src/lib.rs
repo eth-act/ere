@@ -65,7 +65,7 @@
 use crate::{
     cuda::cuda_arch,
     docker::{DockerBuildCmd, DockerRunCmd, docker_image_exists, stop_docker_container},
-    error::{CommonError, CompileError, DockerizedError, ExecuteError, ProveError, VerifyError},
+    error::DockerizedError,
 };
 use ere_server::client::{Url, zkVMClient};
 use ere_zkvm_interface::{
@@ -163,7 +163,7 @@ impl ErezkVM {
     ///
     /// Images are cached and only rebuilt if they don't exist or if the
     /// `ERE_FORCE_REBUILD_DOCKER_IMAGE` environment variable is set.
-    pub fn build_docker_image(&self, gpu: bool) -> Result<(), CommonError> {
+    pub fn build_docker_image(&self, gpu: bool) -> Result<(), DockerizedError> {
         let workspace_dir = workspace_dir();
         let docker_dir = workspace_dir.join("docker");
 
@@ -181,7 +181,7 @@ impl ErezkVM {
             }
 
             cmd.exec(&workspace_dir)
-                .map_err(CommonError::DockerBuildCmd)?;
+                .map_err(DockerizedError::DockerBuildCmd)?;
         }
 
         // Build `ere-base-{zkvm}`
@@ -207,7 +207,7 @@ impl ErezkVM {
             }
 
             cmd.exec(&workspace_dir)
-                .map_err(CommonError::DockerBuildCmd)?;
+                .map_err(DockerizedError::DockerBuildCmd)?;
         }
 
         // Build `ere-compiler-{zkvm}`
@@ -218,7 +218,7 @@ impl ErezkVM {
                 .tag(self.compiler_zkvm_image("latest"))
                 .build_arg("BASE_ZKVM_IMAGE", self.base_zkvm_image(CRATE_VERSION, gpu))
                 .exec(&workspace_dir)
-                .map_err(CommonError::DockerBuildCmd)?;
+                .map_err(DockerizedError::DockerBuildCmd)?;
         }
 
         // Build `ere-server-{zkvm}`
@@ -234,7 +234,7 @@ impl ErezkVM {
             }
 
             cmd.exec(&workspace_dir)
-                .map_err(CommonError::DockerBuildCmd)?;
+                .map_err(DockerizedError::DockerBuildCmd)?;
         }
 
         Ok(())
@@ -248,7 +248,7 @@ impl ErezkVM {
         &self,
         program: &SerializedProgram,
         resource: &ProverResourceType,
-    ) -> Result<ServerContainer, CommonError> {
+    ) -> Result<ServerContainer, DockerizedError> {
         let port = self.server_port().to_string();
         let name = format!("ere-server-{self}-{port}");
         let gpu = matches!(resource, ProverResourceType::Gpu);
@@ -297,7 +297,7 @@ impl ErezkVM {
         }
 
         let tempdir = TempDir::new()
-            .map_err(|err| CommonError::io(err, "Failed to create temporary directory"))?;
+            .map_err(|err| DockerizedError::io(err, "Failed to create temporary directory"))?;
 
         // zkVM specific options needed for proving Groth16 proof.
         cmd = match self {
@@ -328,7 +328,7 @@ impl ErezkVM {
             .chain(["--port", &port])
             .chain(resource.to_args());
         cmd.spawn(args, &program.0)
-            .map_err(CommonError::DockerRunCmd)?;
+            .map_err(DockerizedError::DockerRunCmd)?;
 
         Ok(ServerContainer { name, tempdir })
     }
@@ -366,7 +366,7 @@ pub struct EreDockerizedCompiler {
 }
 
 impl EreDockerizedCompiler {
-    pub fn new(zkvm: ErezkVM, mount_directory: impl AsRef<Path>) -> Result<Self, CommonError> {
+    pub fn new(zkvm: ErezkVM, mount_directory: impl AsRef<Path>) -> Result<Self, DockerizedError> {
         zkvm.build_docker_image(false)?;
         Ok(Self {
             zkvm,
@@ -384,20 +384,20 @@ impl EreDockerizedCompiler {
 pub struct SerializedProgram(Vec<u8>);
 
 impl Compiler for EreDockerizedCompiler {
-    type Error = CompileError;
+    type Error = DockerizedError;
     type Program = SerializedProgram;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
         let guest_relative_path = guest_directory
             .strip_prefix(&self.mount_directory)
-            .map_err(|_| CompileError::GuestNotInMountingDirecty {
+            .map_err(|_| DockerizedError::GuestNotInMountingDirecty {
                 mounting_directory: self.mount_directory.to_path_buf(),
                 guest_directory: guest_directory.to_path_buf(),
             })?;
         let guest_path_in_docker = PathBuf::from("/guest").join(guest_relative_path);
 
         let tempdir = TempDir::new()
-            .map_err(|err| CommonError::io(err, "Failed to create temporary directory"))?;
+            .map_err(|err| DockerizedError::io(err, "Failed to create temporary directory"))?;
 
         let mut cmd = DockerRunCmd::new(self.zkvm.compiler_zkvm_image(CRATE_VERSION))
             .rm()
@@ -419,11 +419,11 @@ impl Compiler for EreDockerizedCompiler {
             "--output-path",
             "/output/program",
         ])
-        .map_err(CommonError::DockerRunCmd)?;
+        .map_err(DockerizedError::DockerRunCmd)?;
 
         let program_path = tempdir.path().join("program");
         let program = fs::read(&program_path).map_err(|err| {
-            CommonError::io(
+            DockerizedError::io(
                 err,
                 format!(
                     "Failed to read compiled program at {}",
@@ -495,8 +495,8 @@ impl EreDockerizedzkVM {
 
 impl zkVM for EreDockerizedzkVM {
     fn execute(&self, input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
-        let (public_values, report) = block_on(self.client.execute(input.to_vec()))
-            .map_err(|err| DockerizedError::Execute(ExecuteError::Client(err)))?;
+        let (public_values, report) =
+            block_on(self.client.execute(input.to_vec())).map_err(DockerizedError::from)?;
 
         Ok((public_values, report))
     }
@@ -508,14 +508,13 @@ impl zkVM for EreDockerizedzkVM {
     ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
         let (public_values, proof, report) =
             block_on(self.client.prove(input.to_vec(), proof_kind))
-                .map_err(|err| DockerizedError::Prove(ProveError::Client(err)))?;
+                .map_err(DockerizedError::from)?;
 
         Ok((public_values, proof, report))
     }
 
     fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
-        let public_values = block_on(self.client.verify(proof))
-            .map_err(|err| DockerizedError::Verify(VerifyError::Client(err)))?;
+        let public_values = block_on(self.client.verify(proof)).map_err(DockerizedError::from)?;
 
         Ok(public_values)
     }
@@ -551,10 +550,11 @@ fn home_dir() -> PathBuf {
 #[cfg(test)]
 mod test {
     use crate::{
-        EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM, SerializedProgram, workspace_dir,
+        DockerizedError, EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM, SerializedProgram,
+        workspace_dir,
     };
     use ere_test_utils::{host::*, program::basic::BasicProgramInput};
-    use ere_zkvm_interface::{Compiler, ProverResourceType};
+    use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM, zkVMError};
     use std::sync::{Mutex, MutexGuard, OnceLock};
 
     macro_rules! test_compile {
@@ -593,22 +593,57 @@ mod test {
     }
 
     macro_rules! test_execute {
-        ($zkvm:ident, $io:expr) => {
+        ($zkvm:ident, $valid_test_case:expr, $invalid_test_cases:expr) => {
             #[test]
             fn test_execute() {
                 let (_guard, zkvm) = zkvm();
-                run_zkvm_execute(&zkvm, &$io);
+
+                // Valid test case
+                run_zkvm_execute(&zkvm, &$valid_test_case);
+
+                // Invalid test cases
+                for input in $invalid_test_cases {
+                    let Err(zkVMError::Other(err)) = zkvm.execute(&input) else {
+                        unreachable!();
+                    };
+                    assert!(
+                        matches!(
+                            err.downcast_ref::<DockerizedError>().unwrap(),
+                            DockerizedError::zkVM(_)
+                        ),
+                        "Unexpected err: {err:?}"
+                    );
+                }
+
                 drop(zkvm);
             }
         };
     }
 
     macro_rules! test_prove {
-        ($zkvm:ident, $io:expr) => {
+        ($zkvm:ident, $valid_test_case:expr, $invalid_test_cases:expr) => {
             #[test]
             fn test_prove() {
                 let (_guard, zkvm) = zkvm();
-                run_zkvm_prove(&zkvm, &$io);
+
+                // Valid test case
+                run_zkvm_prove(&zkvm, &$valid_test_case);
+
+                // Invalid test cases
+                for input in $invalid_test_cases {
+                    let Err(zkVMError::Other(err)) = zkvm.prove(&input, ProofKind::default())
+                    else {
+                        unreachable!();
+                    };
+                    assert!(
+                        matches!(
+                            err.downcast_ref::<DockerizedError>().unwrap(),
+                            DockerizedError::zkVM(_)
+                        ),
+                        "Unexpected err: {err:?}"
+                    );
+                }
+
                 drop(zkvm);
             }
         };
@@ -616,8 +651,16 @@ mod test {
 
     mod airbender {
         test_compile!(Airbender, "basic");
-        test_execute!(Airbender, BasicProgramInput::valid().into_output_sha256());
-        test_prove!(Airbender, BasicProgramInput::valid().into_output_sha256());
+        test_execute!(
+            Airbender,
+            BasicProgramInput::valid().into_output_sha256(),
+            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+        );
+        test_prove!(
+            Airbender,
+            BasicProgramInput::valid().into_output_sha256(),
+            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+        );
     }
 
     mod jolt {
@@ -630,43 +673,99 @@ mod test {
 
     mod nexus {
         test_compile!(Nexus, "basic");
-        test_execute!(Nexus, BasicProgramInput::valid());
-        test_prove!(Nexus, BasicProgramInput::valid());
+        test_execute!(
+            Nexus,
+            BasicProgramInput::valid(),
+            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+        );
+        test_prove!(
+            Nexus,
+            BasicProgramInput::valid(),
+            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+        );
     }
 
     mod openvm {
         test_compile!(OpenVM, "basic");
-        test_execute!(OpenVM, BasicProgramInput::valid().into_output_sha256());
-        test_prove!(OpenVM, BasicProgramInput::valid().into_output_sha256());
+        test_execute!(
+            OpenVM,
+            BasicProgramInput::valid().into_output_sha256(),
+            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+        );
+        test_prove!(
+            OpenVM,
+            BasicProgramInput::valid().into_output_sha256(),
+            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+        );
     }
 
     mod pico {
         test_compile!(Pico, "basic");
-        test_execute!(Pico, BasicProgramInput::valid());
-        test_prove!(Pico, BasicProgramInput::valid());
+        test_execute!(
+            Pico,
+            BasicProgramInput::valid(),
+            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+        );
+        test_prove!(
+            Pico,
+            BasicProgramInput::valid(),
+            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+        );
     }
 
     mod risc0 {
         test_compile!(Risc0, "basic");
-        test_execute!(Risc0, BasicProgramInput::valid());
-        test_prove!(Risc0, BasicProgramInput::valid());
+        test_execute!(
+            Risc0,
+            BasicProgramInput::valid(),
+            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+        );
+        test_prove!(
+            Risc0,
+            BasicProgramInput::valid(),
+            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+        );
     }
 
     mod sp1 {
         test_compile!(SP1, "basic");
-        test_execute!(SP1, BasicProgramInput::valid());
-        test_prove!(SP1, BasicProgramInput::valid());
+        test_execute!(
+            SP1,
+            BasicProgramInput::valid(),
+            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+        );
+        test_prove!(
+            SP1,
+            BasicProgramInput::valid(),
+            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+        );
     }
 
     mod ziren {
         test_compile!(Ziren, "basic");
-        test_execute!(Ziren, BasicProgramInput::valid());
-        test_prove!(Ziren, BasicProgramInput::valid());
+        test_execute!(
+            Ziren,
+            BasicProgramInput::valid(),
+            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+        );
+        test_prove!(
+            Ziren,
+            BasicProgramInput::valid(),
+            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+        );
     }
 
     mod zisk {
         test_compile!(Zisk, "basic");
-        test_execute!(Zisk, BasicProgramInput::valid().into_output_sha256());
-        test_prove!(Zisk, BasicProgramInput::valid().into_output_sha256());
+        test_execute!(
+            Zisk,
+            BasicProgramInput::valid().into_output_sha256(),
+            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+        );
+        test_prove!(
+            Zisk,
+            BasicProgramInput::valid().into_output_sha256(),
+            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+        );
     }
 }
