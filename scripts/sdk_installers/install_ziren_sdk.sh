@@ -37,8 +37,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/ProjectZK
 export PATH="${PATH}:${HOME}/.zkm-toolchain/bin"
 
 # Step 3: Link the latest toolchain as toolchain `zkm`
-rustup toolchain link zkm "$HOME/.zkm-toolchain/rust-toolchain-x86-64-unknown-linux-gnu-$(zkmup list-available | cut -d' ' -f1)"
-
+rustup toolchain link zkm $(ls -d $HOME/.zkm-toolchain/* | grep "$(zkmup list-available | cut -d' ' -f1)$")
 # Step 4: Install cargo-ziren by building from source
 cargo +nightly install --locked --git https://github.com/ProjectZKM/Ziren.git --tag "v${ZIREM_VERSION}" zkm-cli
 
