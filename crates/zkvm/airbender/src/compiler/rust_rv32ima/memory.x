@@ -1,4 +1,4 @@
-/* Copied from https://github.com/matter-labs/zksync-airbender/blob/v0.5.0/examples/scripts/lds/memory.x */
+/* Copied from https://github.com/matter-labs/zksync-os/blob/main/zksync_os/src/lds/memory.x */
 
 MEMORY
 {
@@ -7,9 +7,10 @@ MEMORY
 }
 
 REGION_ALIAS("REGION_TEXT", ROM);
-REGION_ALIAS("REGION_RODATA", ROM);
 REGION_ALIAS("REGION_DATAINIT", ROM);
+REGION_ALIAS("REGION_RODATAINIT", ROM);
 REGION_ALIAS("REGION_STACK", RAM);
 REGION_ALIAS("REGION_DATA", RAM);
+REGION_ALIAS("REGION_RODATA", RAM);
 REGION_ALIAS("REGION_BSS", RAM);
 REGION_ALIAS("REGION_HEAP", RAM);
