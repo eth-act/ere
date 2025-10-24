@@ -92,6 +92,6 @@ where
     fn assert_output(&self, public_values: &[u8]) {
         let output = T::Program::compute(self.inner.clone());
         let digest = D::digest(T::Program::io_serde().serialize(&output).unwrap());
-        assert_eq!(digest.as_slice(), public_values)
+        assert_eq!(&*digest, public_values)
     }
 }
