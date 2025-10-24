@@ -132,10 +132,9 @@ mod tests {
     /// so we have a lock to avoid that.
     static PROVE_LOCK: Mutex<()> = Mutex::new(());
 
-    static BASIC_PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
-
     fn basic_program() -> Vec<u8> {
-        BASIC_PROGRAM
+        static PROGRAM: OnceLock<Vec<u8>> = OnceLock::new();
+        PROGRAM
             .get_or_init(|| {
                 RustRv64imaCustomized
                     .compile(&testing_guest_directory("zisk", "basic"))
