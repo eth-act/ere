@@ -42,8 +42,8 @@ pub enum AirbenderError {
     // Execution
     #[error("Failed to execute `airbender-cli run`: {0}")]
     AirbenderRun(#[source] io::Error),
-    #[error("`airbender-cli run` failed with status: {status}")]
-    AirbenderRunFailed { status: ExitStatus },
+    #[error("`airbender-cli run` failed with status: {status}\nstderr: {stderr}")]
+    AirbenderRunFailed { status: ExitStatus, stderr: String },
     #[error("Failed to parse public value from stdout: {0}")]
     ParsePublicValue(String),
     #[error("Failed to parse cycles from stdout: {0}")]

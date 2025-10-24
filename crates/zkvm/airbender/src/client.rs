@@ -66,6 +66,7 @@ impl AirbenderSdk {
         if !output.status.success() {
             return Err(AirbenderError::AirbenderRunFailed {
                 status: output.status,
+                stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
             });
         }
 
