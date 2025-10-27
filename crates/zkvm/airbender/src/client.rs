@@ -3,7 +3,7 @@ use airbender_execution_utils::{
     Machine, ProgramProof, compute_chain_encoding, generate_params_for_binary,
     universal_circuit_verifier_vk, verify_recursion_log_23_layer,
 };
-use ere_zkvm_interface::PublicValues;
+use ere_zkvm_interface::{CommonError, PublicValues};
 use std::{array, fs, io::BufRead, iter, process::Command};
 use tempfile::tempdir;
 
@@ -43,17 +43,18 @@ impl AirbenderSdk {
     }
 
     pub fn execute(&self, input: &[u8]) -> Result<(PublicValues, u64), AirbenderError> {
-        let tempdir = tempdir().map_err(AirbenderError::TempDir)?;
+        let tempdir = tempdir().map_err(CommonError::tempdir)?;
 
         let bin_path = tempdir.path().join("guest.bin");
         fs::write(&bin_path, &self.bin)
-            .map_err(|err| AirbenderError::write_file(err, "guest.bin", &bin_path))?;
+            .map_err(|err| CommonError::write_file("guest.bin", &bin_path, err))?;
 
         let input_path = tempdir.path().join("input.hex");
         fs::write(&input_path, encode_input(input))
-            .map_err(|err| AirbenderError::write_file(err, "input.hex", &input_path))?;
+            .map_err(|err| CommonError::write_file("input.hex", &input_path, err))?;
 
-        let output = Command::new("airbender-cli")
+        let mut cmd = Command::new("airbender-cli");
+        let output = cmd
             .arg("run")
             .arg("--bin")
             .arg(&bin_path)
@@ -61,13 +62,14 @@ impl AirbenderSdk {
             .arg(&input_path)
             .args(["--cycles", &u64::MAX.to_string()])
             .output()
-            .map_err(AirbenderError::AirbenderRun)?;
+            .map_err(|err| CommonError::command(&cmd, err))?;
 
         if !output.status.success() {
-            return Err(AirbenderError::AirbenderRunFailed {
-                status: output.status,
-                stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
-            });
+            Err(CommonError::command_exit_non_zero(
+                &cmd,
+                output.status,
+                Some(&output),
+            ))?
         }
 
         // Parse public values 8 u32 words (32 bytes) from stdout in format of:
@@ -110,22 +112,23 @@ impl AirbenderSdk {
     }
 
     pub fn prove(&self, input: &[u8]) -> Result<(PublicValues, ProgramProof), AirbenderError> {
-        let tempdir = tempdir().map_err(AirbenderError::TempDir)?;
+        let tempdir = tempdir().map_err(CommonError::tempdir)?;
 
         let bin_path = tempdir.path().join("guest.bin");
         fs::write(&bin_path, &self.bin)
-            .map_err(|err| AirbenderError::write_file(err, "guest.bin", &bin_path))?;
+            .map_err(|err| CommonError::write_file("guest.bin", &bin_path, err))?;
 
         let input_path = tempdir.path().join("input.hex");
         fs::write(&input_path, encode_input(input))
-            .map_err(|err| AirbenderError::write_file(err, "input.hex", &input_path))?;
+            .map_err(|err| CommonError::write_file("input.hex", &input_path, err))?;
 
         let output_dir = tempdir.path().join("output");
         fs::create_dir_all(&output_dir)
-            .map_err(|err| AirbenderError::create_dir(err, "output", &output_dir))?;
+            .map_err(|err| CommonError::create_dir("output", &output_dir, err))?;
 
         // Prove guest program + 1st recursion layer (tree of recursive proofs until root).
-        let output = Command::new("airbender-cli")
+        let mut cmd = Command::new("airbender-cli");
+        let output = cmd
             .arg("prove")
             .arg("--bin")
             .arg(&bin_path)
@@ -137,22 +140,24 @@ impl AirbenderSdk {
             .args(["--cycles", &u64::MAX.to_string()])
             .args(self.gpu.then_some("--gpu"))
             .output()
-            .map_err(AirbenderError::AirbenderProve)?;
+            .map_err(|err| CommonError::command(&cmd, err))?;
 
         if !output.status.success() {
-            return Err(AirbenderError::AirbenderProveFailed {
-                status: output.status,
-                stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
-            });
+            Err(CommonError::command_exit_non_zero(
+                &cmd,
+                output.status,
+                Some(&output),
+            ))?
         }
 
         let proof_path = output_dir.join("recursion_program_proof.json");
         if !proof_path.exists() {
-            return Err(AirbenderError::RecursionProofNotFound { path: proof_path });
+            Err(CommonError::file_not_found("proof", &proof_path))?
         }
 
         // Prove 2nd recursion layer (wrapping root of 1st recursion layer)
-        let output = Command::new("airbender-cli")
+        let mut cmd = Command::new("airbender-cli");
+        let output = cmd
             .arg("prove-final")
             .arg("--input-file")
             .arg(&proof_path)
@@ -160,26 +165,22 @@ impl AirbenderSdk {
             .arg(&output_dir)
             .args(self.gpu.then_some("--gpu"))
             .output()
-            .map_err(AirbenderError::AirbenderProveFinal)?;
+            .map_err(|err| CommonError::command(&cmd, err))?;
 
         if !output.status.success() {
-            return Err(AirbenderError::AirbenderProveFinalFailed {
-                status: output.status,
-                stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
-            });
+            Err(CommonError::command_exit_non_zero(
+                &cmd,
+                output.status,
+                Some(&output),
+            ))?
         }
 
         let proof_path = output_dir.join("final_program_proof.json");
-        if !proof_path.exists() {
-            return Err(AirbenderError::FinalProofNotFound { path: proof_path });
-        }
+        let proof_bytes = fs::read(&proof_path)
+            .map_err(|err| CommonError::read_file("proof", &proof_path, err))?;
 
-        let proof_bytes = fs::read(&proof_path).map_err(|err| {
-            AirbenderError::read_file(err, "final_program_proof.json", &proof_path)
-        })?;
-
-        let proof: ProgramProof =
-            serde_json::from_slice(&proof_bytes).map_err(AirbenderError::JsonDeserialize)?;
+        let proof: ProgramProof = serde_json::from_slice(&proof_bytes)
+            .map_err(|err| CommonError::deserialize("proof", "serde_json", err))?;
 
         let (public_values, vk_hash_chain) = extract_public_values_and_vk_hash_chain(&proof)?;
 

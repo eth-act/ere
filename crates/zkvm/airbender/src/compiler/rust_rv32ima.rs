@@ -1,5 +1,5 @@
-use crate::{compiler::AirbenderProgram, error::AirbenderError};
-use ere_compile_utils::CargoBuildCmd;
+use crate::{compiler::AirbenderProgram, error::CompileError};
+use ere_compile_utils::{CargoBuildCmd, CommonError};
 use ere_zkvm_interface::Compiler;
 use std::{
     env,
@@ -35,7 +35,7 @@ const LINKER_SCRIPT: &str = concat!(
 pub struct RustRv32ima;
 
 impl Compiler for RustRv32ima {
-    type Error = AirbenderError;
+    type Error = CompileError;
 
     type Program = AirbenderProgram;
 
@@ -52,31 +52,33 @@ impl Compiler for RustRv32ima {
     }
 }
 
-fn objcopy_binary(elf: &[u8]) -> Result<Vec<u8>, AirbenderError> {
-    let mut child = Command::new("rust-objcopy")
+fn objcopy_binary(elf: &[u8]) -> Result<Vec<u8>, CompileError> {
+    let mut cmd = Command::new("rust-objcopy");
+    let mut child = cmd
         .args(["-O", "binary", "-", "-"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .map_err(AirbenderError::RustObjcopy)?;
+        .map_err(|err| CommonError::command(&cmd, err))?;
 
     child
         .stdin
         .as_mut()
         .unwrap()
         .write_all(elf)
-        .map_err(AirbenderError::RustObjcopyStdin)?;
+        .map_err(|err| CommonError::command(&cmd, err))?;
 
     let output = child
         .wait_with_output()
-        .map_err(AirbenderError::RustObjcopy)?;
+        .map_err(|err| CommonError::command(&cmd, err))?;
 
     if !output.status.success() {
-        return Err(AirbenderError::RustObjcopyFailed {
-            status: output.status,
-            stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
-        });
+        Err(CommonError::command_exit_non_zero(
+            &cmd,
+            output.status,
+            Some(&output),
+        ))?
     }
 
     Ok(output.stdout)
