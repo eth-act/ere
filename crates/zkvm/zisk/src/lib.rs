@@ -5,9 +5,10 @@ use crate::{
     compiler::ZiskProgram,
     error::ZiskError,
 };
+use anyhow::bail;
 use ere_zkvm_interface::{
-    ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
-    PublicValues, zkVM, zkVMError,
+    CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResourceType, PublicValues, zkVM,
 };
 use std::{
     sync::{Mutex, MutexGuard},
@@ -30,7 +31,7 @@ pub struct EreZisk {
 }
 
 impl EreZisk {
-    pub fn new(elf: ZiskProgram, resource: ProverResourceType) -> Result<Self, zkVMError> {
+    pub fn new(elf: ZiskProgram, resource: ProverResourceType) -> Result<Self, ZiskError> {
         if matches!(resource, ProverResourceType::Network(_)) {
             panic!("Network proving not yet implemented for ZisK. Use CPU or GPU resource type.");
         }
@@ -63,7 +64,7 @@ impl EreZisk {
 }
 
 impl zkVM for EreZisk {
-    fn execute(&self, input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
+    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         let start = Instant::now();
         let (public_values, total_num_cycles) = self.sdk.execute(input)?;
         let execution_duration = start.elapsed();
@@ -82,9 +83,12 @@ impl zkVM for EreZisk {
         &self,
         input: &[u8],
         proof_kind: ProofKind,
-    ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
+    ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         if proof_kind != ProofKind::Compressed {
-            panic!("Only Compressed proof kind is supported.");
+            bail!(CommonError::unsupported_proof_kind(
+                proof_kind,
+                [ProofKind::Compressed]
+            ))
         }
 
         let mut server = self.server()?;
@@ -101,9 +105,12 @@ impl zkVM for EreZisk {
         ))
     }
 
-    fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
+    fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
         let Proof::Compressed(proof) = proof else {
-            return Err(zkVMError::other("Only Compressed proof kind is supported."));
+            bail!(CommonError::unsupported_proof_kind(
+                proof.kind(),
+                [ProofKind::Compressed]
+            ))
         };
 
         Ok(self.sdk.verify(proof)?)

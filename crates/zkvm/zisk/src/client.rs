@@ -1,12 +1,12 @@
 use crate::error::ZiskError;
-use ere_zkvm_interface::{ProverResourceType, PublicValues};
+use ere_zkvm_interface::{CommonError, ProverResourceType, PublicValues};
 use std::{
     collections::BTreeMap,
     env, fs,
     io::BufRead,
     iter,
     path::{Path, PathBuf},
-    process::{Child, Command, Stdio},
+    process::{Child, Command},
     sync::OnceLock,
     thread,
     time::{Duration, Instant},
@@ -151,17 +151,15 @@ impl ZiskSdk {
         // Save ELF to `~/.zisk/cache` along with the ROM binaries, to avoid it
         // been cleaned up during a long run process.
         let cache_dir_path = dot_zisk_dir_path().join("cache");
-        fs::create_dir_all(&cache_dir_path)?;
+        fs::create_dir_all(&cache_dir_path)
+            .map_err(|err| CommonError::create_dir("cache", &cache_dir_path, err))?;
 
         // Use blake3 hash as the ELF file name, since ROM setup uses blake3 as
         // unique identifier as well.
         let elf_hash = blake3::hash(&elf);
         let elf_path = cache_dir_path.join(format!("{elf_hash}.elf"));
 
-        fs::write(&elf_path, elf).map_err(|source| ZiskError::WriteFile {
-            path: elf_path.clone(),
-            source,
-        })?;
+        fs::write(&elf_path, elf).map_err(|err| CommonError::write_file("elf", &elf_path, err))?;
 
         Ok(Self {
             elf_path,
@@ -173,16 +171,15 @@ impl ZiskSdk {
 
     /// Execute the ELF with the given `input`.
     pub fn execute(&self, input: &[u8]) -> Result<(PublicValues, u64), ZiskError> {
-        let tempdir = tempdir().map_err(ZiskError::TempDir)?;
+        let tempdir = tempdir().map_err(CommonError::tempdir)?;
         let input_path = tempdir.path().join("input");
         let output_path = tempdir.path().join("output");
 
-        fs::write(&input_path, input).map_err(|source| ZiskError::WriteFile {
-            path: input_path.clone(),
-            source,
-        })?;
+        fs::write(&input_path, input)
+            .map_err(|err| CommonError::write_file("input", &input_path, err))?;
 
-        let output = Command::new("ziskemu")
+        let mut cmd = Command::new("ziskemu");
+        let output = cmd
             .arg("--elf")
             .arg(&self.elf_path)
             .arg("--inputs")
@@ -190,14 +187,15 @@ impl ZiskSdk {
             .arg("--output")
             .arg(&output_path)
             .arg("--stats") // Enable stats in order to get total steps.
-            .stderr(Stdio::inherit())
             .output()
-            .map_err(ZiskError::Ziskemu)?;
+            .map_err(|err| CommonError::command(&cmd, err))?;
 
         if !output.status.success() {
-            return Err(ZiskError::ZiskemuFailed {
-                status: output.status,
-            });
+            return Err(CommonError::command_exit_non_zero(
+                &cmd,
+                output.status,
+                Some(&output),
+            ))?;
         }
 
         // Extract cycle count from the stdout.
@@ -212,10 +210,8 @@ impl ZiskSdk {
             })
             .ok_or(ZiskError::TotalStepsNotFound)?;
 
-        let public_values = fs::read(&output_path).map_err(|source| ZiskError::ReadFile {
-            path: output_path,
-            source,
-        })?;
+        let public_values = fs::read(&output_path)
+            .map_err(|err| CommonError::read_file("output", &output_path, err))?;
 
         Ok((public_values, total_num_cycles))
     }
@@ -269,7 +265,7 @@ impl ZiskSdk {
             cmd.arg("--witness-lib").arg(witness_lib_path);
         }
 
-        let child = cmd.spawn().map_err(ZiskError::CargoZiskServer)?;
+        let child = cmd.spawn().map_err(|err| CommonError::command(&cmd, err))?;
         let server = ZiskServer {
             options: self.options.clone(),
             rom_digest,
@@ -285,20 +281,19 @@ impl ZiskSdk {
     pub fn verify(&self, proof: &[u8]) -> Result<PublicValues, ZiskError> {
         let rom_digest = self.rom_digest()?;
 
-        let tempdir = tempdir().map_err(ZiskError::TempDir)?;
+        let tempdir = tempdir().map_err(CommonError::tempdir)?;
         let proof_path = tempdir.path().join("proof");
 
-        fs::write(&proof_path, proof).map_err(|source| ZiskError::WriteFile {
-            path: proof_path.clone(),
-            source,
-        })?;
+        fs::write(&proof_path, proof)
+            .map_err(|err| CommonError::write_file("proof", &proof_path, err))?;
 
-        let output = Command::new("cargo-zisk")
+        let mut cmd = Command::new("cargo-zisk");
+        let output = cmd
             .arg("verify")
             .arg("--proof")
             .arg(&proof_path)
             .output()
-            .map_err(ZiskError::CargoZiskVerify)?;
+            .map_err(|err| CommonError::command(&cmd, err))?;
 
         if !output.status.success() {
             Err(ZiskError::InvalidProof(
@@ -306,10 +301,8 @@ impl ZiskSdk {
             ))?
         }
 
-        let proof = fs::read(&proof_path).map_err(|source| ZiskError::ReadFile {
-            path: proof_path,
-            source,
-        })?;
+        let proof = fs::read(&proof_path)
+            .map_err(|err| CommonError::read_file("proof", &proof_path, err))?;
 
         // Deserialize public values.
         let (proved_rom_digest, public_values) = deserialize_public_values(&proof)?;
@@ -356,25 +349,30 @@ impl Drop for ZiskServer {
 impl ZiskServer {
     /// Get status of server.
     pub fn status(&self) -> Result<ZiskServerStatus, ZiskError> {
-        let output = Command::new("cargo-zisk")
+        let mut cmd = Command::new("cargo-zisk");
+        let output = cmd
             .args(["prove-client", "status"])
             .args(self.options.prove_client_args())
             .output()
-            .map_err(ZiskError::CargoZiskStatus)?;
+            .map_err(|err| CommonError::command(&cmd, err))?;
 
         if !output.status.success() {
-            return Err(ZiskError::CargoZiskStatusFailed {
-                status: output.status,
-            });
+            return Err(CommonError::command_exit_non_zero(
+                &cmd,
+                output.status,
+                Some(&output),
+            ))?;
         }
 
-        let output = String::from_utf8_lossy(&output.stdout);
-        if output.contains("idle") {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        if stdout.contains("idle") {
             Ok(ZiskServerStatus::Idle)
-        } else if output.contains("working") {
+        } else if stdout.contains("working") {
             Ok(ZiskServerStatus::Working)
         } else {
-            Err(ZiskError::UnknownServerStatus)
+            Err(ZiskError::UnknownServerStatus {
+                stdout: stdout.to_string(),
+            })
         }
     }
 
@@ -385,19 +383,18 @@ impl ZiskServer {
         // so there will be no conflict.
         const PREFIX: &str = "ere";
 
-        let tempdir = tempdir().map_err(ZiskError::TempDir)?;
+        let tempdir = tempdir().map_err(CommonError::tempdir)?;
         let input_path = tempdir.path().join("input");
         let output_path = tempdir.path().join("output");
         let proof_path = output_path.join(format!("{PREFIX}-vadcop_final_proof.bin"));
 
-        fs::write(&input_path, input).map_err(|source| ZiskError::WriteFile {
-            path: input_path.clone(),
-            source,
-        })?;
+        fs::write(&input_path, input)
+            .map_err(|err| CommonError::write_file("input", &input_path, err))?;
 
         // NOTE: Use snake case for `prove-client` command
         // Issue for tracking: https://github.com/eth-act/ere/issues/151.
-        let status = Command::new("cargo-zisk")
+        let mut cmd = Command::new("cargo-zisk");
+        let output = cmd
             .args(["prove-client", "prove"])
             .arg("--input")
             .arg(input_path)
@@ -406,11 +403,15 @@ impl ZiskServer {
             .args(["-p", PREFIX])
             .args(["--aggregation", "--verify_proofs"])
             .args(self.options.prove_args())
-            .status()
-            .map_err(ZiskError::CargoZiskProve)?;
+            .output()
+            .map_err(|err| CommonError::command(&cmd, err))?;
 
-        if !status.success() {
-            return Err(ZiskError::CargoZiskProveFailed { status });
+        if !output.status.success() {
+            return Err(CommonError::command_exit_non_zero(
+                &cmd,
+                output.status,
+                Some(&output),
+            ))?;
         }
 
         // ZisK server will finish the `prove` requested above then respond the
@@ -418,10 +419,8 @@ impl ZiskServer {
         // should also be ready.
         self.status()?;
 
-        let proof = fs::read(&proof_path).map_err(|source| ZiskError::ReadFile {
-            path: proof_path,
-            source,
-        })?;
+        let proof = fs::read(&proof_path)
+            .map_err(|err| CommonError::read_file("proof", &proof_path, err))?;
 
         // Deserialize public values.
         let (proved_rom_digest, public_values) = deserialize_public_values(&proof)?;
@@ -458,13 +457,18 @@ impl ZiskServer {
 fn check_setup() -> Result<(), ZiskError> {
     info!("Running command `cargo-zisk check-setup --aggregation`...");
 
-    let status = Command::new("cargo-zisk")
+    let mut cmd = Command::new("cargo-zisk");
+    let output = cmd
         .args(["check-setup", "--aggregation"])
-        .status()
-        .map_err(ZiskError::CargoZiskCheckSetup)?;
+        .output()
+        .map_err(|err| CommonError::command(&cmd, err))?;
 
-    if !status.success() {
-        return Err(ZiskError::CargoZiskCheckSetupFailed { status });
+    if !output.status.success() {
+        Err(CommonError::command_exit_non_zero(
+            &cmd,
+            output.status,
+            Some(&output),
+        ))?;
     }
 
     info!("Command `cargo-zisk check-setup --aggregation` succeeded");
@@ -476,18 +480,20 @@ fn check_setup() -> Result<(), ZiskError> {
 fn rom_setup(elf_path: &Path) -> Result<RomDigest, ZiskError> {
     info!("Running command `cargo-zisk rom-setup` ...");
 
-    let output = Command::new("cargo-zisk")
+    let mut cmd = Command::new("cargo-zisk");
+    let output = cmd
         .arg("rom-setup")
         .arg("--elf")
         .arg(elf_path)
-        .stderr(Stdio::inherit())
         .output()
-        .map_err(ZiskError::CargoZiskRomSetup)?;
+        .map_err(|err| CommonError::command(&cmd, err))?;
 
     if !output.status.success() {
-        return Err(ZiskError::CargoZiskRomSetupFailed {
-            status: output.status,
-        });
+        Err(CommonError::command_exit_non_zero(
+            &cmd,
+            output.status,
+            Some(&output),
+        ))?;
     }
 
     // Parse the ROM digest from the stdout.

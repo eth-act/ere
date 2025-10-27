@@ -1,11 +1,7 @@
-use crate::error::ZiskError;
-use ere_compile_utils::cargo_metadata;
+use crate::error::CompileError;
+use ere_compile_utils::{CommonError, cargo_metadata, rustc_path};
 use ere_zkvm_interface::Compiler;
-use std::{
-    fs,
-    path::{Path, PathBuf},
-    process::Command,
-};
+use std::{fs, path::Path, process::Command};
 use tracing::info;
 
 const ZISK_TOOLCHAIN: &str = "zisk";
@@ -16,7 +12,7 @@ const ZISK_TARGET: &str = "riscv64ima-zisk-zkvm-elf";
 pub struct RustRv64imaCustomized;
 
 impl Compiler for RustRv64imaCustomized {
-    type Error = ZiskError;
+    type Error = CompileError;
 
     type Program = Vec<u8>;
 
@@ -24,68 +20,31 @@ impl Compiler for RustRv64imaCustomized {
         info!("Compiling ZisK program at {}", guest_directory.display());
 
         let metadata = cargo_metadata(guest_directory)?;
-        let package_name = &metadata.root_package().unwrap().name;
+        let package = metadata.root_package().unwrap();
 
-        info!("Parsed program name: {package_name}");
+        info!("Parsed program name: {}", package.name);
 
-        // ── build ─────────────────────────────────────────────────────────────
-        // Get the path to ZisK toolchain's `rustc` so we could set the env
-        // `RUSTC=...` for `cargo` instead of using `cargo +zisk ...`.
-        let zisk_rustc = {
-            let output = Command::new("rustc")
-                .env("RUSTUP_TOOLCHAIN", ZISK_TOOLCHAIN)
-                .arg("--print")
-                .arg("sysroot")
-                .output()
-                .map_err(ZiskError::RustcSysroot)?;
-            PathBuf::from(String::from_utf8_lossy(&output.stdout).trim())
-                .join("bin")
-                .join("rustc")
-        };
-
-        let status = Command::new("cargo")
-            .current_dir(guest_directory)
-            .env("RUSTC", zisk_rustc)
-            .args(["build", "--release", "--target", ZISK_TARGET])
+        let mut cmd = Command::new("cargo");
+        let status = cmd
+            .env("RUSTC", rustc_path(ZISK_TOOLCHAIN)?)
+            .args(["build", "--release"])
+            .args(["--target", ZISK_TARGET])
+            .arg("--manifest-path")
+            .arg(&package.manifest_path)
             .status()
-            .map_err(|e| ZiskError::CargoBuild {
-                cwd: guest_directory.to_path_buf(),
-                source: e,
-            })?;
+            .map_err(|err| CommonError::command(&cmd, err))?;
 
         if !status.success() {
-            return Err(ZiskError::CargoBuildFailed {
-                status,
-                path: guest_directory.to_path_buf(),
-            });
+            return Err(CommonError::command_exit_non_zero(&cmd, status, None))?;
         }
 
-        // Get the workspace directory.
-        let program_workspace_path = {
-            let output = Command::new("cargo")
-                .current_dir(guest_directory)
-                .arg("locate-project")
-                .arg("--workspace")
-                .arg("--message-format=plain")
-                .output()
-                .map_err(ZiskError::CargoLocateProject)?;
-            PathBuf::from(
-                String::from_utf8_lossy(&output.stdout)
-                    .trim()
-                    .strip_suffix("Cargo.toml")
-                    .expect("location to be path to Cargo.toml"),
-            )
-        };
-
-        let elf_path = program_workspace_path
-            .join("target")
+        let elf_path = metadata
+            .target_directory
             .join("riscv64ima-zisk-zkvm-elf")
             .join("release")
-            .join(package_name);
-        let elf_bytes = fs::read(&elf_path).map_err(|e| ZiskError::ReadFile {
-            path: elf_path.clone(),
-            source: e,
-        })?;
+            .join(&package.name);
+        let elf_bytes =
+            fs::read(&elf_path).map_err(|err| CommonError::read_file("elf", elf_path, err))?;
 
         Ok(elf_bytes)
     }
