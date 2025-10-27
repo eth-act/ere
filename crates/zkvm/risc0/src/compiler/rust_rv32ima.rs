@@ -1,10 +1,8 @@
-use crate::compiler::Risc0Program;
-use crate::error::{CompileError, Risc0Error};
+use crate::{compiler::Risc0Program, error::CompileError};
 use ere_compile_utils::CargoBuildCmd;
 use ere_zkvm_interface::Compiler;
 use risc0_binfmt::ProgramBinary;
-use std::env;
-use std::path::Path;
+use std::{env, path::Path};
 use tracing::info;
 
 // TODO: Make this with `zkos` package building to avoid binary file storing in repo.
@@ -34,7 +32,7 @@ const CARGO_BUILD_OPTIONS: &[&str] = &[
 pub struct RustRv32ima;
 
 impl Compiler for RustRv32ima {
-    type Error = Risc0Error;
+    type Error = CompileError;
 
     type Program = Risc0Program;
 
@@ -44,8 +42,7 @@ impl Compiler for RustRv32ima {
             .toolchain(toolchain)
             .build_options(CARGO_BUILD_OPTIONS)
             .rustflags(RUSTFLAGS)
-            .exec(guest_directory, TARGET_TRIPLE)
-            .map_err(CompileError::CompileUtilError)?;
+            .exec(guest_directory, TARGET_TRIPLE)?;
 
         let program = ProgramBinary::new(elf.as_slice(), V1COMPAT_ELF);
         let image_id = program

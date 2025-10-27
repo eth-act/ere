@@ -1,9 +1,10 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use crate::compiler::Risc0Program;
+use crate::{compiler::Risc0Program, error::Risc0Error};
+use anyhow::bail;
 use ere_zkvm_interface::{
-    ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
-    PublicValues, zkVM, zkVMError,
+    CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResourceType, PublicValues, zkVM,
 };
 use risc0_zkvm::{
     DEFAULT_MAX_PO2, DefaultProver, ExecutorEnv, ExternalProver, InnerReceipt, ProverOpts, Receipt,
@@ -50,7 +51,7 @@ pub struct EreRisc0 {
 }
 
 impl EreRisc0 {
-    pub fn new(program: Risc0Program, resource: ProverResourceType) -> Result<Self, zkVMError> {
+    pub fn new(program: Risc0Program, resource: ProverResourceType) -> Result<Self, Risc0Error> {
         if matches!(resource, ProverResourceType::Network(_)) {
             panic!(
                 "Network proving not yet implemented for RISC Zero. Use CPU or GPU resource type."
@@ -82,17 +83,17 @@ impl EreRisc0 {
 }
 
 impl zkVM for EreRisc0 {
-    fn execute(&self, input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
+    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         let executor = default_executor();
         let env = ExecutorEnv::builder()
             .write_slice(input)
             .build()
-            .map_err(zkVMError::other)?;
+            .map_err(Risc0Error::BuildExecutorEnv)?;
 
         let start = Instant::now();
         let session_info = executor
             .execute(env, &self.program.elf)
-            .map_err(zkVMError::other)?;
+            .map_err(Risc0Error::Execute)?;
 
         let public_values = session_info.journal.bytes.clone();
 
@@ -110,7 +111,7 @@ impl zkVM for EreRisc0 {
         &self,
         input: &[u8],
         proof_kind: ProofKind,
-    ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
+    ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         let prover = match self.resource {
             ProverResourceType::Cpu => Rc::new(ExternalProver::new("ipc", "r0vm")),
             ProverResourceType::Gpu => {
@@ -124,7 +125,10 @@ impl zkVM for EreRisc0 {
                     // workers to do multi-gpu proving.
                     // It uses env `RISC0_DEFAULT_PROVER_NUM_GPUS` to determine
                     // how many available GPUs there are.
-                    Rc::new(DefaultProver::new("r0vm-cuda").map_err(zkVMError::other)?)
+                    Rc::new(
+                        DefaultProver::new("r0vm-cuda")
+                            .map_err(Risc0Error::InitializeCudaProver)?,
+                    )
                 }
             }
             ProverResourceType::Network(_) => {
@@ -138,25 +142,25 @@ impl zkVM for EreRisc0 {
             .write_slice(input)
             .segment_limit_po2(self.segment_po2 as _)
             .keccak_max_po2(self.keccak_po2 as _)
-            .map_err(zkVMError::other)?
-            .build()
-            .map_err(zkVMError::other)?;
+            .and_then(|builder| builder.build())
+            .map_err(Risc0Error::BuildExecutorEnv)?;
 
         let opts = match proof_kind {
             ProofKind::Compressed => ProverOpts::succinct(),
             ProofKind::Groth16 => ProverOpts::groth16(),
         };
 
-        let now = std::time::Instant::now();
+        let now = Instant::now();
         let prove_info = prover
             .prove_with_opts(env, &self.program.elf, &opts)
-            .map_err(zkVMError::other)?;
+            .map_err(Risc0Error::Prove)?;
         let proving_time = now.elapsed();
 
         let public_values = prove_info.receipt.journal.bytes.clone();
         let proof = Proof::new(
             proof_kind,
-            borsh::to_vec(&prove_info.receipt).map_err(zkVMError::other)?,
+            borsh::to_vec(&prove_info.receipt)
+                .map_err(|err| CommonError::serialize("proof", "borsh", err))?,
         );
 
         Ok((
@@ -166,24 +170,30 @@ impl zkVM for EreRisc0 {
         ))
     }
 
-    fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
+    fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
         let proof_kind = proof.kind();
 
-        let receipt: Receipt = borsh::from_slice(proof.as_bytes()).map_err(zkVMError::other)?;
+        let receipt: Receipt = borsh::from_slice(proof.as_bytes())
+            .map_err(|err| CommonError::deserialize("proof", "borsh", err))?;
 
         if !matches!(
             (proof_kind, &receipt.inner),
             (ProofKind::Compressed, InnerReceipt::Succinct(_))
                 | (ProofKind::Groth16, InnerReceipt::Groth16(_))
         ) {
-            return Err(zkVMError::other(format!(
-                "Invalid inner receipt kind, expected {proof_kind:?}",
-            )))?;
+            let got = match &receipt.inner {
+                InnerReceipt::Composite(_) => "Composite",
+                InnerReceipt::Succinct(_) => "Succinct",
+                InnerReceipt::Groth16(_) => "Groth16",
+                InnerReceipt::Fake(_) => "Fake",
+                _ => "Unknown",
+            };
+            bail!(Risc0Error::InvalidProofKind(proof_kind, got.to_string()));
         }
 
         receipt
             .verify(self.program.image_id)
-            .map_err(zkVMError::other)?;
+            .map_err(Risc0Error::Verify)?;
 
         let public_values = receipt.journal.bytes.clone();
 

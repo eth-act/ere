@@ -1,7 +1,4 @@
-use crate::{
-    compiler::Risc0Program,
-    error::{CompileError, Risc0Error},
-};
+use crate::{compiler::Risc0Program, error::CompileError};
 use ere_compile_utils::cargo_metadata;
 use ere_zkvm_interface::Compiler;
 use risc0_build::GuestOptions;
@@ -13,14 +10,14 @@ use tracing::info;
 pub struct RustRv32imaCustomized;
 
 impl Compiler for RustRv32imaCustomized {
-    type Error = Risc0Error;
+    type Error = CompileError;
 
     type Program = Risc0Program;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
         info!("Compiling Risc0 program at {}", guest_directory.display());
 
-        let metadata = cargo_metadata(guest_directory).map_err(CompileError::CompileUtilError)?;
+        let metadata = cargo_metadata(guest_directory)?;
         let package = metadata.root_package().unwrap();
 
         // Use `risc0_build::build_package` to build package instead of calling
@@ -30,9 +27,9 @@ impl Compiler for RustRv32imaCustomized {
             &metadata.target_directory,
             GuestOptions::default(),
         )
-        .map_err(|source| CompileError::BuildFailure {
-            source,
-            crate_path: guest_directory.to_path_buf(),
+        .map_err(|err| CompileError::BuildFailure {
+            err,
+            guest_path: guest_directory.to_path_buf(),
         })?
         .into_iter()
         .next()
