@@ -1,10 +1,10 @@
-use crate::{
-    compiler::MidenProgram,
-    error::{ExecuteError, MidenError, ProveError, VerifyError},
-};
+#![cfg_attr(not(test), warn(unused_crate_dependencies))]
+
+use crate::{compiler::MidenProgram, error::MidenError};
+use anyhow::bail;
 use ere_zkvm_interface::{
-    ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
-    PublicValues, zkVM, zkVMError,
+    CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResourceType, PublicValues, zkVM,
 };
 use miden_core::{
     Program,
@@ -16,7 +16,6 @@ use miden_processor::{
 use miden_prover::{AdviceInputs, ExecutionProof, ProvingOptions, prove as miden_prove};
 use miden_stdlib::StdLibrary;
 use miden_verifier::verify as miden_verify;
-use serde::{Deserialize, Serialize};
 use std::{env, time::Instant};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
@@ -25,13 +24,6 @@ pub mod compiler;
 pub mod error;
 
 pub use miden_core::{Felt, FieldElement};
-
-#[derive(Serialize, Deserialize)]
-struct MidenProofBundle {
-    stack_inputs: Vec<u8>,
-    stack_outputs: Vec<u8>,
-    proof: Vec<u8>,
-}
 
 /// [`zkVM`] implementation for Miden.
 ///
@@ -43,18 +35,24 @@ struct MidenProofBundle {
 /// [`felts_to_bytes`] as well.
 pub struct EreMiden {
     program: Program,
+    _resource: ProverResourceType,
 }
 
 impl EreMiden {
-    pub fn new(program: MidenProgram, _resource: ProverResourceType) -> Result<Self, MidenError> {
-        Ok(Self { program: program.0 })
+    pub fn new(program: MidenProgram, resource: ProverResourceType) -> Result<Self, MidenError> {
+        if !matches!(resource, ProverResourceType::Cpu) {
+            panic!("Network or GPU proving not yet implemented for Miden. Use CPU resource type.");
+        }
+        Ok(Self {
+            program: program.0,
+            _resource: resource,
+        })
     }
 
     fn setup_host() -> Result<DefaultHost, MidenError> {
         let mut host = DefaultHost::default();
 
         host.load_library(&StdLibrary::default())
-            .map_err(ExecuteError::Execution)
             .map_err(MidenError::Execute)?;
 
         Ok(host)
@@ -62,12 +60,9 @@ impl EreMiden {
 }
 
 impl zkVM for EreMiden {
-    fn execute(&self, input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
+    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         let stack_inputs = StackInputs::default();
-        let advice_inputs = AdviceInputs::default().with_stack(
-            bytes_to_felts(input)
-                .map_err(|err| MidenError::Execute(ExecuteError::InvalidInput(err)))?,
-        );
+        let advice_inputs = AdviceInputs::default().with_stack(bytes_to_felts(input)?);
         let mut host = Self::setup_host()?;
 
         let start = Instant::now();
@@ -78,7 +73,7 @@ impl zkVM for EreMiden {
             &mut host,
             ExecutionOptions::default(),
         )
-        .map_err(|e| MidenError::Execute(e.into()))?;
+        .map_err(MidenError::Execute)?;
 
         let public_values = felts_to_bytes(trace.stack_outputs().as_slice());
 
@@ -95,20 +90,21 @@ impl zkVM for EreMiden {
         &self,
         input: &[u8],
         proof_kind: ProofKind,
-    ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
+    ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         if proof_kind != ProofKind::Compressed {
-            panic!("Only Compressed proof kind is supported.");
+            bail!(CommonError::unsupported_proof_kind(
+                proof_kind,
+                [ProofKind::Compressed]
+            ))
         }
 
         let stack_inputs = StackInputs::default();
-        let advice_inputs = AdviceInputs::default().with_stack(
-            bytes_to_felts(input)
-                .map_err(|err| MidenError::Prove(ProveError::InvalidInput(err)))?,
-        );
+        let advice_inputs = AdviceInputs::default().with_stack(bytes_to_felts(input)?);
         let mut host = Self::setup_host()?;
 
         let start = Instant::now();
-        let proving_options = ProvingOptions::with_96_bit_security(env::var("MIDEN_DEBUG").is_ok());
+        let proving_options =
+            ProvingOptions::with_96_bit_security(env::var_os("MIDEN_DEBUG").is_some());
 
         let (stack_outputs, proof) = miden_prove(
             &self.program,
@@ -117,18 +113,10 @@ impl zkVM for EreMiden {
             &mut host,
             proving_options,
         )
-        .map_err(|e| MidenError::Prove(e.into()))?;
+        .map_err(MidenError::Prove)?;
 
         let public_values = felts_to_bytes(stack_outputs.as_slice());
-
-        let bundle = MidenProofBundle {
-            stack_inputs: stack_inputs.to_bytes(),
-            stack_outputs: stack_outputs.to_bytes(),
-            proof: proof.to_bytes(),
-        };
-
-        let proof_bytes = bincode::serde::encode_to_vec(&bundle, bincode::config::legacy())
-            .map_err(|e| MidenError::Prove(e.into()))?;
+        let proof_bytes = (stack_outputs, proof).to_bytes();
 
         Ok((
             public_values,
@@ -137,31 +125,23 @@ impl zkVM for EreMiden {
         ))
     }
 
-    fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
+    fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
         let Proof::Compressed(proof) = proof else {
-            return Err(zkVMError::other("Only Compressed proof kind is supported."));
+            bail!(CommonError::unsupported_proof_kind(
+                proof.kind(),
+                [ProofKind::Compressed]
+            ))
         };
-
-        let (bundle, _): (MidenProofBundle, _) =
-            bincode::serde::decode_from_slice(proof, bincode::config::legacy())
-                .map_err(|e| MidenError::Verify(VerifyError::BundleDeserialization(e)))?;
 
         let program_info: ProgramInfo = self.program.clone().into();
 
-        let stack_inputs = StackInputs::read_from_bytes(&bundle.stack_inputs)
-            .map_err(|e| MidenError::Verify(VerifyError::MidenDeserialization(e)))?;
-        let stack_outputs = StackOutputs::read_from_bytes(&bundle.stack_outputs)
-            .map_err(|e| MidenError::Verify(VerifyError::MidenDeserialization(e)))?;
-        let execution_proof = ExecutionProof::from_bytes(&bundle.proof)
-            .map_err(|e| MidenError::Verify(VerifyError::MidenDeserialization(e)))?;
+        let stack_inputs = StackInputs::default();
+        let (stack_outputs, proof): (StackOutputs, ExecutionProof) =
+            Deserializable::read_from_bytes(proof)
+                .map_err(|err| CommonError::deserialize("proof", "miden", err))?;
 
-        miden_verify(
-            program_info,
-            stack_inputs,
-            stack_outputs.clone(),
-            execution_proof,
-        )
-        .map_err(|e| MidenError::Verify(e.into()))?;
+        miden_verify(program_info, stack_inputs, stack_outputs.clone(), proof)
+            .map_err(MidenError::Verify)?;
 
         Ok(felts_to_bytes(stack_outputs.as_slice()))
     }
@@ -184,18 +164,19 @@ pub fn felts_to_bytes(felts: &[Felt]) -> Vec<u8> {
 }
 
 /// Convert bytes into Miden field elements.
-pub fn bytes_to_felts(bytes: &[u8]) -> Result<Vec<Felt>, String> {
+pub fn bytes_to_felts(bytes: &[u8]) -> Result<Vec<Felt>, MidenError> {
     if bytes.len() % 8 != 0 {
-        return Err(format!(
+        let err = anyhow::anyhow!(
             "Invalid bytes length {}, expected multiple of 8",
             bytes.len()
-        ));
+        );
+        Err(CommonError::serialize("input", "miden", err))?;
     }
-    bytes
+    Ok(bytes
         .chunks(8)
         .map(|bytes| Felt::try_from(u64::from_le_bytes(bytes.try_into().unwrap())))
         .collect::<Result<Vec<Felt>, _>>()
-        .map_err(|err| err.to_string())
+        .map_err(|err| CommonError::serialize("input", "miden", anyhow::anyhow!(err)))?)
 }
 
 #[cfg(test)]
