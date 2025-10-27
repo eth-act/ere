@@ -6,16 +6,17 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
+anyhow.workspace = true
 bincode = { workspace = true, features = ["std", "serde"] }
 thiserror.workspace = true
 tracing.workspace = true
 
 # Ziren dependencies
-zkm-sdk = { workspace = true }
+zkm-sdk.workspace = true
 
 # Local dependencies
 ere-compile-utils.workspace = true
-ere-zkvm-interface = { workspace = true }
+ere-zkvm-interface.workspace = true
 
 [dev-dependencies]
 ere-test-utils = { workspace = true, features = ["host"] }

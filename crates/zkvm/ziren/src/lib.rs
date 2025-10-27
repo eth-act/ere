@@ -1,12 +1,10 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use crate::{
-    compiler::ZirenProgram,
-    error::{ExecuteError, ProveError, VerifyError, ZirenError},
-};
+use crate::{compiler::ZirenProgram, error::ZirenError};
+use anyhow::bail;
 use ere_zkvm_interface::{
-    ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
-    PublicValues, zkVM, zkVMError,
+    CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResourceType, PublicValues, zkVM,
 };
 use std::{panic, time::Instant};
 use tracing::info;
@@ -27,7 +25,7 @@ pub struct EreZiren {
 }
 
 impl EreZiren {
-    pub fn new(program: ZirenProgram, resource: ProverResourceType) -> Self {
+    pub fn new(program: ZirenProgram, resource: ProverResourceType) -> Result<Self, ZirenError> {
         if matches!(
             resource,
             ProverResourceType::Gpu | ProverResourceType::Network(_)
@@ -35,19 +33,19 @@ impl EreZiren {
             panic!("Network or Gpu proving not yet implemented for ZKM. Use CPU resource type.");
         }
         let (pk, vk) = CpuProver::new().setup(&program);
-        Self { program, pk, vk }
+        Ok(Self { program, pk, vk })
     }
 }
 
 impl zkVM for EreZiren {
-    fn execute(&self, input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
+    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         let mut stdin = ZKMStdin::new();
         stdin.write_slice(input);
 
         let start = Instant::now();
         let (public_inputs, exec_report) = CpuProver::new()
             .execute(&self.program, &stdin)
-            .map_err(|err| ZirenError::Execute(ExecuteError::Client(err.into())))?;
+            .map_err(ZirenError::Execute)?;
         let execution_duration = start.elapsed();
 
         Ok((
@@ -64,7 +62,7 @@ impl zkVM for EreZiren {
         &self,
         input: &[u8],
         proof_kind: ProofKind,
-    ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
+    ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         info!("Generating proof…");
 
         let mut stdin = ZKMStdin::new();
@@ -78,15 +76,15 @@ impl zkVM for EreZiren {
         let start = std::time::Instant::now();
         let proof =
             panic::catch_unwind(|| CpuProver::new().prove(&self.pk, stdin, inner_proof_kind))
-                .map_err(|err| ZirenError::Prove(ProveError::Panic(panic_msg(err))))?
-                .map_err(|err| ZirenError::Prove(ProveError::Client(err.into())))?;
+                .map_err(|err| ZirenError::ProvePanic(panic_msg(err)))?
+                .map_err(ZirenError::Prove)?;
         let proving_time = start.elapsed();
 
         let public_values = proof.public_values.to_vec();
         let proof = Proof::new(
             proof_kind,
             bincode::serde::encode_to_vec(&proof, bincode::config::legacy())
-                .map_err(|err| ZirenError::Prove(ProveError::Bincode(err)))?,
+                .map_err(|err| CommonError::serialize("proof", "bincode", err))?,
         );
 
         Ok((
@@ -96,14 +94,14 @@ impl zkVM for EreZiren {
         ))
     }
 
-    fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
+    fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
         info!("Verifying proof…");
 
         let proof_kind = proof.kind();
 
         let (proof, _): (ZKMProofWithPublicValues, _) =
             bincode::serde::decode_from_slice(proof.as_bytes(), bincode::config::legacy())
-                .map_err(|err| ZirenError::Verify(VerifyError::Bincode(err)))?;
+                .map_err(|err| CommonError::deserialize("proof", "bincode", err))?;
         let inner_proof_kind = ZKMProofKind::from(&proof.proof);
 
         if !matches!(
@@ -111,15 +109,12 @@ impl zkVM for EreZiren {
             (ProofKind::Compressed, ZKMProofKind::Compressed)
                 | (ProofKind::Groth16, ZKMProofKind::Groth16)
         ) {
-            return Err(ZirenError::Verify(VerifyError::InvalidProofKind(
-                proof_kind,
-                inner_proof_kind,
-            )))?;
+            bail!(ZirenError::InvalidProofKind(proof_kind, inner_proof_kind));
         }
 
         CpuProver::new()
             .verify(&proof, &self.vk)
-            .map_err(|err| ZirenError::Verify(VerifyError::Client(err.into())))?;
+            .map_err(ZirenError::Verify)?;
 
         Ok(proof.public_values.to_vec())
     }
@@ -163,7 +158,7 @@ mod tests {
     #[test]
     fn test_execute() {
         let program = basic_program();
-        let zkvm = EreZiren::new(program, ProverResourceType::Cpu);
+        let zkvm = EreZiren::new(program, ProverResourceType::Cpu).unwrap();
 
         let test_case = BasicProgramInput::valid();
         run_zkvm_execute(&zkvm, &test_case);
@@ -172,7 +167,7 @@ mod tests {
     #[test]
     fn test_execute_invalid_input() {
         let program = basic_program();
-        let zkvm = EreZiren::new(program, ProverResourceType::Cpu);
+        let zkvm = EreZiren::new(program, ProverResourceType::Cpu).unwrap();
 
         for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
             zkvm.execute(&input).unwrap_err();
@@ -182,7 +177,7 @@ mod tests {
     #[test]
     fn test_prove() {
         let program = basic_program();
-        let zkvm = EreZiren::new(program, ProverResourceType::Cpu);
+        let zkvm = EreZiren::new(program, ProverResourceType::Cpu).unwrap();
 
         let test_case = BasicProgramInput::valid();
         run_zkvm_prove(&zkvm, &test_case);
@@ -191,7 +186,7 @@ mod tests {
     #[test]
     fn test_prove_invalid_input() {
         let program = basic_program();
-        let zkvm = EreZiren::new(program, ProverResourceType::Cpu);
+        let zkvm = EreZiren::new(program, ProverResourceType::Cpu).unwrap();
 
         for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();

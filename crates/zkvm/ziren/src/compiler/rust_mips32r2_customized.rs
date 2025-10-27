@@ -1,14 +1,7 @@
-use crate::{
-    compiler::ZirenProgram,
-    error::{CompileError, ZirenError},
-};
-use ere_compile_utils::cargo_metadata;
+use crate::{compiler::ZirenProgram, error::CompileError};
+use ere_compile_utils::{CommonError, cargo_metadata, rustc_path};
 use ere_zkvm_interface::Compiler;
-use std::{
-    fs,
-    path::{Path, PathBuf},
-    process::Command,
-};
+use std::{fs, path::Path, process::Command};
 
 const ZKM_TOOLCHAIN: &str = "zkm";
 
@@ -17,68 +10,42 @@ const ZKM_TOOLCHAIN: &str = "zkm";
 pub struct RustMips32r2Customized;
 
 impl Compiler for RustMips32r2Customized {
-    type Error = ZirenError;
+    type Error = CompileError;
 
     type Program = ZirenProgram;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        let metadata = cargo_metadata(guest_directory).map_err(CompileError::CompileUtilError)?;
+        let metadata = cargo_metadata(guest_directory)?;
         let package = metadata.root_package().unwrap();
-
-        let rustc = {
-            let output = Command::new("rustc")
-                .env("RUSTUP_TOOLCHAIN", ZKM_TOOLCHAIN)
-                .args(["--print", "sysroot"])
-                .output()
-                .map_err(CompileError::RustcSysrootFailed)?;
-
-            if !output.status.success() {
-                return Err(CompileError::RustcSysrootExitNonZero {
-                    status: output.status,
-                    stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-                    stderr: String::from_utf8_lossy(&output.stderr).to_string(),
-                })?;
-            }
-
-            PathBuf::from(String::from_utf8_lossy(&output.stdout).trim())
-                .join("bin")
-                .join("rustc")
-        };
 
         // Use `cargo ziren build` instead of using crate `zkm-build`, because
         // it exits if the underlying `cargo build` fails, and there is no way
         // to recover.
-        let output = Command::new("cargo")
+        let mut cmd = Command::new("cargo");
+        let output = cmd
             .current_dir(guest_directory)
-            .env("RUSTC", rustc)
+            .env("RUSTC", rustc_path(ZKM_TOOLCHAIN)?)
             .env("ZIREN_ZKM_CC", "mipsel-zkm-zkvm-elf-gcc")
             .args(["ziren", "build"])
             .output()
-            .map_err(CompileError::CargoZirenBuildFailed)?;
+            .map_err(|err| CommonError::command(&cmd, err))?;
 
         if !output.status.success() {
-            return Err(CompileError::CargoZirenBuildExitNonZero {
-                status: output.status,
-                stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-                stderr: String::from_utf8_lossy(&output.stderr).to_string(),
-            })?;
+            return Err(CommonError::command_exit_non_zero(
+                &cmd,
+                output.status,
+                Some(&output),
+            ))?;
         }
 
-        let elf_path = String::from_utf8_lossy(&output.stdout)
-            .lines()
-            .find_map(|line| {
-                let line = line.strip_prefix("cargo:rustc-env=ZKM_ELF_")?;
-                let (package_name, elf_path) = line.split_once("=")?;
-                (package_name == package.name).then(|| PathBuf::from(elf_path))
-            })
-            .ok_or_else(|| CompileError::GuestNotFound {
-                name: package.name.clone(),
-            })?;
-
-        let elf = fs::read(&elf_path).map_err(|source| CompileError::ReadFile {
-            path: elf_path,
-            source,
-        })?;
+        let elf_path = metadata
+            .target_directory
+            .join("elf-compilation")
+            .join("mipsel-zkm-zkvm-elf")
+            .join("release")
+            .join(&package.name);
+        let elf =
+            fs::read(&elf_path).map_err(|err| CommonError::read_file("elf", &elf_path, err))?;
 
         Ok(elf)
     }
