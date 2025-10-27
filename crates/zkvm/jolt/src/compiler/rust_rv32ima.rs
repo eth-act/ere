@@ -1,7 +1,4 @@
-use crate::{
-    compiler::JoltProgram,
-    error::{CompileError, JoltError},
-};
+use crate::{compiler::JoltProgram, error::CompileError};
 use ere_compile_utils::CargoBuildCmd;
 use ere_zkvm_interface::Compiler;
 use std::{env, path::Path};
@@ -39,7 +36,7 @@ fn make_linker_script() -> String {
 pub struct RustRv32ima;
 
 impl Compiler for RustRv32ima {
-    type Error = JoltError;
+    type Error = CompileError;
 
     type Program = JoltProgram;
 
@@ -50,8 +47,7 @@ impl Compiler for RustRv32ima {
             .toolchain(toolchain)
             .build_options(CARGO_BUILD_OPTIONS)
             .rustflags(RUSTFLAGS)
-            .exec(guest_directory, TARGET_TRIPLE)
-            .map_err(CompileError::CompileUtilError)?;
+            .exec(guest_directory, TARGET_TRIPLE)?;
         Ok(elf)
     }
 }

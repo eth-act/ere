@@ -1,4 +1,4 @@
-use crate::{EreJoltProof, error::VerifyError};
+use crate::{EreJoltProof, error::JoltError};
 use common::constants::{DEFAULT_MAX_BYTECODE_SIZE, DEFAULT_MAX_TRACE_LENGTH, DEFAULT_MEMORY_SIZE};
 use jolt::{
     Jolt, JoltHyperKZGProof, JoltProverPreprocessing, JoltVerifierPreprocessing, MemoryConfig,
@@ -67,7 +67,7 @@ pub fn prove_generic(
 pub fn verify_generic(
     proof: EreJoltProof,
     preprocessing: JoltVerifierPreprocessing<4, jolt::F, jolt::PCS, jolt::ProofTranscript>,
-) -> Result<(), VerifyError> {
+) -> Result<(), JoltError> {
     let mut io_device = JoltDevice::new(&MemoryConfig {
         max_input_size: preprocessing.memory_layout.max_input_size,
         max_output_size: preprocessing.memory_layout.max_output_size,

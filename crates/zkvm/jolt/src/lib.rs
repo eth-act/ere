@@ -2,13 +2,14 @@
 
 use crate::{
     compiler::JoltProgram,
-    error::{JoltError, ProveError, VerifyError},
+    error::JoltError,
     jolt_methods::{preprocess_prover, preprocess_verifier, prove_generic, verify_generic},
 };
+use anyhow::bail;
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ere_zkvm_interface::{
-    ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
-    PublicValues, zkVM, zkVMError,
+    CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResourceType, PublicValues, zkVM,
 };
 use jolt::{JoltHyperKZGProof, JoltProverPreprocessing, JoltVerifierPreprocessing};
 use std::{env, fs, io::Cursor};
@@ -34,7 +35,10 @@ pub struct EreJolt {
 }
 
 impl EreJolt {
-    pub fn new(elf: JoltProgram, _resource: ProverResourceType) -> Result<Self, zkVMError> {
+    pub fn new(elf: JoltProgram, resource: ProverResourceType) -> Result<Self, JoltError> {
+        if !matches!(resource, ProverResourceType::Cpu) {
+            panic!("Network or GPU proving not yet implemented for Miden. Use CPU resource type.");
+        }
         let (_tempdir, program) = program(&elf)?;
         let prover_preprocessing = preprocess_prover(&program);
         let verifier_preprocessing = preprocess_verifier(&program);
@@ -42,13 +46,13 @@ impl EreJolt {
             elf,
             prover_preprocessing,
             verifier_preprocessing,
-            _resource,
+            _resource: resource,
         })
     }
 }
 
 impl zkVM for EreJolt {
-    fn execute(&self, _input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
+    fn execute(&self, _input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         let (_tempdir, program) = program(&self.elf)?;
 
         // TODO: Check how to pass private input to jolt, issue for tracking:
@@ -66,9 +70,12 @@ impl zkVM for EreJolt {
         &self,
         input: &[u8],
         proof_kind: ProofKind,
-    ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
+    ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         if proof_kind != ProofKind::Compressed {
-            panic!("Only Compressed proof kind is supported.");
+            bail!(CommonError::unsupported_proof_kind(
+                proof_kind,
+                [ProofKind::Compressed]
+            ))
         }
 
         let (_tempdir, program) = program(&self.elf)?;
@@ -80,7 +87,7 @@ impl zkVM for EreJolt {
         let mut proof_bytes = Vec::new();
         proof
             .serialize_compressed(&mut proof_bytes)
-            .map_err(|err| JoltError::Prove(ProveError::Serialization(err)))?;
+            .map_err(|err| CommonError::serialize("proof", "jolt", err))?;
 
         // TODO: Public values
         let public_values = Vec::new();
@@ -92,15 +99,18 @@ impl zkVM for EreJolt {
         ))
     }
 
-    fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
+    fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
         let Proof::Compressed(proof) = proof else {
-            return Err(zkVMError::other("Only Compressed proof kind is supported."));
+            bail!(CommonError::unsupported_proof_kind(
+                proof.kind(),
+                [ProofKind::Compressed]
+            ))
         };
 
         let proof = EreJoltProof::deserialize_compressed(&mut Cursor::new(proof))
-            .map_err(|err| JoltError::Verify(VerifyError::Serialization(err)))?;
+            .map_err(|err| CommonError::deserialize("proof", "jolt", err))?;
 
-        verify_generic(proof, self.verifier_preprocessing.clone()).map_err(JoltError::Verify)?;
+        verify_generic(proof, self.verifier_preprocessing.clone())?;
 
         // TODO: Public values
         let public_values = Vec::new();
@@ -120,10 +130,10 @@ impl zkVM for EreJolt {
 /// Create `jolt::host::Program` by storing the compiled `elf` to a temporary
 /// file, and set the elf path for `program`, so methods like `decode`, `trace`
 /// and `trace_analyze` that depend on elf path will work.
-pub fn program(elf: &[u8]) -> Result<(TempDir, jolt::host::Program), zkVMError> {
-    let tempdir = TempDir::new().map_err(zkVMError::other)?;
+pub fn program(elf: &[u8]) -> Result<(TempDir, jolt::host::Program), JoltError> {
+    let tempdir = TempDir::new().map_err(CommonError::tempdir)?;
     let elf_path = tempdir.path().join("guest.elf");
-    fs::write(&elf_path, elf).map_err(zkVMError::other)?;
+    fs::write(&elf_path, elf).map_err(|err| CommonError::write_file("elf", &elf_path, err))?;
     // Set a dummy package name because we don't need to compile anymore.
     let mut program = jolt::host::Program::new("");
     program.elf = Some(elf_path);

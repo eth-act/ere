@@ -1,8 +1,5 @@
-use crate::{
-    compiler::JoltProgram,
-    error::{CompileError, JoltError},
-};
-use ere_compile_utils::cargo_metadata;
+use crate::{compiler::JoltProgram, error::CompileError};
+use ere_compile_utils::{CommonError, cargo_metadata};
 use ere_zkvm_interface::Compiler;
 use jolt::host::DEFAULT_TARGET_DIR;
 use std::{env::set_current_dir, fs, path::Path};
@@ -12,18 +9,18 @@ use std::{env::set_current_dir, fs, path::Path};
 pub struct RustRv32imaCustomized;
 
 impl Compiler for RustRv32imaCustomized {
-    type Error = JoltError;
+    type Error = CompileError;
 
     type Program = JoltProgram;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
         // Change current directory for `Program::build` to build guest program.
-        set_current_dir(guest_directory).map_err(|source| CompileError::SetCurrentDirFailed {
-            source,
+        set_current_dir(guest_directory).map_err(|err| CompileError::SetCurrentDirFailed {
+            err,
             path: guest_directory.to_path_buf(),
         })?;
 
-        let metadata = cargo_metadata(guest_directory).map_err(CompileError::CompileUtilError)?;
+        let metadata = cargo_metadata(guest_directory)?;
         let package_name = &metadata.root_package().unwrap().name;
 
         // Note that if this fails, it will panic, hence we need to catch it.
@@ -35,10 +32,8 @@ impl Compiler for RustRv32imaCustomized {
         })
         .map_err(|_| CompileError::BuildFailed)?;
 
-        let elf = fs::read(&elf_path).map_err(|source| CompileError::ReadElfFailed {
-            source,
-            path: elf_path.to_path_buf(),
-        })?;
+        let elf =
+            fs::read(&elf_path).map_err(|err| CommonError::read_file("elf", &elf_path, err))?;
 
         Ok(elf)
     }
