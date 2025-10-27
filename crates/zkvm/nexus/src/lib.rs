@@ -1,12 +1,10 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use crate::{
-    compiler::NexusProgram,
-    error::{NexusError, ProveError, VerifyError},
-};
+use crate::{compiler::NexusProgram, error::NexusError};
+use anyhow::bail;
 use ere_zkvm_interface::{
-    ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
-    PublicValues, zkVM, zkVMError,
+    CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResourceType, PublicValues, zkVM,
 };
 use nexus_core::nvm::{self, ElfFile};
 use nexus_sdk::{
@@ -34,18 +32,17 @@ pub struct EreNexus {
 }
 
 impl EreNexus {
-    pub fn new(elf: NexusProgram, resource: ProverResourceType) -> Self {
+    pub fn new(elf: NexusProgram, resource: ProverResourceType) -> Result<Self, NexusError> {
         if !matches!(resource, ProverResourceType::Cpu) {
             panic!("Network or GPU proving not yet implemented for Nexus. Use CPU resource type.");
         }
-        Self { elf }
+        Ok(Self { elf })
     }
 }
 
 impl zkVM for EreNexus {
-    fn execute(&self, input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
-        let elf = ElfFile::from_bytes(&self.elf)
-            .map_err(|e| NexusError::Prove(ProveError::Client(e.into())))?;
+    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+        let elf = ElfFile::from_bytes(&self.elf).map_err(NexusError::ParseElf)?;
 
         // Nexus sdk does not provide a trace, so we need to use core `nvm`
         // Encoding is copied directly from `prove_with_input`
@@ -53,7 +50,7 @@ impl zkVM for EreNexus {
             Vec::new()
         } else {
             postcard::to_stdvec_cobs(&input)
-                .map_err(|e| NexusError::Prove(ProveError::Postcard(e.to_string())))?
+                .map_err(|err| CommonError::serialize("input", "postcard", err))?
         };
 
         if !private_encoded.is_empty() {
@@ -64,12 +61,12 @@ impl zkVM for EreNexus {
 
         let start = Instant::now();
         let (view, trace) = nvm::k_trace(elf, &[], &[], private_encoded.as_slice(), 1)
-            .map_err(|e| NexusError::Prove(ProveError::Client(e.into())))?;
+            .map_err(NexusError::Execute)?;
         let execution_duration = start.elapsed();
 
         let public_values = view
             .public_output()
-            .map_err(|e| NexusError::Prove(ProveError::Client(e.into())))?;
+            .map_err(|err| CommonError::deserialize("public_values", "postcard", err))?;
 
         Ok((
             public_values,
@@ -85,26 +82,27 @@ impl zkVM for EreNexus {
         &self,
         input: &[u8],
         proof_kind: ProofKind,
-    ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
+    ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         if proof_kind != ProofKind::Compressed {
-            panic!("Only Compressed proof kind is supported.");
+            bail!(CommonError::unsupported_proof_kind(
+                proof_kind,
+                [ProofKind::Compressed]
+            ))
         }
 
-        let elf = ElfFile::from_bytes(&self.elf)
-            .map_err(|e| NexusError::Prove(ProveError::Client(e.into())))?;
+        let elf = ElfFile::from_bytes(&self.elf).map_err(NexusError::ParseElf)?;
 
-        let prover =
-            Stwo::new(&elf).map_err(|e| NexusError::Prove(ProveError::Client(e.into())))?;
+        let prover = Stwo::new(&elf).map_err(NexusError::Prove)?;
 
         let start = Instant::now();
         let (view, proof) = prover
             .prove_with_input(&input, &())
-            .map_err(|e| NexusError::Prove(ProveError::Client(e.into())))?;
+            .map_err(NexusError::Prove)?;
         let proving_time = start.elapsed();
 
         let public_values = view
             .public_output()
-            .map_err(|e| NexusError::Prove(ProveError::Client(e.into())))?;
+            .map_err(|err| CommonError::deserialize("public_values", "postcard", err))?;
 
         let proof_bundle = NexusProofBundle {
             proof,
@@ -112,7 +110,7 @@ impl zkVM for EreNexus {
         };
 
         let proof_bytes = bincode::serde::encode_to_vec(&proof_bundle, bincode::config::legacy())
-            .map_err(|err| NexusError::Prove(ProveError::Bincode(err)))?;
+            .map_err(|err| CommonError::serialize("proof", "bincode", err))?;
 
         Ok((
             proof_bundle.public_values,
@@ -121,16 +119,19 @@ impl zkVM for EreNexus {
         ))
     }
 
-    fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
+    fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
         let Proof::Compressed(proof) = proof else {
-            return Err(zkVMError::other("Only Compressed proof kind is supported."));
+            bail!(CommonError::unsupported_proof_kind(
+                proof.kind(),
+                [ProofKind::Compressed]
+            ))
         };
 
         info!("Verifying proof...");
 
         let (proof_bundle, _): (NexusProofBundle, _) =
             bincode::serde::decode_from_slice(proof, bincode::config::legacy())
-                .map_err(|err| NexusError::Verify(VerifyError::Bincode(err)))?;
+                .map_err(|err| CommonError::deserialize("proof", "bincode", err))?;
 
         proof_bundle
             .proof
@@ -141,7 +142,7 @@ impl zkVM for EreNexus {
                 &self.elf,
                 &[],
             )
-            .map_err(|e| NexusError::Verify(VerifyError::Client(e.into())))?;
+            .map_err(NexusError::Verify)?;
 
         info!("Verify Succeeded!");
 
@@ -181,7 +182,7 @@ mod tests {
     #[test]
     fn test_execute() {
         let program = basic_program();
-        let zkvm = EreNexus::new(program, ProverResourceType::Cpu);
+        let zkvm = EreNexus::new(program, ProverResourceType::Cpu).unwrap();
 
         let test_case = BasicProgramInput::valid();
         run_zkvm_execute(&zkvm, &test_case);
@@ -190,7 +191,7 @@ mod tests {
     #[test]
     fn test_execute_invalid_input() {
         let program = basic_program();
-        let zkvm = EreNexus::new(program, ProverResourceType::Cpu);
+        let zkvm = EreNexus::new(program, ProverResourceType::Cpu).unwrap();
 
         for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
             zkvm.execute(&input).unwrap_err();
@@ -200,7 +201,7 @@ mod tests {
     #[test]
     fn test_prove() {
         let program = basic_program();
-        let zkvm = EreNexus::new(program, ProverResourceType::Cpu);
+        let zkvm = EreNexus::new(program, ProverResourceType::Cpu).unwrap();
 
         let test_case = BasicProgramInput::valid();
         run_zkvm_prove(&zkvm, &test_case);
@@ -209,7 +210,7 @@ mod tests {
     #[test]
     fn test_prove_invalid_input() {
         let program = basic_program();
-        let zkvm = EreNexus::new(program, ProverResourceType::Cpu);
+        let zkvm = EreNexus::new(program, ProverResourceType::Cpu).unwrap();
 
         for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();

@@ -1,7 +1,4 @@
-use crate::{
-    compiler::NexusProgram,
-    error::{CompileError, NexusError},
-};
+use crate::{compiler::NexusProgram, error::CompileError};
 use ere_compile_utils::CargoBuildCmd;
 use ere_zkvm_interface::Compiler;
 use std::path::Path;
@@ -20,7 +17,7 @@ const CARGO_BUILD_OPTIONS: &[&str] = &[
 pub struct RustRv32i;
 
 impl Compiler for RustRv32i {
-    type Error = NexusError;
+    type Error = CompileError;
 
     type Program = NexusProgram;
 
@@ -32,8 +29,7 @@ impl Compiler for RustRv32i {
             .toolchain("nightly-2025-04-06")
             .build_options(CARGO_BUILD_OPTIONS)
             .rustflags(RUSTFLAGS)
-            .exec(guest_directory, TARGET_TRIPLE)
-            .map_err(CompileError::CompileUtilError)?;
+            .exec(guest_directory, TARGET_TRIPLE)?;
         Ok(elf)
     }
 }
