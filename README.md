@@ -92,7 +92,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let program = compiler.compile(guest_directory)?;
 
     // Create zkVM instance
-    let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
+    let zkvm = EreSP1::new(program, ProverResourceType::Cpu)?;
 
     // Serialize input
     let input = 42u32.to_le_bytes();

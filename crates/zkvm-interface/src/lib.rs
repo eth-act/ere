@@ -4,7 +4,9 @@
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::path::Path;
 use strum::{EnumDiscriminants, EnumIs, EnumTryAs, FromRepr};
-use thiserror::Error;
+
+mod error;
+pub use error::CommonError;
 
 mod reports;
 pub use reports::{ProgramExecutionReport, ProgramProvingReport};
@@ -45,46 +47,6 @@ impl ProverResourceType {
                 .chain(config.to_args())
                 .collect(),
         }
-    }
-}
-
-/// An error that can occur during prove, execute or verification
-/// of a zkVM.
-///
-/// Note: We use a concrete error type here, so that downstream crates
-/// can do patterns such as Vec<dyn zkVM>
-#[allow(non_camel_case_types)]
-#[derive(Debug, Error)]
-pub enum zkVMError {
-    /// Network-related errors
-    #[error("Network error: {0}")]
-    Network(String),
-
-    /// Authentication error
-    #[error("Authentication failed: {0}")]
-    Authentication(String),
-
-    /// Timeout error
-    #[error("Operation timed out after {0:?}")]
-    Timeout(std::time::Duration),
-
-    /// Service unavailable
-    #[error("Prover service unavailable: {0}")]
-    ServiceUnavailable(String),
-
-    /// Invalid response from network
-    #[error("Invalid response from prover network: {0}")]
-    InvalidResponse(String),
-
-    // TODO: We can add more variants as time goes by.
-    // TODO: for now, we use this catch-all as a way to prototype faster
-    #[error(transparent)]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync + 'static>),
-}
-
-impl zkVMError {
-    pub fn other(error: impl Into<Box<dyn std::error::Error + Send + Sync + 'static>>) -> Self {
-        Self::Other(error.into())
     }
 }
 
@@ -142,19 +104,19 @@ impl Proof {
 /// implementation will have their own construction function.
 pub trait zkVM {
     /// Executes the program with the given input.
-    fn execute(&self, input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError>;
+    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)>;
 
     /// Creates a proof of the program execution with given input.
     fn prove(
         &self,
         input: &[u8],
         proof_kind: ProofKind,
-    ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError>;
+    ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)>;
 
     /// Verifies a proof of the program used to create this zkVM instance, then
     /// returns the public values extracted from the proof.
     #[must_use = "Public values must be used"]
-    fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError>;
+    fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues>;
 
     /// Returns the name of the zkVM
     fn name(&self) -> &'static str;

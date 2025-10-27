@@ -1,6 +1,10 @@
-use crate::CompileError;
+use crate::CommonError;
 use cargo_metadata::{Metadata, MetadataCommand};
-use std::{fs, iter, path::Path, process::Command};
+use std::{
+    fs, iter,
+    path::{Path, PathBuf},
+    process::Command,
+};
 use tempfile::tempdir;
 
 const CARGO_ENCODED_RUSTFLAGS_SEPARATOR: &str = "\x1f";
@@ -74,20 +78,20 @@ impl CargoBuildCmd {
         &self,
         manifest_dir: impl AsRef<Path>,
         target: impl AsRef<str>,
-    ) -> Result<Vec<u8>, CompileError> {
+    ) -> Result<Vec<u8>, CommonError> {
         let metadata = cargo_metadata(manifest_dir.as_ref())?;
-
         let package = metadata.root_package().unwrap();
 
-        let tempdir = tempdir().map_err(CompileError::Tempdir)?;
+        let tempdir = tempdir().map_err(CommonError::tempdir)?;
         let linker_script_path = tempdir
             .path()
             .join("linker_script")
             .to_string_lossy()
             .to_string();
         if let Some(linker_script) = &self.linker_script {
-            fs::write(&linker_script_path, linker_script.as_bytes())
-                .map_err(CompileError::CreateLinkerScript)?;
+            fs::write(&linker_script_path, linker_script.as_bytes()).map_err(|err| {
+                CommonError::write_file("linker_script", &linker_script_path, err)
+            })?;
         }
 
         let encoded_rustflags = iter::empty()
@@ -110,14 +114,15 @@ impl CargoBuildCmd {
             .chain(["--target".into(), target.as_ref().into()])
             .chain(["--manifest-path".into(), package.manifest_path.to_string()]);
 
-        let status = Command::new("cargo")
+        let mut cmd = Command::new("cargo");
+        let status = cmd
             .env("CARGO_ENCODED_RUSTFLAGS", encoded_rustflags)
             .args(args)
             .status()
-            .map_err(CompileError::CargoBuild)?;
+            .map_err(|err| CommonError::command(&cmd, err))?;
 
         if !status.success() {
-            return Err(CompileError::CargoBuildFailed(status));
+            return Err(CommonError::command_exit_non_zero(&cmd, status, None));
         }
 
         let elf_path = metadata
@@ -125,28 +130,49 @@ impl CargoBuildCmd {
             .join(target.as_ref())
             .join(&self.profile)
             .join(&package.name);
-        let elf = fs::read(elf_path).map_err(CompileError::ReadElf)?;
+        let elf =
+            fs::read(&elf_path).map_err(|err| CommonError::read_file("elf", &elf_path, err))?;
 
         Ok(elf)
     }
 }
 
 /// Returns `Metadata` of `manifest_dir` and guarantees the `root_package` can be resolved.
-pub fn cargo_metadata(manifest_dir: impl AsRef<Path>) -> Result<Metadata, CompileError> {
-    let manifest_path = manifest_dir.as_ref().join("Cargo.toml");
-    let metadata = MetadataCommand::new()
-        .manifest_path(&manifest_path)
-        .exec()
-        .map_err(|err| CompileError::CargoMetadata {
-            err,
-            manifest_dir: manifest_dir.as_ref().to_path_buf(),
-        })?;
+pub fn cargo_metadata(manifest_dir: impl AsRef<Path>) -> Result<Metadata, CommonError> {
+    let manifest_dir = manifest_dir.as_ref().to_path_buf();
+    let manifest_path = manifest_dir.join("Cargo.toml");
+    let metadata = match MetadataCommand::new().manifest_path(&manifest_path).exec() {
+        Ok(metadata) => metadata,
+        Err(err) => return Err(CommonError::CargoMetadata { err, manifest_dir }),
+    };
 
     if metadata.root_package().is_none() {
-        return Err(CompileError::RootPackageNotFound(
-            manifest_dir.as_ref().to_path_buf(),
-        ));
+        return Err(CommonError::CargoRootPackageNotFound { manifest_dir });
     }
 
     Ok(metadata)
+}
+
+/// Returns the path to `rustc` executable of the given toolchain.
+pub fn rustc_path(toolchain: &str) -> Result<PathBuf, CommonError> {
+    let mut cmd = Command::new("rustc");
+    let output = cmd
+        .env("RUSTUP_TOOLCHAIN", toolchain)
+        .args(["--print", "sysroot"])
+        .output()
+        .map_err(|err| CommonError::command(&cmd, err))?;
+
+    if !output.status.success() {
+        return Err(CommonError::command_exit_non_zero(
+            &cmd,
+            output.status,
+            Some(&output),
+        ));
+    }
+
+    Ok(
+        PathBuf::from(String::from_utf8_lossy(&output.stdout).trim())
+            .join("bin")
+            .join("rustc"),
+    )
 }

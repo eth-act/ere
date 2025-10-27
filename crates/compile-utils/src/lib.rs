@@ -2,6 +2,6 @@ mod error;
 mod rust;
 
 pub use {
-    error::CompileError,
-    rust::{CargoBuildCmd, cargo_metadata},
+    error::CommonError,
+    rust::{CargoBuildCmd, cargo_metadata, rustc_path},
 };

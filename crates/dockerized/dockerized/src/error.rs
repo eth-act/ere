@@ -1,13 +1,6 @@
 use ere_server::client::{TwirpErrorResponse, zkVMClientError};
-use ere_zkvm_interface::zkVMError;
 use std::{io, path::PathBuf};
 use thiserror::Error;
-
-impl From<DockerizedError> for zkVMError {
-    fn from(value: DockerizedError) -> Self {
-        zkVMError::Other(Box::new(value))
-    }
-}
 
 impl From<zkVMClientError> for DockerizedError {
     fn from(value: zkVMClientError) -> Self {

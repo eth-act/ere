@@ -70,7 +70,7 @@ use crate::{
 use ere_server::client::{Url, zkVMClient};
 use ere_zkvm_interface::{
     Compiler, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
-    PublicValues, zkVM, zkVMError,
+    PublicValues, zkVM,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -463,13 +463,13 @@ impl EreDockerizedzkVM {
         zkvm: ErezkVM,
         program: SerializedProgram,
         resource: ProverResourceType,
-    ) -> Result<Self, zkVMError> {
+    ) -> Result<Self, DockerizedError> {
         zkvm.build_docker_image(matches!(resource, ProverResourceType::Gpu))?;
 
         let server_container = zkvm.spawn_server(&program, &resource)?;
 
         let url = Url::parse(&format!("http://127.0.0.1:{}", zkvm.server_port())).unwrap();
-        let client = block_on(zkVMClient::new(url)).map_err(zkVMError::other)?;
+        let client = block_on(zkVMClient::new(url))?;
 
         Ok(Self {
             zkvm,
@@ -494,7 +494,7 @@ impl EreDockerizedzkVM {
 }
 
 impl zkVM for EreDockerizedzkVM {
-    fn execute(&self, input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
+    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         let (public_values, report) =
             block_on(self.client.execute(input.to_vec())).map_err(DockerizedError::from)?;
 
@@ -505,7 +505,7 @@ impl zkVM for EreDockerizedzkVM {
         &self,
         input: &[u8],
         proof_kind: ProofKind,
-    ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
+    ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         let (public_values, proof, report) =
             block_on(self.client.prove(input.to_vec(), proof_kind))
                 .map_err(DockerizedError::from)?;
@@ -513,7 +513,7 @@ impl zkVM for EreDockerizedzkVM {
         Ok((public_values, proof, report))
     }
 
-    fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
+    fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
         let public_values = block_on(self.client.verify(proof)).map_err(DockerizedError::from)?;
 
         Ok(public_values)
@@ -554,7 +554,7 @@ mod test {
         workspace_dir,
     };
     use ere_test_utils::{host::*, program::basic::BasicProgramInput};
-    use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM, zkVMError};
+    use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
     use std::sync::{Mutex, MutexGuard, OnceLock};
 
     macro_rules! test_compile {
@@ -603,16 +603,11 @@ mod test {
 
                 // Invalid test cases
                 for input in $invalid_test_cases {
-                    let Err(zkVMError::Other(err)) = zkvm.execute(&input) else {
-                        unreachable!();
-                    };
-                    assert!(
-                        matches!(
-                            err.downcast_ref::<DockerizedError>().unwrap(),
-                            DockerizedError::zkVM(_)
-                        ),
-                        "Unexpected err: {err:?}"
-                    );
+                    let err = zkvm.execute(&input).unwrap_err();
+                    assert!(matches!(
+                        err.downcast::<DockerizedError>().unwrap(),
+                        DockerizedError::zkVM(_)
+                    ),);
                 }
 
                 drop(zkvm);
@@ -631,17 +626,11 @@ mod test {
 
                 // Invalid test cases
                 for input in $invalid_test_cases {
-                    let Err(zkVMError::Other(err)) = zkvm.prove(&input, ProofKind::default())
-                    else {
-                        unreachable!();
-                    };
-                    assert!(
-                        matches!(
-                            err.downcast_ref::<DockerizedError>().unwrap(),
-                            DockerizedError::zkVM(_)
-                        ),
-                        "Unexpected err: {err:?}"
-                    );
+                    let err = zkvm.prove(&input, ProofKind::default()).unwrap_err();
+                    assert!(matches!(
+                        err.downcast::<DockerizedError>().unwrap(),
+                        DockerizedError::zkVM(_)
+                    ),);
                 }
 
                 drop(zkvm);

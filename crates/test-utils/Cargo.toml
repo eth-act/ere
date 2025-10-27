@@ -12,8 +12,7 @@ sha2.workspace = true
 
 # Local dependencies
 ere-zkvm-interface = { workspace = true, optional = true }
-ere-io-serde = { workspace = true }
-
+ere-io-serde.workspace = true
 [lints]
 workspace = true
 
