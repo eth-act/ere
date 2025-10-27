@@ -1,12 +1,10 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use crate::{
-    compiler::SP1Program,
-    error::{ExecuteError, ProveError, SP1Error, VerifyError},
-};
+use crate::{compiler::SP1Program, error::SP1Error};
+use anyhow::bail;
 use ere_zkvm_interface::{
-    NetworkProverConfig, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMError,
+    CommonError, NetworkProverConfig, ProgramExecutionReport, ProgramProvingReport, Proof,
+    ProofKind, ProverResourceType, PublicValues, zkVM,
 };
 use sp1_sdk::{
     CpuProver, CudaProver, NetworkProver, Prover, ProverClient, SP1ProofMode,
@@ -47,9 +45,7 @@ impl ProverType {
             ProverType::Network(network_prover) => network_prover.execute(program, input),
         };
 
-        cpu_executor_builder
-            .run()
-            .map_err(|e| SP1Error::Execute(ExecuteError::Client(e.into())))
+        cpu_executor_builder.run().map_err(SP1Error::Execute)
     }
 
     fn prove(
@@ -63,7 +59,7 @@ impl ProverType {
             ProverType::Gpu(cuda_prover) => cuda_prover.prove(pk, input).mode(mode).run(),
             ProverType::Network(network_prover) => network_prover.prove(pk, input).mode(mode).run(),
         }
-        .map_err(|e| SP1Error::Prove(ProveError::Client(e.into())))
+        .map_err(SP1Error::Prove)
     }
 
     fn verify(
@@ -76,7 +72,7 @@ impl ProverType {
             ProverType::Gpu(cuda_prover) => cuda_prover.verify(proof, vk),
             ProverType::Network(network_prover) => network_prover.verify(proof, vk),
         }
-        .map_err(|e| SP1Error::Verify(VerifyError::Client(e.into())))
+        .map_err(SP1Error::Verify)
     }
 }
 
@@ -131,20 +127,20 @@ impl EreSP1 {
         }
     }
 
-    pub fn new(program: SP1Program, resource: ProverResourceType) -> Self {
+    pub fn new(program: SP1Program, resource: ProverResourceType) -> Result<Self, SP1Error> {
         let (pk, vk) = Self::create_client(&resource).setup(&program);
 
-        Self {
+        Ok(Self {
             program,
             pk,
             vk,
             resource,
-        }
+        })
     }
 }
 
 impl zkVM for EreSP1 {
-    fn execute(&self, input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
+    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         let mut stdin = SP1Stdin::new();
         stdin.write_slice(input);
 
@@ -166,7 +162,7 @@ impl zkVM for EreSP1 {
         &self,
         input: &[u8],
         proof_kind: ProofKind,
-    ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
+    ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         info!("Generating proof…");
 
         let mut stdin = SP1Stdin::new();
@@ -179,17 +175,17 @@ impl zkVM for EreSP1 {
 
         let (proof, proving_time) = panic::catch_unwind(|| {
             let client = Self::create_client(&self.resource);
-            let start = std::time::Instant::now();
+            let start = Instant::now();
             let proof = client.prove(&self.pk, &stdin, mode)?;
             Ok::<_, SP1Error>((proof, start.elapsed()))
         })
-        .map_err(|err| SP1Error::Prove(ProveError::Panic(panic_msg(err))))??;
+        .map_err(|err| SP1Error::Panic(panic_msg(err)))??;
 
         let public_values = proof.public_values.to_vec();
         let proof = Proof::new(
             proof_kind,
             bincode::serde::encode_to_vec(&proof, bincode::config::legacy())
-                .map_err(|err| SP1Error::Prove(ProveError::Bincode(err)))?,
+                .map_err(|err| CommonError::serialize("proof", "bincode", err))?,
         );
 
         Ok((
@@ -199,14 +195,14 @@ impl zkVM for EreSP1 {
         ))
     }
 
-    fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
+    fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
         info!("Verifying proof…");
 
         let proof_kind = proof.kind();
 
         let (proof, _): (SP1ProofWithPublicValues, _) =
             bincode::serde::decode_from_slice(proof.as_bytes(), bincode::config::legacy())
-                .map_err(|err| SP1Error::Verify(VerifyError::Bincode(err)))?;
+                .map_err(|err| CommonError::deserialize("proof", "bincode", err))?;
         let inner_proof_kind = SP1ProofMode::from(&proof.proof);
 
         if !matches!(
@@ -214,14 +210,11 @@ impl zkVM for EreSP1 {
             (ProofKind::Compressed, SP1ProofMode::Compressed)
                 | (ProofKind::Groth16, SP1ProofMode::Groth16)
         ) {
-            return Err(SP1Error::Verify(VerifyError::InvalidProofKind(
-                proof_kind,
-                inner_proof_kind,
-            )))?;
+            bail!(SP1Error::InvalidProofKind(proof_kind, inner_proof_kind));
         }
 
         let client = Self::create_client(&self.resource);
-        client.verify(&proof, &self.vk).map_err(zkVMError::from)?;
+        client.verify(&proof, &self.vk)?;
 
         let public_values_bytes = proof.public_values.as_slice().to_vec();
 
@@ -267,7 +260,7 @@ mod tests {
     #[test]
     fn test_execute() {
         let program = basic_program();
-        let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
+        let zkvm = EreSP1::new(program, ProverResourceType::Cpu).unwrap();
 
         let test_case = BasicProgramInput::valid();
         run_zkvm_execute(&zkvm, &test_case);
@@ -276,7 +269,7 @@ mod tests {
     #[test]
     fn test_execute_invalid_input() {
         let program = basic_program();
-        let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
+        let zkvm = EreSP1::new(program, ProverResourceType::Cpu).unwrap();
 
         for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
             zkvm.execute(&input).unwrap_err();
@@ -286,7 +279,7 @@ mod tests {
     #[test]
     fn test_prove() {
         let program = basic_program();
-        let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
+        let zkvm = EreSP1::new(program, ProverResourceType::Cpu).unwrap();
 
         let test_case = BasicProgramInput::valid();
         run_zkvm_prove(&zkvm, &test_case);
@@ -295,7 +288,7 @@ mod tests {
     #[test]
     fn test_prove_invalid_input() {
         let program = basic_program();
-        let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
+        let zkvm = EreSP1::new(program, ProverResourceType::Cpu).unwrap();
 
         for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();
@@ -317,7 +310,7 @@ mod tests {
             api_key: std::env::var("NETWORK_PRIVATE_KEY").ok(),
         };
         let program = basic_program();
-        let zkvm = EreSP1::new(program, ProverResourceType::Network(network_config));
+        let zkvm = EreSP1::new(program, ProverResourceType::Network(network_config)).unwrap();
 
         let test_case = BasicProgramInput::valid();
         run_zkvm_prove(&zkvm, &test_case);

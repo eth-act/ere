@@ -1,7 +1,4 @@
-use crate::{
-    compiler::SP1Program,
-    error::{CompileError, SP1Error},
-};
+use crate::{compiler::SP1Program, error::CompileError};
 use ere_compile_utils::CargoBuildCmd;
 use ere_zkvm_interface::Compiler;
 use std::{env, path::Path};
@@ -35,7 +32,7 @@ const CARGO_BUILD_OPTIONS: &[&str] = &[
 pub struct RustRv32ima;
 
 impl Compiler for RustRv32ima {
-    type Error = SP1Error;
+    type Error = CompileError;
 
     type Program = SP1Program;
 
@@ -45,8 +42,7 @@ impl Compiler for RustRv32ima {
             .toolchain(toolchain)
             .build_options(CARGO_BUILD_OPTIONS)
             .rustflags(RUSTFLAGS)
-            .exec(guest_directory, TARGET_TRIPLE)
-            .map_err(CompileError::CompileUtilError)?;
+            .exec(guest_directory, TARGET_TRIPLE)?;
         Ok(elf)
     }
 }
@@ -68,7 +64,7 @@ mod tests {
     fn test_execute() {
         let guest_directory = testing_guest_directory("sp1", "stock_nightly_no_std");
         let program = RustRv32ima.compile(&guest_directory).unwrap();
-        let zkvm = EreSP1::new(program, ProverResourceType::Cpu);
+        let zkvm = EreSP1::new(program, ProverResourceType::Cpu).unwrap();
 
         zkvm.execute(&[]).unwrap();
     }

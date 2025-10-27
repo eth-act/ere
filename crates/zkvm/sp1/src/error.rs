@@ -1,92 +1,33 @@
-use std::{path::PathBuf, process::ExitStatus};
-
-use ere_zkvm_interface::{ProofKind, zkVMError};
-use sp1_sdk::SP1ProofMode;
+use ere_zkvm_interface::ProofKind;
+use sp1_sdk::{SP1ProofMode, SP1VerificationError};
 use thiserror::Error;
 
-impl From<SP1Error> for zkVMError {
-    fn from(value: SP1Error) -> Self {
-        zkVMError::Other(Box::new(value))
-    }
+#[derive(Debug, Error)]
+pub enum CompileError {
+    #[error(transparent)]
+    CommonError(#[from] ere_compile_utils::CommonError),
 }
 
 #[derive(Debug, Error)]
 pub enum SP1Error {
     #[error(transparent)]
-    CompileError(#[from] CompileError),
+    CommonError(#[from] ere_zkvm_interface::CommonError),
 
-    #[error(transparent)]
-    Execute(#[from] ExecuteError),
-
-    #[error(transparent)]
-    Prove(#[from] ProveError),
-
-    #[error(transparent)]
-    Verify(#[from] VerifyError),
-}
-
-/// Errors that can be encountered while compiling a SP1 program
-#[derive(Debug, Error)]
-pub enum CompileError {
-    #[error("Program path does not exist or is not a directory: {0}")]
-    InvalidProgramPath(PathBuf),
-    #[error(
-        "Cargo.toml not found in program directory: {program_dir}. Expected at: {manifest_path}"
-    )]
-    CargoTomlMissing {
-        program_dir: PathBuf,
-        manifest_path: PathBuf,
-    },
-    #[error("Failed to create temporary output directory: {0}")]
-    TempDir(#[from] std::io::Error),
-    #[error("Could not find `[package].name` in guest Cargo.toml at {path}")]
-    MissingPackageName { path: PathBuf },
-    #[error("Failed to execute `cargo prove build` in {cwd}: {source}")]
-    CargoProveBuild {
-        cwd: PathBuf,
-        #[source]
-        source: std::io::Error,
-    },
-    #[error("`cargo prove build` failed with status: {status} for program at {path}")]
-    CargoProveBuildFailed { status: ExitStatus, path: PathBuf },
-    #[error("Compiled ELF not found at expected path: {0}")]
-    ElfNotFound(PathBuf),
-    #[error("Failed to read file at {path}: {source}")]
-    ReadFile {
-        path: PathBuf,
-        #[source]
-        source: std::io::Error,
-    },
-    #[error(transparent)]
-    CompileUtilError(#[from] ere_compile_utils::CompileError),
-}
-
-#[derive(Debug, Error)]
-pub enum ExecuteError {
+    // Execute
     #[error("SP1 execution failed: {0}")]
-    Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
-}
+    Execute(#[source] anyhow::Error),
 
-#[derive(Debug, Error)]
-pub enum ProveError {
+    // Prove
     #[error("SP1 SDK proving failed: {0}")]
-    Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
+    Prove(#[source] anyhow::Error),
 
     #[error("SP1 proving panicked: {0}")]
     Panic(String),
 
-    #[error("Serialising proof with `bincode` failed: {0}")]
-    Bincode(#[from] bincode::error::EncodeError),
-}
-
-#[derive(Debug, Error)]
-pub enum VerifyError {
-    #[error("Deserialising proof failed: {0}")]
-    Bincode(#[from] bincode::error::DecodeError),
-
-    #[error("Invalid proof kind, expected: {}, got: {}", 0.to_string(), 1.to_string() )]
+    // Verify
+    #[error("Invalid proof kind, expected: {0:?}, got: {1:?}")]
     InvalidProofKind(ProofKind, SP1ProofMode),
 
     #[error("SP1 SDK verification failed: {0}")]
-    Client(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
+    Verify(#[source] SP1VerificationError),
 }
