@@ -1,4 +1,5 @@
 use crate::error::CompileError;
+use ere_compile_utils::CommonError;
 use openvm_sdk::config::{AppConfig, DEFAULT_APP_LOG_BLOWUP, DEFAULT_LEAF_LOG_BLOWUP, SdkVmConfig};
 use openvm_stark_sdk::config::FriParameters;
 use serde::{Deserialize, Serialize};
@@ -22,13 +23,10 @@ impl OpenVMProgram {
         app_config_path: impl AsRef<Path>,
     ) -> Result<Self, CompileError> {
         let app_config = if app_config_path.as_ref().exists() {
-            let toml = fs::read_to_string(app_config_path.as_ref()).map_err(|source| {
-                CompileError::ReadConfigFailed {
-                    source,
-                    path: app_config_path.as_ref().to_path_buf(),
-                }
-            })?;
-            toml::from_str(&toml).map_err(CompileError::DeserializeConfigFailed)?
+            let toml = fs::read_to_string(app_config_path.as_ref())
+                .map_err(|err| CommonError::read_file("app_config", &app_config_path, err))?;
+            toml::from_str(&toml)
+                .map_err(|err| CommonError::deserialize("app_config", "toml", err))?
         } else {
             // The default `AppConfig` copied from https://github.com/openvm-org/openvm/blob/v1.4.0/crates/cli/src/default.rs#L35.
             AppConfig {

@@ -1,7 +1,5 @@
-use crate::{
-    compiler::OpenVMProgram,
-    error::{CompileError, OpenVMError},
-};
+use crate::{compiler::OpenVMProgram, error::CompileError};
+use ere_compile_utils::CommonError;
 use ere_zkvm_interface::Compiler;
 use openvm_build::GuestOptions;
 use std::{fs, path::Path};
@@ -11,7 +9,7 @@ use std::{fs, path::Path};
 pub struct RustRv32imaCustomized;
 
 impl Compiler for RustRv32imaCustomized {
-    type Error = OpenVMError;
+    type Error = CompileError;
 
     type Program = OpenVMProgram;
 
@@ -26,16 +24,11 @@ impl Compiler for RustRv32imaCustomized {
         };
 
         let elf_path = openvm_build::find_unique_executable(guest_directory, target_dir, &None)
-            .map_err(|e| CompileError::UniqueElfNotFound(e.into()))?;
-        let elf = fs::read(&elf_path).map_err(|source| CompileError::ReadElfFailed {
-            source,
-            path: elf_path.to_path_buf(),
-        })?;
+            .map_err(CompileError::UniqueElfNotFound)?;
+        let elf =
+            fs::read(&elf_path).map_err(|err| CommonError::read_file("elf", &elf_path, err))?;
 
-        Ok(OpenVMProgram::from_elf_and_app_config_path(
-            elf,
-            guest_directory.join("openvm.toml"),
-        )?)
+        OpenVMProgram::from_elf_and_app_config_path(elf, guest_directory.join("openvm.toml"))
     }
 }
 

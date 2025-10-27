@@ -1,12 +1,10 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use crate::{
-    compiler::OpenVMProgram,
-    error::{CommonError, ExecuteError, OpenVMError, ProveError, VerifyError},
-};
+use crate::{compiler::OpenVMProgram, error::OpenVMError};
+use anyhow::bail;
 use ere_zkvm_interface::{
-    ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
-    PublicValues, zkVM, zkVMError,
+    CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResourceType, PublicValues, zkVM,
 };
 use openvm_circuit::arch::instructions::exe::VmExe;
 use openvm_continuations::verifier::internal::types::VmStarkProof;
@@ -38,7 +36,7 @@ pub struct EreOpenVM {
 }
 
 impl EreOpenVM {
-    pub fn new(program: OpenVMProgram, resource: ProverResourceType) -> Result<Self, zkVMError> {
+    pub fn new(program: OpenVMProgram, resource: ProverResourceType) -> Result<Self, OpenVMError> {
         match resource {
             #[cfg(not(feature = "cuda"))]
             ProverResourceType::Gpu => {
@@ -52,24 +50,23 @@ impl EreOpenVM {
             _ => {}
         }
 
-        let sdk = CpuSdk::new(program.app_config.clone()).map_err(CommonError::SdkInit)?;
+        let sdk = CpuSdk::new(program.app_config.clone()).map_err(OpenVMError::SdkInit)?;
 
-        let elf = Elf::decode(&program.elf, MEM_SIZE as u32)
-            .map_err(|e| CommonError::ElfDecode(e.into()))?;
+        let elf = Elf::decode(&program.elf, MEM_SIZE as u32).map_err(OpenVMError::ElfDecode)?;
 
-        let app_exe = sdk.convert_to_exe(elf).map_err(CommonError::Transpile)?;
+        let app_exe = sdk.convert_to_exe(elf).map_err(OpenVMError::Transpile)?;
 
         let (app_pk, _) = sdk.app_keygen();
 
         let agg_pk = read_object_from_file::<AggProvingKey, _>(agg_pk_path())
-            .map_err(|e| CommonError::ReadAggKeyFailed(e.into()))?;
+            .map_err(OpenVMError::ReadAggKeyFailed)?;
         let agg_vk = agg_pk.get_agg_vk();
 
         let _ = sdk.set_agg_pk(agg_pk.clone());
 
         let app_commit = sdk
             .prover(app_exe.clone())
-            .map_err(CommonError::ProverInit)?
+            .map_err(OpenVMError::ProverInit)?
             .app_commit();
 
         Ok(Self {
@@ -83,18 +80,18 @@ impl EreOpenVM {
         })
     }
 
-    fn cpu_sdk(&self) -> Result<CpuSdk, CommonError> {
+    fn cpu_sdk(&self) -> Result<CpuSdk, OpenVMError> {
         let sdk = CpuSdk::new_without_transpiler(self.app_config.clone())
-            .map_err(CommonError::SdkInit)?;
+            .map_err(OpenVMError::SdkInit)?;
         let _ = sdk.set_app_pk(self.app_pk.clone());
         let _ = sdk.set_agg_pk(self.agg_pk.clone());
         Ok(sdk)
     }
 
     #[cfg(feature = "cuda")]
-    fn gpu_sdk(&self) -> Result<openvm_sdk::GpuSdk, CommonError> {
+    fn gpu_sdk(&self) -> Result<openvm_sdk::GpuSdk, OpenVMError> {
         let sdk = openvm_sdk::GpuSdk::new_without_transpiler(self.app_config.clone())
-            .map_err(CommonError::SdkInit)?;
+            .map_err(OpenVMError::SdkInit)?;
         let _ = sdk.set_app_pk(self.app_pk.clone());
         let _ = sdk.set_agg_pk(self.agg_pk.clone());
         Ok(sdk)
@@ -102,7 +99,7 @@ impl EreOpenVM {
 }
 
 impl zkVM for EreOpenVM {
-    fn execute(&self, input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
+    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         let mut stdin = StdIn::default();
         stdin.write_bytes(input);
 
@@ -110,7 +107,7 @@ impl zkVM for EreOpenVM {
         let public_values = self
             .cpu_sdk()?
             .execute(self.app_exe.clone(), stdin)
-            .map_err(|e| OpenVMError::from(ExecuteError::Execute(e)))?;
+            .map_err(OpenVMError::Execute)?;
 
         Ok((
             public_values,
@@ -125,9 +122,12 @@ impl zkVM for EreOpenVM {
         &self,
         input: &[u8],
         proof_kind: ProofKind,
-    ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMError> {
+    ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         if proof_kind != ProofKind::Compressed {
-            panic!("Only Compressed proof kind is supported.");
+            bail!(CommonError::unsupported_proof_kind(
+                proof_kind,
+                [ProofKind::Compressed]
+            ))
         }
 
         let mut stdin = StdIn::default();
@@ -148,20 +148,20 @@ impl zkVM for EreOpenVM {
                 );
             }
         }
-        .map_err(|e| OpenVMError::from(ProveError::Prove(e)))?;
+        .map_err(OpenVMError::Prove)?;
         let elapsed = now.elapsed();
 
         if app_commit != self.app_commit {
-            return Err(OpenVMError::from(ProveError::UnexpectedAppCommit {
-                preprocessed: self.app_commit,
-                proved: app_commit,
-            }))?;
+            bail!(OpenVMError::UnexpectedAppCommit {
+                preprocessed: self.app_commit.into(),
+                proved: app_commit.into(),
+            });
         }
 
         let public_values = extract_public_values(&proof.user_public_values)?;
         let proof_bytes = proof
             .encode_to_vec()
-            .map_err(|e| OpenVMError::from(ProveError::SerializeProof(e)))?;
+            .map_err(|err| CommonError::serialize("proof", "openvm_sdk", err))?;
 
         Ok((
             public_values,
@@ -170,16 +170,18 @@ impl zkVM for EreOpenVM {
         ))
     }
 
-    fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
+    fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
         let Proof::Compressed(proof) = proof else {
-            return Err(zkVMError::other("Only Compressed proof kind is supported."));
+            bail!(CommonError::unsupported_proof_kind(
+                proof.kind(),
+                [ProofKind::Compressed]
+            ))
         };
 
         let proof = VmStarkProof::<SC>::decode(&mut proof.as_slice())
-            .map_err(|e| OpenVMError::from(VerifyError::DeserializeProof(e)))?;
+            .map_err(|err| CommonError::deserialize("proof", "openvm_sdk", err))?;
 
-        CpuSdk::verify_proof(&self.agg_vk, self.app_commit, &proof)
-            .map_err(|e| OpenVMError::Verify(VerifyError::Verify(e)))?;
+        CpuSdk::verify_proof(&self.agg_vk, self.app_commit, &proof).map_err(OpenVMError::Verify)?;
 
         let public_values = extract_public_values(&proof.user_public_values)?;
 
@@ -199,12 +201,12 @@ impl zkVM for EreOpenVM {
 ///
 /// The public values revealed in guest program will be flatten into `Vec<u8>`
 /// then converted to field elements `Vec<F>`, so here we try to downcast it.
-fn extract_public_values(user_public_values: &[F]) -> Result<Vec<u8>, CommonError> {
+fn extract_public_values(user_public_values: &[F]) -> Result<Vec<u8>, OpenVMError> {
     user_public_values
         .iter()
         .map(|v| u8::try_from(v.as_canonical_u32()).ok())
         .collect::<Option<_>>()
-        .ok_or(CommonError::InvalidPublicValue)
+        .ok_or(OpenVMError::InvalidPublicValue)
 }
 
 fn agg_pk_path() -> PathBuf {

@@ -1,7 +1,4 @@
-use crate::{
-    compiler::OpenVMProgram,
-    error::{CompileError, OpenVMError},
-};
+use crate::{compiler::OpenVMProgram, error::CompileError};
 use ere_compile_utils::CargoBuildCmd;
 use ere_zkvm_interface::Compiler;
 use std::{env, path::Path};
@@ -38,7 +35,7 @@ const CARGO_BUILD_OPTIONS: &[&str] = &[
 pub struct RustRv32ima;
 
 impl Compiler for RustRv32ima {
-    type Error = OpenVMError;
+    type Error = CompileError;
 
     type Program = OpenVMProgram;
 
@@ -48,12 +45,8 @@ impl Compiler for RustRv32ima {
             .toolchain(toolchain)
             .build_options(CARGO_BUILD_OPTIONS)
             .rustflags(RUSTFLAGS)
-            .exec(guest_directory, TARGET_TRIPLE)
-            .map_err(CompileError::CompileUtilError)?;
-        Ok(OpenVMProgram::from_elf_and_app_config_path(
-            elf,
-            guest_directory.join("openvm.toml"),
-        )?)
+            .exec(guest_directory, TARGET_TRIPLE)?;
+        OpenVMProgram::from_elf_and_app_config_path(elf, guest_directory.join("openvm.toml"))
     }
 }
 
