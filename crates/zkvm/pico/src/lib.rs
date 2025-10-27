@@ -3,11 +3,12 @@
 use crate::{
     client::{MetaProof, ProverClient},
     compiler::PicoProgram,
-    error::{ExecuteError, PicoError, ProveError, VerifyError},
+    error::PicoError,
 };
+use anyhow::bail;
 use ere_zkvm_interface::{
-    ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
-    PublicValues, zkVM, zkVMError,
+    CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResourceType, PublicValues, zkVM,
 };
 use pico_p3_field::PrimeField32;
 use pico_vm::emulator::stdin::EmulatorStdinBuilder;
@@ -32,11 +33,11 @@ pub struct ErePico {
 }
 
 impl ErePico {
-    pub fn new(program: PicoProgram, resource: ProverResourceType) -> Self {
+    pub fn new(program: PicoProgram, resource: ProverResourceType) -> Result<Self, PicoError> {
         if !matches!(resource, ProverResourceType::Cpu) {
             panic!("Network or GPU proving not yet implemented for Pico. Use CPU resource type.");
         }
-        ErePico { program }
+        Ok(ErePico { program })
     }
 
     pub fn client(&self) -> ProverClient {
@@ -45,7 +46,7 @@ impl ErePico {
 }
 
 impl zkVM for ErePico {
-    fn execute(&self, input: &[u8]) -> Result<(PublicValues, ProgramExecutionReport), zkVMError> {
+    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         let mut stdin = EmulatorStdinBuilder::default();
         stdin.write_slice(input);
 
@@ -55,7 +56,7 @@ impl zkVM for ErePico {
             let result = client.execute(stdin);
             (result, start.elapsed())
         })
-        .map_err(|err| PicoError::Execute(ExecuteError::Panic(panic_msg(err))))?;
+        .map_err(|err| PicoError::ExecutePanic(panic_msg(err)))?;
 
         Ok((
             public_values,
@@ -71,16 +72,12 @@ impl zkVM for ErePico {
         &self,
         input: &[u8],
         proof_kind: ProofKind,
-    ) -> Result<
-        (
-            PublicValues,
-            Proof,
-            ere_zkvm_interface::ProgramProvingReport,
-        ),
-        zkVMError,
-    > {
+    ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         if proof_kind != ProofKind::Compressed {
-            panic!("Only Compressed proof kind is implemented.");
+            bail!(CommonError::unsupported_proof_kind(
+                proof_kind,
+                [ProofKind::Compressed]
+            ))
         }
 
         let mut stdin = EmulatorStdinBuilder::default();
@@ -92,8 +89,8 @@ impl zkVM for ErePico {
             let result = client.prove(stdin)?;
             Ok((result, start.elapsed()))
         })
-        .map_err(|err| PicoError::Prove(ProveError::Panic(panic_msg(err))))?
-        .map_err(|err| PicoError::Prove(ProveError::Client(err)))?;
+        .map_err(|err| PicoError::ProvePanic(panic_msg(err)))?
+        .map_err(PicoError::Prove)?;
 
         let proof_bytes = bincode::serde::encode_to_vec(
             &PicoProofWithPublicValues {
@@ -102,7 +99,7 @@ impl zkVM for ErePico {
             },
             bincode::config::legacy(),
         )
-        .map_err(|err| PicoError::Prove(ProveError::Bincode(err)))?;
+        .map_err(|err| CommonError::serialize("proof", "bincode", err))?;
 
         Ok((
             public_values,
@@ -111,27 +108,26 @@ impl zkVM for ErePico {
         ))
     }
 
-    fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMError> {
+    fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
         let Proof::Compressed(proof) = proof else {
-            return Err(zkVMError::other(
-                "Only Compressed proof kind is implemented.",
-            ));
+            bail!(CommonError::unsupported_proof_kind(
+                proof.kind(),
+                [ProofKind::Compressed]
+            ))
         };
 
         let client = self.client();
 
         let (proof, _): (PicoProofWithPublicValues, _) =
             bincode::serde::decode_from_slice(proof, bincode::config::legacy())
-                .map_err(|err| PicoError::Verify(VerifyError::Bincode(err)))?;
+                .map_err(|err| CommonError::deserialize("proof", "bincode", err))?;
 
-        client
-            .verify(&proof.proof)
-            .map_err(|err| PicoError::Verify(VerifyError::Client(err)))?;
+        client.verify(&proof.proof).map_err(PicoError::Verify)?;
 
-        if extract_public_values_sha256_digest(&proof.proof).map_err(PicoError::Verify)?
-            != <[u8; 32]>::from(Sha256::digest(&proof.public_values))
-        {
-            return Err(PicoError::Verify(VerifyError::InvalidPublicValuesDigest))?;
+        let claimed = <[u8; 32]>::from(Sha256::digest(&proof.public_values));
+        let proved = extract_public_values_sha256_digest(&proof.proof)?;
+        if claimed != proved {
+            bail!(PicoError::UnexpectedPublicValuesDigest { claimed, proved });
         }
 
         Ok(proof.public_values)
@@ -149,13 +145,13 @@ impl zkVM for ErePico {
 /// Extract public values sha256 digest from base proof of compressed proof.
 /// The sha256 digest will be placed at the first 32 field elements of the
 /// public values of the only base proof.
-fn extract_public_values_sha256_digest(proof: &MetaProof) -> Result<[u8; 32], VerifyError> {
+fn extract_public_values_sha256_digest(proof: &MetaProof) -> Result<[u8; 32], PicoError> {
     if proof.proofs().len() != 1 {
-        return Err(VerifyError::InvalidBaseProofLength(proof.proofs().len()));
+        return Err(PicoError::InvalidBaseProofLength(proof.proofs().len()));
     }
 
     if proof.proofs()[0].public_values.len() < 32 {
-        return Err(VerifyError::InvalidPublicValuesLength(
+        return Err(PicoError::InvalidPublicValuesLength(
             proof.proofs()[0].public_values.len(),
         ));
     }
@@ -164,7 +160,7 @@ fn extract_public_values_sha256_digest(proof: &MetaProof) -> Result<[u8; 32], Ve
         .iter()
         .map(|value| u8::try_from(value.as_canonical_u32()))
         .collect::<Result<Vec<_>, _>>()
-        .map_err(|_| VerifyError::InvalidPublicValues)?
+        .map_err(|_| PicoError::InvalidPublicValues)?
         .try_into()
         .unwrap())
 }
@@ -203,7 +199,7 @@ mod tests {
     #[test]
     fn test_execute() {
         let program = basic_program();
-        let zkvm = ErePico::new(program, ProverResourceType::Cpu);
+        let zkvm = ErePico::new(program, ProverResourceType::Cpu).unwrap();
 
         let test_case = BasicProgramInput::valid();
         run_zkvm_execute(&zkvm, &test_case);
@@ -212,7 +208,7 @@ mod tests {
     #[test]
     fn test_execute_invalid_input() {
         let program = basic_program();
-        let zkvm = ErePico::new(program, ProverResourceType::Cpu);
+        let zkvm = ErePico::new(program, ProverResourceType::Cpu).unwrap();
 
         for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
             zkvm.execute(&input).unwrap_err();
@@ -222,7 +218,7 @@ mod tests {
     #[test]
     fn test_prove() {
         let program = basic_program();
-        let zkvm = ErePico::new(program, ProverResourceType::Cpu);
+        let zkvm = ErePico::new(program, ProverResourceType::Cpu).unwrap();
 
         let test_case = BasicProgramInput::valid();
         run_zkvm_prove(&zkvm, &test_case);
@@ -231,7 +227,7 @@ mod tests {
     #[test]
     fn test_prove_invalid_input() {
         let program = basic_program();
-        let zkvm = ErePico::new(program, ProverResourceType::Cpu);
+        let zkvm = ErePico::new(program, ProverResourceType::Cpu).unwrap();
 
         for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();

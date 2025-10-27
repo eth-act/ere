@@ -1,4 +1,5 @@
-use crate::error::{CompileError, PicoError};
+use crate::error::CompileError;
+use ere_compile_utils::{CommonError, cargo_metadata};
 use ere_zkvm_interface::Compiler;
 use std::{fs, path::Path, process::Command};
 use tempfile::tempdir;
@@ -8,43 +9,31 @@ use tempfile::tempdir;
 pub struct RustRv32imaCustomized;
 
 impl Compiler for RustRv32imaCustomized {
-    type Error = PicoError;
+    type Error = CompileError;
 
     type Program = Vec<u8>;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        let tempdir = tempdir().map_err(CompileError::Tempdir)?;
+        let tempdir = tempdir().map_err(CommonError::tempdir)?;
 
-        // 1. Check guest path
-        if !guest_directory.exists() {
-            return Err(CompileError::PathNotFound(guest_directory.to_path_buf()))?;
-        }
+        cargo_metadata(guest_directory)?;
 
-        // 2. Run `cargo pico build`
-        let status = Command::new("cargo")
+        let mut cmd = Command::new("cargo");
+        let status = cmd
             .current_dir(guest_directory)
             .env("RUST_LOG", "info")
             .args(["pico", "build", "--output-directory"])
             .arg(tempdir.path())
             .status()
-            .map_err(CompileError::CargoPicoBuild)?;
+            .map_err(|err| CommonError::command(&cmd, err))?;
 
         if !status.success() {
-            return Err(CompileError::CargoPicoBuildFailed { status })?;
+            return Err(CommonError::command_exit_non_zero(&cmd, status, None))?;
         }
 
-        // 3. Locate the ELF file
         let elf_path = tempdir.path().join("riscv32im-pico-zkvm-elf");
-
-        if !elf_path.exists() {
-            return Err(CompileError::ElfNotFound(elf_path))?;
-        }
-
-        // 4. Read the ELF file
-        let elf_bytes = fs::read(&elf_path).map_err(|e| CompileError::ReadElf {
-            path: elf_path,
-            source: e,
-        })?;
+        let elf_bytes =
+            fs::read(&elf_path).map_err(|err| CommonError::read_file("elf", &elf_path, err))?;
 
         Ok(elf_bytes)
     }

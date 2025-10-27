@@ -1,7 +1,4 @@
-use crate::{
-    compiler::PicoProgram,
-    error::{CompileError, PicoError},
-};
+use crate::{compiler::PicoProgram, error::CompileError};
 use ere_compile_utils::CargoBuildCmd;
 use ere_zkvm_interface::Compiler;
 use std::{env, path::Path};
@@ -35,7 +32,7 @@ const CARGO_BUILD_OPTIONS: &[&str] = &[
 pub struct RustRv32ima;
 
 impl Compiler for RustRv32ima {
-    type Error = PicoError;
+    type Error = CompileError;
 
     type Program = PicoProgram;
 
@@ -45,8 +42,7 @@ impl Compiler for RustRv32ima {
             .toolchain(toolchain)
             .build_options(CARGO_BUILD_OPTIONS)
             .rustflags(RUSTFLAGS)
-            .exec(guest_directory, TARGET_TRIPLE)
-            .map_err(CompileError::CompileUtilError)?;
+            .exec(guest_directory, TARGET_TRIPLE)?;
         Ok(elf)
     }
 }
@@ -68,7 +64,7 @@ mod tests {
     fn test_execute() {
         let guest_directory = testing_guest_directory("pico", "stock_nightly_no_std");
         let program = RustRv32ima.compile(&guest_directory).unwrap();
-        let zkvm = ErePico::new(program, ProverResourceType::Cpu);
+        let zkvm = ErePico::new(program, ProverResourceType::Cpu).unwrap();
 
         zkvm.execute(&[]).unwrap();
     }
