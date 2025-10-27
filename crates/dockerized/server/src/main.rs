@@ -113,7 +113,7 @@ fn construct_zkvm(program: Vec<u8>, resource: ProverResourceType) -> Result<impl
         .with_context(|| "Failed to deserialize program")?;
 
     #[cfg(feature = "airbender")]
-    let zkvm = Ok::<_, Error>(ere_airbender::EreAirbender::new(program, resource));
+    let zkvm = ere_airbender::EreAirbender::new(program, resource);
 
     #[cfg(feature = "jolt")]
     let zkvm = ere_jolt::EreJolt::new(program, resource);
@@ -122,22 +122,22 @@ fn construct_zkvm(program: Vec<u8>, resource: ProverResourceType) -> Result<impl
     let zkvm = ere_miden::EreMiden::new(program, resource);
 
     #[cfg(feature = "nexus")]
-    let zkvm = Ok::<_, Error>(ere_nexus::EreNexus::new(program, resource));
+    let zkvm = ere_nexus::EreNexus::new(program, resource);
 
     #[cfg(feature = "openvm")]
     let zkvm = ere_openvm::EreOpenVM::new(program, resource);
 
     #[cfg(feature = "pico")]
-    let zkvm = Ok::<_, Error>(ere_pico::ErePico::new(program, resource));
+    let zkvm = ere_pico::ErePico::new(program, resource);
 
     #[cfg(feature = "risc0")]
     let zkvm = ere_risc0::EreRisc0::new(program, resource);
 
     #[cfg(feature = "sp1")]
-    let zkvm = Ok::<_, Error>(ere_sp1::EreSP1::new(program, resource));
+    let zkvm = ere_sp1::EreSP1::new(program, resource);
 
     #[cfg(feature = "ziren")]
-    let zkvm = Ok::<_, Error>(ere_ziren::EreZiren::new(program, resource));
+    let zkvm = ere_ziren::EreZiren::new(program, resource);
 
     #[cfg(feature = "zisk")]
     let zkvm = ere_zisk::EreZisk::new(program, resource);
