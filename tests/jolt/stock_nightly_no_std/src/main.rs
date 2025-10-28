@@ -1,14 +1,13 @@
-#![cfg_attr(feature = "guest", no_std)]
+#![no_std]
 #![no_main]
 extern crate alloc;
 
 use alloc::vec::Vec;
-use core::sync::atomic::Ordering;
 use core::sync::atomic::AtomicU16;
-use jolt_sdk as jolt;
+use core::sync::atomic::Ordering;
 
-#[jolt::provable]
-fn foo() {
+#[jolt::provable(guest_only)]
+fn main() {
     let a: AtomicU16 = core::hint::black_box(AtomicU16::new(5));
     let b: AtomicU16 = core::hint::black_box(AtomicU16::new(7));
 

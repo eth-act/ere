@@ -1,12 +1,13 @@
 [package]
-name = "guest"
+name = "ere-jolt-guest"
 version = "0.1.0"
 edition = "2021"
 
+[dependencies]
+jolt = { git = "https://github.com/a16z/jolt", package = "jolt-sdk", tag = "v0.3.0-alpha" }
+ere-test-utils = { path = "../../../crates/test-utils" }
+
 [features]
 guest = []
-
-[dependencies]
-jolt = { package = "jolt-sdk", git = "https://github.com/a16z/jolt", rev = "55b9830a3944dde55d33a55c42522b81dd49f87a" }
 
 [workspace]
