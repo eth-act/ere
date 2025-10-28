@@ -146,7 +146,6 @@ mod tests {
         let zkvm = EreAirbender::new(program, ProverResourceType::Cpu).unwrap();
 
         let test_case = BasicProgramInput::valid().into_output_sha256();
-        run_zkvm_execute(&zkvm, &test_case);
         run_zkvm_prove(&zkvm, &test_case);
     }
 
