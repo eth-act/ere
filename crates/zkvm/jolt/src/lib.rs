@@ -1,36 +1,26 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 use crate::{
+    client::{JoltProof, JoltSdk},
     compiler::JoltProgram,
     error::JoltError,
-    jolt_methods::{preprocess_prover, preprocess_verifier, prove_generic, verify_generic},
 };
 use anyhow::bail;
-use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ere_zkvm_interface::{
     CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
     ProverResourceType, PublicValues, zkVM,
 };
-use jolt::{JoltHyperKZGProof, JoltProverPreprocessing, JoltVerifierPreprocessing};
-use std::{env, fs, io::Cursor};
-use tempfile::TempDir;
+use jolt_ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
+use std::{env, io::Cursor, time::Instant};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
+mod client;
 pub mod compiler;
 pub mod error;
-mod jolt_methods;
-
-#[derive(CanonicalSerialize, CanonicalDeserialize)]
-pub struct EreJoltProof {
-    proof: JoltHyperKZGProof,
-    public_outputs: Vec<u8>,
-}
 
 pub struct EreJolt {
-    elf: JoltProgram,
-    prover_preprocessing: JoltProverPreprocessing<4, jolt::F, jolt::PCS, jolt::ProofTranscript>,
-    verifier_preprocessing: JoltVerifierPreprocessing<4, jolt::F, jolt::PCS, jolt::ProofTranscript>,
+    sdk: JoltSdk,
     _resource: ProverResourceType,
 }
 
@@ -39,31 +29,28 @@ impl EreJolt {
         if !matches!(resource, ProverResourceType::Cpu) {
             panic!("Network or GPU proving not yet implemented for Miden. Use CPU resource type.");
         }
-        let (_tempdir, program) = program(&elf)?;
-        let prover_preprocessing = preprocess_prover(&program);
-        let verifier_preprocessing = preprocess_verifier(&program);
+        let sdk = JoltSdk::new(&elf);
         Ok(EreJolt {
-            elf,
-            prover_preprocessing,
-            verifier_preprocessing,
+            sdk,
             _resource: resource,
         })
     }
 }
 
 impl zkVM for EreJolt {
-    fn execute(&self, _input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
-        let (_tempdir, program) = program(&self.elf)?;
+    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+        let start = Instant::now();
+        let (public_values, total_num_cycles) = self.sdk.execute(input)?;
+        let execution_duration = start.elapsed();
 
-        // TODO: Check how to pass private input to jolt, issue for tracking:
-        //       https://github.com/a16z/jolt/issues/371.
-        let summary = program.clone().trace_analyze::<jolt::F>(&[]);
-        let trace_len = summary.trace_len();
-
-        // TODO: Public values
-        let public_values = Vec::new();
-
-        Ok((public_values, ProgramExecutionReport::new(trace_len as u64)))
+        Ok((
+            public_values,
+            ProgramExecutionReport {
+                total_num_cycles,
+                execution_duration,
+                ..Default::default()
+            },
+        ))
     }
 
     fn prove(
@@ -77,25 +64,19 @@ impl zkVM for EreJolt {
                 [ProofKind::Compressed]
             ))
         }
-
-        let (_tempdir, program) = program(&self.elf)?;
-
-        let now = std::time::Instant::now();
-        let proof = prove_generic(&program, self.prover_preprocessing.clone(), input);
-        let elapsed = now.elapsed();
+        let start = Instant::now();
+        let (public_values, proof) = self.sdk.prove(input)?;
+        let proving_time = start.elapsed();
 
         let mut proof_bytes = Vec::new();
         proof
             .serialize_compressed(&mut proof_bytes)
             .map_err(|err| CommonError::serialize("proof", "jolt", err))?;
 
-        // TODO: Public values
-        let public_values = Vec::new();
-
         Ok((
             public_values,
             Proof::Compressed(proof_bytes),
-            ProgramProvingReport::new(elapsed),
+            ProgramProvingReport::new(proving_time),
         ))
     }
 
@@ -107,13 +88,10 @@ impl zkVM for EreJolt {
             ))
         };
 
-        let proof = EreJoltProof::deserialize_compressed(&mut Cursor::new(proof))
+        let proof = JoltProof::deserialize_compressed(&mut Cursor::new(proof))
             .map_err(|err| CommonError::deserialize("proof", "jolt", err))?;
 
-        verify_generic(proof, self.verifier_preprocessing.clone())?;
-
-        // TODO: Public values
-        let public_values = Vec::new();
+        let public_values = self.sdk.verify(proof)?;
 
         Ok(public_values)
     }
@@ -127,15 +105,74 @@ impl zkVM for EreJolt {
     }
 }
 
-/// Create `jolt::host::Program` by storing the compiled `elf` to a temporary
-/// file, and set the elf path for `program`, so methods like `decode`, `trace`
-/// and `trace_analyze` that depend on elf path will work.
-pub fn program(elf: &[u8]) -> Result<(TempDir, jolt::host::Program), JoltError> {
-    let tempdir = TempDir::new().map_err(CommonError::tempdir)?;
-    let elf_path = tempdir.path().join("guest.elf");
-    fs::write(&elf_path, elf).map_err(|err| CommonError::write_file("elf", &elf_path, err))?;
-    // Set a dummy package name because we don't need to compile anymore.
-    let mut program = jolt::host::Program::new("");
-    program.elf = Some(elf_path);
-    Ok((tempdir, program))
+#[cfg(test)]
+mod tests {
+    use crate::{
+        EreJolt,
+        compiler::{JoltProgram, RustRv64imacCustomized},
+    };
+    use ere_test_utils::{
+        host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
+        program::basic::BasicProgramInput,
+    };
+    use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
+    use std::sync::{Mutex, OnceLock};
+
+    /// While proving, Jolt uses global static variables to store some
+    /// parameters, that might cause panics if we prove concurrently, so we put
+    /// a lock here for the test to work without the need to set test threads.
+    static PROVE_LOCK: Mutex<()> = Mutex::new(());
+
+    fn basic_program() -> JoltProgram {
+        static PROGRAM: OnceLock<JoltProgram> = OnceLock::new();
+        PROGRAM
+            .get_or_init(|| {
+                RustRv64imacCustomized
+                    .compile(&testing_guest_directory("jolt", "basic"))
+                    .unwrap()
+            })
+            .clone()
+    }
+
+    #[test]
+    fn test_execute() {
+        let program = basic_program();
+        let zkvm = EreJolt::new(program, ProverResourceType::Cpu).unwrap();
+
+        let test_case = BasicProgramInput::valid();
+        run_zkvm_execute(&zkvm, &test_case);
+    }
+
+    #[test]
+    fn test_execute_invalid_input() {
+        let program = basic_program();
+        let zkvm = EreJolt::new(program, ProverResourceType::Cpu).unwrap();
+
+        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+            zkvm.execute(&input).unwrap_err();
+        }
+    }
+
+    #[test]
+    fn test_prove() {
+        let program = basic_program();
+        let zkvm = EreJolt::new(program, ProverResourceType::Cpu).unwrap();
+
+        let _guard = PROVE_LOCK.lock().unwrap();
+
+        let test_case = BasicProgramInput::valid();
+        run_zkvm_prove(&zkvm, &test_case);
+    }
+
+    #[test]
+    fn test_prove_invalid_input() {
+        let program = basic_program();
+        let zkvm = EreJolt::new(program, ProverResourceType::Cpu).unwrap();
+
+        let _guard = PROVE_LOCK.lock().unwrap();
+
+        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+            zkvm.prove(&input, ProofKind::default()).unwrap_err();
+        }
+    }
 }

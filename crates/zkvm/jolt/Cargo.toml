@@ -11,9 +11,10 @@ tempfile.workspace = true
 thiserror.workspace = true
 
 # Jolt dependencies
-ark-serialize = { workspace = true, features = ["derive"] }
-common.workspace = true
-jolt = { workspace = true, features = ["host"] }
+jolt-ark-serialize = { workspace = true, features = ["derive"] }
+jolt-common.workspace = true
+jolt-core.workspace = true
+jolt-sdk = { workspace = true, features = ["host"] }
 
 # Local dependencies
 ere-compile-utils.workspace = true

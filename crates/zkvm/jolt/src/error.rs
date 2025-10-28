@@ -1,5 +1,5 @@
 use ere_compile_utils::CommonError;
-use jolt::jolt_core::utils::errors::ProofVerifyError;
+use jolt_core::utils::errors::ProofVerifyError;
 use std::{io, path::PathBuf};
 use thiserror::Error;
 
@@ -23,6 +23,10 @@ pub enum CompileError {
 pub enum JoltError {
     #[error(transparent)]
     CommonError(#[from] ere_zkvm_interface::CommonError),
+
+    // Execute
+    #[error("Execution panics")]
+    ExecutionPanic,
 
     // Verify
     #[error("Failed to verify proof: {0}")]

@@ -68,9 +68,10 @@ twirp-build = "0.9.0"
 airbender_execution_utils = { git = "https://github.com/matter-labs/zksync-airbender", package = "execution_utils", tag = "v0.5.0" }
 
 # Jolt dependencies
-ark-serialize = "0.5.0"
-common = { git = "https://github.com/a16z/jolt.git", rev = "55b9830a3944dde55d33a55c42522b81dd49f87a" }
-jolt = { git = "https://github.com/a16z/jolt.git", rev = "55b9830a3944dde55d33a55c42522b81dd49f87a" }
+jolt-ark-serialize = { git = "https://github.com/a16z/arkworks-algebra", package = "ark-serialize", branch = "feat/fewer-reductions" }
+jolt-common = { git = "https://github.com/a16z/jolt.git", package = "common", tag = "v0.3.0-alpha" }
+jolt-core = { git = "https://github.com/a16z/jolt.git", tag = "v0.3.0-alpha" }
+jolt-sdk = { git = "https://github.com/a16z/jolt.git", tag = "v0.3.0-alpha" }
 
 # Miden dependencies
 miden-assembly = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.17.1" }
@@ -137,6 +138,8 @@ opt-level = 3
 
 [patch.crates-io]
 # These patches are only needed by Jolt
-ark-ff = { git = "https://github.com/a16z/arkworks-algebra", branch = "v0.5.0-optimize-mul-u64" }
-ark-ec = { git = "https://github.com/a16z/arkworks-algebra", branch = "v0.5.0-optimize-mul-u64" }
-ark-serialize = { git = "https://github.com/a16z/arkworks-algebra", branch = "v0.5.0-optimize-mul-u64" }
+ark-ff = { git = "https://github.com/a16z/arkworks-algebra", branch = "feat/fewer-reductions" }
+ark-ec = { git = "https://github.com/a16z/arkworks-algebra", branch = "feat/fewer-reductions" }
+jolt-optimizations = { git = "https://github.com/a16z/arkworks-algebra", branch = "feat/fewer-reductions" }
+ark-serialize = { git = "https://github.com/a16z/arkworks-algebra", branch = "feat/fewer-reductions" }
+allocative = { git = "https://github.com/facebookexperimental/allocative", rev = "85b773d85d526d068ce94724ff7a7b81203fc95e" }

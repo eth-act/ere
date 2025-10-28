@@ -1,10 +1,13 @@
 use crate::{compiler::JoltProgram, error::CompileError};
 use ere_compile_utils::CargoBuildCmd;
 use ere_zkvm_interface::Compiler;
+use jolt_common::constants::{
+    DEFAULT_MEMORY_SIZE, DEFAULT_STACK_SIZE, EMULATOR_MEMORY_CAPACITY, STACK_CANARY_SIZE,
+};
 use std::{env, path::Path};
 
-const TARGET_TRIPLE: &str = "riscv32ima-unknown-none-elf";
-// According to https://github.com/a16z/jolt/blob/55b9830a3944dde55d33a55c42522b81dd49f87a/jolt-core/src/host/mod.rs#L95
+const TARGET_TRIPLE: &str = "riscv64imac-unknown-none-elf";
+// According to https://github.com/a16z/jolt/blob/v0.3.0-alpha/jolt-core/src/host/program.rs#L82
 const RUSTFLAGS: &[&str] = &[
     "-C",
     "passes=lower-atomic",
@@ -14,6 +17,8 @@ const RUSTFLAGS: &[&str] = &[
     "strip=symbols",
     "-C",
     "opt-level=z",
+    "--cfg",
+    "getrandom_backend=\"custom\"",
 ];
 const CARGO_BUILD_OPTIONS: &[&str] = &[
     "--features",
@@ -22,20 +27,20 @@ const CARGO_BUILD_OPTIONS: &[&str] = &[
     "-Zbuild-std=core,alloc",
 ];
 
-const DEFAULT_MEMORY_SIZE: u64 = 10 * 1024 * 1024;
-const DEFAULT_STACK_SIZE: u64 = 4096;
-const LINKER_SCRIPT_TEMPLATE: &str = include_str!("rust_rv32ima/template.ld");
+const LINKER_SCRIPT_TEMPLATE: &str = include_str!("rust_rv64imac/template.ld");
 
 fn make_linker_script() -> String {
     LINKER_SCRIPT_TEMPLATE
+        .replace("{EMULATOR_MEMORY}", &EMULATOR_MEMORY_CAPACITY.to_string())
+        .replace("{STACK_CANARY}", &STACK_CANARY_SIZE.to_string())
         .replace("{MEMORY_SIZE}", &DEFAULT_MEMORY_SIZE.to_string())
         .replace("{STACK_SIZE}", &DEFAULT_STACK_SIZE.to_string())
 }
 
-/// Compiler for Rust guest program to RV32IMA architecture.
-pub struct RustRv32ima;
+/// Compiler for Rust guest program to RV64IMAC architecture.
+pub struct RustRv64imac;
 
-impl Compiler for RustRv32ima {
+impl Compiler for RustRv64imac {
     type Error = CompileError;
 
     type Program = JoltProgram;
@@ -54,21 +59,21 @@ impl Compiler for RustRv32ima {
 
 #[cfg(test)]
 mod tests {
-    use crate::{EreJolt, compiler::RustRv32ima};
+    use crate::{EreJolt, compiler::RustRv64imac};
     use ere_test_utils::host::testing_guest_directory;
     use ere_zkvm_interface::{Compiler, ProverResourceType, zkVM};
 
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("jolt", "stock_nightly_no_std");
-        let elf = RustRv32ima.compile(&guest_directory).unwrap();
+        let elf = RustRv64imac.compile(&guest_directory).unwrap();
         assert!(!elf.is_empty(), "ELF bytes should not be empty.");
     }
 
     #[test]
     fn test_execute() {
         let guest_directory = testing_guest_directory("jolt", "stock_nightly_no_std");
-        let program = RustRv32ima.compile(&guest_directory).unwrap();
+        let program = RustRv64imac.compile(&guest_directory).unwrap();
         let zkvm = EreJolt::new(program, ProverResourceType::Cpu).unwrap();
 
         zkvm.execute(&[]).unwrap();
