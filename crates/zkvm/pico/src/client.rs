@@ -11,7 +11,7 @@ use pico_vm::{
     instances::compiler::shapes::{
         recursion_shape::RecursionShapeConfig, riscv_shape::RiscvShapeConfig,
     },
-    machine::proof,
+    machine::{keys::BaseVerifyingKey, proof},
     proverchain::{
         CombineProver, CompressProver, ConvertProver, InitialProverSetup, MachineProver,
         ProverChain, RiscvProver,
@@ -95,5 +95,9 @@ impl ProverClient {
             return Err(Error::msg("verify compress proof failed"));
         }
         Ok(())
+    }
+
+    pub fn vk(&self) -> &BaseVerifyingKey<KoalaBearPoseidon2> {
+        self.riscv.vk()
     }
 }

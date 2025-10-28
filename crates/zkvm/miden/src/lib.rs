@@ -146,6 +146,14 @@ impl zkVM for EreMiden {
         Ok(felts_to_bytes(stack_outputs.as_slice()))
     }
 
+    type VerifyingKey = Vec<u8>;
+    fn get_verifying_key(&self) -> anyhow::Result<Self::VerifyingKey> {
+        // TODO: is the kernel needed here?
+        // TODO: upstream Serialize on miden_core::ProgramInfo?
+        let program_info: ProgramInfo = self.program.clone().into();
+        Ok(miden_core::utils::Serializable::to_bytes(&program_info))
+    }
+
     fn name(&self) -> &'static str {
         NAME
     }

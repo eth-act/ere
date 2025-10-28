@@ -188,6 +188,11 @@ impl zkVM for EreOpenVM {
         Ok(public_values)
     }
 
+    type VerifyingKey = AggVerifyingKey;
+    fn get_verifying_key(&self) -> anyhow::Result<Self::VerifyingKey> {
+        Ok(self.agg_vk.clone())
+    }
+
     fn name(&self) -> &'static str {
         NAME
     }

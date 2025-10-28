@@ -1,7 +1,7 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 use crate::{
-    client::{ZiskOptions, ZiskSdk, ZiskServer},
+    client::{RomDigest, ZiskOptions, ZiskSdk, ZiskServer},
     compiler::ZiskProgram,
     error::ZiskError,
 };
@@ -114,6 +114,11 @@ impl zkVM for EreZisk {
         };
 
         Ok(self.sdk.verify(proof)?)
+    }
+
+    type VerifyingKey = RomDigest;
+    fn get_verifying_key(&self) -> anyhow::Result<Self::VerifyingKey> {
+        Ok(self.sdk.rom_digest()?)
     }
 
     fn name(&self) -> &'static str {

@@ -103,6 +103,8 @@ impl Proof {
 /// Note that a zkVM instance is created for specific program, each zkVM
 /// implementation will have their own construction function.
 pub trait zkVM {
+    type VerifyingKey: Serialize;
+
     /// Executes the program with the given input.
     fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)>;
 
@@ -117,6 +119,8 @@ pub trait zkVM {
     /// returns the public values extracted from the proof.
     #[must_use = "Public values must be used"]
     fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues>;
+
+    fn get_verifying_key(&self) -> anyhow::Result<Self::VerifyingKey>;
 
     /// Returns the name of the zkVM
     fn name(&self) -> &'static str;

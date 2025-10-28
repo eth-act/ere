@@ -7,8 +7,8 @@ use ere_zkvm_interface::{
     ProverResourceType, PublicValues, zkVM,
 };
 use risc0_zkvm::{
-    DEFAULT_MAX_PO2, DefaultProver, ExecutorEnv, ExternalProver, InnerReceipt, ProverOpts, Receipt,
-    default_executor, default_prover,
+    DEFAULT_MAX_PO2, DefaultProver, Digest, ExecutorEnv, ExternalProver, InnerReceipt, ProverOpts,
+    Receipt, default_executor, default_prover,
 };
 use std::{env, ops::RangeInclusive, rc::Rc, time::Instant};
 
@@ -198,6 +198,11 @@ impl zkVM for EreRisc0 {
         let public_values = receipt.journal.bytes.clone();
 
         Ok(public_values)
+    }
+
+    type VerifyingKey = Digest;
+    fn get_verifying_key(&self) -> anyhow::Result<Self::VerifyingKey> {
+        Ok(self.program.image_id)
     }
 
     fn name(&self) -> &'static str {

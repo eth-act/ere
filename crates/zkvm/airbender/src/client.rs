@@ -211,6 +211,10 @@ impl AirbenderSdk {
 
         Ok(public_values)
     }
+
+    pub fn vk_hash_chain(&self) -> &VkHashChain {
+        &self.vk_hash_chain
+    }
 }
 
 /// Encode input with length prefixed to hex string for `airbender-cli`.

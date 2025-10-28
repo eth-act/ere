@@ -1,6 +1,10 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use crate::{client::AirbenderSdk, compiler::AirbenderProgram, error::AirbenderError};
+use crate::{
+    client::{AirbenderSdk, VkHashChain},
+    compiler::AirbenderProgram,
+    error::AirbenderError,
+};
 use airbender_execution_utils::ProgramProof;
 use anyhow::bail;
 use ere_zkvm_interface::{
@@ -86,6 +90,11 @@ impl zkVM for EreAirbender {
         let public_values = self.sdk.verify(&proof)?;
 
         Ok(public_values)
+    }
+
+    type VerifyingKey = VkHashChain;
+    fn get_verifying_key(&self) -> anyhow::Result<Self::VerifyingKey> {
+        Ok(*self.sdk.vk_hash_chain())
     }
 
     fn name(&self) -> &'static str {

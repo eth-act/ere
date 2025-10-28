@@ -119,6 +119,11 @@ impl zkVM for EreZiren {
         Ok(proof.public_values.to_vec())
     }
 
+    type VerifyingKey = ZKMVerifyingKey;
+    fn get_verifying_key(&self) -> anyhow::Result<Self::VerifyingKey> {
+        Ok(self.vk.clone())
+    }
+
     fn name(&self) -> &'static str {
         NAME
     }

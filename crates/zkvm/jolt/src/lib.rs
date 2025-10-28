@@ -118,6 +118,12 @@ impl zkVM for EreJolt {
         Ok(public_values)
     }
 
+    type VerifyingKey = ();
+    fn get_verifying_key(&self) -> anyhow::Result<Self::VerifyingKey> {
+        // TODO: figure out how to do this
+        anyhow::bail!("Getting verifying key is not yet implemented for Jolt zkVM");
+    }
+
     fn name(&self) -> &'static str {
         NAME
     }

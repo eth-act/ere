@@ -11,7 +11,10 @@ use ere_zkvm_interface::{
     ProverResourceType, PublicValues, zkVM,
 };
 use pico_p3_field::PrimeField32;
-use pico_vm::emulator::stdin::EmulatorStdinBuilder;
+use pico_vm::{
+    configs::stark_config::KoalaBearPoseidon2, emulator::stdin::EmulatorStdinBuilder,
+    machine::keys::BaseVerifyingKey,
+};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{env, panic, time::Instant};
@@ -131,6 +134,11 @@ impl zkVM for ErePico {
         }
 
         Ok(proof.public_values)
+    }
+
+    type VerifyingKey = BaseVerifyingKey<KoalaBearPoseidon2>;
+    fn get_verifying_key(&self) -> anyhow::Result<Self::VerifyingKey> {
+        Ok(self.client().vk().clone())
     }
 
     fn name(&self) -> &'static str {

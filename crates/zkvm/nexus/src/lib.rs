@@ -149,6 +149,11 @@ impl zkVM for EreNexus {
         Ok(proof_bundle.public_values)
     }
 
+    type VerifyingKey = ();
+    fn get_verifying_key(&self) -> anyhow::Result<Self::VerifyingKey> {
+        anyhow::bail!("Getting verifying key is not yet implemented for Nexus zkVM");
+    }
+
     fn name(&self) -> &'static str {
         NAME
     }

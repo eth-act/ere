@@ -221,6 +221,11 @@ impl zkVM for EreSP1 {
         Ok(public_values_bytes)
     }
 
+    type VerifyingKey = SP1VerifyingKey;
+    fn get_verifying_key(&self) -> anyhow::Result<Self::VerifyingKey> {
+        Ok(self.vk.clone())
+    }
+
     fn name(&self) -> &'static str {
         NAME
     }
