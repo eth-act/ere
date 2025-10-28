@@ -15,5 +15,4 @@ jobs:
     with:
       zkvm: zisk
       toolchain: 1.86.0
-      free_up_disk_space: true
       skip_prove_test: true
