@@ -19,6 +19,8 @@ use jolt_sdk::{
 #[derive(CanonicalSerialize, CanonicalDeserialize)]
 pub struct JoltProof {
     proof: jolt_sdk::JoltProof<F, PCS, FS>,
+    // FIXME: Remove `inputs` when Jolt supports proving with private input.
+    //        Issue for tracking: https://github.com/eth-act/ere/issues/4.
     inputs: Vec<u8>,
     outputs: Vec<u8>,
 }
