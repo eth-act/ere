@@ -654,6 +654,16 @@ mod test {
 
     mod jolt {
         test_compile!(Jolt, "basic");
+        test_execute!(
+            Jolt,
+            BasicProgramInput::valid(),
+            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+        );
+        test_prove!(
+            Jolt,
+            BasicProgramInput::valid(),
+            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+        );
     }
 
     mod miden {

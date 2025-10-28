@@ -56,9 +56,9 @@ fn compile(guest_path: PathBuf) -> Result<impl Serialize, Error> {
 
     #[cfg(feature = "jolt")]
     let result = if use_stock_rust() {
-        ere_jolt::compiler::RustRv32ima.compile(&guest_path)
+        ere_jolt::compiler::RustRv64imac.compile(&guest_path)
     } else {
-        ere_jolt::compiler::RustRv32imaCustomized.compile(&guest_path)
+        ere_jolt::compiler::RustRv64imacCustomized.compile(&guest_path)
     };
 
     #[cfg(feature = "miden")]
