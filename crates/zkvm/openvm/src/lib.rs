@@ -188,9 +188,9 @@ impl zkVM for EreOpenVM {
         Ok(public_values)
     }
 
-    type VerifyingKey = AggVerifyingKey;
+    type VerifyingKey = AppExecutionCommit;
     fn get_verifying_key(&self) -> anyhow::Result<Self::VerifyingKey> {
-        Ok(self.agg_vk.clone())
+        Ok(self.app_commit.clone())
     }
 
     fn name(&self) -> &'static str {

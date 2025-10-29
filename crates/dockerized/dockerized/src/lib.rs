@@ -519,6 +519,14 @@ impl zkVM for EreDockerizedzkVM {
         Ok(public_values)
     }
 
+    type VerifyingKey = Vec<u8>;
+    fn get_verifying_key(&self) -> anyhow::Result<Self::VerifyingKey> {
+        let verifying_key =
+            block_on(self.client.get_verifying_key()).map_err(DockerizedError::from)?;
+
+        Ok(verifying_key)
+    }
+
     fn name(&self) -> &'static str {
         self.zkvm.as_str()
     }

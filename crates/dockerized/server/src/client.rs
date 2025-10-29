@@ -1,7 +1,8 @@
 use crate::api::{
     ExecuteRequest, ProveRequest, VerifyRequest, ZkvmService,
-    execute_response::Result as ExecuteResult, prove_response::Result as ProveResult,
-    verify_response::Result as VerifyResult,
+    execute_response::Result as ExecuteResult,
+    get_verifying_key_response::Result as GetVerifyingKeyResult,
+    prove_response::Result as ProveResult, verify_response::Result as VerifyResult,
 };
 use ere_zkvm_interface::{
     ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, PublicValues,
@@ -108,6 +109,17 @@ impl zkVMClient {
         match response.into_body().result.ok_or_else(result_none_err)? {
             VerifyResult::Ok(result) => Ok(result.public_values),
             VerifyResult::Err(err) => Err(zkVMClientError::zkVM(err)),
+        }
+    }
+
+    pub async fn get_verifying_key(&self) -> Result<Vec<u8>, zkVMClientError> {
+        let request = Request::new(crate::api::GetVerifyingKeyRequest {});
+
+        let response = self.client.get_verifying_key(request).await?;
+
+        match response.into_body().result.ok_or_else(result_none_err)? {
+            GetVerifyingKeyResult::Ok(result) => Ok(result.verifying_key),
+            GetVerifyingKeyResult::Err(err) => Err(zkVMClientError::zkVM(err)),
         }
     }
 }

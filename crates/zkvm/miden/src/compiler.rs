@@ -29,3 +29,28 @@ impl<'de> Deserialize<'de> for MidenProgram {
             .map_err(D::Error::custom)
     }
 }
+
+/// Wrapper for [`miden_core::ProgramInfo`] that implements `serde`.
+#[derive(Clone)]
+pub struct MidenProgramInfo(pub miden_core::ProgramInfo);
+
+impl Serialize for MidenProgramInfo {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_bytes(&self.0.to_bytes())
+    }
+}
+
+impl<'de> Deserialize<'de> for MidenProgramInfo {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let bytes = Vec::<u8>::deserialize(deserializer)?;
+        miden_core::ProgramInfo::read_from_bytes(&bytes)
+            .map(Self)
+            .map_err(D::Error::custom)
+    }
+}

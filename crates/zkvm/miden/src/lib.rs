@@ -1,6 +1,9 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use crate::{compiler::MidenProgram, error::MidenError};
+use crate::{
+    compiler::{MidenProgram, MidenProgramInfo},
+    error::MidenError,
+};
 use anyhow::bail;
 use ere_zkvm_interface::{
     CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
@@ -146,12 +149,10 @@ impl zkVM for EreMiden {
         Ok(felts_to_bytes(stack_outputs.as_slice()))
     }
 
-    type VerifyingKey = Vec<u8>;
+    type VerifyingKey = MidenProgramInfo;
     fn get_verifying_key(&self) -> anyhow::Result<Self::VerifyingKey> {
-        // TODO: is the kernel needed here?
-        // TODO: upstream Serialize on miden_core::ProgramInfo?
         let program_info: ProgramInfo = self.program.clone().into();
-        Ok(miden_core::utils::Serializable::to_bytes(&program_info))
+        Ok(MidenProgramInfo(program_info))
     }
 
     fn name(&self) -> &'static str {

@@ -11,6 +11,7 @@ service ZkvmService {
     rpc Execute(ExecuteRequest) returns (ExecuteResponse) {}
     rpc Prove(ProveRequest) returns (ProveResponse) {}
     rpc Verify(VerifyRequest) returns (VerifyResponse) {}
+    rpc GetVerifyingKey(GetVerifyingKeyRequest) returns (GetVerifyingKeyResponse) {}
 }
 
 message ExecuteRequest {
@@ -61,4 +62,18 @@ message VerifyResponse {
 
 message VerifyOk {
     bytes public_values = 1;
+}
+
+message GetVerifyingKeyRequest {
+}
+
+message GetVerifyingKeyResponse {
+    oneof result {
+        GetVerifyingKeyOk ok = 1;
+        string err = 2;
+    }
+}
+
+message GetVerifyingKeyOk {
+    bytes verifying_key = 1;
 }
