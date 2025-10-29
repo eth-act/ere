@@ -134,7 +134,10 @@ impl zkVM for EreZisk {
 mod tests {
     use crate::{EreZisk, compiler::RustRv64imaCustomized};
     use ere_test_utils::{
-        host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
+        host::{
+            TestCase, run_zkvm_execute, run_zkvm_get_verifying_key, run_zkvm_prove,
+            testing_guest_directory,
+        },
         program::basic::BasicProgramInput,
     };
     use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
@@ -183,6 +186,14 @@ mod tests {
 
         let test_case = BasicProgramInput::valid().into_output_sha256();
         run_zkvm_prove(&zkvm, &test_case);
+    }
+
+    #[test]
+    fn test_get_verifying_key() {
+        let program = basic_program();
+        let zkvm = EreZisk::new(program, ProverResourceType::Cpu).unwrap();
+
+        run_zkvm_get_verifying_key(&zkvm);
     }
 
     #[test]

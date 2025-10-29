@@ -646,6 +646,19 @@ mod test {
         };
     }
 
+    macro_rules! test_get_verifying_key {
+        ($zkvm:ident) => {
+            #[test]
+            fn test_get_verifying_key() {
+                let (_guard, zkvm) = zkvm();
+
+                run_zkvm_get_verifying_key(&zkvm);
+
+                drop(zkvm);
+            }
+        };
+    }
+
     mod airbender {
         test_compile!(Airbender, "basic");
         test_execute!(
@@ -658,6 +671,7 @@ mod test {
             BasicProgramInput::valid().into_output_sha256(),
             [Vec::new(), BasicProgramInput::invalid().serialized_input()]
         );
+        test_get_verifying_key!(Airbender);
     }
 
     mod jolt {
@@ -694,6 +708,7 @@ mod test {
             BasicProgramInput::valid().into_output_sha256(),
             [Vec::new(), BasicProgramInput::invalid().serialized_input()]
         );
+        test_get_verifying_key!(OpenVM);
     }
 
     mod pico {
@@ -708,6 +723,7 @@ mod test {
             BasicProgramInput::valid(),
             [Vec::new(), BasicProgramInput::invalid().serialized_input()]
         );
+        test_get_verifying_key!(Pico);
     }
 
     mod risc0 {
@@ -722,6 +738,7 @@ mod test {
             BasicProgramInput::valid(),
             [Vec::new(), BasicProgramInput::invalid().serialized_input()]
         );
+        test_get_verifying_key!(Risc0);
     }
 
     mod sp1 {
@@ -736,6 +753,7 @@ mod test {
             BasicProgramInput::valid(),
             [Vec::new(), BasicProgramInput::invalid().serialized_input()]
         );
+        test_get_verifying_key!(SP1);
     }
 
     mod ziren {
@@ -750,6 +768,7 @@ mod test {
             BasicProgramInput::valid(),
             [Vec::new(), BasicProgramInput::invalid().serialized_input()]
         );
+        test_get_verifying_key!(Ziren);
     }
 
     mod zisk {
@@ -764,5 +783,6 @@ mod test {
             BasicProgramInput::valid().into_output_sha256(),
             [Vec::new(), BasicProgramInput::invalid().serialized_input()]
         );
+        test_get_verifying_key!(Zisk);
     }
 }

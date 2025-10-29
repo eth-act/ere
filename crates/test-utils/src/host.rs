@@ -30,11 +30,6 @@ pub fn run_zkvm_prove(zkvm: &impl zkVM, test_case: &impl TestCase) -> PublicValu
         .prove(&test_case.serialized_input(), ProofKind::default())
         .expect("prove should not fail with valid input");
 
-    // Test this here alongside verify.
-    // TOOD: should maybe check that this matches the proof input?
-    zkvm.get_verifying_key()
-        .expect("get_verifying_key should not fail");
-
     let verifier_public_values = zkvm
         .verify(&proof)
         .expect("verify should not fail with valid input");
@@ -44,6 +39,11 @@ pub fn run_zkvm_prove(zkvm: &impl zkVM, test_case: &impl TestCase) -> PublicValu
     test_case.assert_output(&verifier_public_values);
 
     verifier_public_values
+}
+
+pub fn run_zkvm_get_verifying_key(zkvm: &impl zkVM) {
+    zkvm.get_verifying_key()
+        .expect("get_verifying_key should not fail with valid zkVM");
 }
 
 /// Test case for specific [`Program`] that provides serialized

@@ -1,6 +1,6 @@
 use crate::api::{
-    self, ExecuteOk, ExecuteRequest, ExecuteResponse, ProveOk, ProveRequest, ProveResponse,
-    VerifyOk, VerifyRequest, VerifyResponse, ZkvmService,
+    self, ExecuteOk, ExecuteRequest, ExecuteResponse, GetVerifyingKeyRequest, ProveOk,
+    ProveRequest, ProveResponse, VerifyOk, VerifyRequest, VerifyResponse, ZkvmService,
     execute_response::Result as ExecuteResult, prove_response::Result as ProveResult,
     verify_response::Result as VerifyResult,
 };
@@ -90,6 +90,30 @@ impl<T: 'static + zkVM + Send + Sync> ZkvmService for zkVMServer<T> {
         Ok(Response::new(VerifyResponse {
             result: Some(result),
         }))
+    }
+
+    async fn get_verifying_key(
+        &self,
+        _request: Request<GetVerifyingKeyRequest>,
+    ) -> twirp::Result<Response<api::GetVerifyingKeyResponse>> {
+        match self.zkvm.get_verifying_key() {
+            Ok(verifying_key) => Ok(Response::new(api::GetVerifyingKeyResponse {
+                result: Some(api::get_verifying_key_response::Result::Ok(
+                    api::GetVerifyingKeyOk {
+                        verifying_key: bincode::serde::encode_to_vec(
+                            &verifying_key,
+                            bincode::config::legacy(),
+                        )
+                        .map_err(serialize_report_err)?,
+                    },
+                )),
+            })),
+            Err(err) => Ok(Response::new(api::GetVerifyingKeyResponse {
+                result: Some(api::get_verifying_key_response::Result::Err(
+                    err.to_string(),
+                )),
+            })),
+        }
     }
 }
 

@@ -221,7 +221,10 @@ mod tests {
         compiler::{Risc0Program, RustRv32imaCustomized},
     };
     use ere_test_utils::{
-        host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
+        host::{
+            TestCase, run_zkvm_execute, run_zkvm_get_verifying_key, run_zkvm_prove,
+            testing_guest_directory,
+        },
         program::basic::BasicProgramInput,
     };
     use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
@@ -275,6 +278,14 @@ mod tests {
         for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }
+    }
+
+    #[test]
+    fn test_get_verifying_key() {
+        let program = basic_program();
+        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
+
+        run_zkvm_get_verifying_key(&zkvm);
     }
 
     #[test]

@@ -213,6 +213,16 @@ mod tests {
     }
 
     #[test]
+    // Fails - unimplemented for now
+    #[should_panic]
+    fn test_get_verifying_key() {
+        let program = basic_program();
+        let zkvm = EreNexus::new(program, ProverResourceType::Cpu).unwrap();
+
+        run_zkvm_get_verifying_key(&zkvm);
+    }
+
+    #[test]
     fn test_prove_invalid_input() {
         let program = basic_program();
         let zkvm = EreNexus::new(program, ProverResourceType::Cpu).unwrap();
