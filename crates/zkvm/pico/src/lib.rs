@@ -1,14 +1,14 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 use crate::{
-    client::{MetaProof, ProverClient},
+    client::{BaseVerifyingKey, MetaProof, ProverClient},
     compiler::PicoProgram,
     error::PicoError,
 };
 use anyhow::bail;
 use ere_zkvm_interface::{
     CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM,
+    ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
 };
 use pico_p3_field::PrimeField32;
 use pico_vm::emulator::stdin::EmulatorStdinBuilder;
@@ -139,6 +139,14 @@ impl zkVM for ErePico {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
+    }
+}
+
+impl zkVMProgramDigest for ErePico {
+    type ProgramDigest = BaseVerifyingKey;
+
+    fn program_digest(&self) -> anyhow::Result<Self::ProgramDigest> {
+        Ok(self.client().vk().clone())
     }
 }
 

@@ -1,11 +1,15 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use crate::{client::AirbenderSdk, compiler::AirbenderProgram, error::AirbenderError};
+use crate::{
+    client::{AirbenderSdk, VkHashChain},
+    compiler::AirbenderProgram,
+    error::AirbenderError,
+};
 use airbender_execution_utils::ProgramProof;
 use anyhow::bail;
 use ere_zkvm_interface::{
     CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM,
+    ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
 };
 use std::time::Instant;
 
@@ -94,6 +98,14 @@ impl zkVM for EreAirbender {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
+    }
+}
+
+impl zkVMProgramDigest for EreAirbender {
+    type ProgramDigest = VkHashChain;
+
+    fn program_digest(&self) -> anyhow::Result<Self::ProgramDigest> {
+        Ok(*self.sdk.vk_chain_hash())
     }
 }
 

@@ -4,7 +4,7 @@ use crate::{compiler::OpenVMProgram, error::OpenVMError};
 use anyhow::bail;
 use ere_zkvm_interface::{
     CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM,
+    ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
 };
 use openvm_circuit::arch::instructions::exe::VmExe;
 use openvm_continuations::verifier::internal::types::VmStarkProof;
@@ -194,6 +194,14 @@ impl zkVM for EreOpenVM {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
+    }
+}
+
+impl zkVMProgramDigest for EreOpenVM {
+    type ProgramDigest = AppExecutionCommit;
+
+    fn program_digest(&self) -> anyhow::Result<Self::ProgramDigest> {
+        Ok(self.app_commit)
     }
 }
 

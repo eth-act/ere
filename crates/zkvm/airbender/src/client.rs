@@ -42,6 +42,10 @@ impl AirbenderSdk {
         }
     }
 
+    pub fn vk_chain_hash(&self) -> &VkHashChain {
+        &self.vk_hash_chain
+    }
+
     pub fn execute(&self, input: &[u8]) -> Result<(PublicValues, u64), AirbenderError> {
         let tempdir = tempdir().map_err(CommonError::tempdir)?;
 

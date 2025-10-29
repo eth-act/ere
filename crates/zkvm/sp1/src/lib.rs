@@ -4,7 +4,7 @@ use crate::{compiler::SP1Program, error::SP1Error};
 use anyhow::bail;
 use ere_zkvm_interface::{
     CommonError, NetworkProverConfig, ProgramExecutionReport, ProgramProvingReport, Proof,
-    ProofKind, ProverResourceType, PublicValues, zkVM,
+    ProofKind, ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
 };
 use sp1_sdk::{
     CpuProver, CudaProver, NetworkProver, Prover, ProverClient, SP1ProofMode,
@@ -227,6 +227,14 @@ impl zkVM for EreSP1 {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
+    }
+}
+
+impl zkVMProgramDigest for EreSP1 {
+    type ProgramDigest = SP1VerifyingKey;
+
+    fn program_digest(&self) -> anyhow::Result<Self::ProgramDigest> {
+        Ok(self.vk.clone())
     }
 }
 

@@ -11,7 +11,7 @@ use pico_vm::{
     instances::compiler::shapes::{
         recursion_shape::RecursionShapeConfig, riscv_shape::RiscvShapeConfig,
     },
-    machine::proof,
+    machine::{keys, proof},
     proverchain::{
         CombineProver, CompressProver, ConvertProver, InitialProverSetup, MachineProver,
         ProverChain, RiscvProver,
@@ -20,6 +20,7 @@ use pico_vm::{
 
 pub type SC = KoalaBearPoseidon2;
 pub type MetaProof = proof::MetaProof<SC>;
+pub type BaseVerifyingKey = keys::BaseVerifyingKey<SC>;
 
 pub struct ProverClient {
     riscv: RiscvProver<SC, Program>,
@@ -52,6 +53,10 @@ impl ProverClient {
             combine,
             compress,
         }
+    }
+
+    pub fn vk(&self) -> &BaseVerifyingKey {
+        self.riscv.vk()
     }
 
     pub fn new_stdin_builder(&self) -> EmulatorStdinBuilder<Vec<u8>, SC> {

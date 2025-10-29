@@ -4,7 +4,7 @@ use crate::{compiler::ZirenProgram, error::ZirenError};
 use anyhow::bail;
 use ere_zkvm_interface::{
     CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM,
+    ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
 };
 use std::{panic, time::Instant};
 use tracing::info;
@@ -125,6 +125,14 @@ impl zkVM for EreZiren {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
+    }
+}
+
+impl zkVMProgramDigest for EreZiren {
+    type ProgramDigest = ZKMVerifyingKey;
+
+    fn program_digest(&self) -> anyhow::Result<Self::ProgramDigest> {
+        Ok(self.vk.clone())
     }
 }
 

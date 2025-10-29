@@ -1,10 +1,13 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use crate::{compiler::MidenProgram, error::MidenError};
+use crate::{
+    compiler::{MidenProgram, MidenProgramInfo, MidenSerdeWrapper},
+    error::MidenError,
+};
 use anyhow::bail;
 use ere_zkvm_interface::{
     CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM,
+    ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
 };
 use miden_core::{
     Program,
@@ -152,6 +155,14 @@ impl zkVM for EreMiden {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
+    }
+}
+
+impl zkVMProgramDigest for EreMiden {
+    type ProgramDigest = MidenProgramInfo;
+
+    fn program_digest(&self) -> anyhow::Result<Self::ProgramDigest> {
+        Ok(MidenSerdeWrapper(self.program.clone().into()))
     }
 }
 

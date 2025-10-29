@@ -1,4 +1,7 @@
-use crate::{compiler::MidenProgram, error::CompileError};
+use crate::{
+    compiler::{MidenProgram, MidenSerdeWrapper},
+    error::CompileError,
+};
 use ere_zkvm_interface::Compiler;
 use miden_assembly::Assembler;
 use miden_stdlib::StdLibrary;
@@ -42,7 +45,7 @@ impl Compiler for MidenAsm {
             .assemble_program(&source)
             .map_err(CompileError::AssemblyCompilation)?;
 
-        Ok(MidenProgram(program))
+        Ok(MidenSerdeWrapper(program))
     }
 }
 

@@ -4,11 +4,11 @@ use crate::{compiler::Risc0Program, error::Risc0Error};
 use anyhow::bail;
 use ere_zkvm_interface::{
     CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM,
+    ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
 };
 use risc0_zkvm::{
-    DEFAULT_MAX_PO2, DefaultProver, ExecutorEnv, ExternalProver, InnerReceipt, ProverOpts, Receipt,
-    default_executor, default_prover,
+    DEFAULT_MAX_PO2, DefaultProver, Digest, ExecutorEnv, ExternalProver, InnerReceipt, ProverOpts,
+    Receipt, default_executor, default_prover,
 };
 use std::{env, ops::RangeInclusive, rc::Rc, time::Instant};
 
@@ -206,6 +206,14 @@ impl zkVM for EreRisc0 {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
+    }
+}
+
+impl zkVMProgramDigest for EreRisc0 {
+    type ProgramDigest = Digest;
+
+    fn program_digest(&self) -> anyhow::Result<Self::ProgramDigest> {
+        Ok(self.program.image_id)
     }
 }
 

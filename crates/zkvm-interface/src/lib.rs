@@ -1,5 +1,6 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 #![allow(clippy::double_parens)]
+#![allow(non_camel_case_types)]
 
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::path::Path;
@@ -91,7 +92,6 @@ impl Proof {
     }
 }
 
-#[allow(non_camel_case_types)]
 #[auto_impl::auto_impl(&, Arc, Box)]
 /// zkVM trait to abstract away the differences between each zkVM.
 ///
@@ -123,4 +123,12 @@ pub trait zkVM {
 
     /// Returns the version of the zkVM SDK (e.g. 0.1.0)
     fn sdk_version(&self) -> &'static str;
+}
+
+pub trait zkVMProgramDigest {
+    /// Digest of specific compiled guest program used when verify a proof.
+    type ProgramDigest: Clone + Serialize + DeserializeOwned;
+
+    /// Returns [`zkVMProgramDigest::ProgramDigest`].
+    fn program_digest(&self) -> anyhow::Result<Self::ProgramDigest>;
 }

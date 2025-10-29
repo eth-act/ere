@@ -220,7 +220,7 @@ impl ZiskSdk {
     ///
     /// If it is not setup yet, it makes sure the global setup is done, then
     /// does ROM setup of the ELF and stores the ROM digest for later usage.
-    fn rom_digest(&self) -> Result<RomDigest, ZiskError> {
+    pub fn rom_digest(&self) -> Result<RomDigest, ZiskError> {
         // FIXME: Use `get_or_try_init` when it is stabilized
         let mut result = Ok(());
         let rom_digest = *self.rom_digest.get_or_init(|| {

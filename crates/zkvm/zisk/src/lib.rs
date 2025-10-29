@@ -1,14 +1,14 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 use crate::{
-    client::{ZiskOptions, ZiskSdk, ZiskServer},
+    client::{RomDigest, ZiskOptions, ZiskSdk, ZiskServer},
     compiler::ZiskProgram,
     error::ZiskError,
 };
 use anyhow::bail;
 use ere_zkvm_interface::{
     CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM,
+    ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
 };
 use std::{
     sync::{Mutex, MutexGuard},
@@ -122,6 +122,14 @@ impl zkVM for EreZisk {
 
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
+    }
+}
+
+impl zkVMProgramDigest for EreZisk {
+    type ProgramDigest = RomDigest;
+
+    fn program_digest(&self) -> anyhow::Result<Self::ProgramDigest> {
+        Ok(self.sdk.rom_digest()?)
     }
 }
 
