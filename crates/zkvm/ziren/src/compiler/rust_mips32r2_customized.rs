@@ -1,6 +1,6 @@
-use crate::{compiler::ZirenProgram, error::CompileError};
+use crate::{compiler::Error, program::ZirenProgram};
 use ere_compile_utils::{CommonError, cargo_metadata, rustc_path};
-use ere_zkvm_interface::Compiler;
+use ere_zkvm_interface::compiler::Compiler;
 use std::{fs, path::Path, process::Command};
 
 const ZKM_TOOLCHAIN: &str = "zkm";
@@ -10,7 +10,7 @@ const ZKM_TOOLCHAIN: &str = "zkm";
 pub struct RustMips32r2Customized;
 
 impl Compiler for RustMips32r2Customized {
-    type Error = CompileError;
+    type Error = Error;
 
     type Program = ZirenProgram;
 
@@ -47,7 +47,7 @@ impl Compiler for RustMips32r2Customized {
         let elf =
             fs::read(&elf_path).map_err(|err| CommonError::read_file("elf", &elf_path, err))?;
 
-        Ok(elf)
+        Ok(ZirenProgram { elf })
     }
 }
 
@@ -55,12 +55,12 @@ impl Compiler for RustMips32r2Customized {
 mod tests {
     use crate::compiler::RustMips32r2Customized;
     use ere_test_utils::host::testing_guest_directory;
-    use ere_zkvm_interface::Compiler;
+    use ere_zkvm_interface::compiler::Compiler;
 
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("ziren", "basic");
-        let elf_bytes = RustMips32r2Customized.compile(&guest_directory).unwrap();
-        assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
+        let program = RustMips32r2Customized.compile(&guest_directory).unwrap();
+        assert!(!program.elf().is_empty(), "ELF bytes should not be empty.");
     }
 }
