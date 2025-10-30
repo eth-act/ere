@@ -1,17 +1,11 @@
-use crate::client::VkHashChain;
-use ere_compile_utils::CommonError;
+use crate::zkvm::sdk::VkHashChain;
+use ere_zkvm_interface::zkvm::CommonError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum CompileError {
+pub enum Error {
     #[error(transparent)]
     CommonError(#[from] CommonError),
-}
-
-#[derive(Debug, Error)]
-pub enum AirbenderError {
-    #[error(transparent)]
-    CommonError(#[from] ere_zkvm_interface::CommonError),
 
     // Execution
     #[error("Failed to parse public value from stdout: {0}")]

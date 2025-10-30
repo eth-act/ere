@@ -1,6 +1,6 @@
-use crate::{compiler::AirbenderProgram, error::CompileError};
+use crate::{compiler::Error, program::AirbenderProgram};
 use ere_compile_utils::{CargoBuildCmd, CommonError};
-use ere_zkvm_interface::Compiler;
+use ere_zkvm_interface::compiler::Compiler;
 use std::{
     env,
     io::Write,
@@ -35,7 +35,7 @@ const LINKER_SCRIPT: &str = concat!(
 pub struct RustRv32ima;
 
 impl Compiler for RustRv32ima {
-    type Error = CompileError;
+    type Error = Error;
 
     type Program = AirbenderProgram;
 
@@ -48,11 +48,11 @@ impl Compiler for RustRv32ima {
             .rustflags(RUSTFLAGS)
             .exec(guest_directory, TARGET_TRIPLE)?;
         let bin = objcopy_binary(&elf)?;
-        Ok(bin)
+        Ok(AirbenderProgram { bin })
     }
 }
 
-fn objcopy_binary(elf: &[u8]) -> Result<Vec<u8>, CompileError> {
+fn objcopy_binary(elf: &[u8]) -> Result<Vec<u8>, Error> {
     let mut cmd = Command::new("rust-objcopy");
     let mut child = cmd
         .args(["-O", "binary", "-", "-"])
@@ -88,12 +88,12 @@ fn objcopy_binary(elf: &[u8]) -> Result<Vec<u8>, CompileError> {
 mod tests {
     use crate::compiler::RustRv32ima;
     use ere_test_utils::host::testing_guest_directory;
-    use ere_zkvm_interface::Compiler;
+    use ere_zkvm_interface::compiler::Compiler;
 
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("airbender", "basic");
-        let bin = RustRv32ima.compile(&guest_directory).unwrap();
-        assert!(!bin.is_empty(), "Binary should not be empty.");
+        let program = RustRv32ima.compile(&guest_directory).unwrap();
+        assert!(!program.bin.is_empty(), "Binary should not be empty.");
     }
 }

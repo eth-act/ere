@@ -1,9 +1,9 @@
-use crate::error::AirbenderError;
+use crate::zkvm::error::Error;
 use airbender_execution_utils::{
     Machine, ProgramProof, compute_chain_encoding, generate_params_for_binary,
     universal_circuit_verifier_vk, verify_recursion_log_23_layer,
 };
-use ere_zkvm_interface::{CommonError, PublicValues};
+use ere_zkvm_interface::zkvm::{CommonError, PublicValues};
 use std::{array, fs, io::BufRead, iter, process::Command};
 use tempfile::tempdir;
 
@@ -46,7 +46,7 @@ impl AirbenderSdk {
         &self.vk_hash_chain
     }
 
-    pub fn execute(&self, input: &[u8]) -> Result<(PublicValues, u64), AirbenderError> {
+    pub fn execute(&self, input: &[u8]) -> Result<(PublicValues, u64), Error> {
         let tempdir = tempdir().map_err(CommonError::tempdir)?;
 
         let bin_path = tempdir.path().join("guest.bin");
@@ -92,9 +92,7 @@ impl AirbenderSdk {
                 Some(bytes)
             })
             .ok_or_else(|| {
-                AirbenderError::ParsePublicValue(
-                    String::from_utf8_lossy(&output.stdout).to_string(),
-                )
+                Error::ParsePublicValue(String::from_utf8_lossy(&output.stdout).to_string())
             })?;
 
         // Parse cycles from stdout in format of:
@@ -109,13 +107,13 @@ impl AirbenderSdk {
                 cycle.parse().ok()
             })
             .ok_or_else(|| {
-                AirbenderError::ParseCycles(String::from_utf8_lossy(&output.stdout).to_string())
+                Error::ParseCycles(String::from_utf8_lossy(&output.stdout).to_string())
             })?;
 
         Ok((public_values, cycles))
     }
 
-    pub fn prove(&self, input: &[u8]) -> Result<(PublicValues, ProgramProof), AirbenderError> {
+    pub fn prove(&self, input: &[u8]) -> Result<(PublicValues, ProgramProof), Error> {
         let tempdir = tempdir().map_err(CommonError::tempdir)?;
 
         let bin_path = tempdir.path().join("guest.bin");
@@ -189,7 +187,7 @@ impl AirbenderSdk {
         let (public_values, vk_hash_chain) = extract_public_values_and_vk_hash_chain(&proof)?;
 
         if self.vk_hash_chain != vk_hash_chain {
-            return Err(AirbenderError::UnexpectedVkHashChain {
+            return Err(Error::UnexpectedVkHashChain {
                 preprocessed: self.vk_hash_chain,
                 proved: vk_hash_chain,
             });
@@ -198,16 +196,16 @@ impl AirbenderSdk {
         Ok((public_values, proof))
     }
 
-    pub fn verify(&self, proof: &ProgramProof) -> Result<PublicValues, AirbenderError> {
+    pub fn verify(&self, proof: &ProgramProof) -> Result<PublicValues, Error> {
         let is_valid = verify_recursion_log_23_layer(proof);
         if !is_valid {
-            return Err(AirbenderError::ProofVerificationFailed);
+            return Err(Error::ProofVerificationFailed);
         }
 
         let (public_values, vk_hash_chain) = extract_public_values_and_vk_hash_chain(proof)?;
 
         if self.vk_hash_chain != vk_hash_chain {
-            return Err(AirbenderError::UnexpectedVkHashChain {
+            return Err(Error::UnexpectedVkHashChain {
                 preprocessed: self.vk_hash_chain,
                 proved: vk_hash_chain,
             });
@@ -232,9 +230,9 @@ fn encode_input(input: &[u8]) -> String {
 // Extract public values and VK hash chain from register values.
 fn extract_public_values_and_vk_hash_chain(
     proof: &ProgramProof,
-) -> Result<(PublicValues, VkHashChain), AirbenderError> {
+) -> Result<(PublicValues, VkHashChain), Error> {
     if proof.register_final_values.len() != 32 {
-        return Err(AirbenderError::InvalidRegisterCount(
+        return Err(Error::InvalidRegisterCount(
             proof.register_final_values.len(),
         ));
     }
