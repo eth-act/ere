@@ -27,7 +27,10 @@
 //! ```rust,no_run
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! use ere_dockerized::{EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM};
-//! use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
+//! use ere_zkvm_interface::{
+//!     compiler::Compiler,
+//!     zkvm::{ProofKind, ProverResourceType, zkVM},
+//! };
 //! use std::path::Path;
 //!
 //! // The zkVM we plan to use
@@ -65,12 +68,14 @@
 use crate::{
     cuda::cuda_arch,
     docker::{DockerBuildCmd, DockerRunCmd, docker_image_exists, stop_docker_container},
-    error::DockerizedError,
 };
 use ere_server::client::{Url, zkVMClient};
 use ere_zkvm_interface::{
-    Compiler, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
-    PublicValues, zkVM,
+    compiler::Compiler,
+    zkvm::{
+        ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
+        PublicValues, zkVM,
+    },
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -83,12 +88,14 @@ use std::{
 use tempfile::TempDir;
 use tracing::error;
 
+mod cuda;
+mod docker;
+mod error;
+
+pub use error::Error;
+
 include!(concat!(env!("OUT_DIR"), "/crate_version.rs"));
 include!(concat!(env!("OUT_DIR"), "/zkvm_sdk_version_impl.rs"));
-
-pub mod cuda;
-pub mod docker;
-pub mod error;
 
 /// Offset of port used for `ere-server` for [`ErezkVM`]s.
 const ERE_SERVER_PORT_OFFSET: u16 = 4174;
@@ -163,7 +170,7 @@ impl ErezkVM {
     ///
     /// Images are cached and only rebuilt if they don't exist or if the
     /// `ERE_FORCE_REBUILD_DOCKER_IMAGE` environment variable is set.
-    pub fn build_docker_image(&self, gpu: bool) -> Result<(), DockerizedError> {
+    pub fn build_docker_image(&self, gpu: bool) -> Result<(), Error> {
         let workspace_dir = workspace_dir();
         let docker_dir = workspace_dir.join("docker");
 
@@ -180,8 +187,7 @@ impl ErezkVM {
                 cmd = cmd.build_arg("CUDA", "1");
             }
 
-            cmd.exec(&workspace_dir)
-                .map_err(DockerizedError::DockerBuildCmd)?;
+            cmd.exec(&workspace_dir).map_err(Error::DockerBuildCmd)?;
         }
 
         // Build `ere-base-{zkvm}`
@@ -206,8 +212,7 @@ impl ErezkVM {
                 }
             }
 
-            cmd.exec(&workspace_dir)
-                .map_err(DockerizedError::DockerBuildCmd)?;
+            cmd.exec(&workspace_dir).map_err(Error::DockerBuildCmd)?;
         }
 
         // Build `ere-compiler-{zkvm}`
@@ -218,7 +223,7 @@ impl ErezkVM {
                 .tag(self.compiler_zkvm_image("latest"))
                 .build_arg("BASE_ZKVM_IMAGE", self.base_zkvm_image(CRATE_VERSION, gpu))
                 .exec(&workspace_dir)
-                .map_err(DockerizedError::DockerBuildCmd)?;
+                .map_err(Error::DockerBuildCmd)?;
         }
 
         // Build `ere-server-{zkvm}`
@@ -233,8 +238,7 @@ impl ErezkVM {
                 cmd = cmd.build_arg("CUDA", "1");
             }
 
-            cmd.exec(&workspace_dir)
-                .map_err(DockerizedError::DockerBuildCmd)?;
+            cmd.exec(&workspace_dir).map_err(Error::DockerBuildCmd)?;
         }
 
         Ok(())
@@ -248,7 +252,7 @@ impl ErezkVM {
         &self,
         program: &SerializedProgram,
         resource: &ProverResourceType,
-    ) -> Result<ServerContainer, DockerizedError> {
+    ) -> Result<ServerContainer, Error> {
         let port = self.server_port().to_string();
         let name = format!("ere-server-{self}-{port}");
         let gpu = matches!(resource, ProverResourceType::Gpu);
@@ -296,8 +300,8 @@ impl ErezkVM {
             }
         }
 
-        let tempdir = TempDir::new()
-            .map_err(|err| DockerizedError::io(err, "Failed to create temporary directory"))?;
+        let tempdir =
+            TempDir::new().map_err(|err| Error::io(err, "Failed to create temporary directory"))?;
 
         // zkVM specific options needed for proving Groth16 proof.
         cmd = match self {
@@ -327,8 +331,7 @@ impl ErezkVM {
         let args = iter::empty()
             .chain(["--port", &port])
             .chain(resource.to_args());
-        cmd.spawn(args, &program.0)
-            .map_err(DockerizedError::DockerRunCmd)?;
+        cmd.spawn(args, &program.0).map_err(Error::DockerRunCmd)?;
 
         Ok(ServerContainer { name, tempdir })
     }
@@ -366,7 +369,7 @@ pub struct EreDockerizedCompiler {
 }
 
 impl EreDockerizedCompiler {
-    pub fn new(zkvm: ErezkVM, mount_directory: impl AsRef<Path>) -> Result<Self, DockerizedError> {
+    pub fn new(zkvm: ErezkVM, mount_directory: impl AsRef<Path>) -> Result<Self, Error> {
         zkvm.build_docker_image(false)?;
         Ok(Self {
             zkvm,
@@ -384,20 +387,20 @@ impl EreDockerizedCompiler {
 pub struct SerializedProgram(Vec<u8>);
 
 impl Compiler for EreDockerizedCompiler {
-    type Error = DockerizedError;
+    type Error = Error;
     type Program = SerializedProgram;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
         let guest_relative_path = guest_directory
             .strip_prefix(&self.mount_directory)
-            .map_err(|_| DockerizedError::GuestNotInMountingDirecty {
+            .map_err(|_| Error::GuestNotInMountingDirecty {
                 mounting_directory: self.mount_directory.to_path_buf(),
                 guest_directory: guest_directory.to_path_buf(),
             })?;
         let guest_path_in_docker = PathBuf::from("/guest").join(guest_relative_path);
 
-        let tempdir = TempDir::new()
-            .map_err(|err| DockerizedError::io(err, "Failed to create temporary directory"))?;
+        let tempdir =
+            TempDir::new().map_err(|err| Error::io(err, "Failed to create temporary directory"))?;
 
         let mut cmd = DockerRunCmd::new(self.zkvm.compiler_zkvm_image(CRATE_VERSION))
             .rm()
@@ -419,11 +422,11 @@ impl Compiler for EreDockerizedCompiler {
             "--output-path",
             "/output/program",
         ])
-        .map_err(DockerizedError::DockerRunCmd)?;
+        .map_err(Error::DockerRunCmd)?;
 
         let program_path = tempdir.path().join("program");
         let program = fs::read(&program_path).map_err(|err| {
-            DockerizedError::io(
+            Error::io(
                 err,
                 format!(
                     "Failed to read compiled program at {}",
@@ -463,7 +466,7 @@ impl EreDockerizedzkVM {
         zkvm: ErezkVM,
         program: SerializedProgram,
         resource: ProverResourceType,
-    ) -> Result<Self, DockerizedError> {
+    ) -> Result<Self, Error> {
         zkvm.build_docker_image(matches!(resource, ProverResourceType::Gpu))?;
 
         let server_container = zkvm.spawn_server(&program, &resource)?;
@@ -496,7 +499,7 @@ impl EreDockerizedzkVM {
 impl zkVM for EreDockerizedzkVM {
     fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         let (public_values, report) =
-            block_on(self.client.execute(input.to_vec())).map_err(DockerizedError::from)?;
+            block_on(self.client.execute(input.to_vec())).map_err(Error::from)?;
 
         Ok((public_values, report))
     }
@@ -507,14 +510,13 @@ impl zkVM for EreDockerizedzkVM {
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         let (public_values, proof, report) =
-            block_on(self.client.prove(input.to_vec(), proof_kind))
-                .map_err(DockerizedError::from)?;
+            block_on(self.client.prove(input.to_vec(), proof_kind)).map_err(Error::from)?;
 
         Ok((public_values, proof, report))
     }
 
     fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
-        let public_values = block_on(self.client.verify(proof)).map_err(DockerizedError::from)?;
+        let public_values = block_on(self.client.verify(proof)).map_err(Error::from)?;
 
         Ok(public_values)
     }
@@ -550,11 +552,13 @@ fn home_dir() -> PathBuf {
 #[cfg(test)]
 mod test {
     use crate::{
-        DockerizedError, EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM, SerializedProgram,
-        workspace_dir,
+        EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM, Error, SerializedProgram, workspace_dir,
     };
     use ere_test_utils::{host::*, program::basic::BasicProgramInput};
-    use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
+    use ere_zkvm_interface::{
+        compiler::Compiler,
+        zkvm::{ProofKind, ProverResourceType, zkVM},
+    };
     use std::sync::{Mutex, MutexGuard, OnceLock};
 
     macro_rules! test_compile {
@@ -604,10 +608,7 @@ mod test {
                 // Invalid test cases
                 for input in $invalid_test_cases {
                     let err = zkvm.execute(&input).unwrap_err();
-                    assert!(matches!(
-                        err.downcast::<DockerizedError>().unwrap(),
-                        DockerizedError::zkVM(_)
-                    ),);
+                    assert!(matches!(err.downcast::<Error>().unwrap(), Error::zkVM(_)),);
                 }
 
                 drop(zkvm);
@@ -627,10 +628,7 @@ mod test {
                 // Invalid test cases
                 for input in $invalid_test_cases {
                     let err = zkvm.prove(&input, ProofKind::default()).unwrap_err();
-                    assert!(matches!(
-                        err.downcast::<DockerizedError>().unwrap(),
-                        DockerizedError::zkVM(_)
-                    ),);
+                    assert!(matches!(err.downcast::<Error>().unwrap(), Error::zkVM(_)),);
                 }
 
                 drop(zkvm);

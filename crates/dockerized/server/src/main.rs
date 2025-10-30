@@ -1,7 +1,7 @@
 use anyhow::{Context, Error};
 use clap::Parser;
 use ere_server::server::{router, zkVMServer};
-use ere_zkvm_interface::{ProverResourceType, zkVM};
+use ere_zkvm_interface::zkvm::{ProverResourceType, zkVM};
 use std::{
     io::{self, Read},
     net::{Ipv4Addr, SocketAddr},
@@ -113,34 +113,34 @@ fn construct_zkvm(program: Vec<u8>, resource: ProverResourceType) -> Result<impl
         .with_context(|| "Failed to deserialize program")?;
 
     #[cfg(feature = "airbender")]
-    let zkvm = ere_airbender::EreAirbender::new(program, resource);
+    let zkvm = ere_airbender::zkvm::EreAirbender::new(program, resource);
 
     #[cfg(feature = "jolt")]
-    let zkvm = ere_jolt::EreJolt::new(program, resource);
+    let zkvm = ere_jolt::zkvm::EreJolt::new(program, resource);
 
     #[cfg(feature = "miden")]
-    let zkvm = ere_miden::EreMiden::new(program, resource);
+    let zkvm = ere_miden::zkvm::EreMiden::new(program, resource);
 
     #[cfg(feature = "nexus")]
-    let zkvm = ere_nexus::EreNexus::new(program, resource);
+    let zkvm = ere_nexus::zkvm::EreNexus::new(program, resource);
 
     #[cfg(feature = "openvm")]
-    let zkvm = ere_openvm::EreOpenVM::new(program, resource);
+    let zkvm = ere_openvm::zkvm::EreOpenVM::new(program, resource);
 
     #[cfg(feature = "pico")]
-    let zkvm = ere_pico::ErePico::new(program, resource);
+    let zkvm = ere_pico::zkvm::ErePico::new(program, resource);
 
     #[cfg(feature = "risc0")]
-    let zkvm = ere_risc0::EreRisc0::new(program, resource);
+    let zkvm = ere_risc0::zkvm::EreRisc0::new(program, resource);
 
     #[cfg(feature = "sp1")]
-    let zkvm = ere_sp1::EreSP1::new(program, resource);
+    let zkvm = ere_sp1::zkvm::EreSP1::new(program, resource);
 
     #[cfg(feature = "ziren")]
-    let zkvm = ere_ziren::EreZiren::new(program, resource);
+    let zkvm = ere_ziren::zkvm::EreZiren::new(program, resource);
 
     #[cfg(feature = "zisk")]
-    let zkvm = ere_zisk::EreZisk::new(program, resource);
+    let zkvm = ere_zisk::zkvm::EreZisk::new(program, resource);
 
     zkvm.with_context(|| "Failed to instantiate zkVM")
 }

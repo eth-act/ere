@@ -3,7 +3,7 @@ use crate::api::{
     execute_response::Result as ExecuteResult, prove_response::Result as ProveResult,
     verify_response::Result as VerifyResult,
 };
-use ere_zkvm_interface::{
+use ere_zkvm_interface::zkvm::{
     ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, PublicValues,
 };
 use std::time::{Duration, Instant};
@@ -15,7 +15,7 @@ pub use twirp::{TwirpErrorResponse, url::Url};
 
 #[derive(Debug, Error)]
 #[allow(non_camel_case_types)]
-pub enum zkVMClientError {
+pub enum Error {
     #[error("zkVM method error: {0}")]
     zkVM(String),
     #[error("Connection to zkVM server timeout after 5 minutes")]
@@ -31,7 +31,7 @@ pub struct zkVMClient {
 }
 
 impl zkVMClient {
-    pub async fn new(url: Url) -> Result<Self, zkVMClientError> {
+    pub async fn new(url: Url) -> Result<Self, Error> {
         const TIMEOUT: Duration = Duration::from_secs(300); // 5mins
         const INTERVAL: Duration = Duration::from_millis(500);
 
@@ -40,7 +40,7 @@ impl zkVMClient {
         let start = Instant::now();
         loop {
             if start.elapsed() > TIMEOUT {
-                return Err(zkVMClientError::ConnectionTimeout);
+                return Err(Error::ConnectionTimeout);
             }
 
             match http_client.get(url.join("health").unwrap()).send().await {
@@ -57,7 +57,7 @@ impl zkVMClient {
     pub async fn execute(
         &self,
         input: Vec<u8>,
-    ) -> Result<(PublicValues, ProgramExecutionReport), zkVMClientError> {
+    ) -> Result<(PublicValues, ProgramExecutionReport), Error> {
         let request = Request::new(ExecuteRequest { input });
 
         let response = self.client.execute(request).await?;
@@ -69,7 +69,7 @@ impl zkVMClient {
                     .map_err(deserialize_report_err)?
                     .0,
             )),
-            ExecuteResult::Err(err) => Err(zkVMClientError::zkVM(err)),
+            ExecuteResult::Err(err) => Err(Error::zkVM(err)),
         }
     }
 
@@ -77,7 +77,7 @@ impl zkVMClient {
         &self,
         input: Vec<u8>,
         proof_kind: ProofKind,
-    ) -> Result<(PublicValues, Proof, ProgramProvingReport), zkVMClientError> {
+    ) -> Result<(PublicValues, Proof, ProgramProvingReport), Error> {
         let request = Request::new(ProveRequest {
             input,
             proof_kind: proof_kind as i32,
@@ -93,11 +93,11 @@ impl zkVMClient {
                     .map_err(deserialize_report_err)?
                     .0,
             )),
-            ProveResult::Err(err) => Err(zkVMClientError::zkVM(err)),
+            ProveResult::Err(err) => Err(Error::zkVM(err)),
         }
     }
 
-    pub async fn verify(&self, proof: &Proof) -> Result<PublicValues, zkVMClientError> {
+    pub async fn verify(&self, proof: &Proof) -> Result<PublicValues, Error> {
         let request = Request::new(VerifyRequest {
             proof: proof.as_bytes().to_vec(),
             proof_kind: proof.kind() as i32,
@@ -107,7 +107,7 @@ impl zkVMClient {
 
         match response.into_body().result.ok_or_else(result_none_err)? {
             VerifyResult::Ok(result) => Ok(result.public_values),
-            VerifyResult::Err(err) => Err(zkVMClientError::zkVM(err)),
+            VerifyResult::Err(err) => Err(Error::zkVM(err)),
         }
     }
 }

@@ -21,16 +21,16 @@ tracing = { workspace = true, optional = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"], optional = true }
 
 # Local dependencies
-ere-airbender = { workspace = true, optional = true }
-ere-jolt = { workspace = true, optional = true }
-ere-miden = { workspace = true, optional = true }
-ere-nexus = { workspace = true, optional = true }
-ere-openvm = { workspace = true, optional = true }
-ere-pico = { workspace = true, optional = true }
-ere-risc0 = { workspace = true, optional = true }
-ere-sp1 = { workspace = true, optional = true }
-ere-ziren = { workspace = true, optional = true }
-ere-zisk = { workspace = true, optional = true }
+ere-airbender = { workspace = true, features = ["zkvm"], optional = true }
+ere-jolt = { workspace = true, features = ["zkvm"], optional = true }
+ere-miden = { workspace = true, features = ["zkvm"], optional = true }
+ere-nexus = { workspace = true, features = ["zkvm"], optional = true }
+ere-openvm = { workspace = true, features = ["zkvm"], optional = true }
+ere-pico = { workspace = true, features = ["zkvm"], optional = true }
+ere-risc0 = { workspace = true, features = ["zkvm"], optional = true }
+ere-sp1 = { workspace = true, features = ["zkvm"], optional = true }
+ere-ziren = { workspace = true, features = ["zkvm"], optional = true }
+ere-zisk = { workspace = true, features = ["zkvm"], optional = true }
 ere-zkvm-interface = { workspace = true, features = ["clap"] }
 
 [dev-dependencies]

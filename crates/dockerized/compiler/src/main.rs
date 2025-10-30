@@ -1,6 +1,6 @@
 use anyhow::{Context, Error};
 use clap::Parser;
-use ere_zkvm_interface::Compiler;
+use ere_zkvm_interface::compiler::Compiler;
 use serde::Serialize;
 use std::{env, fs::File, path::PathBuf};
 use tracing_subscriber::EnvFilter;

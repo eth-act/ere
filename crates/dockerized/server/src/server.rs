@@ -4,7 +4,7 @@ use crate::api::{
     execute_response::Result as ExecuteResult, prove_response::Result as ProveResult,
     verify_response::Result as VerifyResult,
 };
-use ere_zkvm_interface::{Proof, ProofKind, zkVM};
+use ere_zkvm_interface::zkvm::{Proof, ProofKind, zkVM};
 use twirp::{
     Request, Response, TwirpErrorResponse, async_trait::async_trait, internal, invalid_argument,
 };

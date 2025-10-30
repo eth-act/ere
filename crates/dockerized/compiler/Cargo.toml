@@ -13,16 +13,16 @@ serde.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 # Local dependencies
-ere-airbender = { workspace = true, optional = true }
-ere-jolt = { workspace = true, optional = true }
-ere-miden = { workspace = true, optional = true }
-ere-nexus = { workspace = true, optional = true }
-ere-openvm = { workspace = true, optional = true }
-ere-pico = { workspace = true, optional = true }
-ere-risc0 = { workspace = true, optional = true }
-ere-sp1 = { workspace = true, optional = true }
-ere-ziren = { workspace = true, optional = true }
-ere-zisk = { workspace = true, optional = true }
+ere-airbender = { workspace = true, features = ["compiler"], optional = true }
+ere-jolt = { workspace = true, features = ["compiler"], optional = true }
+ere-miden = { workspace = true, features = ["compiler"], optional = true }
+ere-nexus = { workspace = true, features = ["compiler"], optional = true }
+ere-openvm = { workspace = true, features = ["compiler"], optional = true }
+ere-pico = { workspace = true, features = ["compiler"], optional = true }
+ere-risc0 = { workspace = true, features = ["compiler"], optional = true }
+ere-sp1 = { workspace = true, features = ["compiler"], optional = true }
+ere-ziren = { workspace = true, features = ["compiler"], optional = true }
+ere-zisk = { workspace = true, features = ["compiler"], optional = true }
 ere-zkvm-interface.workspace = true
 
 [dev-dependencies]

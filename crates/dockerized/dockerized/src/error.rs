@@ -1,20 +1,20 @@
-use ere_server::client::{TwirpErrorResponse, zkVMClientError};
+use ere_server::client::{self, TwirpErrorResponse};
 use std::{io, path::PathBuf};
 use thiserror::Error;
 
-impl From<zkVMClientError> for DockerizedError {
-    fn from(value: zkVMClientError) -> Self {
+impl From<client::Error> for Error {
+    fn from(value: client::Error) -> Self {
         match value {
-            zkVMClientError::zkVM(err) => DockerizedError::zkVM(err),
-            zkVMClientError::ConnectionTimeout => DockerizedError::ConnectionTimeout,
-            zkVMClientError::Rpc(err) => DockerizedError::Rpc(err),
+            client::Error::zkVM(err) => Self::zkVM(err),
+            client::Error::ConnectionTimeout => Self::ConnectionTimeout,
+            client::Error::Rpc(err) => Self::Rpc(err),
         }
     }
 }
 
 #[derive(Debug, Error)]
 #[allow(non_camel_case_types)]
-pub enum DockerizedError {
+pub enum Error {
     #[error(
         "Guest directory must be in mounting directory, mounting_directory: {mounting_directory}, guest_directory: {guest_directory}"
     )]
@@ -44,7 +44,7 @@ pub enum DockerizedError {
     Rpc(TwirpErrorResponse),
 }
 
-impl DockerizedError {
+impl Error {
     pub fn io(source: io::Error, context: impl ToString) -> Self {
         Self::Io {
             source,
