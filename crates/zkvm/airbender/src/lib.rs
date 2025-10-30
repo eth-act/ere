@@ -1,4 +1,7 @@
-#![cfg_attr(not(test), warn(unused_crate_dependencies))]
+#![cfg_attr(
+    all(not(test), feature = "compiler", feature = "zkvm"),
+    warn(unused_crate_dependencies)
+)]
 
 pub mod program;
 

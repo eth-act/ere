@@ -16,11 +16,10 @@ thiserror.workspace = true
 tracing.workspace = true
 
 # Local dependencies
-ere-compile-utils.workspace = true
+ere-compile-utils = { workspace = true, optional = true }
 ere-zkvm-interface.workspace = true
 
 [dev-dependencies]
-# Local dependencies
 ere-test-utils = { workspace = true, features = ["host"] }
 
 [build-dependencies]
@@ -28,7 +27,7 @@ ere-build-utils.workspace = true
 
 [features]
 default = ["compiler", "zkvm"]
-compiler = []
+compiler = ["dep:ere-compile-utils"]
 zkvm = []
 
 [lints]

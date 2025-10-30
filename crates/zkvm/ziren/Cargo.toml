@@ -16,7 +16,7 @@ tracing.workspace = true
 zkm-sdk = { workspace = true, optional = true }
 
 # Local dependencies
-ere-compile-utils.workspace = true
+ere-compile-utils = { workspace = true, optional = true }
 ere-zkvm-interface.workspace = true
 
 [dev-dependencies]
@@ -27,7 +27,7 @@ ere-build-utils.workspace = true
 
 [features]
 default = ["compiler", "zkvm"]
-compiler = []
+compiler = ["dep:ere-compile-utils"]
 zkvm = ["dep:zkm-sdk"]
 
 [lints]

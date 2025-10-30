@@ -19,7 +19,7 @@ risc0-zkvm = { workspace = true, features = ["client", "unstable"], optional = t
 risc0-binfmt.workspace = true
 
 # Local dependencies
-ere-compile-utils.workspace = true
+ere-compile-utils = { workspace = true, optional = true }
 ere-zkvm-interface.workspace = true
 
 [dev-dependencies]
@@ -31,7 +31,7 @@ ere-build-utils.workspace = true
 
 [features]
 default = ["compiler", "zkvm"]
-compiler = []
+compiler = ["dep:ere-compile-utils"]
 zkvm = ["dep:risc0-zkvm"]
 metal = ["risc0-zkvm/metal"]
 
