@@ -1,6 +1,6 @@
-use crate::{compiler::JoltProgram, error::CompileError};
+use crate::{compiler::Error, program::JoltProgram};
 use ere_compile_utils::CargoBuildCmd;
-use ere_zkvm_interface::Compiler;
+use ere_zkvm_interface::compiler::Compiler;
 use jolt_common::constants::{
     DEFAULT_MEMORY_SIZE, DEFAULT_STACK_SIZE, EMULATOR_MEMORY_CAPACITY, STACK_CANARY_SIZE,
 };
@@ -41,7 +41,7 @@ fn make_linker_script() -> String {
 pub struct RustRv64imac;
 
 impl Compiler for RustRv64imac {
-    type Error = CompileError;
+    type Error = Error;
 
     type Program = JoltProgram;
 
@@ -53,21 +53,24 @@ impl Compiler for RustRv64imac {
             .build_options(CARGO_BUILD_OPTIONS)
             .rustflags(RUSTFLAGS)
             .exec(guest_directory, TARGET_TRIPLE)?;
-        Ok(elf)
+        Ok(JoltProgram { elf })
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{EreJolt, compiler::RustRv64imac};
+    use crate::{compiler::RustRv64imac, zkvm::EreJolt};
     use ere_test_utils::host::testing_guest_directory;
-    use ere_zkvm_interface::{Compiler, ProverResourceType, zkVM};
+    use ere_zkvm_interface::{
+        compiler::Compiler,
+        zkvm::{ProverResourceType, zkVM},
+    };
 
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("jolt", "stock_nightly_no_std");
-        let elf = RustRv64imac.compile(&guest_directory).unwrap();
-        assert!(!elf.is_empty(), "ELF bytes should not be empty.");
+        let program = RustRv64imac.compile(&guest_directory).unwrap();
+        assert!(!program.elf().is_empty(), "ELF bytes should not be empty.");
     }
 
     #[test]

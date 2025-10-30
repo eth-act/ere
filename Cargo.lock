@@ -3821,6 +3821,7 @@ dependencies = [
  "ere-zkvm-interface",
  "jolt-core",
  "jolt-sdk",
+ "serde",
  "tempfile",
  "thiserror 2.0.12",
 ]

@@ -1,7 +1,7 @@
-use crate::{compiler::JoltProgram, error::CompileError};
+use crate::{compiler::Error, program::JoltProgram};
 use ere_compile_utils::{CommonError, cargo_metadata};
-use ere_zkvm_interface::Compiler;
-use jolt_sdk::host::Program;
+use ere_zkvm_interface::compiler::Compiler;
+use jolt_core::host::Program;
 use std::{env::set_current_dir, fs, path::Path};
 use tempfile::tempdir;
 
@@ -10,13 +10,13 @@ use tempfile::tempdir;
 pub struct RustRv64imacCustomized;
 
 impl Compiler for RustRv64imacCustomized {
-    type Error = CompileError;
+    type Error = Error;
 
     type Program = JoltProgram;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
         // Change current directory for `Program::build` to build guest program.
-        set_current_dir(guest_directory).map_err(|err| CompileError::SetCurrentDirFailed {
+        set_current_dir(guest_directory).map_err(|err| Error::SetCurrentDirFailed {
             err,
             path: guest_directory.to_path_buf(),
         })?;
@@ -33,12 +33,12 @@ impl Compiler for RustRv64imacCustomized {
             program.build(&tempdir.path().to_string_lossy());
             program.elf.unwrap()
         })
-        .map_err(|_| CompileError::BuildFailed)?;
+        .map_err(|_| Error::BuildFailed)?;
 
         let elf =
             fs::read(&elf_path).map_err(|err| CommonError::read_file("elf", &elf_path, err))?;
 
-        Ok(elf)
+        Ok(JoltProgram { elf })
     }
 }
 
@@ -46,12 +46,12 @@ impl Compiler for RustRv64imacCustomized {
 mod tests {
     use crate::compiler::RustRv64imacCustomized;
     use ere_test_utils::host::testing_guest_directory;
-    use ere_zkvm_interface::Compiler;
+    use ere_zkvm_interface::compiler::Compiler;
 
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("jolt", "basic");
-        let elf = RustRv64imacCustomized.compile(&guest_directory).unwrap();
-        assert!(!elf.is_empty(), "ELF bytes should not be empty.");
+        let program = RustRv64imacCustomized.compile(&guest_directory).unwrap();
+        assert!(!program.elf().is_empty(), "ELF bytes should not be empty.");
     }
 }

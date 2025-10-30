@@ -1,5 +1,5 @@
-use crate::error::JoltError;
-use ere_zkvm_interface::{CommonError, PublicValues};
+use crate::zkvm::Error;
+use ere_zkvm_interface::zkvm::{CommonError, PublicValues};
 use jolt_ark_serialize::{self as ark_serialize, CanonicalDeserialize, CanonicalSerialize};
 use jolt_common::constants::{
     DEFAULT_MAX_INPUT_SIZE, DEFAULT_MAX_OUTPUT_SIZE, DEFAULT_MAX_TRACE_LENGTH, DEFAULT_MEMORY_SIZE,
@@ -62,7 +62,7 @@ impl JoltSdk {
         }
     }
 
-    pub fn execute(&self, input: &[u8]) -> Result<(PublicValues, u64), JoltError> {
+    pub fn execute(&self, input: &[u8]) -> Result<(PublicValues, u64), Error> {
         let (cycles, _, io) = trace(
             &self.elf,
             None,
@@ -70,16 +70,16 @@ impl JoltSdk {
             &self.memory_config,
         );
         if io.panic {
-            return Err(JoltError::ExecutionPanic);
+            return Err(Error::ExecutionPanic);
         }
         let public_values = deserialize_output(&io.outputs)?;
         Ok((public_values, cycles.len() as _))
     }
 
-    pub fn prove(&self, input: &[u8]) -> Result<(PublicValues, JoltProof), JoltError> {
+    pub fn prove(&self, input: &[u8]) -> Result<(PublicValues, JoltProof), Error> {
         let (proof, io, _) = JoltRV64IMAC::prove(&self.pk, &self.elf, &serialize_input(input)?);
         if io.panic {
-            return Err(JoltError::ExecutionPanic);
+            return Err(Error::ExecutionPanic);
         }
         let public_values = deserialize_output(&io.outputs)?;
         let proof = JoltProof {
@@ -90,7 +90,7 @@ impl JoltSdk {
         Ok((public_values, proof))
     }
 
-    pub fn verify(&self, proof: JoltProof) -> Result<PublicValues, JoltError> {
+    pub fn verify(&self, proof: JoltProof) -> Result<PublicValues, Error> {
         JoltRV64IMAC::verify(
             &self.vk,
             proof.proof,
@@ -107,12 +107,12 @@ impl JoltSdk {
     }
 }
 
-fn serialize_input(bytes: &[u8]) -> Result<Vec<u8>, JoltError> {
+fn serialize_input(bytes: &[u8]) -> Result<Vec<u8>, Error> {
     Ok(postcard::to_stdvec(bytes)
         .map_err(|err| CommonError::serialize("input", "postcard", err))?)
 }
 
-fn deserialize_output(output: &[u8]) -> Result<Vec<u8>, JoltError> {
+fn deserialize_output(output: &[u8]) -> Result<Vec<u8>, Error> {
     Ok(if output.is_empty() {
         Vec::new()
     } else {
