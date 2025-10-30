@@ -1,6 +1,6 @@
-use crate::{compiler::Risc0Program, error::CompileError};
+use crate::{compiler::Error, program::Risc0Program};
 use ere_compile_utils::CargoBuildCmd;
-use ere_zkvm_interface::Compiler;
+use ere_zkvm_interface::compiler::Compiler;
 use risc0_binfmt::ProgramBinary;
 use std::{env, path::Path};
 use tracing::info;
@@ -32,7 +32,7 @@ const CARGO_BUILD_OPTIONS: &[&str] = &[
 pub struct RustRv32ima;
 
 impl Compiler for RustRv32ima {
-    type Error = CompileError;
+    type Error = Error;
 
     type Program = Risc0Program;
 
@@ -47,7 +47,7 @@ impl Compiler for RustRv32ima {
         let program = ProgramBinary::new(elf.as_slice(), V1COMPAT_ELF);
         let image_id = program
             .compute_image_id()
-            .map_err(CompileError::ImageIDCalculationFailure)?;
+            .map_err(Error::ImageIDCalculationFailure)?;
 
         info!("Risc0 program compiled OK - {} bytes", elf.len());
         info!("Image ID - {image_id}");
@@ -61,9 +61,12 @@ impl Compiler for RustRv32ima {
 
 #[cfg(test)]
 mod tests {
-    use crate::{EreRisc0, compiler::RustRv32ima};
+    use crate::{compiler::RustRv32ima, zkvm::EreRisc0};
     use ere_test_utils::host::testing_guest_directory;
-    use ere_zkvm_interface::{Compiler, ProverResourceType, zkVM};
+    use ere_zkvm_interface::{
+        compiler::Compiler,
+        zkvm::{ProverResourceType, zkVM},
+    };
 
     #[test]
     fn test_compile() {

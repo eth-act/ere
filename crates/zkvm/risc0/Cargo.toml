@@ -15,7 +15,7 @@ tracing.workspace = true
 # Risc0 dependencies
 risc0-build = { workspace = true, features = ["unstable"] }
 risc0-zkp.workspace = true
-risc0-zkvm = { workspace = true, features = ["client", "unstable"] }
+risc0-zkvm = { workspace = true, features = ["client", "unstable"], optional = true }
 risc0-binfmt.workspace = true
 
 # Local dependencies
@@ -30,6 +30,9 @@ ere-test-utils = { workspace = true, features = ["host"] }
 ere-build-utils.workspace = true
 
 [features]
+default = ["compiler", "zkvm"]
+compiler = []
+zkvm = ["dep:risc0-zkvm"]
 metal = ["risc0-zkvm/metal"]
 
 [lints]

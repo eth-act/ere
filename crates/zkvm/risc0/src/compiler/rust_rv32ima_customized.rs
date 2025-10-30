@@ -1,6 +1,6 @@
-use crate::{compiler::Risc0Program, error::CompileError};
+use crate::{compiler::Error, program::Risc0Program};
 use ere_compile_utils::cargo_metadata;
-use ere_zkvm_interface::Compiler;
+use ere_zkvm_interface::compiler::Compiler;
 use risc0_build::GuestOptions;
 use std::path::Path;
 use tracing::info;
@@ -10,7 +10,7 @@ use tracing::info;
 pub struct RustRv32imaCustomized;
 
 impl Compiler for RustRv32imaCustomized {
-    type Error = CompileError;
+    type Error = Error;
 
     type Program = Risc0Program;
 
@@ -27,13 +27,13 @@ impl Compiler for RustRv32imaCustomized {
             &metadata.target_directory,
             GuestOptions::default(),
         )
-        .map_err(|err| CompileError::BuildFailure {
+        .map_err(|err| Error::BuildFailure {
             err,
             guest_path: guest_directory.to_path_buf(),
         })?
         .into_iter()
         .next()
-        .ok_or(CompileError::Risc0BuildMissingGuest)?;
+        .ok_or(Error::Risc0BuildMissingGuest)?;
 
         let elf = guest.elf.to_vec();
         let image_id = guest.image_id;
@@ -49,7 +49,7 @@ impl Compiler for RustRv32imaCustomized {
 mod tests {
     use crate::compiler::RustRv32imaCustomized;
     use ere_test_utils::host::testing_guest_directory;
-    use ere_zkvm_interface::Compiler;
+    use ere_zkvm_interface::compiler::Compiler;
 
     #[test]
     fn test_compile() {
