@@ -31,7 +31,9 @@ ere-test-utils = { workspace = true, features = ["host"] }
 ere-build-utils.workspace = true
 
 [features]
-default = []
+default = ["compiler", "zkvm"]
+compiler = []
+zkvm = []
 cuda = ["openvm-sdk/cuda"]
 
 [lints]

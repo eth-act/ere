@@ -1,25 +1,11 @@
+use ere_zkvm_interface::zkvm::CommonError;
 use openvm_sdk::{SdkError, commit::AppExecutionCommit};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum CompileError {
+pub enum Error {
     #[error(transparent)]
-    CommonError(#[from] ere_compile_utils::CommonError),
-
-    #[error("Failed to build guest, code: {0}")]
-    BuildFailed(i32),
-
-    #[error("Guest building skipped (OPENVM_SKIP_BUILD is set)")]
-    BuildSkipped,
-
-    #[error("Missing to find unique elf: {0}")]
-    UniqueElfNotFound(eyre::Error),
-}
-
-#[derive(Debug, Error)]
-pub enum OpenVMError {
-    #[error(transparent)]
-    CommonError(#[from] ere_zkvm_interface::CommonError),
+    CommonError(#[from] CommonError),
 
     // Common
     #[error("Initialize SDK failed: {0}")]

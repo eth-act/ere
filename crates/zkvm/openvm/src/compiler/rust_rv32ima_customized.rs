@@ -1,6 +1,9 @@
-use crate::{compiler::OpenVMProgram, error::CompileError};
+use crate::{
+    compiler::{Error, read_app_config},
+    program::OpenVMProgram,
+};
 use ere_compile_utils::CommonError;
-use ere_zkvm_interface::Compiler;
+use ere_zkvm_interface::compiler::Compiler;
 use openvm_build::GuestOptions;
 use std::{fs, path::Path};
 
@@ -9,7 +12,7 @@ use std::{fs, path::Path};
 pub struct RustRv32imaCustomized;
 
 impl Compiler for RustRv32imaCustomized {
-    type Error = CompileError;
+    type Error = Error;
 
     type Program = OpenVMProgram;
 
@@ -19,16 +22,19 @@ impl Compiler for RustRv32imaCustomized {
         let guest_opts = GuestOptions::default().with_profile("release".to_string());
         let target_dir = match openvm_build::build_guest_package(&pkg, &guest_opts, None, &None) {
             Ok(target_dir) => target_dir,
-            Err(Some(code)) => return Err(CompileError::BuildFailed(code))?,
-            Err(None) => return Err(CompileError::BuildSkipped)?,
+            Err(Some(code)) => return Err(Error::BuildFailed(code))?,
+            Err(None) => return Err(Error::BuildSkipped)?,
         };
 
         let elf_path = openvm_build::find_unique_executable(guest_directory, target_dir, &None)
-            .map_err(CompileError::UniqueElfNotFound)?;
+            .map_err(Error::UniqueElfNotFound)?;
         let elf =
             fs::read(&elf_path).map_err(|err| CommonError::read_file("elf", &elf_path, err))?;
 
-        OpenVMProgram::from_elf_and_app_config_path(elf, guest_directory.join("openvm.toml"))
+        Ok(OpenVMProgram {
+            elf,
+            app_config: read_app_config(guest_directory.join("openvm.toml"))?,
+        })
     }
 }
 
@@ -36,12 +42,12 @@ impl Compiler for RustRv32imaCustomized {
 mod tests {
     use crate::compiler::RustRv32imaCustomized;
     use ere_test_utils::host::testing_guest_directory;
-    use ere_zkvm_interface::Compiler;
+    use ere_zkvm_interface::compiler::Compiler;
 
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("openvm", "basic");
         let program = RustRv32imaCustomized.compile(&guest_directory).unwrap();
-        assert!(!program.elf.is_empty(), "ELF bytes should not be empty.");
+        assert!(!program.elf().is_empty(), "ELF bytes should not be empty.");
     }
 }
