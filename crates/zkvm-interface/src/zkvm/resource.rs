@@ -22,3 +22,27 @@ impl NetworkProverConfig {
             .collect()
     }
 }
+
+/// ResourceType specifies what resource will be used to create the proofs.
+#[derive(Debug, Clone, Default)]
+#[cfg_attr(feature = "clap", derive(clap::Subcommand))]
+pub enum ProverResourceType {
+    #[default]
+    Cpu,
+    Gpu,
+    /// Use a remote prover network
+    Network(NetworkProverConfig),
+}
+
+#[cfg(feature = "clap")]
+impl ProverResourceType {
+    pub fn to_args(&self) -> Vec<&str> {
+        match self {
+            Self::Cpu => vec!["cpu"],
+            Self::Gpu => vec!["gpu"],
+            Self::Network(config) => core::iter::once("network")
+                .chain(config.to_args())
+                .collect(),
+        }
+    }
+}

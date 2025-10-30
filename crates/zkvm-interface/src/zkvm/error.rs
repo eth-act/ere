@@ -1,4 +1,4 @@
-use crate::ProofKind;
+use crate::zkvm::ProofKind;
 use std::{
     io,
     path::Path,
