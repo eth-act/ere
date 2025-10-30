@@ -1,17 +1,14 @@
-use ere_zkvm_interface::ProofKind;
+use ere_zkvm_interface::zkvm::{CommonError, ProofKind};
 use sp1_sdk::{SP1ProofMode, SP1VerificationError};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum CompileError {
+pub enum Error {
     #[error(transparent)]
-    CommonError(#[from] ere_compile_utils::CommonError),
-}
+    CommonError(#[from] CommonError),
 
-#[derive(Debug, Error)]
-pub enum SP1Error {
-    #[error(transparent)]
-    CommonError(#[from] ere_zkvm_interface::CommonError),
+    #[error("Prover RwLock posioned, panic not catched properly")]
+    RwLockPosioned,
 
     // Execute
     #[error("SP1 execution failed: {0}")]
