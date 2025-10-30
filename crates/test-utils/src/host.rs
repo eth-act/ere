@@ -1,6 +1,6 @@
 use crate::program::{Program, ProgramInput};
 use ere_io_serde::IoSerde;
-use ere_zkvm_interface::{ProofKind, PublicValues, zkVM};
+use ere_zkvm_interface::zkvm::{ProofKind, PublicValues, zkVM};
 use sha2::Digest;
 use std::{marker::PhantomData, path::PathBuf};
 
