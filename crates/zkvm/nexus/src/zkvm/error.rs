@@ -1,17 +1,12 @@
+use ere_zkvm_interface::zkvm::CommonError;
 use nexus_sdk::stwo::seq::Error as StwoError;
 use nexus_vm::error::VMError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum CompileError {
+pub enum Error {
     #[error(transparent)]
-    CommonError(#[from] ere_compile_utils::CommonError),
-}
-
-#[derive(Debug, Error)]
-pub enum NexusError {
-    #[error(transparent)]
-    CommonError(#[from] ere_zkvm_interface::CommonError),
+    CommonError(#[from] CommonError),
 
     #[error("Parse ELF failed: {0}")]
     ParseElf(#[source] VMError),

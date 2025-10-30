@@ -14,9 +14,9 @@ thiserror.workspace = true
 tracing.workspace = true
 
 # Nexus dependencies
-nexus-core.workspace = true
-nexus-sdk.workspace = true
-nexus-vm.workspace = true
+nexus-core = { workspace = true, optional = true }
+nexus-sdk = { workspace = true, optional = true }
+nexus-vm = { workspace = true, optional = true }
 
 # Local dependencies
 ere-compile-utils.workspace = true
@@ -28,6 +28,10 @@ ere-test-utils = { workspace = true, features = ["host"] }
 [build-dependencies]
 ere-build-utils.workspace = true
 
+[features]
+default = ["compiler", "zkvm"]
+compiler = []
+zkvm = ["dep:nexus-core", "dep:nexus-sdk", "dep:nexus-vm"]
 
 [lints]
 workspace = true

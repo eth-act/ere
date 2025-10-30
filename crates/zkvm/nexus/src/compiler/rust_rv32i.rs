@@ -1,6 +1,6 @@
-use crate::{compiler::NexusProgram, error::CompileError};
+use crate::{compiler::Error, program::NexusProgram};
 use ere_compile_utils::CargoBuildCmd;
-use ere_zkvm_interface::Compiler;
+use ere_zkvm_interface::compiler::Compiler;
 use std::path::Path;
 
 const TARGET_TRIPLE: &str = "riscv32i-unknown-none-elf";
@@ -17,7 +17,7 @@ const CARGO_BUILD_OPTIONS: &[&str] = &[
 pub struct RustRv32i;
 
 impl Compiler for RustRv32i {
-    type Error = CompileError;
+    type Error = Error;
 
     type Program = NexusProgram;
 
@@ -30,7 +30,7 @@ impl Compiler for RustRv32i {
             .build_options(CARGO_BUILD_OPTIONS)
             .rustflags(RUSTFLAGS)
             .exec(guest_directory, TARGET_TRIPLE)?;
-        Ok(elf)
+        Ok(NexusProgram { elf })
     }
 }
 
@@ -38,12 +38,12 @@ impl Compiler for RustRv32i {
 mod tests {
     use crate::compiler::RustRv32i;
     use ere_test_utils::host::testing_guest_directory;
-    use ere_zkvm_interface::Compiler;
+    use ere_zkvm_interface::compiler::Compiler;
 
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("nexus", "basic");
-        let elf = RustRv32i.compile(&guest_directory).unwrap();
-        assert!(!elf.is_empty(), "ELF bytes should not be empty.");
+        let program = RustRv32i.compile(&guest_directory).unwrap();
+        assert!(!program.elf().is_empty(), "ELF bytes should not be empty.");
     }
 }
