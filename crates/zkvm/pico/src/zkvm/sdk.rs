@@ -3,7 +3,7 @@
 // on chain. Issue for tracking: https://github.com/eth-act/ere/issues/140.
 
 use anyhow::{Error, Ok, Result};
-use ere_zkvm_interface::PublicValues;
+use ere_zkvm_interface::zkvm::PublicValues;
 use pico_vm::{
     compiler::riscv::program::Program,
     configs::{config::StarkGenericConfig, stark_config::KoalaBearPoseidon2},

@@ -1,15 +1,10 @@
+use ere_zkvm_interface::zkvm::CommonError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum CompileError {
+pub enum Error {
     #[error(transparent)]
-    CommonError(#[from] ere_compile_utils::CommonError),
-}
-
-#[derive(Debug, Error)]
-pub enum PicoError {
-    #[error(transparent)]
-    CommonError(#[from] ere_zkvm_interface::CommonError),
+    CommonError(#[from] CommonError),
 
     // Execute
     #[error("Pico execution panicked: {0}")]

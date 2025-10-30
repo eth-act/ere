@@ -1,6 +1,6 @@
-use crate::error::CompileError;
+use crate::{compiler::Error, program::PicoProgram};
 use ere_compile_utils::{CommonError, cargo_metadata};
-use ere_zkvm_interface::Compiler;
+use ere_zkvm_interface::compiler::Compiler;
 use std::{fs, path::Path, process::Command};
 use tempfile::tempdir;
 
@@ -9,9 +9,9 @@ use tempfile::tempdir;
 pub struct RustRv32imaCustomized;
 
 impl Compiler for RustRv32imaCustomized {
-    type Error = CompileError;
+    type Error = Error;
 
-    type Program = Vec<u8>;
+    type Program = PicoProgram;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
         let tempdir = tempdir().map_err(CommonError::tempdir)?;
@@ -32,10 +32,10 @@ impl Compiler for RustRv32imaCustomized {
         }
 
         let elf_path = tempdir.path().join("riscv32im-pico-zkvm-elf");
-        let elf_bytes =
+        let elf =
             fs::read(&elf_path).map_err(|err| CommonError::read_file("elf", &elf_path, err))?;
 
-        Ok(elf_bytes)
+        Ok(PicoProgram { elf })
     }
 }
 
@@ -43,12 +43,12 @@ impl Compiler for RustRv32imaCustomized {
 mod tests {
     use crate::compiler::RustRv32imaCustomized;
     use ere_test_utils::host::testing_guest_directory;
-    use ere_zkvm_interface::Compiler;
+    use ere_zkvm_interface::compiler::Compiler;
 
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("pico", "basic");
-        let elf = RustRv32imaCustomized.compile(&guest_directory).unwrap();
-        assert!(!elf.is_empty(), "ELF bytes should not be empty.");
+        let program = RustRv32imaCustomized.compile(&guest_directory).unwrap();
+        assert!(!program.elf().is_empty(), "ELF bytes should not be empty.");
     }
 }
