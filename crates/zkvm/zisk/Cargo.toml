@@ -9,6 +9,7 @@ license.workspace = true
 anyhow.workspace = true
 blake3.workspace = true
 bytemuck.workspace = true
+serde.workspace = true
 strum = { workspace = true, features = ["derive"] }
 tempfile.workspace = true
 thiserror.workspace = true
@@ -24,3 +25,11 @@ ere-test-utils = { workspace = true, features = ["host"] }
 
 [build-dependencies]
 ere-build-utils.workspace = true
+
+[features]
+default = ["compiler", "zkvm"]
+compiler = []
+zkvm = []
+
+[lints]
+workspace = true

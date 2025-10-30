@@ -1,17 +1,12 @@
-use crate::client::RomDigest;
+use crate::zkvm::sdk::RomDigest;
 use bytemuck::PodCastError;
+use ere_zkvm_interface::zkvm::CommonError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum CompileError {
+pub enum Error {
     #[error(transparent)]
-    CommonError(#[from] ere_compile_utils::CommonError),
-}
-
-#[derive(Debug, Error)]
-pub enum ZiskError {
-    #[error(transparent)]
-    CommonError(#[from] ere_zkvm_interface::CommonError),
+    CommonError(#[from] CommonError),
 
     // Execution
     #[error("Total steps not found in execution report")]

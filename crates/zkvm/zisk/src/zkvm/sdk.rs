@@ -1,5 +1,5 @@
-use crate::error::ZiskError;
-use ere_zkvm_interface::{CommonError, ProverResourceType, PublicValues};
+use crate::zkvm::Error;
+use ere_zkvm_interface::zkvm::{CommonError, ProverResourceType, PublicValues};
 use std::{
     collections::BTreeMap,
     env, fs,
@@ -147,7 +147,7 @@ impl ZiskSdk {
         elf: Vec<u8>,
         resource: ProverResourceType,
         options: ZiskOptions,
-    ) -> Result<Self, ZiskError> {
+    ) -> Result<Self, Error> {
         // Save ELF to `~/.zisk/cache` along with the ROM binaries, to avoid it
         // been cleaned up during a long run process.
         let cache_dir_path = dot_zisk_dir_path().join("cache");
@@ -170,7 +170,7 @@ impl ZiskSdk {
     }
 
     /// Execute the ELF with the given `input`.
-    pub fn execute(&self, input: &[u8]) -> Result<(PublicValues, u64), ZiskError> {
+    pub fn execute(&self, input: &[u8]) -> Result<(PublicValues, u64), Error> {
         let tempdir = tempdir().map_err(CommonError::tempdir)?;
         let input_path = tempdir.path().join("input");
         let output_path = tempdir.path().join("output");
@@ -208,7 +208,7 @@ impl ZiskSdk {
                     .next()
                     .and_then(|steps| steps.parse::<u64>().ok())
             })
-            .ok_or(ZiskError::TotalStepsNotFound)?;
+            .ok_or(Error::TotalStepsNotFound)?;
 
         let public_values = fs::read(&output_path)
             .map_err(|err| CommonError::read_file("output", &output_path, err))?;
@@ -220,7 +220,7 @@ impl ZiskSdk {
     ///
     /// If it is not setup yet, it makes sure the global setup is done, then
     /// does ROM setup of the ELF and stores the ROM digest for later usage.
-    pub fn rom_digest(&self) -> Result<RomDigest, ZiskError> {
+    pub fn rom_digest(&self) -> Result<RomDigest, Error> {
         // FIXME: Use `get_or_try_init` when it is stabilized
         let mut result = Ok(());
         let rom_digest = *self.rom_digest.get_or_init(|| {
@@ -230,11 +230,11 @@ impl ZiskSdk {
                 .ok()
         });
         result?;
-        rom_digest.ok_or(ZiskError::RomSetupFailedBefore)
+        rom_digest.ok_or(Error::RomSetupFailedBefore)
     }
 
     /// Start a server of the ELF.
-    pub fn server(&self) -> Result<ZiskServer, ZiskError> {
+    pub fn server(&self) -> Result<ZiskServer, Error> {
         // Setup ROM and get ROM digest if it's not done yet.
         let rom_digest = self.rom_digest()?;
 
@@ -278,7 +278,7 @@ impl ZiskSdk {
     }
 
     /// Verify the proof of the ELF, and returns public values.
-    pub fn verify(&self, proof: &[u8]) -> Result<PublicValues, ZiskError> {
+    pub fn verify(&self, proof: &[u8]) -> Result<PublicValues, Error> {
         let rom_digest = self.rom_digest()?;
 
         let tempdir = tempdir().map_err(CommonError::tempdir)?;
@@ -296,7 +296,7 @@ impl ZiskSdk {
             .map_err(|err| CommonError::command(&cmd, err))?;
 
         if !output.status.success() {
-            Err(ZiskError::InvalidProof(
+            Err(Error::InvalidProof(
                 String::from_utf8_lossy(&output.stderr).to_string(),
             ))?
         }
@@ -309,7 +309,7 @@ impl ZiskSdk {
 
         // The proved ROM digest should be equal to preprocessed one.
         if proved_rom_digest != rom_digest {
-            return Err(ZiskError::UnexpectedRomDigest {
+            return Err(Error::UnexpectedRomDigest {
                 preprocessed: rom_digest,
                 proved: proved_rom_digest,
             });
@@ -348,7 +348,7 @@ impl Drop for ZiskServer {
 
 impl ZiskServer {
     /// Get status of server.
-    pub fn status(&self) -> Result<ZiskServerStatus, ZiskError> {
+    pub fn status(&self) -> Result<ZiskServerStatus, Error> {
         let mut cmd = Command::new("cargo-zisk");
         let output = cmd
             .args(["prove-client", "status"])
@@ -370,14 +370,14 @@ impl ZiskServer {
         } else if stdout.contains("working") {
             Ok(ZiskServerStatus::Working)
         } else {
-            Err(ZiskError::UnknownServerStatus {
+            Err(Error::UnknownServerStatus {
                 stdout: stdout.to_string(),
             })
         }
     }
 
     /// Send prove request to server and wait for proof to be created.
-    pub fn prove(&mut self, input: &[u8]) -> Result<(PublicValues, Vec<u8>), ZiskError> {
+    pub fn prove(&mut self, input: &[u8]) -> Result<(PublicValues, Vec<u8>), Error> {
         // Prefix that ZisK server will add to the file name of the proof.
         // We use constant because the file will be save to a temporary dir,
         // so there will be no conflict.
@@ -427,7 +427,7 @@ impl ZiskServer {
 
         // The proved ROM digest should be equal to preprocessed one.
         if proved_rom_digest != self.rom_digest {
-            return Err(ZiskError::UnexpectedRomDigest {
+            return Err(Error::UnexpectedRomDigest {
                 preprocessed: self.rom_digest,
                 proved: proved_rom_digest,
             });
@@ -437,14 +437,14 @@ impl ZiskServer {
     }
 
     /// Wait until the server status to be idle.
-    fn wait_until_ready(&self) -> Result<(), ZiskError> {
+    fn wait_until_ready(&self) -> Result<(), Error> {
         const TIMEOUT: Duration = Duration::from_secs(300); // 5mins
         const INTERVAL: Duration = Duration::from_secs(1);
 
         let start = Instant::now();
         while !matches!(self.status(), Ok(ZiskServerStatus::Idle)) {
             if start.elapsed() > TIMEOUT {
-                return Err(ZiskError::TimeoutWaitingServerReady);
+                return Err(Error::TimeoutWaitingServerReady);
             }
             thread::sleep(INTERVAL);
         }
@@ -454,7 +454,7 @@ impl ZiskServer {
 }
 
 /// Does global setup if it is not done yet.
-fn check_setup() -> Result<(), ZiskError> {
+fn check_setup() -> Result<(), Error> {
     info!("Running command `cargo-zisk check-setup --aggregation`...");
 
     let mut cmd = Command::new("cargo-zisk");
@@ -477,7 +477,7 @@ fn check_setup() -> Result<(), ZiskError> {
 }
 
 /// Does ROM setup of the ELF and returns the ROM digest.
-fn rom_setup(elf_path: &Path) -> Result<RomDigest, ZiskError> {
+fn rom_setup(elf_path: &Path) -> Result<RomDigest, Error> {
     info!("Running command `cargo-zisk rom-setup` ...");
 
     let mut cmd = Command::new("cargo-zisk");
@@ -510,7 +510,7 @@ fn rom_setup(elf_path: &Path) -> Result<RomDigest, ZiskError> {
                 .try_into()
                 .ok()
         })
-        .ok_or(ZiskError::RomDigestNotFound)?;
+        .ok_or(Error::RomDigestNotFound)?;
 
     info!("Command `cargo-zisk rom-setup` succeeded");
 
@@ -519,14 +519,13 @@ fn rom_setup(elf_path: &Path) -> Result<RomDigest, ZiskError> {
 
 /// Deserialize public values as json string sequence, and parse the `RomDigest`
 /// and user set public values as `Vec<u8>`.
-fn deserialize_public_values(proof: &[u8]) -> Result<(RomDigest, Vec<u8>), ZiskError> {
-    let proof =
-        bytemuck::try_cast_slice::<_, u64>(proof).map_err(ZiskError::CastProofBytesToU64s)?;
+fn deserialize_public_values(proof: &[u8]) -> Result<(RomDigest, Vec<u8>), Error> {
+    let proof = bytemuck::try_cast_slice::<_, u64>(proof).map_err(Error::CastProofBytesToU64s)?;
 
     // The public values contain at least the the total number of public values,
     // `RomDigest`, and the number of user set public values.
     if proof.len() < 6 {
-        return Err(ZiskError::InvalidPublicValuesLength(proof.len()));
+        return Err(Error::InvalidPublicValuesLength(proof.len()));
     }
 
     // The first element is total number of public values.
@@ -543,7 +542,7 @@ fn deserialize_public_values(proof: &[u8]) -> Result<(RomDigest, Vec<u8>), ZiskE
         .map(|v| Some(u32::try_from(*v).ok()?.to_le_bytes()))
         .take(num_user_public_values)
         .collect::<Option<Vec<_>>>()
-        .ok_or(ZiskError::InvalidPublicValue)?
+        .ok_or(Error::InvalidPublicValue)?
         .into_iter()
         .flatten()
         .collect();

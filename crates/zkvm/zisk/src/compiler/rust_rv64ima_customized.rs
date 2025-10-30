@@ -1,6 +1,6 @@
-use crate::error::CompileError;
+use crate::{compiler::Error, program::ZiskProgram};
 use ere_compile_utils::{CommonError, cargo_metadata, rustc_path};
-use ere_zkvm_interface::Compiler;
+use ere_zkvm_interface::compiler::Compiler;
 use std::{fs, path::Path, process::Command};
 use tracing::info;
 
@@ -12,9 +12,9 @@ const ZISK_TARGET: &str = "riscv64ima-zisk-zkvm-elf";
 pub struct RustRv64imaCustomized;
 
 impl Compiler for RustRv64imaCustomized {
-    type Error = CompileError;
+    type Error = Error;
 
-    type Program = Vec<u8>;
+    type Program = ZiskProgram;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
         info!("Compiling ZisK program at {}", guest_directory.display());
@@ -43,10 +43,10 @@ impl Compiler for RustRv64imaCustomized {
             .join("riscv64ima-zisk-zkvm-elf")
             .join("release")
             .join(&package.name);
-        let elf_bytes =
+        let elf =
             fs::read(&elf_path).map_err(|err| CommonError::read_file("elf", elf_path, err))?;
 
-        Ok(elf_bytes)
+        Ok(ZiskProgram { elf })
     }
 }
 
@@ -54,12 +54,12 @@ impl Compiler for RustRv64imaCustomized {
 mod tests {
     use crate::compiler::RustRv64imaCustomized;
     use ere_test_utils::host::testing_guest_directory;
-    use ere_zkvm_interface::Compiler;
+    use ere_zkvm_interface::compiler::Compiler;
 
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("zisk", "basic");
-        let elf_bytes = RustRv64imaCustomized.compile(&guest_directory).unwrap();
-        assert!(!elf_bytes.is_empty(), "ELF bytes should not be empty.");
+        let program = RustRv64imaCustomized.compile(&guest_directory).unwrap();
+        assert!(!program.elf().is_empty(), "ELF bytes should not be empty.");
     }
 }
