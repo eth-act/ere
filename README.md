@@ -82,7 +82,10 @@ ere-sp1        = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.12" }
 ```rust
 // main.rs
 use ere_sp1::{EreSP1, RV32_IM_SUCCINCT_ZKVM_ELF};
-use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
+use ere_zkvm_interface::{
+    compiler::Compiler,
+    zkvm::{ProofKind, ProverResourceType, zkVM},
+};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let guest_directory = std::path::Path::new("workspace/guest");
@@ -128,7 +131,10 @@ ere-dockerized = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.12" }
 ```rust
 // main.rs
 use ere_dockerized::{EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM};
-use ere_zkvm_interface::{Compiler, ProofKind, ProverResourceType, zkVM};
+use ere_zkvm_interface::{
+    compiler::Compiler,
+    zkvm::{ProofKind, ProverResourceType, zkVM},
+};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let guest_directory = std::path::Path::new("workspace/guest");
