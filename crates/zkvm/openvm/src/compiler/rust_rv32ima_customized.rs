@@ -2,9 +2,9 @@ use crate::{
     compiler::{Error, read_app_config},
     program::OpenVMProgram,
 };
-use ere_compile_utils::CommonError;
+use ere_compile_utils::{CommonError, install_rust_src};
 use ere_zkvm_interface::compiler::Compiler;
-use openvm_build::GuestOptions;
+use openvm_build::{GuestOptions, get_rustup_toolchain_name};
 use std::{fs, path::Path};
 
 /// Compiler for Rust guest program to RV32IMA architecture, using customized
@@ -17,6 +17,8 @@ impl Compiler for RustRv32imaCustomized {
     type Program = OpenVMProgram;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
+        install_rust_src(&get_rustup_toolchain_name())?;
+
         // Inlining `openvm_sdk::Sdk::build` in order to get raw elf bytes.
         let pkg = openvm_build::get_package(guest_directory);
         let guest_opts = GuestOptions::default().with_profile("release".to_string());

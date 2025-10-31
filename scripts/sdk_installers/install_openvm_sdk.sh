@@ -47,7 +47,3 @@ fi
 
 # Setup aggregation keys
 cargo openvm setup
-
-# Install the toolchain for guest compilation.
-rustup install nightly-2025-02-14
-rustup component add rust-src --toolchain nightly-2025-02-14
