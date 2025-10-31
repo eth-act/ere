@@ -38,7 +38,7 @@ curl "https://raw.githubusercontent.com/0xPolygonHermez/zisk/main/ziskup/install
 unset SETUP_KEY
 
 # Step 2: Ensure the installed cargo-zisk binary is in PATH for this script session.
-export PATH="${PATH}:${HOME}/.zisk/bin"
+export PATH="$PATH:$HOME/.zisk/bin"
 
 # Verify ZisK installation
 echo "Verifying ZisK installation..."
@@ -61,13 +61,12 @@ fi
 
 # Step 3: Build cargo-zisk-cuda from source with `gpu` feature enabled
 if [ -n "$CUDA" ]; then
-    TEMP_DIR=$(mktemp -d)
-    git clone https://github.com/0xPolygonHermez/zisk.git --depth 1 --branch "v$ZISK_VERSION" "$TEMP_DIR/zisk"
-    cd "$TEMP_DIR/zisk"
-    cargo build --release --features gpu
-    cp ./target/release/cargo-zisk "${HOME}/.zisk/bin/cargo-zisk-cuda"
-    cp ./target/release/libzisk_witness.so "${HOME}/.zisk/bin/libzisk_witness_cuda.so"
-    rm -rf "$TEMP_DIR"
+    WORKSPACE=$(mktemp -d)
+    git clone https://github.com/0xPolygonHermez/zisk.git --depth 1 --tag "v$ZISK_VERSION" "$WORKSPACE"
+    cargo build --manifest-path "$WORKSPACE/Cargo.toml" --release --features gpu
+    cp "$WORKSPACE/target/release/cargo-zisk" "$HOME/.zisk/bin/cargo-zisk-cuda"
+    cp "$WORKSPACE/target/release/libzisk_witness.so" "$HOME/.zisk/bin/libzisk_witness_cuda.so"
+    rm -rf "$WORKSPACE"
 
     echo "Checking for cargo-zisk-cuda CLI tool..."
     if cargo-zisk-cuda --version; then
@@ -86,9 +85,8 @@ fi
 # So here we make sure it's already ran, and the built thing will be stored in
 # `$CARGO_HOME/git/checkouts/zisk-{hash}/{rev}/lib-c/c/build`, so could be
 # re-used as long as the `ziskos` has the same version.
-TEMP_DIR=$(mktemp -d)
-cd "$TEMP_DIR"
-cargo init . --name build-lib-c
-cargo add lib-c --git https://github.com/0xPolygonHermez/zisk.git --tag "v${ZISK_VERSION}"
-cargo build
-rm -rf "$TEMP_DIR"
+WORKSPACE=$(mktemp -d)
+cargo new "$WORKSPACE" --name build-lib-c
+cargo add lib-c --git https://github.com/0xPolygonHermez/zisk.git --tag "v$ZISK_VERSION" --manifest-path "$WORKSPACE/Cargo.toml"
+cargo build --manifest-path "$WORKSPACE/Cargo.toml"
+rm -rf "$WORKSPACE"
