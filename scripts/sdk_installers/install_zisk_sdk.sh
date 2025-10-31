@@ -40,6 +40,16 @@ unset SETUP_KEY
 # Step 2: Ensure the installed cargo-zisk binary is in PATH for this script session.
 export PATH="$PATH:$HOME/.zisk/bin"
 
+# FIXME: Remove this when https://github.com/0xPolygonHermez/zisk/pull/634 is resolved.
+if true; then
+    WORKSPACE=$(mktemp -d)
+    git clone https://github.com/han0110/zisk.git --depth 1 --branch fix/single-process-server-panic "$WORKSPACE"
+    cargo build --manifest-path "$WORKSPACE/Cargo.toml" --release
+    cp "$WORKSPACE/target/release/cargo-zisk" "$HOME/.zisk/bin/cargo-zisk"
+    cp "$WORKSPACE/target/release/libzisk_witness.so" "$HOME/.zisk/bin/libzisk_witness.so"
+    rm -rf "$WORKSPACE"
+fi
+
 # Verify ZisK installation
 echo "Verifying ZisK installation..."
 
@@ -62,7 +72,9 @@ fi
 # Step 3: Build cargo-zisk-cuda from source with `gpu` feature enabled
 if [ -n "$CUDA" ]; then
     WORKSPACE=$(mktemp -d)
-    git clone https://github.com/0xPolygonHermez/zisk.git --depth 1 --tag "v$ZISK_VERSION" "$WORKSPACE"
+    # FIXME: Use upstream when https://github.com/0xPolygonHermez/zisk/pull/634 is resolved.
+    # git clone https://github.com/0xPolygonHermez/zisk.git --depth 1 --tag "v$ZISK_VERSION" "$WORKSPACE"
+    git clone https://github.com/han0110/zisk.git --depth 1 --branch fix/single-process-server-panic "$WORKSPACE"
     cargo build --manifest-path "$WORKSPACE/Cargo.toml" --release --features gpu
     cp "$WORKSPACE/target/release/cargo-zisk" "$HOME/.zisk/bin/cargo-zisk-cuda"
     cp "$WORKSPACE/target/release/libzisk_witness.so" "$HOME/.zisk/bin/libzisk_witness_cuda.so"
