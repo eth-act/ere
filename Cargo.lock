@@ -3748,8 +3748,6 @@ name = "ere-build-utils"
 version = "0.0.14"
 dependencies = [
  "cargo_metadata 0.19.2",
- "thiserror 2.0.12",
- "tracing",
 ]
 
 [[package]]

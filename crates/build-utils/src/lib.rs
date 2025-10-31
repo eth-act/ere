@@ -3,8 +3,6 @@
 use cargo_metadata::MetadataCommand;
 use std::{env, fs, path::Path};
 
-pub mod docker;
-
 // Detect and generate a Rust source file that contains the name and version of the SDK.
 pub fn detect_and_generate_name_and_sdk_version(name: &str, sdk_dep_name: &str) {
     gen_name_and_sdk_version(name, &detect_sdk_version(sdk_dep_name));

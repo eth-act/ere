@@ -1,0 +1,131 @@
+name: Check zkVM version
+
+on:
+  schedule:
+    # Run every day at 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  check-zkvm-version:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - zkvm: airbender
+            crate: execution_utils
+          - zkvm: jolt
+            crate: jolt-sdk
+          - zkvm: miden
+            crate: miden-core
+          - zkvm: nexus
+            crate: nexus-sdk
+          - zkvm: openvm
+            crate: openvm-sdk
+          - zkvm: pico
+            crate: pico-vm
+          - zkvm: risc0
+            crate: risc0-zkvm
+          - zkvm: sp1
+            crate: sp1-sdk
+          - zkvm: ziren
+            crate: zkm-sdk
+          - zkvm: zisk
+            crate: 0xPolygonHermez/zisk
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check ${{ matrix.zkvm }} version
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e -o pipefail
+
+          RESULT=$(.github/scripts/fetch-zkvm-version.sh "${{ matrix.zkvm }}" "${{ matrix.crate }}")
+
+          CURRENT=$(echo "$RESULT" | grep "CURRENT=" | cut -d= -f2)
+          LATEST=$(echo "$RESULT" | grep "LATEST=" | cut -d= -f2)
+
+          if [ -z "$CURRENT" ] || [ -z "$LATEST" ]; then
+            echo "Failed to fetch version"
+            exit 1
+          fi
+
+          echo "current=$CURRENT" >> $GITHUB_OUTPUT
+          echo "latest=$LATEST" >> $GITHUB_OUTPUT
+
+          echo "Current version: $CURRENT"
+          echo "Latest version: $LATEST"
+
+          if [ "$CURRENT" == "$LATEST" ]; then
+            echo "Up to date"
+            echo "outdated=false" >> $GITHUB_OUTPUT
+          else
+            echo "Update available"
+            echo "outdated=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create or update issue if outdated
+        if: steps.check.outputs.outdated == 'true'
+        uses: actions/github-script@v7
+        env:
+          ZKVM: ${{ matrix.zkvm }}
+          CURRENT: ${{ steps.check.outputs.current }}
+          LATEST: ${{ steps.check.outputs.latest }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const zkvm = process.env.ZKVM;
+            const current = process.env.CURRENT;
+            const latest = process.env.LATEST;
+
+            const title = `Update \`${zkvm}\` to \`${latest}\``;
+            const body = `
+            A new version of \`${zkvm}\` is available.
+
+            - Current version: \`${current}\`
+            - Latest version: \`${latest}\`
+            `;
+
+            const issues = await github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                labels: `zkvm:${zkvm}`,
+                per_page: 100
+            });
+
+            const existingIssue = issues.data.find(issue =>
+                issue.title.startsWith(`Update \`${zkvm}\` to`)
+            );
+
+            if (existingIssue) {
+                if (existingIssue.title === title) {
+                  console.log(`Issue #${existingIssue.number} already exists`);
+                } else {
+                  await github.rest.issues.update({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number: existingIssue.number,
+                      body: body.trim(),
+                      title
+                  });
+                  console.log(`Updated issue #${existingIssue.number} with new version ${latest}`);
+                }
+            } else {
+                const issue = await github.rest.issues.create({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    title,
+                    body: body.trim(),
+                    labels: [`zkvm:${zkvm}`]
+                });
+                console.log(`Created issue #${issue.data.number}`);
+            }
