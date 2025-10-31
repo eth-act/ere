@@ -6,5 +6,5 @@ edition = "2021"
 [workspace]
 
 [dependencies]
-openvm = { git = "https://github.com/openvm-org/openvm.git", features = ["std"], tag = "v1.4.0" }
+openvm = { git = "https://github.com/openvm-org/openvm.git", features = ["std"], tag = "v1.4.1" }
 ere-test-utils = { path = "../../../crates/test-utils" }

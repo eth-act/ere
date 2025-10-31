@@ -17,7 +17,7 @@ fn read_app_config(app_config_path: impl AsRef<Path>) -> Result<AppConfig<SdkVmC
             .map_err(|err| CommonError::read_file("app_config", &app_config_path, err))?;
         toml::from_str(&toml).map_err(|err| CommonError::deserialize("app_config", "toml", err))?
     } else {
-        // The default `AppConfig` copied from https://github.com/openvm-org/openvm/blob/v1.4.0/crates/cli/src/default.rs#L35.
+        // The default `AppConfig` copied from https://github.com/openvm-org/openvm/blob/v1.4.1/crates/cli/src/default.rs#L35.
         AppConfig {
             app_fri_params: FriParameters::standard_with_100_bits_conjectured_security(
                 DEFAULT_APP_LOG_BLOWUP,
