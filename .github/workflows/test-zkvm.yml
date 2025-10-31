@@ -11,7 +11,7 @@ on:
         description: 'Rust toolchain to use'
         required: false
         type: string
-        default: 1.86.0
+        default: 1.88.0
       # Remove when we use larger runners, currently only needed to skip for zisk
       skip_prove_test:
         description: 'Whether to skip prove test and ere-dockerized test or not'
