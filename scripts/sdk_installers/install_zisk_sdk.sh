@@ -97,7 +97,7 @@ fi
 # So here we make sure it's already ran, and the built thing will be stored in
 # `$CARGO_HOME/git/checkouts/zisk-{hash}/{rev}/lib-c/c/build`, so could be
 # re-used as long as the `ziskos` has the same version.
-WORKSPACE=$(mktemp -d)
+WORKSPACE="/tmp/build-lib-c"
 cargo new "$WORKSPACE" --name build-lib-c
 cargo add lib-c --git https://github.com/0xPolygonHermez/zisk.git --tag "v$ZISK_VERSION" --manifest-path "$WORKSPACE/Cargo.toml"
 cargo build --manifest-path "$WORKSPACE/Cargo.toml"
