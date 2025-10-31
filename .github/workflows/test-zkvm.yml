@@ -173,7 +173,7 @@ jobs:
             /bin/bash"
 
           cat <<EOF | $DOCKER_CMD
-          set -e
+          set -e -o pipefail
 
           OPTIONS="--all-targets -- -D warnings"
           cargo clippy --package ere-${{ inputs.zkvm }} \$OPTIONS
