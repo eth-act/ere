@@ -39,13 +39,13 @@ pub enum CommonError {
     },
 
     #[error("Command `{cmd}` exit with {status}{stdout}{stderr}",
-        stdout = if stdout.is_empty() { String::new() } else { format!("\nstdout: {}", String::from_utf8_lossy(stdout)) },
-        stderr = if stderr.is_empty() { String::new() } else { format!("\nstdout: {}", String::from_utf8_lossy(stderr)) })]
+        stdout = if stdout.is_empty() { String::new() } else { format!("\nstdout: {}", stdout) },
+        stderr = if stderr.is_empty() { String::new() } else { format!("\nstderr: {}", stderr) })]
     CommandExitNonZero {
         cmd: String,
         status: ExitStatus,
-        stdout: Vec<u8>,
-        stderr: Vec<u8>,
+        stdout: String,
+        stderr: String,
     },
 
     #[error("Unsupported proof kind {unsupported:?}, expect one of {supported:?}")]
@@ -126,12 +126,10 @@ impl CommonError {
             cmd: format!("{cmd:?}"),
             status,
             stdout: output
-                .map(|output| &output.stdout)
-                .cloned()
+                .map(|output| String::from_utf8_lossy(&output.stdout).to_string())
                 .unwrap_or_default(),
             stderr: output
-                .map(|output| &output.stderr)
-                .cloned()
+                .map(|output| String::from_utf8_lossy(&output.stderr).to_string())
                 .unwrap_or_default(),
         }
     }
