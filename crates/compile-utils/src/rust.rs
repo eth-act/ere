@@ -4,6 +4,7 @@ use std::{
     fs, iter,
     path::{Path, PathBuf},
     process::Command,
+    sync::Mutex,
 };
 use tempfile::tempdir;
 
@@ -82,6 +83,14 @@ impl CargoBuildCmd {
         let metadata = cargo_metadata(manifest_dir.as_ref())?;
         let package = metadata.root_package().unwrap();
 
+        if self
+            .build_options
+            .iter()
+            .any(|opt| opt.contains("build-std"))
+        {
+            install_rust_src(&self.toolchain)?;
+        }
+
         let tempdir = tempdir().map_err(CommonError::tempdir)?;
         let linker_script_path = tempdir
             .path()
@@ -107,7 +116,7 @@ impl CargoBuildCmd {
             .join(CARGO_ENCODED_RUSTFLAGS_SEPARATOR);
 
         let args = iter::empty()
-            .chain([format!("+{}", &self.toolchain)])
+            .chain([plus_toolchain(&self.toolchain)])
             .chain(["build".into()])
             .chain(self.build_options.iter().cloned())
             .chain(["--profile".into(), self.profile.clone()])
@@ -175,4 +184,31 @@ pub fn rustc_path(toolchain: &str) -> Result<PathBuf, CommonError> {
             .join("bin")
             .join("rustc"),
     )
+}
+
+/// Install component `rust-src` for the given `toolchain` if not found.
+pub fn install_rust_src(toolchain: &str) -> Result<(), CommonError> {
+    static LOCK: Mutex<()> = Mutex::new(());
+
+    let _guard = LOCK.lock().unwrap_or_else(|err| err.into_inner());
+
+    let mut cmd = Command::new("rustup");
+    let output = cmd
+        .args([&plus_toolchain(toolchain), "component", "add", "rust-src"])
+        .output()
+        .map_err(|err| CommonError::command(&cmd, err))?;
+
+    if !output.status.success() {
+        return Err(CommonError::command_exit_non_zero(
+            &cmd,
+            output.status,
+            Some(&output),
+        ));
+    }
+
+    Ok(())
+}
+
+fn plus_toolchain(toolchain: &str) -> String {
+    format!("+{toolchain}")
 }
