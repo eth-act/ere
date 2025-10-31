@@ -36,7 +36,4 @@ RUN /tmp/install_risc0_sdk.sh && rm /tmp/install_risc0_sdk.sh
 # Verify Risc0 installation (script also does this, but good for Dockerfile sanity)
 RUN echo "Verifying Risc0 installation in Dockerfile (post-script)..." && cargo risczero --version
 
-# Add `rust-src` component to enable std build for nightly rust.
-RUN rustup +nightly component add rust-src
-
 CMD ["/bin/bash"]

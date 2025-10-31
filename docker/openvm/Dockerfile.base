@@ -30,7 +30,4 @@ RUN /tmp/install_openvm_sdk.sh && rm /tmp/install_openvm_sdk.sh
 # Verify cargo-openvm is accessible with the correct toolchain
 RUN cargo openvm --version
 
-# Add `rust-src` component to enable std build for nightly rust.
-RUN rustup +nightly component add rust-src
-
 CMD ["/bin/bash"]

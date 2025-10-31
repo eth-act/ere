@@ -29,7 +29,4 @@ RUN /tmp/install_airbender_sdk.sh && rm /tmp/install_airbender_sdk.sh
 # Verify airbender-cli is accessible with the correct toolchain
 RUN airbender-cli --version
 
-# Add `rust-src` component to enable std build for nightly rust.
-RUN rustup component add rust-src
-
 CMD ["/bin/bash"]

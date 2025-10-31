@@ -19,7 +19,4 @@ RUN /tmp/install_jolt_sdk.sh && rm /tmp/install_jolt_sdk.sh # Clean up the scrip
 # Verify jolt CLI is accessible.
 RUN jolt --version
 
-# Add `rust-src` component to enable std build for nightly rust.
-RUN rustup +nightly component add rust-src
-
 CMD ["/bin/bash"]
