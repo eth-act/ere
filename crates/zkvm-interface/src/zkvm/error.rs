@@ -39,8 +39,8 @@ pub enum CommonError {
     },
 
     #[error("Command `{cmd}` exit with {status}{stdout}{stderr}",
-        stdout = if stdout.is_empty() { String::new() } else { format!("\nstdout: {}", stdout) },
-        stderr = if stderr.is_empty() { String::new() } else { format!("\nstderr: {}", stderr) })]
+        stdout = if stdout.is_empty() { String::new() } else { format!("\nstdout: {stdout}") },
+        stderr = if stderr.is_empty() { String::new() } else { format!("\nstderr: {stderr}") })]
     CommandExitNonZero {
         cmd: String,
         status: ExitStatus,
