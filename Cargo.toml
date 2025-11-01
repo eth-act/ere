@@ -108,7 +108,7 @@ risc0-binfmt = { version = "3.0.2", default-features = false }
 sp1-sdk = "5.2.2"
 
 # Ziren dependencies
-zkm-sdk = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.1.4" }
+zkm-sdk = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.2.1" }
 
 # Local dependencies
 ere-zkvm-interface = { path = "crates/zkvm-interface" }

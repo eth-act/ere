@@ -137,37 +137,14 @@ checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
 name = "alloy-consensus"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c2179ba839ac532f50279f5da2a6c5047f791f03f6f808b4dfab11327b97902f"
-dependencies = [
- "alloy-eips 0.14.0",
- "alloy-primitives",
- "alloy-rlp",
- "alloy-serde 0.14.0",
- "alloy-trie",
- "auto_impl",
- "c-kzg",
- "derive_more 2.0.1",
- "either",
- "k256",
- "once_cell",
- "rand 0.8.5",
- "serde",
- "serde_with",
- "thiserror 2.0.12",
-]
-
-[[package]]
-name = "alloy-consensus"
 version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ad451f9a70c341d951bca4e811d74dbe1e193897acd17e9dbac1353698cc430b"
 dependencies = [
- "alloy-eips 1.0.9",
+ "alloy-eips",
  "alloy-primitives",
  "alloy-rlp",
- "alloy-serde 1.0.9",
+ "alloy-serde",
  "alloy-trie",
  "auto_impl",
  "c-kzg",
@@ -184,29 +161,15 @@ dependencies = [
 
 [[package]]
 name = "alloy-consensus-any"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aec6f67bdc62aa277e0ec13c1b1fb396c8a62b65c8e9bd8c1d3583cc6d1a8dd3"
-dependencies = [
- "alloy-consensus 0.14.0",
- "alloy-eips 0.14.0",
- "alloy-primitives",
- "alloy-rlp",
- "alloy-serde 0.14.0",
- "serde",
-]
-
-[[package]]
-name = "alloy-consensus-any"
 version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "142daffb15d5be1a2b20d2cd540edbcef03037b55d4ff69dc06beb4d06286dba"
 dependencies = [
- "alloy-consensus 1.0.9",
- "alloy-eips 1.0.9",
+ "alloy-consensus",
+ "alloy-eips",
  "alloy-primitives",
  "alloy-rlp",
- "alloy-serde 1.0.9",
+ "alloy-serde",
  "serde",
 ]
 
@@ -248,26 +211,6 @@ dependencies = [
 
 [[package]]
 name = "alloy-eips"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "609515c1955b33af3d78d26357540f68c5551a90ef58fd53def04f2aa074ec43"
-dependencies = [
- "alloy-eip2124",
- "alloy-eip2930",
- "alloy-eip7702",
- "alloy-primitives",
- "alloy-rlp",
- "alloy-serde 0.14.0",
- "auto_impl",
- "c-kzg",
- "derive_more 2.0.1",
- "either",
- "serde",
- "sha2",
-]
-
-[[package]]
-name = "alloy-eips"
 version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3056872f6da48046913e76edb5ddced272861f6032f09461aea1a2497be5ae5d"
@@ -277,7 +220,7 @@ dependencies = [
  "alloy-eip7702",
  "alloy-primitives",
  "alloy-rlp",
- "alloy-serde 1.0.9",
+ "alloy-serde",
  "auto_impl",
  "c-kzg",
  "derive_more 2.0.1",
@@ -300,20 +243,6 @@ dependencies = [
 
 [[package]]
 name = "alloy-json-rpc"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3994ab6ff6bdeb5aebe65381a8f6a47534789817570111555e8ac413e242ce06"
-dependencies = [
- "alloy-primitives",
- "alloy-sol-types",
- "serde",
- "serde_json",
- "thiserror 2.0.12",
- "tracing",
-]
-
-[[package]]
-name = "alloy-json-rpc"
 version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc08b31ebf9273839bd9a01f9333cbb7a3abb4e820c312ade349dd18bdc79581"
@@ -328,46 +257,20 @@ dependencies = [
 
 [[package]]
 name = "alloy-network"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0be3aa020a6d3aa7601185b4c1a7d6f3a5228cb5424352db63064b29a455c891"
-dependencies = [
- "alloy-consensus 0.14.0",
- "alloy-consensus-any 0.14.0",
- "alloy-eips 0.14.0",
- "alloy-json-rpc 0.14.0",
- "alloy-network-primitives 0.14.0",
- "alloy-primitives",
- "alloy-rpc-types-any 0.14.0",
- "alloy-rpc-types-eth 0.14.0",
- "alloy-serde 0.14.0",
- "alloy-signer 0.14.0",
- "alloy-sol-types",
- "async-trait",
- "auto_impl",
- "derive_more 2.0.1",
- "futures-utils-wasm",
- "serde",
- "serde_json",
- "thiserror 2.0.12",
-]
-
-[[package]]
-name = "alloy-network"
 version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed117b08f0cc190312bf0c38c34cf4f0dabfb4ea8f330071c587cd7160a88cb2"
 dependencies = [
- "alloy-consensus 1.0.9",
- "alloy-consensus-any 1.0.9",
- "alloy-eips 1.0.9",
- "alloy-json-rpc 1.0.9",
- "alloy-network-primitives 1.0.9",
+ "alloy-consensus",
+ "alloy-consensus-any",
+ "alloy-eips",
+ "alloy-json-rpc",
+ "alloy-network-primitives",
  "alloy-primitives",
- "alloy-rpc-types-any 1.0.19",
- "alloy-rpc-types-eth 1.0.9",
- "alloy-serde 1.0.9",
- "alloy-signer 1.0.9",
+ "alloy-rpc-types-any",
+ "alloy-rpc-types-eth",
+ "alloy-serde",
+ "alloy-signer",
  "alloy-sol-types",
  "async-trait",
  "auto_impl",
@@ -376,19 +279,6 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.12",
-]
-
-[[package]]
-name = "alloy-network-primitives"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "498f2ee2eef38a6db0fc810c7bf7daebdf5f2fa8d04adb8bd53e54e91ddbdea3"
-dependencies = [
- "alloy-consensus 0.14.0",
- "alloy-eips 0.14.0",
- "alloy-primitives",
- "alloy-serde 0.14.0",
- "serde",
 ]
 
 [[package]]
@@ -397,10 +287,10 @@ version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c7162ff7be8649c0c391f4e248d1273e85c62076703a1f3ec7daf76b283d886d"
 dependencies = [
- "alloy-consensus 1.0.9",
- "alloy-eips 1.0.9",
+ "alloy-consensus",
+ "alloy-eips",
  "alloy-primitives",
- "alloy-serde 1.0.9",
+ "alloy-serde",
  "serde",
 ]
 
@@ -455,44 +345,13 @@ dependencies = [
 
 [[package]]
 name = "alloy-rpc-types-any"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d1a40595b927dfb07218459037837dbc8de8500a26024bb6ff0548dd2ccc13e0"
-dependencies = [
- "alloy-consensus-any 0.14.0",
- "alloy-rpc-types-eth 0.14.0",
- "alloy-serde 0.14.0",
-]
-
-[[package]]
-name = "alloy-rpc-types-any"
 version = "1.0.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed1e99233cff99aff94fe29cea9e9dd6014c85eeea7890ea4f0e4eada9957ceb"
 dependencies = [
- "alloy-consensus-any 1.0.9",
- "alloy-rpc-types-eth 1.0.9",
- "alloy-serde 1.0.9",
-]
-
-[[package]]
-name = "alloy-rpc-types-eth"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2a9f64e0f69cfb6029e2a044519a1bdd44ce9fc334d5315a7b9837f7a6748e5"
-dependencies = [
- "alloy-consensus 0.14.0",
- "alloy-consensus-any 0.14.0",
- "alloy-eips 0.14.0",
- "alloy-network-primitives 0.14.0",
- "alloy-primitives",
- "alloy-rlp",
- "alloy-serde 0.14.0",
- "alloy-sol-types",
- "itertools 0.14.0",
- "serde",
- "serde_json",
- "thiserror 2.0.12",
+ "alloy-consensus-any",
+ "alloy-rpc-types-eth",
+ "alloy-serde",
 ]
 
 [[package]]
@@ -501,29 +360,18 @@ version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fcaf7dff0fdd756a714d58014f4f8354a1706ebf9fa2cf73431e0aeec3c9431e"
 dependencies = [
- "alloy-consensus 1.0.9",
- "alloy-consensus-any 1.0.9",
- "alloy-eips 1.0.9",
- "alloy-network-primitives 1.0.9",
+ "alloy-consensus",
+ "alloy-consensus-any",
+ "alloy-eips",
+ "alloy-network-primitives",
  "alloy-primitives",
  "alloy-rlp",
- "alloy-serde 1.0.9",
+ "alloy-serde",
  "alloy-sol-types",
  "itertools 0.14.0",
  "serde",
  "serde_json",
  "thiserror 2.0.12",
-]
-
-[[package]]
-name = "alloy-serde"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4dba6ff08916bc0a9cbba121ce21f67c0b554c39cf174bc7b9df6c651bd3c3b"
-dependencies = [
- "alloy-primitives",
- "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -535,21 +383,6 @@ dependencies = [
  "alloy-primitives",
  "serde",
  "serde_json",
-]
-
-[[package]]
-name = "alloy-signer"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c580da7f00f3999e44e327223044d6732358627f93043e22d92c583f6583556"
-dependencies = [
- "alloy-primitives",
- "async-trait",
- "auto_impl",
- "either",
- "elliptic-curve",
- "k256",
- "thiserror 2.0.12",
 ]
 
 [[package]]
@@ -573,10 +406,10 @@ version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6be3d371299b62eac5aa459fa58e8d1c761aabdc637573ae258ab744457fcc88"
 dependencies = [
- "alloy-consensus 1.0.9",
- "alloy-network 1.0.9",
+ "alloy-consensus",
+ "alloy-network",
  "alloy-primitives",
- "alloy-signer 1.0.9",
+ "alloy-signer",
  "async-trait",
  "aws-sdk-kms",
  "k256",
@@ -587,30 +420,14 @@ dependencies = [
 
 [[package]]
 name = "alloy-signer-local"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a00f0f07862bd8f6bc66c953660693c5903062c2c9d308485b2a6eee411089e7"
-dependencies = [
- "alloy-consensus 0.14.0",
- "alloy-network 0.14.0",
- "alloy-primitives",
- "alloy-signer 0.14.0",
- "async-trait",
- "k256",
- "rand 0.8.5",
- "thiserror 2.0.12",
-]
-
-[[package]]
-name = "alloy-signer-local"
 version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e14fe6fedb7fe6e0dfae47fe020684f1d8e063274ef14bca387ddb7a6efa8ec1"
 dependencies = [
- "alloy-consensus 1.0.9",
- "alloy-network 1.0.9",
+ "alloy-consensus",
+ "alloy-network",
  "alloy-primitives",
- "alloy-signer 1.0.9",
+ "alloy-signer",
  "async-trait",
  "k256",
  "rand 0.8.5",
@@ -8597,7 +8414,7 @@ dependencies = [
 [[package]]
 name = "p3-air"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "p3-field 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
  "p3-matrix 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
@@ -8709,7 +8526,7 @@ dependencies = [
 [[package]]
 name = "p3-bn254-fr"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "ff 0.13.1",
  "halo2curves 0.7.0",
@@ -8763,7 +8580,7 @@ dependencies = [
 [[package]]
 name = "p3-challenger"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "p3-field 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
  "p3-maybe-rayon 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
@@ -8808,7 +8625,7 @@ dependencies = [
 [[package]]
 name = "p3-circle"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "itertools 0.13.0",
  "p3-challenger 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
@@ -8854,7 +8671,7 @@ dependencies = [
 [[package]]
 name = "p3-commit"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "itertools 0.13.0",
  "p3-challenger 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
@@ -8908,7 +8725,7 @@ dependencies = [
 [[package]]
 name = "p3-dft"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "itertools 0.13.0",
  "p3-field 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
@@ -8968,7 +8785,7 @@ dependencies = [
 [[package]]
 name = "p3-field"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "itertools 0.13.0",
  "num-bigint 0.4.6",
@@ -9037,7 +8854,7 @@ dependencies = [
 [[package]]
 name = "p3-fri"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "itertools 0.13.0",
  "p3-challenger 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
@@ -9130,7 +8947,7 @@ dependencies = [
 [[package]]
 name = "p3-interpolation"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "p3-field 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
  "p3-matrix 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
@@ -9176,7 +8993,7 @@ dependencies = [
 [[package]]
 name = "p3-keccak"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "itertools 0.13.0",
  "p3-field 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
@@ -9215,7 +9032,7 @@ dependencies = [
 [[package]]
 name = "p3-keccak-air"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "p3-air 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
  "p3-field 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
@@ -9270,7 +9087,7 @@ dependencies = [
 [[package]]
 name = "p3-koala-bear"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "p3-field 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
  "p3-mds 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
@@ -9314,7 +9131,7 @@ dependencies = [
 [[package]]
 name = "p3-matrix"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "itertools 0.13.0",
  "p3-field 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
@@ -9360,7 +9177,7 @@ dependencies = [
 [[package]]
 name = "p3-maybe-rayon"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "rayon",
 ]
@@ -9405,7 +9222,7 @@ dependencies = [
 [[package]]
 name = "p3-mds"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "itertools 0.13.0",
  "p3-dft 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
@@ -9468,7 +9285,7 @@ dependencies = [
 [[package]]
 name = "p3-merkle-tree"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "itertools 0.13.0",
  "p3-commit 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
@@ -9521,7 +9338,7 @@ dependencies = [
 [[package]]
 name = "p3-mersenne-31"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "itertools 0.13.0",
  "num-bigint 0.4.6",
@@ -9582,7 +9399,7 @@ dependencies = [
 [[package]]
 name = "p3-monty-31"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "itertools 0.13.0",
  "num-bigint 0.4.6",
@@ -9639,7 +9456,7 @@ dependencies = [
 [[package]]
 name = "p3-poseidon2"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "gcd",
  "p3-field 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
@@ -9702,7 +9519,7 @@ dependencies = [
 [[package]]
 name = "p3-symmetric"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "itertools 0.13.0",
  "p3-field 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
@@ -9759,7 +9576,7 @@ dependencies = [
 [[package]]
 name = "p3-uni-stark"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "itertools 0.13.0",
  "p3-air 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
@@ -9812,7 +9629,7 @@ dependencies = [
 [[package]]
 name = "p3-util"
 version = "0.1.0"
-source = "git+https://github.com/ProjectZKM/Plonky3#79f986caf008ee3ae455474f42100cb7227219f3"
+source = "git+https://github.com/ProjectZKM/Plonky3#faa24ca4597eebeecbf71b194b71c7d1a99b3f01"
 dependencies = [
  "lock_api",
  "serde",
@@ -12938,9 +12755,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f5fcae977c189e0f8e08dafa115add26d39b972b6e672b8e9f772db4655259de"
 dependencies = [
  "alloy-primitives",
- "alloy-signer 1.0.9",
+ "alloy-signer",
  "alloy-signer-aws",
- "alloy-signer-local 1.0.9",
+ "alloy-signer-local",
  "alloy-sol-types",
  "anyhow",
  "async-trait",
@@ -15649,8 +15466,8 @@ dependencies = [
 
 [[package]]
 name = "zkm-build"
-version = "1.1.4"
-source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.1.4#30749a49a6bb7b5ad9c011d1830b9f6029a3a87c"
+version = "1.2.1"
+source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.2.1#cb8c24305e8889a448da3b3b06ce04b16deaa6be"
 dependencies = [
  "anyhow",
  "cargo_metadata 0.18.1",
@@ -15661,8 +15478,8 @@ dependencies = [
 
 [[package]]
 name = "zkm-core-executor"
-version = "1.1.4"
-source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.1.4#30749a49a6bb7b5ad9c011d1830b9f6029a3a87c"
+version = "1.2.1"
+source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.2.1#cb8c24305e8889a448da3b3b06ce04b16deaa6be"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
@@ -15702,13 +15519,16 @@ dependencies = [
 
 [[package]]
 name = "zkm-core-machine"
-version = "1.1.4"
-source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.1.4#30749a49a6bb7b5ad9c011d1830b9f6029a3a87c"
+version = "1.2.1"
+source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.2.1#cb8c24305e8889a448da3b3b06ce04b16deaa6be"
 dependencies = [
  "bincode 1.3.3",
+ "cbindgen",
+ "cc",
  "cfg-if",
  "elliptic-curve",
  "generic-array 1.1.0",
+ "glob",
  "hashbrown 0.14.5",
  "hex",
  "itertools 0.13.0",
@@ -15727,6 +15547,7 @@ dependencies = [
  "p3-poseidon2 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
  "p3-uni-stark 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
  "p3-util 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
+ "pathdiff",
  "rand 0.8.5",
  "rayon",
  "rayon-scan",
@@ -15754,8 +15575,8 @@ dependencies = [
 
 [[package]]
 name = "zkm-curves"
-version = "1.1.4"
-source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.1.4#30749a49a6bb7b5ad9c011d1830b9f6029a3a87c"
+version = "1.2.1"
+source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.2.1#cb8c24305e8889a448da3b3b06ce04b16deaa6be"
 dependencies = [
  "cfg-if",
  "curve25519-dalek",
@@ -15776,8 +15597,8 @@ dependencies = [
 
 [[package]]
 name = "zkm-derive"
-version = "1.1.4"
-source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.1.4#30749a49a6bb7b5ad9c011d1830b9f6029a3a87c"
+version = "1.2.1"
+source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.2.1#cb8c24305e8889a448da3b3b06ce04b16deaa6be"
 dependencies = [
  "quote",
  "syn 1.0.109",
@@ -15785,8 +15606,8 @@ dependencies = [
 
 [[package]]
 name = "zkm-lib"
-version = "1.1.4"
-source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.1.4#30749a49a6bb7b5ad9c011d1830b9f6029a3a87c"
+version = "1.2.1"
+source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.2.1#cb8c24305e8889a448da3b3b06ce04b16deaa6be"
 dependencies = [
  "bincode 1.3.3",
  "cfg-if",
@@ -15798,8 +15619,8 @@ dependencies = [
 
 [[package]]
 name = "zkm-primitives"
-version = "1.1.4"
-source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.1.4#30749a49a6bb7b5ad9c011d1830b9f6029a3a87c"
+version = "1.2.1"
+source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.2.1#cb8c24305e8889a448da3b3b06ce04b16deaa6be"
 dependencies = [
  "bincode 1.3.3",
  "hex",
@@ -15816,8 +15637,8 @@ dependencies = [
 
 [[package]]
 name = "zkm-prover"
-version = "1.1.4"
-source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.1.4#30749a49a6bb7b5ad9c011d1830b9f6029a3a87c"
+version = "1.2.1"
+source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.2.1#cb8c24305e8889a448da3b3b06ce04b16deaa6be"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
@@ -15855,8 +15676,8 @@ dependencies = [
 
 [[package]]
 name = "zkm-recursion-circuit"
-version = "1.1.4"
-source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.1.4#30749a49a6bb7b5ad9c011d1830b9f6029a3a87c"
+version = "1.2.1"
+source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.2.1#cb8c24305e8889a448da3b3b06ce04b16deaa6be"
 dependencies = [
  "hashbrown 0.14.5",
  "itertools 0.13.0",
@@ -15888,8 +15709,8 @@ dependencies = [
 
 [[package]]
 name = "zkm-recursion-compiler"
-version = "1.1.4"
-source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.1.4#30749a49a6bb7b5ad9c011d1830b9f6029a3a87c"
+version = "1.2.1"
+source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.2.1#cb8c24305e8889a448da3b3b06ce04b16deaa6be"
 dependencies = [
  "backtrace",
  "itertools 0.13.0",
@@ -15909,11 +15730,14 @@ dependencies = [
 
 [[package]]
 name = "zkm-recursion-core"
-version = "1.1.4"
-source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.1.4#30749a49a6bb7b5ad9c011d1830b9f6029a3a87c"
+version = "1.2.1"
+source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.2.1#cb8c24305e8889a448da3b3b06ce04b16deaa6be"
 dependencies = [
  "backtrace",
+ "cbindgen",
+ "cc",
  "ff 0.13.1",
+ "glob",
  "hashbrown 0.14.5",
  "itertools 0.13.0",
  "p3-air 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
@@ -15931,6 +15755,8 @@ dependencies = [
  "p3-poseidon2 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
  "p3-symmetric 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
  "p3-util 0.1.0 (git+https://github.com/ProjectZKM/Plonky3)",
+ "pathdiff",
+ "rand 0.8.5",
  "serde",
  "static_assertions",
  "thiserror 1.0.69",
@@ -15945,8 +15771,8 @@ dependencies = [
 
 [[package]]
 name = "zkm-recursion-derive"
-version = "1.1.4"
-source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.1.4#30749a49a6bb7b5ad9c011d1830b9f6029a3a87c"
+version = "1.2.1"
+source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.2.1#cb8c24305e8889a448da3b3b06ce04b16deaa6be"
 dependencies = [
  "quote",
  "syn 1.0.109",
@@ -15954,8 +15780,8 @@ dependencies = [
 
 [[package]]
 name = "zkm-recursion-gnark-ffi"
-version = "1.1.4"
-source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.1.4#30749a49a6bb7b5ad9c011d1830b9f6029a3a87c"
+version = "1.2.1"
+source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.2.1#cb8c24305e8889a448da3b3b06ce04b16deaa6be"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
@@ -15979,11 +15805,11 @@ dependencies = [
 
 [[package]]
 name = "zkm-sdk"
-version = "1.1.4"
-source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.1.4#30749a49a6bb7b5ad9c011d1830b9f6029a3a87c"
+version = "1.2.1"
+source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.2.1#cb8c24305e8889a448da3b3b06ce04b16deaa6be"
 dependencies = [
- "alloy-signer 0.14.0",
- "alloy-signer-local 0.14.0",
+ "alloy-signer",
+ "alloy-signer-local",
  "alloy-sol-types",
  "anyhow",
  "async-trait",
@@ -16026,8 +15852,8 @@ dependencies = [
 
 [[package]]
 name = "zkm-stark"
-version = "1.1.4"
-source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.1.4#30749a49a6bb7b5ad9c011d1830b9f6029a3a87c"
+version = "1.2.1"
+source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.2.1#cb8c24305e8889a448da3b3b06ce04b16deaa6be"
 dependencies = [
  "arrayref",
  "hashbrown 0.14.5",
@@ -16068,8 +15894,8 @@ dependencies = [
 
 [[package]]
 name = "zkm-zkvm"
-version = "1.1.4"
-source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.1.4#30749a49a6bb7b5ad9c011d1830b9f6029a3a87c"
+version = "1.2.1"
+source = "git+https://github.com/ProjectZKM/Ziren.git?tag=v1.2.1#cb8c24305e8889a448da3b3b06ce04b16deaa6be"
 dependencies = [
  "bincode 1.3.3",
  "cfg-if",
