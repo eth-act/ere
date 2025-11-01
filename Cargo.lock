@@ -5570,6 +5570,7 @@ checksum = "fe4cd85333e22411419a0bcae1297d25e58c9443848b11dc6a86fefe8c78a661"
 dependencies = [
  "equivalent",
  "hashbrown 0.15.3",
+ "rayon",
  "serde",
 ]
 
@@ -6800,8 +6801,8 @@ checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
 
 [[package]]
 name = "nexus-common"
-version = "0.3.4"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.4#8eb6cb423073ca308d64d9fec21a3bfa59b6e4ea"
+version = "0.3.5"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
 dependencies = [
  "rrs-lib 0.1.0 (git+https://github.com/GregAC/rrs/)",
  "serde",
@@ -6811,8 +6812,8 @@ dependencies = [
 
 [[package]]
 name = "nexus-core"
-version = "0.3.4"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.4#8eb6cb423073ca308d64d9fec21a3bfa59b6e4ea"
+version = "0.3.5"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
 dependencies = [
  "nexus-vm",
  "nexus-vm-prover",
@@ -6821,7 +6822,7 @@ dependencies = [
 [[package]]
 name = "nexus-precompile-macros"
 version = "0.1.0"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.4#8eb6cb423073ca308d64d9fec21a3bfa59b6e4ea"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
 dependencies = [
  "nexus-common",
  "proc-macro-crate 3.3.0",
@@ -6834,8 +6835,8 @@ dependencies = [
 
 [[package]]
 name = "nexus-precompiles"
-version = "0.3.4"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.4#8eb6cb423073ca308d64d9fec21a3bfa59b6e4ea"
+version = "0.3.5"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
 dependencies = [
  "nexus-common",
  "nexus-precompile-macros",
@@ -6843,16 +6844,16 @@ dependencies = [
 
 [[package]]
 name = "nexus-profiler"
-version = "0.3.4"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.4#8eb6cb423073ca308d64d9fec21a3bfa59b6e4ea"
+version = "0.3.5"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
 dependencies = [
  "pprof",
 ]
 
 [[package]]
 name = "nexus-sdk"
-version = "0.3.4"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.4#8eb6cb423073ca308d64d9fec21a3bfa59b6e4ea"
+version = "0.3.5"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
 dependencies = [
  "crypto",
  "crypto-common",
@@ -6867,8 +6868,8 @@ dependencies = [
 
 [[package]]
 name = "nexus-sdk-macros"
-version = "0.3.4"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.4#8eb6cb423073ca308d64d9fec21a3bfa59b6e4ea"
+version = "0.3.5"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
 dependencies = [
  "nexus-profiler",
  "proc-macro-crate 3.3.0",
@@ -6879,8 +6880,8 @@ dependencies = [
 
 [[package]]
 name = "nexus-vm"
-version = "0.3.4"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.4#8eb6cb423073ca308d64d9fec21a3bfa59b6e4ea"
+version = "0.3.5"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
 dependencies = [
  "elf",
  "itertools 0.14.0",
@@ -6905,8 +6906,8 @@ dependencies = [
 
 [[package]]
 name = "nexus-vm-prover"
-version = "0.3.4"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.4#8eb6cb423073ca308d64d9fec21a3bfa59b6e4ea"
+version = "0.3.5"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
 dependencies = [
  "impl-trait-for-tuples",
  "itertools 0.13.0",
@@ -6916,14 +6917,15 @@ dependencies = [
  "num-traits",
  "rayon",
  "serde",
- "stwo-prover",
+ "stwo",
+ "stwo-constraint-framework",
  "tiny-keccak",
 ]
 
 [[package]]
 name = "nexus-vm-prover-macros"
-version = "0.3.4"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.4#8eb6cb423073ca308d64d9fec21a3bfa59b6e4ea"
+version = "0.3.5"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
 dependencies = [
  "convert_case",
  "proc-macro2",
@@ -10245,17 +10247,16 @@ dependencies = [
 
 [[package]]
 name = "proptest"
-version = "1.6.0"
+version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14cae93065090804185d3b75f0bf93b8eeda30c7a9b4a33d3bdb3988d6229e50"
+checksum = "bee689443a2bd0a16ab0348b52ee43e3b2d1b1f931c8aa5c9f8de4c86fbe8c40"
 dependencies = [
  "bit-set 0.8.0",
  "bit-vec 0.8.0",
  "bitflags 2.9.0",
- "lazy_static",
  "num-traits",
- "rand 0.8.5",
- "rand_chacha 0.3.1",
+ "rand 0.9.2",
+ "rand_chacha 0.9.0",
  "rand_xorshift",
  "regex-syntax",
  "rusty-fork",
@@ -10654,11 +10655,11 @@ dependencies = [
 
 [[package]]
 name = "rand_xorshift"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d25bf25ec5ae4a3f1b92f929810509a2f53d7dca2f50b794ff57e3face536c8f"
+checksum = "513962919efc330f829edb2535844d1b912b0fbe2ca165d613e4e8788bb05a5a"
 dependencies = [
- "rand_core 0.6.4",
+ "rand_core 0.9.3",
 ]
 
 [[package]]
@@ -12937,6 +12938,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
+name = "std-shims"
+version = "0.1.0"
+source = "git+https://github.com/starkware-libs/stwo?rev=0790eba#0790eba46b8af5697083d84fb75bd34b08a0b31f"
+
+[[package]]
 name = "str_stack"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -13019,23 +13025,44 @@ dependencies = [
 ]
 
 [[package]]
-name = "stwo-prover"
+name = "stwo"
 version = "0.1.1"
-source = "git+https://github.com/starkware-libs/stwo?rev=61d1f6b#61d1f6bf6d2913e6951b837526c2ce1f7f661414"
+source = "git+https://github.com/starkware-libs/stwo?rev=0790eba#0790eba46b8af5697083d84fb75bd34b08a0b31f"
 dependencies = [
  "blake2",
  "blake3",
  "bytemuck",
  "cfg-if",
  "educe 0.5.11",
+ "fnv",
+ "hashbrown 0.15.3",
  "hex",
+ "indexmap 2.10.0",
  "itertools 0.12.1",
  "num-traits",
  "rand 0.8.5",
+ "rayon",
  "serde",
  "starknet-crypto",
  "starknet-ff",
- "thiserror 1.0.69",
+ "std-shims",
+ "thiserror 2.0.12",
+ "tracing",
+ "tracing-subscriber 0.3.20",
+]
+
+[[package]]
+name = "stwo-constraint-framework"
+version = "0.1.1"
+source = "git+https://github.com/starkware-libs/stwo?rev=0790eba#0790eba46b8af5697083d84fb75bd34b08a0b31f"
+dependencies = [
+ "hashbrown 0.15.3",
+ "itertools 0.12.1",
+ "num-traits",
+ "rand 0.8.5",
+ "rayon",
+ "std-shims",
+ "stwo",
  "tracing",
 ]
 

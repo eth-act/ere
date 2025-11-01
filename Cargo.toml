@@ -82,9 +82,9 @@ miden-stdlib = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "
 miden-verifier = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.17.1" }
 
 # Nexus dependencies
-nexus-sdk = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.4" }
-nexus-core = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.4" }
-nexus-vm = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.4" }
+nexus-sdk = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.5" }
+nexus-core = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.5" }
+nexus-vm = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.5" }
 
 # OpenVM dependencies
 openvm-build = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1" }
