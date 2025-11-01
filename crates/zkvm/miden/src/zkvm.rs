@@ -11,7 +11,9 @@ use miden_core::{
 use miden_processor::{
     DefaultHost, ExecutionOptions, ProgramInfo, StackInputs, StackOutputs, execute as miden_execute,
 };
-use miden_prover::{AdviceInputs, ExecutionProof, ProvingOptions, prove as miden_prove};
+use miden_prover::{
+    AdviceInputs, ExecutionProof, HashFunction, ProvingOptions, prove as miden_prove,
+};
 use miden_stdlib::StdLibrary;
 use miden_verifier::verify as miden_verify;
 use std::{env, time::Instant};
@@ -95,11 +97,9 @@ impl zkVM for EreMiden {
         let stack_inputs = StackInputs::default();
         let advice_inputs = AdviceInputs::default().with_stack(bytes_to_felts(input)?);
         let mut host = Self::setup_host()?;
+        let proving_options = ProvingOptions::with_128_bit_security(HashFunction::Blake3_256);
 
         let start = Instant::now();
-        let proving_options =
-            ProvingOptions::with_96_bit_security(env::var_os("MIDEN_DEBUG").is_some());
-
         let (stack_outputs, proof) = miden_prove(
             &self.program,
             stack_inputs.clone(),
@@ -108,6 +108,7 @@ impl zkVM for EreMiden {
             proving_options,
         )
         .map_err(Error::Prove)?;
+        let proving_time = start.elapsed();
 
         let public_values = felts_to_bytes(stack_outputs.as_slice());
         let proof_bytes = (stack_outputs, proof).to_bytes();
@@ -115,7 +116,7 @@ impl zkVM for EreMiden {
         Ok((
             public_values,
             Proof::Compressed(proof_bytes),
-            ProgramProvingReport::new(start.elapsed()),
+            ProgramProvingReport::new(proving_time),
         ))
     }
 
