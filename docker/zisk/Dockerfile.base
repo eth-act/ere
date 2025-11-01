@@ -39,6 +39,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     clang \
     # Needed for /usr/include/google/protobuf/timestamp.proto
     libprotobuf-dev \
+    gcc-riscv64-unknown-elf \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Default to build for RTX 50 series
