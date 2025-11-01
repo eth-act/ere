@@ -105,7 +105,7 @@ risc0-zkvm = { version = "3.0.3", default-features = false }
 risc0-binfmt = { version = "3.0.2", default-features = false }
 
 # SP1 dependencies
-sp1-sdk = "5.2.1"
+sp1-sdk = "5.2.2"
 
 # Ziren dependencies
 zkm-sdk = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.1.4" }
