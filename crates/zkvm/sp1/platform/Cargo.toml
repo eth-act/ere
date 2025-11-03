@@ -1,0 +1,24 @@
+[package]
+name = "ere-platform-sp1"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+# SP1 dependencies
+sp1-zkvm.workspace = true
+
+# Local dependencies
+ere-platform-trait.workspace = true
+
+[features]
+default = ["lib", "libm"]
+blake3 = ["sp1-zkvm/blake3"]
+embedded = ["sp1-zkvm/embedded"]
+lib = ["sp1-zkvm/lib"]
+libm = ["sp1-zkvm/libm"]
+verify = ["sp1-zkvm/verify"]
+
+[lints]
+workspace = true

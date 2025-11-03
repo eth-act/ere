@@ -6,5 +6,5 @@ edition = "2021"
 [workspace]
 
 [dependencies]
-sp1-zkvm = "5.2.2"
+ere-platform-sp1 = { path = "../../../crates/zkvm/sp1/platform" }
 ere-test-utils = { path = "../../../crates/test-utils" }
