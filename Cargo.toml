@@ -12,6 +12,7 @@ members = [
     "crates/zkvm/nexus",
     "crates/zkvm/nexus/platform",
     "crates/zkvm/openvm",
+    "crates/zkvm/openvm/platform",
     "crates/zkvm/pico",
     "crates/zkvm/risc0",
     "crates/zkvm/sp1",
@@ -100,6 +101,7 @@ openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", tag =
 openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1" }
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.1" }
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1" }
+openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1", default-features = false }
 
 # Pico dependencies
 pico-p3-field = { git = "https://github.com/brevis-network/Plonky3.git", package = "p3-field", rev = "a4d376b" }
@@ -135,6 +137,7 @@ ere-zisk = { path = "crates/zkvm/zisk", default-features = false }
 ere-platform-airbender = { path = "crates/zkvm/airbender/platform" }
 ere-platform-jolt = { path = "crates/zkvm/jolt/platform" }
 ere-platform-nexus = { path = "crates/zkvm/nexus/platform" }
+ere-platform-openvm = { path = "crates/zkvm/openvm/platform" }
 
 ere-compiler = { path = "crates/dockerized/compiler" }
 ere-dockerized = { path = "crates/dockerized/dockerized" }

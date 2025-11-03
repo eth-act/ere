@@ -1,0 +1,22 @@
+[package]
+name = "ere-platform-openvm"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+# Openvm dependencies
+openvm.workspace = true
+
+# Local dependencies
+ere-platform-trait = { workspace = true, features = ["output-hasher"] }
+
+[features]
+default = ["getrandom-unsupported"]
+getrandom-unsupported = ["openvm/getrandom-unsupported"]
+heap-embedded-alloc = ["openvm/heap-embedded-alloc"]
+std = ["openvm/std"]
+
+[lints]
+workspace = true
