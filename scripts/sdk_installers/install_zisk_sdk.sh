@@ -41,6 +41,7 @@ unset SETUP_KEY
 export PATH="$PATH:$HOME/.zisk/bin"
 
 # FIXME: Remove this when https://github.com/0xPolygonHermez/zisk/pull/634 is resolved.
+#        Issue for tracking: https://github.com/eth-act/ere/issues/200.
 if true; then
     WORKSPACE=$(mktemp -d)
     git clone https://github.com/han0110/zisk.git --depth 1 --branch fix/single-process-server-panic "$WORKSPACE"
@@ -73,6 +74,7 @@ fi
 if [ -n "$CUDA" ]; then
     WORKSPACE=$(mktemp -d)
     # FIXME: Use upstream when https://github.com/0xPolygonHermez/zisk/pull/634 is resolved.
+    #        Issue for tracking: https://github.com/eth-act/ere/issues/200.
     # git clone https://github.com/0xPolygonHermez/zisk.git --depth 1 --tag "v$ZISK_VERSION" "$WORKSPACE"
     git clone https://github.com/han0110/zisk.git --depth 1 --branch fix/single-process-server-panic "$WORKSPACE"
     cargo build --manifest-path "$WORKSPACE/Cargo.toml" --release --features gpu
