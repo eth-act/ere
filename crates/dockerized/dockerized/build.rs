@@ -29,6 +29,7 @@ fn generate_zkvm_sdk_version_impl() {
         risc0_version,
         sp1_version,
         ziren_version,
+        zisk_version,
     ] = [
         "execution_utils",
         "jolt-sdk",
@@ -39,15 +40,9 @@ fn generate_zkvm_sdk_version_impl() {
         "risc0-zkvm",
         "sp1-sdk",
         "zkm-sdk",
+        "ziskos",
     ]
     .map(detect_sdk_version);
-
-    // FIXME: ZisK doesn't depend on SDK yet, so we hardcode the version here,
-    //        same as the one in `scripts/sdk_installers/install_zisk_sdk.sh`.
-    //        Once ZisK's SDK is ready, we should update this to detect the SDK
-    //        version.
-    //        The issue for tracking https://github.com/eth-act/ere/issues/73.
-    let zisk_version = "0.13.0";
 
     let zkvm_sdk_version_impl = format!(
         r#"impl crate::ErezkVM {{

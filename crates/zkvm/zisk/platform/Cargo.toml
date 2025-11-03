@@ -1,0 +1,19 @@
+[package]
+name = "ere-platform-zisk"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+# ZisK dependencies
+ziskos.workspace = true
+
+# Local dependencies
+ere-platform-trait = { workspace = true, features = ["output-hasher"] }
+
+[features]
+default = []
+
+[lints]
+workspace = true

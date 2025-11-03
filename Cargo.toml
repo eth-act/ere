@@ -22,6 +22,7 @@ members = [
     "crates/zkvm/ziren",
     "crates/zkvm/ziren/platform",
     "crates/zkvm/zisk",
+    "crates/zkvm/zisk/platform",
     # Dockerized zkVM
     "crates/dockerized/compiler",
     "crates/dockerized/dockerized",
@@ -126,6 +127,9 @@ sp1-zkvm = "5.2.2"
 zkm-sdk = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.2.1" }
 zkm-zkvm = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.2.1" }
 
+# ZisK dependencies
+ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.13.0" }
+
 # Local dependencies
 ere-zkvm-interface = { path = "crates/zkvm-interface" }
 ere-platform-trait = { path = "crates/zkvm-interface/platform" }
@@ -149,6 +153,7 @@ ere-platform-pico = { path = "crates/zkvm/pico/platform" }
 ere-platform-risc0 = { path = "crates/zkvm/risc0/platform" }
 ere-platform-sp1 = { path = "crates/zkvm/sp1/platform" }
 ere-platform-ziren = { path = "crates/zkvm/ziren/platform" }
+ere-platform-zisk = { path = "crates/zkvm/zisk/platform" }
 
 ere-compiler = { path = "crates/dockerized/compiler" }
 ere-dockerized = { path = "crates/dockerized/dockerized" }
