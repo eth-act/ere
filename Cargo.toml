@@ -10,6 +10,7 @@ members = [
     "crates/zkvm/jolt/platform",
     "crates/zkvm/miden",
     "crates/zkvm/nexus",
+    "crates/zkvm/nexus/platform",
     "crates/zkvm/openvm",
     "crates/zkvm/pico",
     "crates/zkvm/risc0",
@@ -90,6 +91,7 @@ miden-verifier = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag =
 nexus-sdk = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.5" }
 nexus-core = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.5" }
 nexus-vm = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.5" }
+nexus-rt = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.5" }
 
 # OpenVM dependencies
 openvm-build = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.1" }
@@ -132,6 +134,7 @@ ere-zisk = { path = "crates/zkvm/zisk", default-features = false }
 
 ere-platform-airbender = { path = "crates/zkvm/airbender/platform" }
 ere-platform-jolt = { path = "crates/zkvm/jolt/platform" }
+ere-platform-nexus = { path = "crates/zkvm/nexus/platform" }
 
 ere-compiler = { path = "crates/dockerized/compiler" }
 ere-dockerized = { path = "crates/dockerized/dockerized" }

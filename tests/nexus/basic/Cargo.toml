@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-nexus-rt = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.5" }
+ere-platform-nexus = { path = "../../../crates/zkvm/nexus/platform" }
 ere-test-utils = { path = "../../../crates/test-utils" }
 
 [workspace]
