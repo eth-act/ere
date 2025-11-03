@@ -85,6 +85,7 @@ impl zkVM for EreRisc0 {
     fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         let executor = default_executor();
         let env = ExecutorEnv::builder()
+            .write_slice(&(input.len() as u32).to_le_bytes())
             .write_slice(input)
             .build()
             .map_err(Error::BuildExecutorEnv)?;
@@ -135,6 +136,7 @@ impl zkVM for EreRisc0 {
         };
 
         let env = ExecutorEnv::builder()
+            .write_slice(&(input.len() as u32).to_le_bytes())
             .write_slice(input)
             .segment_limit_po2(self.segment_po2 as _)
             .keccak_max_po2(self.keccak_po2 as _)

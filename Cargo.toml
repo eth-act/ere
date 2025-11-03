@@ -16,6 +16,7 @@ members = [
     "crates/zkvm/pico",
     "crates/zkvm/pico/platform",
     "crates/zkvm/risc0",
+    "crates/zkvm/risc0/platform",
     "crates/zkvm/sp1",
     "crates/zkvm/ziren",
     "crates/zkvm/zisk",
@@ -141,6 +142,7 @@ ere-platform-jolt = { path = "crates/zkvm/jolt/platform" }
 ere-platform-nexus = { path = "crates/zkvm/nexus/platform" }
 ere-platform-openvm = { path = "crates/zkvm/openvm/platform" }
 ere-platform-pico = { path = "crates/zkvm/pico/platform" }
+ere-platform-risc0 = { path = "crates/zkvm/risc0/platform" }
 
 ere-compiler = { path = "crates/dockerized/compiler" }
 ere-dockerized = { path = "crates/dockerized/dockerized" }
