@@ -7,6 +7,7 @@ members = [
     "crates/zkvm/airbender",
     "crates/zkvm/airbender/platform",
     "crates/zkvm/jolt",
+    "crates/zkvm/jolt/platform",
     "crates/zkvm/miden",
     "crates/zkvm/nexus",
     "crates/zkvm/openvm",
@@ -48,7 +49,7 @@ dashmap = "6.1.0"
 digest = { version = "0.10.7", default-features = false }
 eyre = "0.6.12"
 indexmap = "2.10.0"
-postcard = "1.0.8"
+postcard = { version = "1.0.8", default-features = false }
 prost = "0.13"
 prost-build = "0.13"
 rand = "0.9.2"
@@ -73,9 +74,9 @@ airbender_riscv_common = { git = "https://github.com/matter-labs/zksync-airbende
 
 # Jolt dependencies
 jolt-ark-serialize = { git = "https://github.com/a16z/arkworks-algebra", package = "ark-serialize", branch = "feat/fewer-reductions" }
-jolt-common = { git = "https://github.com/a16z/jolt.git", package = "common", tag = "v0.3.0-alpha" }
+jolt-common = { git = "https://github.com/a16z/jolt.git", package = "common", tag = "v0.3.0-alpha", default-features = false }
 jolt-core = { git = "https://github.com/a16z/jolt.git", tag = "v0.3.0-alpha" }
-jolt-sdk = { git = "https://github.com/a16z/jolt.git", tag = "v0.3.0-alpha" }
+jolt-sdk = { git = "https://github.com/a16z/jolt.git", tag = "v0.3.0-alpha", default-features = false }
 
 # Miden dependencies
 miden-assembly = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.18.3" }
@@ -130,6 +131,7 @@ ere-ziren = { path = "crates/zkvm/ziren", default-features = false }
 ere-zisk = { path = "crates/zkvm/zisk", default-features = false }
 
 ere-platform-airbender = { path = "crates/zkvm/airbender/platform" }
+ere-platform-jolt = { path = "crates/zkvm/jolt/platform" }
 
 ere-compiler = { path = "crates/dockerized/compiler" }
 ere-dockerized = { path = "crates/dockerized/dockerized" }
