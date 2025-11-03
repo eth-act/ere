@@ -132,7 +132,7 @@ impl ZiskOptions {
 
 pub struct ZiskSdk {
     elf_path: PathBuf,
-    resource: ProverResourceType,
+    cuda: bool,
     options: ZiskOptions,
     /// ROM digest will be setup only when `ZiskSdk::server` is called.
     ///
@@ -148,6 +148,9 @@ impl ZiskSdk {
         resource: ProverResourceType,
         options: ZiskOptions,
     ) -> Result<Self, Error> {
+        if matches!(resource, ProverResourceType::Network(_)) {
+            panic!("Network proving not yet implemented for ZisK. Use CPU or GPU resource type.");
+        }
         // Save ELF to `~/.zisk/cache` along with the ROM binaries, to avoid it
         // been cleaned up during a long run process.
         let cache_dir_path = dot_zisk_dir_path().join("cache");
@@ -163,7 +166,7 @@ impl ZiskSdk {
 
         Ok(Self {
             elf_path,
-            resource,
+            cuda: matches!(resource, ProverResourceType::Gpu),
             options,
             rom_digest: OnceLock::new(),
         })
@@ -201,12 +204,12 @@ impl ZiskSdk {
         // Extract cycle count from the stdout.
 
         let total_num_cycles = String::from_utf8_lossy(&output.stdout)
-            .split_once("total steps = ")
+            .split_once("STEPS")
             .and_then(|(_, stats)| {
                 stats
                     .split_whitespace()
                     .next()
-                    .and_then(|steps| steps.parse::<u64>().ok())
+                    .and_then(|steps| steps.replace(",", "").parse::<u64>().ok())
             })
             .ok_or(Error::TotalStepsNotFound)?;
 
@@ -224,7 +227,7 @@ impl ZiskSdk {
         // FIXME: Use `get_or_try_init` when it is stabilized
         let mut result = Ok(());
         let rom_digest = *self.rom_digest.get_or_init(|| {
-            check_setup()
+            check_setup(self.cuda)
                 .and_then(|_| rom_setup(&self.elf_path))
                 .map_err(|err| result = Err(err))
                 .ok()
@@ -238,21 +241,13 @@ impl ZiskSdk {
         // Setup ROM and get ROM digest if it's not done yet.
         let rom_digest = self.rom_digest()?;
 
-        let (cargo_zisk, witness_lib_path) = match self.resource {
-            ProverResourceType::Cpu => ("cargo-zisk", None),
-            ProverResourceType::Gpu => (
-                "cargo-zisk-cuda",
-                Some(
-                    dot_zisk_dir_path()
-                        .join("bin")
-                        .join("libzisk_witness_cuda.so"),
-                ),
-            ),
-            ProverResourceType::Network(_) => {
-                panic!(
-                    "Network proving not yet implemented for ZisK. Use CPU or GPU resource type."
-                );
-            }
+        let (cargo_zisk, witness_lib_path) = if self.cuda {
+            let witness_lib_path = dot_zisk_dir_path()
+                .join("bin")
+                .join("libzisk_witness_cuda.so");
+            ("cargo-zisk-cuda", Some(witness_lib_path))
+        } else {
+            ("cargo-zisk", None)
         };
 
         let mut cmd = Command::new(cargo_zisk);
@@ -454,10 +449,16 @@ impl ZiskServer {
 }
 
 /// Does global setup if it is not done yet.
-fn check_setup() -> Result<(), Error> {
+fn check_setup(cuda: bool) -> Result<(), Error> {
     info!("Running command `cargo-zisk check-setup --aggregation`...");
 
-    let mut cmd = Command::new("cargo-zisk");
+    let cargo_zisk = if cuda {
+        "cargo-zisk-cuda"
+    } else {
+        "cargo-zisk"
+    };
+
+    let mut cmd = Command::new(cargo_zisk);
     let output = cmd
         .args(["check-setup", "--aggregation"])
         .output()

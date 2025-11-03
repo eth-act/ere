@@ -6,5 +6,5 @@ edition = "2021"
 [workspace]
 
 [dependencies]
-ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.12.0" }
+ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.13.0" }
 ere-test-utils = { path = "../../../crates/test-utils" }
