@@ -2,6 +2,7 @@
 members = [
     # zkVM interface
     "crates/zkvm-interface",
+    "crates/zkvm-interface/platform",
     # zkVMs
     "crates/zkvm/airbender",
     "crates/zkvm/jolt",
@@ -112,6 +113,7 @@ zkm-sdk = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.2.1" }
 
 # Local dependencies
 ere-zkvm-interface = { path = "crates/zkvm-interface" }
+ere-platform-trait = { path = "crates/zkvm-interface/platform" }
 
 ere-airbender = { path = "crates/zkvm/airbender", default-features = false }
 ere-jolt = { path = "crates/zkvm/jolt", default-features = false }
