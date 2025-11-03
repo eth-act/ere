@@ -36,7 +36,7 @@ jobs:
           - zkvm: ziren
             crate: zkm-sdk
           - zkvm: zisk
-            crate: 0xPolygonHermez/zisk
+            crate: ziskos
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
