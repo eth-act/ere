@@ -1,12 +1,14 @@
 #![no_std]
 #![no_main]
+
 extern crate alloc;
 
 use alloc::vec::Vec;
 use core::sync::atomic::AtomicU16;
 use core::sync::atomic::Ordering;
 
-#[jolt::provable(guest_only)]
+mod jolt_rt;
+
 fn main() {
     let a: AtomicU16 = core::hint::black_box(AtomicU16::new(5));
     let b: AtomicU16 = core::hint::black_box(AtomicU16::new(7));
