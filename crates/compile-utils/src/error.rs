@@ -48,6 +48,12 @@ pub enum CommonError {
 
     #[error("Root package not found in {manifest_dir}")]
     CargoRootPackageNotFound { manifest_dir: PathBuf },
+
+    #[error("Attempt to get {var} env variable results in {var_error}")]
+    Env {
+        var: String,
+        var_error: std::env::VarError,
+    },
 }
 
 impl CommonError {
@@ -116,5 +122,9 @@ impl CommonError {
 
     pub fn cargo_root_package_not_found(manifest_dir: PathBuf) -> Self {
         Self::CargoRootPackageNotFound { manifest_dir }
+    }
+
+    pub fn env_var_error(var: String, var_error: std::env::VarError) -> Self {
+        Self::Env { var, var_error }
     }
 }

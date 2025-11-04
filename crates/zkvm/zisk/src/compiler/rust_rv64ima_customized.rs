@@ -17,7 +17,10 @@ impl Compiler for RustRv64imaCustomized {
     type Program = ZiskProgram;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
-        info!("Compiling ZisK program at {}", guest_directory.display());
+        info!(
+            "Compiling Rust ZisK program at {}",
+            guest_directory.display()
+        );
 
         let metadata = cargo_metadata(guest_directory)?;
         let package = metadata.root_package().unwrap();
@@ -58,7 +61,7 @@ mod tests {
 
     #[test]
     fn test_compile() {
-        let guest_directory = testing_guest_directory("zisk", "basic");
+        let guest_directory = testing_guest_directory("zisk", "basic_rust");
         let program = RustRv64imaCustomized.compile(&guest_directory).unwrap();
         assert!(!program.elf().is_empty(), "ELF bytes should not be empty.");
     }
