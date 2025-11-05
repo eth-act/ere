@@ -3,24 +3,24 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
-use core::marker::PhantomData;
-use ere_platform_trait::output_hasher::{OutputHasher, digest::typenum::U32};
+use core::{marker::PhantomData, ops::Deref};
+use ere_platform_trait::output_hasher::FixedOutputHasher;
 
 pub use ere_platform_trait::{
     Platform,
-    output_hasher::{IdentityOutput, PaddedOutput},
+    output_hasher::{IdentityOutput, PaddedOutput, digest::typenum::U32},
 };
 pub use openvm;
 
-pub struct OpenVMPlatform<D>(PhantomData<D>);
+pub struct OpenVMPlatform<H>(PhantomData<H>);
 
-impl<D: OutputHasher<OutputSize = U32>> Platform for OpenVMPlatform<D> {
+impl<H: FixedOutputHasher<OutputSize = U32>> Platform for OpenVMPlatform<H> {
     fn read_whole_input() -> Vec<u8> {
         openvm::io::read_vec()
     }
 
     fn write_whole_output(output: &[u8]) {
-        let hash = D::output_hash(output);
-        openvm::io::reveal_bytes32(hash.into());
+        let hash = H::output_hash(output).deref().try_into().unwrap();
+        openvm::io::reveal_bytes32(hash);
     }
 }
