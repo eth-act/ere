@@ -3,13 +3,18 @@
 extern crate alloc;
 
 use alloc::{vec, vec::Vec};
+use core::marker::PhantomData;
+use ere_platform_trait::output_hasher::OutputHasher;
 
-pub use ere_platform_trait::Platform;
+pub use ere_platform_trait::{
+    Platform,
+    output_hasher::{IdentityOutput, PaddedOutput, digest::typenum},
+};
 pub use risc0_zkvm;
 
-pub struct Risc0Platform;
+pub struct Risc0Platform<H = IdentityOutput>(PhantomData<H>);
 
-impl Platform for Risc0Platform {
+impl<H: OutputHasher> Platform for Risc0Platform<H> {
     fn read_whole_input() -> Vec<u8> {
         let len = {
             let mut bytes = [0; 4];
@@ -22,6 +27,7 @@ impl Platform for Risc0Platform {
     }
 
     fn write_whole_output(output: &[u8]) {
-        risc0_zkvm::guest::env::commit_slice(output);
+        let hash = H::output_hash(output);
+        risc0_zkvm::guest::env::commit_slice(&*hash);
     }
 }
