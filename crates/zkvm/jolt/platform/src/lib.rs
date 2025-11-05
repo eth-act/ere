@@ -4,8 +4,12 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 use core::{marker::PhantomData, slice};
+use ere_platform_trait::output_hasher::OutputHasher;
 
-pub use ere_platform_trait::Platform;
+pub use ere_platform_trait::{
+    Platform,
+    output_hasher::{IdentityOutput, PaddedOutput, digest::typenum},
+};
 pub use jolt_sdk as jolt;
 
 // FIXME: Because the crate `jolt-common` is not `no_std` compatible, so we have
@@ -65,9 +69,9 @@ impl JoltMemoryConfig for DefaulJoltMemoryConfig {
     const MEMORY_SIZE: u64 = DEFAULT_MEMORY_SIZE;
 }
 
-pub struct JoltPlatform<C = DefaulJoltMemoryConfig>(PhantomData<C>);
+pub struct JoltPlatform<C = DefaulJoltMemoryConfig, H = IdentityOutput>(PhantomData<(C, H)>);
 
-impl<C: JoltMemoryConfig> Platform for JoltPlatform<C> {
+impl<C: JoltMemoryConfig, H: OutputHasher> Platform for JoltPlatform<C, H> {
     fn read_whole_input() -> Vec<u8> {
         let memory_layout = C::memory_layout();
         let input_ptr = memory_layout.input_start as *const u8;
@@ -78,10 +82,11 @@ impl<C: JoltMemoryConfig> Platform for JoltPlatform<C> {
     }
 
     fn write_whole_output(output: &[u8]) {
+        let hash = H::output_hash(output);
         let memory_layout = C::memory_layout();
         let output_ptr = memory_layout.output_start as *mut u8;
         let max_output_len = memory_layout.max_output_size as usize;
         let output_slice = unsafe { core::slice::from_raw_parts_mut(output_ptr, max_output_len) };
-        jolt::postcard::to_slice(output, output_slice).unwrap();
+        jolt::postcard::to_slice(&*hash, output_slice).unwrap();
     }
 }
