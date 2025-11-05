@@ -4,7 +4,6 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 
-#[cfg(feature = "output-hasher")]
 pub mod output_hasher;
 
 /// Platform dependent methods.

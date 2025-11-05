@@ -6,11 +6,10 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-digest = { workspace = true, optional = true }
+digest.workspace = true
 
 [features]
 default = []
-output-hasher = ["dep:digest"]
 
 [lints]
 workspace = true

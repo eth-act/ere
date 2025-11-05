@@ -10,7 +10,7 @@ license.workspace = true
 ziskos.workspace = true
 
 # Local dependencies
-ere-platform-trait = { workspace = true, features = ["output-hasher"] }
+ere-platform-trait.workspace = true
 
 [features]
 default = []
