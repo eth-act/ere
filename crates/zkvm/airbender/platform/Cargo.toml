@@ -10,7 +10,7 @@ license.workspace = true
 airbender_riscv_common.workspace = true
 
 # Local dependencies
-ere-platform-trait = { workspace = true, features = ["output-hasher"] }
+ere-platform-trait.workspace = true
 
 [features]
 default = []
