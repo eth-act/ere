@@ -1,0 +1,23 @@
+[package]
+name = "ere-platform-risc0"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+# Risc0 dependencies
+risc0-zkvm.workspace = true
+
+# Local dependencies
+ere-platform-trait.workspace = true
+
+[features]
+default = []
+getrandom = ["risc0-zkvm/getrandom"]
+heap-embedded-alloc = ["risc0-zkvm/heap-embedded-alloc"]
+std = ["risc0-zkvm/std"]
+unstable = ["risc0-zkvm/unstable"]
+
+[lints]
+workspace = true

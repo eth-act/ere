@@ -1,0 +1,22 @@
+[package]
+name = "ere-platform-airbender"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+# Airbender dependencies
+airbender_riscv_common.workspace = true
+
+# Local dependencies
+ere-platform-trait = { workspace = true, features = ["output-hasher"] }
+
+[features]
+default = []
+uart = ["airbender_riscv_common/uart"]
+custom_panic = ["airbender_riscv_common/custom_panic"]
+custom_allocator = ["airbender_riscv_common/custom_allocator"]
+
+[lints]
+workspace = true

@@ -2,10 +2,4 @@
 name = "addition_no_std"
 edition = "2021"
 
-[dependencies]
-jolt = { git = "https://github.com/a16z/jolt", package = "jolt-sdk", tag = "v0.3.0-alpha" }
-
-[features]
-guest = []
-
 [workspace]

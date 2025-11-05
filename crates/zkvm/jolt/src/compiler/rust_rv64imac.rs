@@ -21,8 +21,6 @@ const RUSTFLAGS: &[&str] = &[
     "getrandom_backend=\"custom\"",
 ];
 const CARGO_BUILD_OPTIONS: &[&str] = &[
-    "--features",
-    "guest",
     // For bare metal we have to build core and alloc
     "-Zbuild-std=core,alloc",
 ];

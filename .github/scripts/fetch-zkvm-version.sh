@@ -13,11 +13,10 @@ set -e -o pipefail
 #   .github/scripts/fetch-zkvm-version.sh risc0 risc0-zkvm
 #   .github/scripts/fetch-zkvm-version.sh sp1 sp1-sdk
 #   .github/scripts/fetch-zkvm-version.sh ziren zkm-sdk
-#   .github/scripts/fetch-zkvm-version.sh zisk 0xPolygonHermez/zisk
+#   .github/scripts/fetch-zkvm-version.sh zisk ziskos
 
 if [ $# -ne 2 ]; then
     echo "Usage: $0 <zkvm> <crate>"
-    echo "  crate: crate (e.g. openvm-sdk) or github org/repo (e.g. 0xPolygonHermez/zisk)"
     exit 1
 fi
 
@@ -34,24 +33,17 @@ get_crates_io_latest() {
     curl -sL -A "EreCI" "https://crates.io/api/v1/crates/$crate" | grep -oP '"max_version":"\K[^"]+'
 }
 
-if [[ "$CRATE" == */* ]]; then
-    # It is in format of org/repo, get current version from build.rs
-    LATEST=$(get_github_latest "$CRATE")
-    CURRENT=$(grep -oP 'gen_name_and_sdk_version\("'"$ZKVM"'", "\K[^"]+' "crates/zkvm/$ZKVM/build.rs")
-else
-    # It is a crate name, get current version from Cargo.toml
-    LINE=$(grep "$CRATE" Cargo.toml)
+LINE=$(grep "$CRATE" Cargo.toml)
 
-    if echo "$LINE" | grep -q "git ="; then
-        # Dependency from github.com
-        REPO=$(echo "$LINE" | grep -oP 'git = "https://github.com/\K[^"]+' | sed 's/\.git$//')
-        CURRENT=$(echo "$LINE" | grep -oP 'tag = "\K[^"]+')
-        LATEST=$(get_github_latest "$REPO")
-    else
-        # Dependency from crates.io
-        CURRENT=$(grep "^$CRATE = " Cargo.toml | grep -oP '"\K[0-9.]+(?=")')
-        LATEST=$(get_crates_io_latest "$CRATE")
-    fi
+if echo "$LINE" | grep -q "git ="; then
+    # Dependency from github.com
+    REPO=$(echo "$LINE" | grep -oP 'git = "https://github.com/\K[^"]+' | sed 's/\.git$//')
+    CURRENT=$(echo "$LINE" | grep -oP 'tag = "\K[^"]+')
+    LATEST=$(get_github_latest "$REPO")
+else
+    # Dependency from crates.io
+    CURRENT=$(grep "^$CRATE = " Cargo.toml | grep -oP '"\K[0-9.]+(?=")')
+    LATEST=$(get_crates_io_latest "$CRATE")
 fi
 
 echo "CURRENT=v${CURRENT#v}"

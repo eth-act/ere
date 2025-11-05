@@ -3,31 +3,10 @@
 
 extern crate alloc;
 
-use alloc::vec::Vec;
-use core::mem;
-use ere_test_utils::{
-    guest::Platform,
-    program::{basic::BasicProgram, Program},
-};
-
-static mut INPUT: Vec<u8> = Vec::new();
-static mut OUTPUT: Vec<u8> = Vec::new();
-
-struct JoltPlatform;
-
-impl Platform for JoltPlatform {
-    fn read_input() -> Vec<u8> {
-        unsafe { mem::take(&mut INPUT) }
-    }
-
-    fn write_output(output: &[u8]) {
-        unsafe { mem::replace(&mut OUTPUT, output.to_vec()) };
-    }
-}
+use ere_platform_jolt::{jolt, JoltPlatform};
+use ere_test_utils::program::{basic::BasicProgram, Program};
 
 #[jolt::provable(guest_only)]
-fn main(input: Vec<u8>) -> Vec<u8> {
-    unsafe { mem::replace(&mut INPUT, input) };
+fn main() {
     BasicProgram::run::<JoltPlatform>();
-    unsafe { mem::take(&mut OUTPUT) }
 }

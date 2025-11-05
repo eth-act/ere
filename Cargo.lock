@@ -2460,6 +2460,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "const-default"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b396d1f76d455557e1218ec8066ae14bba60b4b36ecd55577ba979f5db7ecaa"
+
+[[package]]
 name = "const-hex"
 version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3439,6 +3445,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "embedded-alloc"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8f2de9133f68db0d4627ad69db767726c99ff8585272716708227008d3f1bddd"
+dependencies = [
+ "const-default",
+ "critical-section",
+ "linked_list_allocator",
+ "rlsf",
+]
+
+[[package]]
 name = "embedded-io"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3777,6 +3795,86 @@ dependencies = [
 ]
 
 [[package]]
+name = "ere-platform-airbender"
+version = "0.0.14"
+dependencies = [
+ "ere-platform-trait",
+ "riscv_common",
+]
+
+[[package]]
+name = "ere-platform-jolt"
+version = "0.0.14"
+dependencies = [
+ "ere-platform-trait",
+ "jolt-sdk",
+ "postcard",
+]
+
+[[package]]
+name = "ere-platform-nexus"
+version = "0.0.14"
+dependencies = [
+ "ere-platform-trait",
+ "nexus-rt",
+]
+
+[[package]]
+name = "ere-platform-openvm"
+version = "0.0.14"
+dependencies = [
+ "ere-platform-trait",
+ "openvm",
+]
+
+[[package]]
+name = "ere-platform-pico"
+version = "0.0.14"
+dependencies = [
+ "ere-platform-trait",
+ "pico-sdk",
+]
+
+[[package]]
+name = "ere-platform-risc0"
+version = "0.0.14"
+dependencies = [
+ "ere-platform-trait",
+ "risc0-zkvm",
+]
+
+[[package]]
+name = "ere-platform-sp1"
+version = "0.0.14"
+dependencies = [
+ "ere-platform-trait",
+ "sp1-zkvm",
+]
+
+[[package]]
+name = "ere-platform-trait"
+version = "0.0.14"
+dependencies = [
+ "digest 0.10.7",
+]
+
+[[package]]
+name = "ere-platform-ziren"
+version = "0.0.14"
+dependencies = [
+ "ere-platform-trait",
+ "zkm-zkvm",
+]
+
+[[package]]
+name = "ere-platform-zisk"
+version = "0.0.14"
+dependencies = [
+ "ere-platform-trait",
+ "ziskos",
+]
+
+[[package]]
 name = "ere-risc0"
 version = "0.0.14"
 dependencies = [
@@ -3848,6 +3946,7 @@ name = "ere-test-utils"
 version = "0.0.14"
 dependencies = [
  "ere-io-serde",
+ "ere-platform-trait",
  "ere-zkvm-interface",
  "rand 0.9.2",
  "serde",
@@ -6119,6 +6218,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
+name = "lib-c"
+version = "0.13.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.13.0#ea1ed4c518992a170fc59ec19f1228eb4829a9e1"
+
+[[package]]
 name = "lib-rv32-asm"
 version = "0.2.0"
 source = "git+https://github.com/shamatar/lib-rv32.git#869f82795f82314f17014a04fb6f2c31808e6b42"
@@ -6213,6 +6317,12 @@ name = "linked-hash-map"
 version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0717cef1bc8b636c6e1c1bbdefc09e6322da8a9321966e8928ef80d20f7f770f"
+
+[[package]]
+name = "linked_list_allocator"
+version = "0.10.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9afa463f5405ee81cdb9cc2baf37e08ec7e4c8209442b5d72c04cfb2cd6e6286"
 
 [[package]]
 name = "linux-raw-sys"
@@ -6931,6 +7041,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "nexus-rt"
+version = "0.3.5"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
+dependencies = [
+ "nexus-rt-macros",
+ "postcard",
+ "serde",
+ "tiny-keccak",
+]
+
+[[package]]
+name = "nexus-rt-macros"
+version = "0.1.0"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
+dependencies = [
+ "proc-macro-crate 3.3.0",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.101",
+]
+
+[[package]]
 name = "nexus-sdk"
 version = "0.3.5"
 source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
@@ -7500,6 +7632,8 @@ version = "1.4.1"
 source = "git+https://github.com/openvm-org/openvm.git?tag=v1.4.1#05cb6a11bbd7ac3ac8a00c3fc56391b06f54baa2"
 dependencies = [
  "bytemuck",
+ "getrandom 0.2.16",
+ "getrandom 0.3.3",
  "num-bigint 0.4.6",
  "openvm-custom-insn",
  "openvm-platform",
@@ -8156,6 +8290,8 @@ name = "openvm-platform"
 version = "1.4.1"
 source = "git+https://github.com/openvm-org/openvm.git?tag=v1.4.1#05cb6a11bbd7ac3ac8a00c3fc56391b06f54baa2"
 dependencies = [
+ "critical-section",
+ "embedded-alloc",
  "libm",
  "openvm-custom-insn",
  "openvm-rv32im-guest",
@@ -10002,6 +10138,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "pico-patch-libs"
+version = "1.1.6"
+source = "git+https://github.com/brevis-network/pico.git?tag=v1.1.7#79b10e613c3a0dd2a92d2a65a149d853f4aface2"
+dependencies = [
+ "bincode 1.3.3",
+ "serde",
+]
+
+[[package]]
+name = "pico-sdk"
+version = "1.1.6"
+source = "git+https://github.com/brevis-network/pico.git?tag=v1.1.7#79b10e613c3a0dd2a92d2a65a149d853f4aface2"
+dependencies = [
+ "anyhow",
+ "bincode 1.3.3",
+ "cfg-if",
+ "env_logger",
+ "getrandom 0.2.16",
+ "hex",
+ "lazy_static",
+ "log",
+ "p3-baby-bear 0.1.0 (git+https://github.com/brevis-network/Plonky3.git?rev=a4d376b)",
+ "p3-challenger 0.1.0 (git+https://github.com/brevis-network/Plonky3.git?rev=a4d376b)",
+ "p3-field 0.1.0 (git+https://github.com/brevis-network/Plonky3.git?rev=a4d376b)",
+ "p3-koala-bear 0.1.0 (git+https://github.com/brevis-network/Plonky3.git?rev=a4d376b)",
+ "p3-mersenne-31 0.1.0 (git+https://github.com/brevis-network/Plonky3.git?rev=a4d376b)",
+ "pico-patch-libs",
+ "pico-vm",
+ "rand 0.8.5",
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "pico-vm"
 version = "1.1.6"
 source = "git+https://github.com/brevis-network/pico.git?tag=v1.1.7#79b10e613c3a0dd2a92d2a65a149d853f4aface2"
@@ -10189,9 +10360,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "170a2601f67cc9dba8edd8c4870b15f71a6a2dc196daec8c83f72b59dff628a8"
 dependencies = [
  "cobs",
+ "crc",
  "embedded-io 0.4.0",
  "embedded-io 0.6.1",
  "heapless",
+ "paste",
  "serde",
 ]
 
@@ -11460,6 +11633,8 @@ checksum = "cfaa10feba15828c788837ddde84b994393936d8f5715228627cfe8625122a40"
 dependencies = [
  "bytemuck",
  "cfg-if",
+ "critical-section",
+ "embedded-alloc",
  "getrandom 0.2.16",
  "getrandom 0.3.3",
  "libm",
@@ -11500,6 +11675,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "riscv_common"
+version = "0.1.0"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.0#a3c74040d2f994608f451550232392333400bbf1"
+dependencies = [
+ "heapless",
+]
+
+[[package]]
 name = "rlp"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -11519,6 +11702,18 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "rlsf"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "222fb240c3286247ecdee6fa5341e7cdad0ffdf8e7e401d9937f2d58482a20bf"
+dependencies = [
+ "cfg-if",
+ "const-default",
+ "libc",
+ "svgbobdoc",
 ]
 
 [[package]]
@@ -12655,6 +12850,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "sp1-lib"
+version = "5.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fce8ad0f153443d09d398eccb650a0b2dcbf829470e394e4bf60ec4379c7af93"
+dependencies = [
+ "bincode 1.3.3",
+ "serde",
+ "sp1-primitives",
+]
+
+[[package]]
 name = "sp1-primitives"
 version = "5.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -12943,6 +13149,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "sp1-zkvm"
+version = "5.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb9cad934f30e245be5c0c55aac0810cf3bbd86187b384e0e95f3afac7cd41b3"
+dependencies = [
+ "blake3",
+ "cfg-if",
+ "critical-section",
+ "embedded-alloc",
+ "getrandom 0.2.16",
+ "getrandom 0.3.3",
+ "lazy_static",
+ "libm",
+ "p3-baby-bear 0.2.3-succinct",
+ "p3-field 0.2.3-succinct",
+ "rand 0.8.5",
+ "sha2",
+ "sp1-lib",
+ "sp1-primitives",
+]
+
+[[package]]
 name = "spin"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -13221,6 +13449,19 @@ name = "supports-unicode"
 version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b7401a30af6cb5818bb64852270bb722533397edcfc7344954a38f420819ece2"
+
+[[package]]
+name = "svgbobdoc"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2c04b93fc15d79b39c63218f15e3fdffaa4c227830686e3b7c5f41244eb3e50"
+dependencies = [
+ "base64 0.13.1",
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+ "unicode-width 0.1.14",
+]
 
 [[package]]
 name = "svm-rs"
@@ -15555,6 +15796,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "ziskos"
+version = "0.13.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.13.0#ea1ed4c518992a170fc59ec19f1228eb4829a9e1"
+dependencies = [
+ "cfg-if",
+ "getrandom 0.2.16",
+ "lazy_static",
+ "lib-c",
+ "num-bigint 0.4.6",
+ "num-traits",
+ "rand 0.8.5",
+ "static_assertions",
+ "tiny-keccak",
+]
+
+[[package]]
 name = "zkhash"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -16044,6 +16301,7 @@ dependencies = [
  "cfg-if",
  "getrandom 0.2.16",
  "lazy_static",
+ "libm",
  "rand 0.8.5",
  "serde",
  "sha2",

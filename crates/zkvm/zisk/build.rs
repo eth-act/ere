@@ -1,5 +1,5 @@
-use ere_build_utils::gen_name_and_sdk_version;
+use ere_build_utils::detect_and_generate_name_and_sdk_version;
 
 fn main() {
-    gen_name_and_sdk_version("zisk", "0.13.0");
+    detect_and_generate_name_and_sdk_version("zisk", "ziskos");
 }

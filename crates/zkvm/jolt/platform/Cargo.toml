@@ -1,0 +1,22 @@
+[package]
+name = "ere-platform-jolt"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+postcard = { workspace = true, features = ["alloc"] }
+
+# Jolt dependencies
+jolt-sdk.workspace = true
+
+# Local dependencies
+ere-platform-trait.workspace = true
+
+[features]
+default = ["jolt-sdk/default"]
+guest-std = ["jolt-sdk/guest-std"]
+
+[lints]
+workspace = true
