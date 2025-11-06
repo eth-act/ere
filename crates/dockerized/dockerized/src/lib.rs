@@ -753,7 +753,7 @@ mod test {
     }
 
     mod zisk {
-        test_compile!(Zisk, "basic");
+        test_compile!(Zisk, "basic_rust");
         test_execute!(
             Zisk,
             BasicProgramInput::valid().into_output_sha256(),

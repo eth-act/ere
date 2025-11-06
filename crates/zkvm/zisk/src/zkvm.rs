@@ -153,7 +153,7 @@ mod tests {
         PROGRAM
             .get_or_init(|| {
                 RustRv64imaCustomized
-                    .compile(&testing_guest_directory("zisk", "basic"))
+                    .compile(&testing_guest_directory("zisk", "basic_rust"))
                     .unwrap()
             })
             .clone()
