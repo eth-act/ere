@@ -70,6 +70,14 @@ impl DockerBuildCmd {
         )
     }
 
+    pub fn build_arg_from_env(self, key: impl AsRef<str>) -> Self {
+        let key = key.as_ref();
+        match env::var(key) {
+            Ok(val) => self.build_arg(key, val),
+            Err(_) => self,
+        }
+    }
+
     pub fn exec(self, context: impl AsRef<Path>) -> Result<(), io::Error> {
         let mut cmd = Command::new("docker");
         cmd.arg("build");
