@@ -37,6 +37,7 @@ impl Compiler for GoCustomized {
             .env("GOOS", "tamago")
             .env("GOARCH", "riscv64")
             .arg("build")
+            .arg("-buildvcs=false")
             .args(ldflags)
             .args(tags)
             .args(["-o", executable.to_str().unwrap()])
