@@ -64,7 +64,7 @@ mod tests {
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("zisk", "basic_go");
-        println!("Guest directory is: {:?}", guest_directory);
+        println!("Guest directory is: {guest_directory:?}");
         let program = GoCustomized.compile(&guest_directory).unwrap();
         assert!(!program.elf().is_empty(), "ELF bytes should not be empty.");
     }
