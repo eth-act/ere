@@ -92,7 +92,7 @@ if [ -n "$CUDA" ]; then
     cd "$TEMP_DIR/risc0"
 
     # Build with feature `cuda`
-    RUSTFLAGS="-C target-cpu=native" cargo build --release --features cuda --bin r0vm
+    cargo build --release --features cuda --bin r0vm
     # Copy the binary to the same directory with `cargo-risczero` and `r0vm`
     cp ./target/release/r0vm "$RISC0_BIN_DIR/r0vm-cuda"
     # Create symbolic link as `cargo-risczero` and `r0vm`

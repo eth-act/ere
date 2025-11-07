@@ -196,7 +196,8 @@ impl ErezkVM {
                 .file(docker_dir.join(self.as_str()).join("Dockerfile.base"))
                 .tag(self.base_zkvm_image(CRATE_VERSION, gpu))
                 .tag(self.base_zkvm_image("latest", gpu))
-                .build_arg("BASE_IMAGE", self.base_image(CRATE_VERSION, gpu));
+                .build_arg("BASE_IMAGE", self.base_image(CRATE_VERSION, gpu))
+                .build_arg_from_env("RUSTFLAGS");
 
             if gpu {
                 cmd = cmd.build_arg("CUDA", "1");
@@ -232,7 +233,8 @@ impl ErezkVM {
                 .file(docker_dir.join(self.as_str()).join("Dockerfile.server"))
                 .tag(self.server_zkvm_image(CRATE_VERSION, gpu))
                 .tag(self.server_zkvm_image("latest", gpu))
-                .build_arg("BASE_ZKVM_IMAGE", self.base_zkvm_image(CRATE_VERSION, gpu));
+                .build_arg("BASE_ZKVM_IMAGE", self.base_zkvm_image(CRATE_VERSION, gpu))
+                .build_arg_from_env("RUSTFLAGS");
 
             if gpu {
                 cmd = cmd.build_arg("CUDA", "1");

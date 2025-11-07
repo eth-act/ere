@@ -7,7 +7,7 @@ COPY . /ere
 
 WORKDIR /ere
 
-ARG RUSTFLAGS="-Ctarget-cpu=native"
+ARG RUSTFLAGS
 
 RUN cargo build --release --package ere-server --bin ere-server --features sp1 \
     && mkdir bin && mv target/release/ere-server bin/ere-server \
