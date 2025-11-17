@@ -11,6 +11,9 @@ FROM base${CUDA:+_cuda}
 # The ere-base image provides Rust, Cargo, and common tools.
 # We operate as root for SDK installation.
 
+# Set default toolchain to nightly
+RUN rustup default nightly
+
 ARG CUDA
 
 # Default to build for RTX 50 series
