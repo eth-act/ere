@@ -14,4 +14,4 @@ jobs:
       packages: write
     with:
       zkvm: openvm
-      toolchain: 1.88.0
+      toolchain: nightly
