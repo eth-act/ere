@@ -164,9 +164,6 @@ ere-build-utils = { path = "crates/build-utils" }
 ere-compile-utils = { path = "crates/compile-utils" }
 ere-test-utils = { path = "crates/test-utils" }
 
-[profile.dev.package.openvm-stark-backend]
-opt-level = 3
-
 [patch.crates-io]
 # These patches are only needed by Jolt
 ark-ff = { git = "https://github.com/a16z/arkworks-algebra", branch = "feat/fewer-reductions" }

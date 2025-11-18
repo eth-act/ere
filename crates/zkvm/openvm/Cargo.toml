@@ -16,7 +16,7 @@ toml.workspace = true
 openvm-build.workspace = true
 openvm-circuit.workspace = true
 openvm-continuations.workspace = true
-openvm-sdk.workspace = true
+openvm-sdk = { workspace = true, features = ["nightly-features"] }
 openvm-stark-sdk.workspace = true
 openvm-transpiler.workspace = true
 
