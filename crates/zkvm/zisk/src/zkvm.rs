@@ -47,6 +47,8 @@ impl EreZisk {
             // Recreate the server if it has been created but failed to get status.
             Some(s) => {
                 if s.status().is_err() {
+                    // Drop server first to make sure the server is shutdown.
+                    drop(server.take());
                     *server = Some(self.sdk.server()?);
                 }
             }
