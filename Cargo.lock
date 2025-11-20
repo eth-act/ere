@@ -3682,9 +3682,11 @@ version = "0.0.14"
 dependencies = [
  "anyhow",
  "ere-build-utils",
+ "ere-compiler",
  "ere-server",
  "ere-test-utils",
  "ere-zkvm-interface",
+ "paste",
  "serde",
  "tempfile",
  "thiserror 2.0.12",
