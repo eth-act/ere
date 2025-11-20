@@ -43,18 +43,22 @@ impl EreZisk {
     fn server(&'_ self) -> Result<MutexGuard<'_, Option<ZiskServer>>, Error> {
         let mut server = self.server.lock().map_err(|_| Error::MutexPoisoned)?;
 
-        match &mut *server {
-            // Recreate the server if it has been created but failed to get status.
-            Some(s) => {
-                if s.status().is_err() {
-                    // Drop server first to make sure the server is shutdown.
-                    drop(server.take());
-                    *server = Some(self.sdk.server()?);
+        if server
+            .as_ref()
+            .is_none_or(|server| server.status().is_err())
+        {
+            const MAX_RETRY: usize = 3;
+            let mut retry = 0;
+            *server = loop {
+                drop(server.take());
+                match self.sdk.server() {
+                    Ok(server) => break Some(server),
+                    Err(Error::TimeoutWaitingServerReady) if retry < MAX_RETRY => {
+                        retry += 1;
+                        continue;
+                    }
+                    Err(err) => return Err(err),
                 }
-            }
-            // Create the server if it has not been created.
-            None => {
-                *server = Some(self.sdk.server()?);
             }
         }
 

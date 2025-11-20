@@ -453,7 +453,7 @@ impl ZiskServer {
 
     /// Wait until the server status to be idle.
     fn wait_until_ready(&self) -> Result<(), Error> {
-        const TIMEOUT: Duration = Duration::from_secs(300); // 5mins
+        const TIMEOUT: Duration = Duration::from_secs(120); // 2mins
         const INTERVAL: Duration = Duration::from_secs(1);
 
         let start = Instant::now();
