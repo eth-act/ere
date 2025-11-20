@@ -10,11 +10,11 @@ use openvm_sdk::{
     CpuSdk, F, SC, StdIn,
     codec::{Decode, Encode},
     commit::AppExecutionCommit,
-    config::{AppConfig, SdkVmConfig},
+    config::{AppConfig, DEFAULT_APP_LOG_BLOWUP, DEFAULT_LEAF_LOG_BLOWUP, SdkVmConfig},
     fs::read_object_from_file,
     keygen::{AggProvingKey, AggVerifyingKey, AppProvingKey},
 };
-use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+use openvm_stark_sdk::{config::FriParameters, openvm_stark_backend::p3_field::PrimeField32};
 use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
 use std::{env, path::PathBuf, sync::Arc, time::Instant};
 
@@ -49,7 +49,31 @@ impl EreOpenVM {
             _ => {}
         }
 
-        let sdk = CpuSdk::new(program.app_config().clone()).map_err(Error::SdkInit)?;
+        let app_config = if let Some(value) = program.app_config() {
+            toml::from_str(value).map_err(Error::InvalidAppConfig)?
+        } else {
+            // The default `AppConfig` copied from https://github.com/openvm-org/openvm/blob/v1.4.1/crates/cli/src/default.rs#L35.
+            AppConfig {
+                app_fri_params: FriParameters::standard_with_100_bits_conjectured_security(
+                    DEFAULT_APP_LOG_BLOWUP,
+                )
+                .into(),
+                // By default it supports RISCV32IM with IO but no precompiles.
+                app_vm_config: SdkVmConfig::builder()
+                    .system(Default::default())
+                    .rv32i(Default::default())
+                    .rv32m(Default::default())
+                    .io(Default::default())
+                    .build(),
+                leaf_fri_params: FriParameters::standard_with_100_bits_conjectured_security(
+                    DEFAULT_LEAF_LOG_BLOWUP,
+                )
+                .into(),
+                compiler_options: Default::default(),
+            }
+        };
+
+        let sdk = CpuSdk::new(app_config.clone()).map_err(Error::SdkInit)?;
 
         let elf = Elf::decode(program.elf(), MEM_SIZE as u32).map_err(Error::ElfDecode)?;
 
@@ -69,7 +93,7 @@ impl EreOpenVM {
             .app_commit();
 
         Ok(Self {
-            app_config: program.app_config,
+            app_config,
             app_exe,
             app_pk,
             agg_pk,

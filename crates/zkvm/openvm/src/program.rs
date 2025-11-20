@@ -1,11 +1,10 @@
-use openvm_sdk::config::{AppConfig, SdkVmConfig};
 use serde::{Deserialize, Serialize};
 
 /// OpenVM program that contains ELF of compiled guest and app config.
 #[derive(Clone, Serialize, Deserialize)]
 pub struct OpenVMProgram {
     pub(crate) elf: Vec<u8>,
-    pub(crate) app_config: AppConfig<SdkVmConfig>,
+    pub(crate) app_config: Option<String>,
 }
 
 impl OpenVMProgram {
@@ -13,7 +12,7 @@ impl OpenVMProgram {
         &self.elf
     }
 
-    pub fn app_config(&self) -> &AppConfig<SdkVmConfig> {
-        &self.app_config
+    pub fn app_config(&self) -> Option<&str> {
+        self.app_config.as_deref()
     }
 }
