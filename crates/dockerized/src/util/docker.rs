@@ -1,16 +1,17 @@
-use crate::error::Error;
+use ere_zkvm_interface::CommonError;
 use std::{
     env,
     fmt::{self, Display, Formatter},
-    io::{self, Write},
+    io::Write,
     path::Path,
     process::{Child, Command, Stdio},
 };
+use tracing::debug;
 
 pub const DOCKER_SOCKET: &str = "/var/run/docker.sock";
 
 #[derive(Clone)]
-pub struct CmdOption(String, Option<String>);
+struct CmdOption(String, Option<String>);
 
 impl CmdOption {
     pub fn new(key: impl AsRef<str>, value: impl AsRef<str>) -> Self {
@@ -78,7 +79,7 @@ impl DockerBuildCmd {
         }
     }
 
-    pub fn exec(self, context: impl AsRef<Path>) -> Result<(), io::Error> {
+    pub fn exec(self, context: impl AsRef<Path>) -> Result<(), CommonError> {
         let mut cmd = Command::new("docker");
         cmd.arg("build");
         for option in self.options {
@@ -86,12 +87,14 @@ impl DockerBuildCmd {
         }
         cmd.arg(context.as_ref().to_string_lossy().to_string());
 
-        let status = cmd.status()?;
+        debug!("Docker build with command: {cmd:?}");
+
+        let status = cmd
+            .status()
+            .map_err(|err| CommonError::command(&cmd, err))?;
 
         if !status.success() {
-            return Err(io::Error::other(format!(
-                "Command {cmd:?} failed with status: {status}",
-            )));
+            Err(CommonError::command_exit_non_zero(&cmd, status, None))?
         }
 
         Ok(())
@@ -177,7 +180,7 @@ impl DockerRunCmd {
         mut self,
         commands: impl IntoIterator<Item: AsRef<str>>,
         stdin: &[u8],
-    ) -> Result<Child, io::Error> {
+    ) -> Result<Child, CommonError> {
         self = self.flag("interactive");
 
         let mut cmd = Command::new("docker");
@@ -190,15 +193,25 @@ impl DockerRunCmd {
             cmd.arg(command.as_ref());
         }
 
-        let mut child = cmd.stdin(Stdio::piped()).spawn()?;
+        debug!("Docker run with command: {cmd:?}");
+
+        let mut child = cmd
+            .stdin(Stdio::piped())
+            .spawn()
+            .map_err(|err| CommonError::command(&cmd, err))?;
 
         // Write all to stdin then drop to close the pipe.
-        child.stdin.take().unwrap().write_all(stdin)?;
+        child
+            .stdin
+            .take()
+            .unwrap()
+            .write_all(stdin)
+            .map_err(|err| CommonError::command(&cmd, err))?;
 
         Ok(child)
     }
 
-    pub fn exec(self, commands: impl IntoIterator<Item: AsRef<str>>) -> Result<(), io::Error> {
+    pub fn exec(self, commands: impl IntoIterator<Item: AsRef<str>>) -> Result<(), CommonError> {
         let mut cmd = Command::new("docker");
         cmd.arg("run");
         for option in self.options {
@@ -209,41 +222,59 @@ impl DockerRunCmd {
             cmd.arg(command.as_ref());
         }
 
-        let status = cmd.status()?;
+        debug!("Docker run with command: {cmd:?}");
+
+        let status = cmd
+            .status()
+            .map_err(|err| CommonError::command(&cmd, err))?;
 
         if !status.success() {
-            return Err(io::Error::other(format!(
-                "Command {cmd:?} failed with status: {status}",
-            )));
+            Err(CommonError::command_exit_non_zero(&cmd, status, None))?
         }
 
         Ok(())
     }
 }
 
-pub fn stop_docker_container(container_name: impl AsRef<str>) -> Result<(), Error> {
-    let output = Command::new("docker")
+pub fn stop_docker_container(container_name: impl AsRef<str>) -> Result<(), CommonError> {
+    let mut cmd = Command::new("docker");
+    let output = cmd
         .args(["container", "stop", container_name.as_ref()])
         .output()
-        .map_err(Error::DockerContainerCmd)?;
+        .map_err(|err| CommonError::command(&cmd, err))?;
 
-    if String::from_utf8_lossy(&output.stdout).starts_with("Error") {
-        return Err(Error::DockerContainerCmd(io::Error::other(format!(
-            "Failed to stop container {}",
-            container_name.as_ref()
-        ))));
+    if !output.status.success() {
+        Err(CommonError::command_exit_non_zero(
+            &cmd,
+            output.status,
+            Some(&output),
+        ))?
     }
 
     Ok(())
 }
 
-pub fn docker_image_exists(image: impl AsRef<str>) -> Result<bool, Error> {
-    let output = Command::new("docker")
+pub fn docker_image_exists(image: impl AsRef<str>) -> Result<bool, CommonError> {
+    let mut cmd = Command::new("docker");
+    let output = cmd
         .args(["images", "--quiet", image.as_ref()])
         .output()
-        .map_err(Error::DockerImageCmd)?;
+        .map_err(|err| CommonError::command(&cmd, err))?;
+
+    if !output.status.success() {
+        Err(CommonError::command_exit_non_zero(
+            &cmd,
+            output.status,
+            Some(&output),
+        ))?
+    }
+
     // If image exists, image id will be printed hence stdout will be non-empty.
     Ok(!output.stdout.is_empty())
+}
+
+pub fn force_rebuild() -> bool {
+    env::var_os("ERE_FORCE_REBUILD_DOCKER_IMAGE").is_some()
 }
 
 fn to_string(s: impl AsRef<str>) -> String {
