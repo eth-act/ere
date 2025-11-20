@@ -80,12 +80,12 @@ impl CommonError {
 
     pub fn read_file(id: impl AsRef<str>, path: impl AsRef<Path>, err: io::Error) -> Self {
         let (id, path) = (id.as_ref(), path.as_ref().display());
-        Self::io(format!("Failed to write {id} to {path}"), err)
+        Self::io(format!("Failed to read {id} from {path}"), err)
     }
 
     pub fn write_file(id: impl AsRef<str>, path: impl AsRef<Path>, err: io::Error) -> Self {
         let (id, path) = (id.as_ref(), path.as_ref().display());
-        Self::io(format!("Failed to read {id} from {path}"), err)
+        Self::io(format!("Failed to write {id} to {path}"), err)
     }
 
     pub fn serialize(
