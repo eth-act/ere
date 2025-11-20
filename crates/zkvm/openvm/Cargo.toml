@@ -14,11 +14,11 @@ toml.workspace = true
 
 # OpenVM dependencies
 openvm-build.workspace = true
-openvm-circuit.workspace = true
-openvm-continuations.workspace = true
-openvm-sdk = { workspace = true, features = ["nightly-features"] }
-openvm-stark-sdk.workspace = true
-openvm-transpiler.workspace = true
+openvm-circuit = { workspace = true, optional = true }
+openvm-continuations = { workspace = true, optional = true }
+openvm-sdk = { workspace = true, features = ["nightly-features"], optional = true }
+openvm-stark-sdk = { workspace = true, optional = true }
+openvm-transpiler = { workspace = true, optional = true }
 
 # Local dependencies
 ere-compile-utils = { workspace = true, optional = true }
@@ -33,7 +33,13 @@ ere-build-utils.workspace = true
 [features]
 default = ["compiler", "zkvm"]
 compiler = ["dep:ere-compile-utils"]
-zkvm = []
+zkvm = [
+    "dep:openvm-circuit",
+    "dep:openvm-continuations",
+    "dep:openvm-sdk",
+    "dep:openvm-stark-sdk",
+    "dep:openvm-transpiler",
+]
 cuda = ["openvm-sdk/cuda"]
 
 [lints]
