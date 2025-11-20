@@ -2,6 +2,7 @@ use std::{env, fs, path::Path, process::Command};
 
 use ere_compile_utils::CommonError;
 use ere_zkvm_interface::Compiler;
+use tempfile::tempdir;
 use tracing::info;
 
 use crate::{compiler::Error, program::ZiskProgram};
@@ -28,7 +29,10 @@ impl Compiler for GoCustomized {
             "-tags",
             "tamago,linkcpuinit,linkramstart,linkramsize,linkprintk,tinygo.wasm,tinygo,riscv64",
         ];
-        let executable = guest_directory.join("program.elf");
+
+        let tempdir = tempdir().map_err(CommonError::tempdir)?;
+        let executable = tempdir.path().join("program.elf");
+
         let mut cmd = Command::new(home_dir.join(".tamago").join("bin").join("go"));
         let status = cmd
             .current_dir(guest_directory)
