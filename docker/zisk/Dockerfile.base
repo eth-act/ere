@@ -1,17 +1,12 @@
 ARG BASE_IMAGE=ere-base:latest
-ARG BASE_CUDA_IMAGE=ere-base:latest-cuda
 
-# Whether to enable CUDA feature or not.
-ARG CUDA
-
-FROM $BASE_IMAGE AS base
-FROM $BASE_CUDA_IMAGE AS base_cuda
-FROM base${CUDA:+_cuda}
+FROM $BASE_IMAGE
 
 # The ere-base image provides Rust, Cargo, and common tools.
 # ZisK requires Ubuntu 22.04 or higher (ere-base uses 24.04 by default).
 # We operate as root for SDK and dependency installation.
 
+# Whether to enable CUDA feature or not.
 ARG CUDA
 
 # Install ZisK system dependencies (for Ubuntu)
@@ -67,5 +62,12 @@ ENV PATH=/root/.zisk/bin:$PATH
 
 # Verify cargo-zisk is accessible
 RUN echo "Verifying ZisK installation in Dockerfile ..." && cargo-zisk --version
+
+# Copy the TamaGo installer script from the workspace context
+COPY --chmod=755 scripts/install_tamago.sh /tmp/install_tamago.sh
+
+# Run the TamaGo installation script.
+RUN /tmp/install_tamago.sh && \
+    rm /tmp/install_tamago.sh
 
 CMD ["/bin/bash"]

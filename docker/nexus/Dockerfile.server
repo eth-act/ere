@@ -11,7 +11,7 @@ ARG RUSTFLAGS
 
 RUN cargo build --release --package ere-server --bin ere-server --features nexus \
     && mkdir bin && mv target/release/ere-server bin/ere-server \
-    && cargo clean && rm -rf $CARGO_HOME/registry/src $CARGO_HOME/registry/cache
+    && cargo clean && rm -rf $CARGO_HOME/registry/
 
 FROM $RUNTIME_IMAGE AS runtime_stage
 

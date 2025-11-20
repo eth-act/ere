@@ -1,14 +1,10 @@
 ARG BASE_IMAGE=ere-base:latest
-ARG BASE_CUDA_IMAGE=ere-base:latest-cuda
+
+FROM $BASE_IMAGE
 
 # Whether to enable CUDA feature or not.
 ARG CUDA
 
-FROM $BASE_IMAGE AS base
-FROM $BASE_CUDA_IMAGE AS base_cuda
-FROM base${CUDA:+_cuda}
-
-ARG CUDA
 ARG RUSTFLAGS
 
 # Install protoc with same version as https://github.com/risc0/risc0/blob/v3.0.3/bento/dockerfiles/agent.dockerfile#L24-L26.

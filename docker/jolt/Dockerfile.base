@@ -5,9 +5,6 @@ FROM $BASE_IMAGE
 # The ere-base image provides Rust, Cargo (with a default nightly), and common tools.
 # We operate as root for SDK installation.
 
-# Set default toolchain to 1.88.0
-RUN rustup default 1.88.0
-
 # Copy the Jolt SDK (CLI) installer script from the workspace context
 COPY --chmod=755 scripts/sdk_installers/install_jolt_sdk.sh /tmp/install_jolt_sdk.sh
 
