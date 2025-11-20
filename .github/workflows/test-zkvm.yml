@@ -290,4 +290,4 @@ jobs:
       - name: Run cargo test for ere-${{ inputs.zkvm }} via ere-dockerized
         run: |
           cargo test --release --package ere-dockerized \
-            -- ${{ inputs.zkvm }} ${{ inputs.skip_prove_test && '--skip prove' || ''  }}
+            -- ${{ inputs.zkvm }} ${{ inputs.skip_prove_test && '--skip prove' || ''  }} --test-threads=1
