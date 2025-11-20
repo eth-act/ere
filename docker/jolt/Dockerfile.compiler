@@ -9,7 +9,7 @@ WORKDIR /ere
 
 RUN cargo build --release --package ere-compiler --bin ere-compiler --features jolt \
     && mkdir bin && mv target/release/ere-compiler bin/ere-compiler \
-    && cargo clean && rm -rf $CARGO_HOME/registry/src $CARGO_HOME/registry/cache
+    && cargo clean && rm -rf $CARGO_HOME/registry/
 
 FROM $RUNTIME_IMAGE AS runtime_stage
 

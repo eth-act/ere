@@ -1,16 +1,11 @@
 ARG BASE_IMAGE=ere-base:latest
-ARG BASE_CUDA_IMAGE=ere-base:latest-cuda
 
-# Whether to enable CUDA feature or not.
-ARG CUDA
-
-FROM $BASE_IMAGE AS base
-FROM $BASE_CUDA_IMAGE AS base_cuda
-FROM base${CUDA:+_cuda}
+FROM $BASE_IMAGE
 
 # Set default toolchain to nightly
 RUN rustup default nightly
 
+# Whether to enable CUDA feature or not.
 ARG CUDA
 
 # Default to build for RTX 50 series
