@@ -6385,8 +6385,8 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "lib-c"
-version = "0.13.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.13.0#ea1ed4c518992a170fc59ec19f1228eb4829a9e1"
+version = "0.14.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.14.0#2f791ffd070d024ba350f054c349c8d6bd98d629"
 
 [[package]]
 name = "lib-rv32-asm"
@@ -16202,16 +16202,19 @@ dependencies = [
 
 [[package]]
 name = "ziskos"
-version = "0.13.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.13.0#ea1ed4c518992a170fc59ec19f1228eb4829a9e1"
+version = "0.14.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.14.0#2f791ffd070d024ba350f054c349c8d6bd98d629"
 dependencies = [
+ "bincode 2.0.1",
  "cfg-if",
  "getrandom 0.2.16",
  "lazy_static",
  "lib-c",
  "num-bigint 0.4.6",
+ "num-integer",
  "num-traits",
  "rand 0.8.5",
+ "serde",
  "static_assertions",
  "tiny-keccak",
 ]
