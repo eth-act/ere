@@ -3,8 +3,9 @@ use ere_zkvm_interface::zkvm::{CommonError, ProverResourceType, PublicValues};
 use std::{
     collections::BTreeMap,
     env, fs,
-    io::BufRead,
+    io::{BufRead, Write},
     iter,
+    net::{Ipv4Addr, TcpStream},
     path::{Path, PathBuf},
     process::{Child, Command},
     sync::OnceLock,
@@ -315,6 +316,7 @@ impl ZiskSdk {
 }
 
 /// ZisK server status returned from `cargo-zisk prove-client status`.
+#[derive(Debug)]
 pub enum ZiskServerStatus {
     Idle,
     Working,
@@ -329,14 +331,26 @@ pub struct ZiskServer {
 
 impl Drop for ZiskServer {
     fn drop(&mut self) {
+        info!("Shutting down ZisK server");
         let result = Command::new("cargo-zisk")
             .args(["prove-client", "shutdown"])
             .args(self.options.prove_client_args())
-            .status();
-        if result.is_err() || !result.unwrap().success() {
-            self.child
-                .kill()
-                .unwrap_or_else(|err| error!("Failed to kill server: {err:?}"));
+            .output();
+        if result.is_err() || result.as_ref().is_ok_and(|output| !output.status.success()) {
+            error!(
+                "Failed to shutdown ZisK server{}",
+                result
+                    .map(|output| format!(": {}", String::from_utf8_lossy(&output.stderr)))
+                    .unwrap_or_default()
+            );
+            error!("Shutdown server child process and asm services manually...");
+            let _ = self.child.kill();
+            shutdown_asm_service(23115);
+            shutdown_asm_service(23116);
+            shutdown_asm_service(23117);
+            remove_shm_files();
+        } else {
+            info!("Shutdown ZisK server");
         }
     }
 }
@@ -412,7 +426,13 @@ impl ZiskServer {
         // ZisK server will finish the `prove` requested above then respond the
         // following `status`. So if the following `status` succeeds, the proof
         // should also be ready.
-        self.status()?;
+        self.status().map_err(|err| {
+            if err.to_string().contains("EOF") {
+                Error::ServerCrashed
+            } else {
+                err
+            }
+        })?;
 
         let proof = fs::read(&proof_path)
             .map_err(|err| CommonError::read_file("proof", &proof_path, err))?;
@@ -433,7 +453,7 @@ impl ZiskServer {
 
     /// Wait until the server status to be idle.
     fn wait_until_ready(&self) -> Result<(), Error> {
-        const TIMEOUT: Duration = Duration::from_secs(300); // 5mins
+        const TIMEOUT: Duration = Duration::from_secs(120); // 2mins
         const INTERVAL: Duration = Duration::from_secs(1);
 
         let start = Instant::now();
@@ -516,6 +536,38 @@ fn rom_setup(elf_path: &Path) -> Result<RomDigest, Error> {
     info!("Command `cargo-zisk rom-setup` succeeded");
 
     Ok(rom_digest)
+}
+
+/// Send shutdown request to ZisK asm services.
+fn shutdown_asm_service(port: u16) {
+    // According to https://github.com/0xPolygonHermez/zisk/blob/v0.13.0/emulator-asm/asm-runner/src/asm_services/mod.rs#L34.
+    const CMD_SHUTDOWN_REQUEST_ID: u64 = 1000000;
+    if let Ok(mut stream) = TcpStream::connect((Ipv4Addr::LOCALHOST, port)) {
+        let _ = stream.write_all(
+            &[CMD_SHUTDOWN_REQUEST_ID, 0, 0, 0, 0]
+                .into_iter()
+                .flat_map(|word| word.to_le_bytes())
+                .collect::<Vec<_>>(),
+        );
+    }
+}
+
+/// Remove shared memory created by ZisK.
+fn remove_shm_files() {
+    let Ok(shm_dir) = fs::read_dir(Path::new("/dev/shm")) else {
+        return;
+    };
+
+    for entry in shm_dir.flatten() {
+        let path = entry.path();
+        if path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .is_some_and(|name| name.contains("ZISK"))
+        {
+            let _ = fs::remove_file(&path);
+        }
+    }
 }
 
 /// Deserialize public values as json string sequence, and parse the `RomDigest`

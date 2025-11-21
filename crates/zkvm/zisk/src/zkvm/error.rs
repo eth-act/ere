@@ -23,6 +23,9 @@ pub enum Error {
     #[error("Mutex of ZiskServer is poisoned")]
     MutexPoisoned,
 
+    #[error("Server crashed")]
+    ServerCrashed,
+
     #[error("Timeout waiting for server ready")]
     TimeoutWaitingServerReady,
 
