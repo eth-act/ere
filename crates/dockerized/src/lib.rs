@@ -78,6 +78,10 @@ mod util;
 pub mod compiler;
 pub mod zkvm;
 
+pub use crate::{
+    compiler::{DockerizedCompiler, SerializedProgram},
+    zkvm::DockerizedzkVM,
+};
 pub use ere_compiler::CompilerKind;
 
 include!(concat!(env!("OUT_DIR"), "/crate_version.rs"));
