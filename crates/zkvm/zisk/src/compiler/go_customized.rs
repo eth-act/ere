@@ -62,15 +62,28 @@ impl Compiler for GoCustomized {
 
 #[cfg(test)]
 mod tests {
-    use crate::compiler::GoCustomized;
-    use ere_test_utils::host::testing_guest_directory;
-    use ere_zkvm_interface::compiler::Compiler;
+    use crate::{EreZisk, compiler::GoCustomized};
+    use ere_test_utils::{
+        host::{run_zkvm_execute, testing_guest_directory},
+        io::serde::cbor::Cbor,
+        program::basic::BasicProgram,
+    };
+    use ere_zkvm_interface::{ProverResourceType, compiler::Compiler};
 
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("zisk", "basic_go");
-        println!("Guest directory is: {guest_directory:?}");
         let program = GoCustomized.compile(&guest_directory).unwrap();
         assert!(!program.elf().is_empty(), "ELF bytes should not be empty.");
+    }
+
+    #[test]
+    fn test_execute() {
+        let guest_directory = testing_guest_directory("zisk", "basic_go");
+        let program = GoCustomized.compile(&guest_directory).unwrap();
+        let zkvm = EreZisk::new(program, ProverResourceType::Cpu).unwrap();
+
+        let test_case = BasicProgram::<Cbor>::valid_test_case();
+        run_zkvm_execute(&zkvm, &test_case);
     }
 }
