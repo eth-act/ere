@@ -1,7 +1,7 @@
 use crate::program::Program;
 use alloc::vec::Vec;
 use core::{marker::PhantomData, panic};
-use ere_io::{IoSerde, Serde, bincode::BincodeLegacy};
+use ere_io::serde::{IoSerde, Serde, bincode::BincodeLegacy};
 use serde::{Deserialize, Serialize};
 
 /// The basic program takes `BasicProgramInput` as input, and computes
@@ -55,7 +55,7 @@ mod host {
         host::ProgramTestCase,
         program::basic::{BasicProgram, BasicProgramInput},
     };
-    use ere_io::Serde;
+    use ere_io::serde::Serde;
     use rand::{Rng, rng};
 
     impl<S: Serde> BasicProgram<S> {

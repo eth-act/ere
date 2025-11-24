@@ -107,7 +107,8 @@ mod tests {
     use crate::{compiler::RustRv32ima, program::AirbenderProgram, zkvm::EreAirbender};
     use ere_test_utils::{
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
-        program::basic::BasicProgramInput,
+        io::serde::bincode::BincodeLegacy,
+        program::basic::BasicProgram,
     };
     use ere_zkvm_interface::{
         compiler::Compiler,
@@ -131,16 +132,19 @@ mod tests {
         let program = basic_program();
         let zkvm = EreAirbender::new(program, ProverResourceType::Cpu).unwrap();
 
-        let test_case = BasicProgramInput::valid().into_output_sha256();
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
         run_zkvm_execute(&zkvm, &test_case);
     }
 
     #[test]
-    fn test_execute_invalid_input() {
+    fn test_execute_invalid_test_case() {
         let program = basic_program();
         let zkvm = EreAirbender::new(program, ProverResourceType::Cpu).unwrap();
 
-        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+        for input in [
+            Vec::new(),
+            BasicProgram::<BincodeLegacy>::invalid_test_case().serialized_input(),
+        ] {
             zkvm.execute(&input).unwrap_err();
         }
     }
@@ -150,16 +154,19 @@ mod tests {
         let program = basic_program();
         let zkvm = EreAirbender::new(program, ProverResourceType::Cpu).unwrap();
 
-        let test_case = BasicProgramInput::valid().into_output_sha256();
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
         run_zkvm_prove(&zkvm, &test_case);
     }
 
     #[test]
-    fn test_prove_invalid_input() {
+    fn test_prove_invalid_test_case() {
         let program = basic_program();
         let zkvm = EreAirbender::new(program, ProverResourceType::Cpu).unwrap();
 
-        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+        for input in [
+            Vec::new(),
+            BasicProgram::<BincodeLegacy>::invalid_test_case().serialized_input(),
+        ] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }
     }
