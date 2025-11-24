@@ -7,6 +7,8 @@ license.workspace = true
 
 [dependencies]
 bincode = { workspace = true, features = ["alloc", "serde"], optional = true }
+ciborium = { workspace = true, optional = true }
+ciborium-io = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
 rkyv = { workspace = true, features = ["alloc", "bytecheck", "unaligned"], optional = true }
 
@@ -16,6 +18,7 @@ rkyv = { workspace = true, features = ["alloc", "bytecheck", "unaligned"], optio
 default = []
 serde = ["dep:serde"]
 bincode = ["dep:bincode", "serde"]
+cbor = ["dep:ciborium", "dep:ciborium-io", "serde"]
 rkyv = ["dep:rkyv"]
 
 [lints]
