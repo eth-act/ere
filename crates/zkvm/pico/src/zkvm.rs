@@ -182,7 +182,8 @@ mod tests {
     use crate::{compiler::RustRv32imaCustomized, program::PicoProgram, zkvm::ErePico};
     use ere_test_utils::{
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
-        program::basic::BasicProgramInput,
+        io_serde::bincode::BincodeLegacy,
+        program::basic::BasicProgram,
     };
     use ere_zkvm_interface::{
         compiler::Compiler,
@@ -206,7 +207,7 @@ mod tests {
         let program = basic_program();
         let zkvm = ErePico::new(program, ProverResourceType::Cpu).unwrap();
 
-        let test_case = BasicProgramInput::valid();
+        let test_case = BasicProgram::<BincodeLegacy>::valid_input();
         run_zkvm_execute(&zkvm, &test_case);
     }
 
@@ -215,7 +216,10 @@ mod tests {
         let program = basic_program();
         let zkvm = ErePico::new(program, ProverResourceType::Cpu).unwrap();
 
-        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+        for input in [
+            Vec::new(),
+            BasicProgram::<BincodeLegacy>::invalid_input().serialized_input(),
+        ] {
             zkvm.execute(&input).unwrap_err();
         }
     }
@@ -225,7 +229,7 @@ mod tests {
         let program = basic_program();
         let zkvm = ErePico::new(program, ProverResourceType::Cpu).unwrap();
 
-        let test_case = BasicProgramInput::valid();
+        let test_case = BasicProgram::<BincodeLegacy>::valid_input();
         run_zkvm_prove(&zkvm, &test_case);
     }
 
@@ -234,7 +238,10 @@ mod tests {
         let program = basic_program();
         let zkvm = ErePico::new(program, ProverResourceType::Cpu).unwrap();
 
-        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+        for input in [
+            Vec::new(),
+            BasicProgram::<BincodeLegacy>::invalid_input().serialized_input(),
+        ] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }
     }
