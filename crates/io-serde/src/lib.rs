@@ -8,9 +8,13 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 use core::error::Error;
-use serde::{Deserialize, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
+#[cfg(feature = "bincode")]
 pub mod bincode;
+
+#[cfg(feature = "cbor")]
+pub mod cbor;
 
 /// IO de/serialization to be shared between host and guest.
 pub trait IoSerde {
@@ -18,5 +22,5 @@ pub trait IoSerde {
 
     fn serialize<T: Serialize>(&self, value: &T) -> Result<Vec<u8>, Self::Error>;
 
-    fn deserialize<'a, T: Deserialize<'a>>(&self, bytes: &'a [u8]) -> Result<T, Self::Error>;
+    fn deserialize<T: DeserializeOwned>(&self, bytes: &[u8]) -> Result<T, Self::Error>;
 }

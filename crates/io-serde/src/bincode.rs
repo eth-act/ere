@@ -5,24 +5,29 @@ use core::{
     error::Error,
     fmt::{self, Display, Formatter},
 };
-use serde::{Deserialize, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
 pub use bincode::{
     config,
     error::{DecodeError, EncodeError},
 };
 
+pub type BincodeLegacyConfig = Configuration<LittleEndian, Fixint, NoLimit>;
+pub type BincodeLegacy = Bincode<BincodeLegacyConfig>;
+pub type BincodeStandardConfig = Configuration<LittleEndian, Varint, NoLimit>;
+pub type BincodeStandard = Bincode<BincodeStandardConfig>;
+
 #[derive(Debug)]
 pub enum BincodeError {
-    Encode(EncodeError),
-    Decode(DecodeError),
+    Serialize(EncodeError),
+    Deserialize(DecodeError),
 }
 
 impl Display for BincodeError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Encode(err) => write!(f, "{err:?}"),
-            Self::Decode(err) => write!(f, "{err:?}"),
+            Self::Serialize(err) => write!(f, "Bincode serialize error: {err:?}"),
+            Self::Deserialize(err) => write!(f, "Bincode deserialize error: {err:?}"),
         }
     }
 }
@@ -30,17 +35,17 @@ impl Display for BincodeError {
 impl Error for BincodeError {}
 
 /// IO de/serialization implementation with [`bincode`].
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct Bincode<O>(pub O);
 
-impl Bincode<Configuration<LittleEndian, Fixint, NoLimit>> {
+impl Bincode<BincodeLegacyConfig> {
     /// `Bincode` with legacy configuration, same as the default of `bincode@1`.
     pub fn legacy() -> Self {
         Self(bincode::config::legacy())
     }
 }
 
-impl Bincode<Configuration<LittleEndian, Varint, NoLimit>> {
+impl Bincode<BincodeStandardConfig> {
     /// `Bincode` with standard configuration.
     pub fn standard() -> Self {
         Self(bincode::config::standard())
@@ -51,12 +56,12 @@ impl<O: Config> IoSerde for Bincode<O> {
     type Error = BincodeError;
 
     fn serialize<T: Serialize>(&self, value: &T) -> Result<Vec<u8>, Self::Error> {
-        bincode::serde::encode_to_vec(value, self.0).map_err(BincodeError::Encode)
+        bincode::serde::encode_to_vec(value, self.0).map_err(BincodeError::Serialize)
     }
 
-    fn deserialize<'a, T: Deserialize<'a>>(&self, bytes: &'a [u8]) -> Result<T, Self::Error> {
-        let (value, _) = bincode::serde::borrow_decode_from_slice(bytes, self.0)
-            .map_err(BincodeError::Decode)?;
+    fn deserialize<T: DeserializeOwned>(&self, bytes: &[u8]) -> Result<T, Self::Error> {
+        let (value, _) =
+            bincode::serde::decode_from_slice(bytes, self.0).map_err(BincodeError::Deserialize)?;
         Ok(value)
     }
 }
