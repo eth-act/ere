@@ -1,8 +1,9 @@
-use anyhow::{Context, Error};
+use anyhow::{Context, Error, bail};
 use clap::Parser;
+use ere_compiler::CompilerKind;
 use ere_zkvm_interface::compiler::Compiler;
 use serde::Serialize;
-use std::{env, fs::File, path::PathBuf};
+use std::{fs::File, path::PathBuf};
 use tracing_subscriber::EnvFilter;
 
 // Compile-time check to ensure exactly one zkVM feature is enabled for `ere-compiler`
@@ -26,6 +27,9 @@ const _: () = {
 #[derive(Parser)]
 #[command(author, version)]
 struct Args {
+    /// Compiler kind to use
+    #[arg(long, value_parser = <CompilerKind as std::str::FromStr>::from_str)]
+    compiler_kind: CompilerKind,
     /// Path to the guest program
     #[arg(long)]
     guest_path: PathBuf,
@@ -41,7 +45,7 @@ fn main() -> Result<(), Error> {
 
     let args = Args::parse();
 
-    let program = compile(args.guest_path)?;
+    let program = compile(args.guest_path, args.compiler_kind)?;
 
     let mut output = File::create(args.output_path).with_context(|| "Failed to create output")?;
     bincode::serde::encode_into_std_write(&program, &mut output, bincode::config::legacy())
@@ -50,62 +54,140 @@ fn main() -> Result<(), Error> {
     Ok(())
 }
 
-fn compile(guest_path: PathBuf) -> Result<impl Serialize, Error> {
+fn compile(guest_path: PathBuf, compiler_kind: CompilerKind) -> Result<impl Serialize, Error> {
     #[cfg(feature = "airbender")]
-    let result = ere_airbender::compiler::RustRv32ima.compile(&guest_path);
+    let result = {
+        use ere_airbender::compiler::*;
+        match compiler_kind {
+            CompilerKind::Rust | CompilerKind::RustCustomized => RustRv32ima.compile(&guest_path),
+            _ => bail!(unsupported_compiler_kind_err(
+                compiler_kind,
+                [CompilerKind::Rust, CompilerKind::RustCustomized]
+            )),
+        }
+    };
 
     #[cfg(feature = "jolt")]
-    let result = if use_stock_rust() {
-        ere_jolt::compiler::RustRv64imac.compile(&guest_path)
-    } else {
-        ere_jolt::compiler::RustRv64imacCustomized.compile(&guest_path)
+    let result = {
+        use ere_jolt::compiler::*;
+        match compiler_kind {
+            CompilerKind::Rust => RustRv64imac.compile(&guest_path),
+            CompilerKind::RustCustomized => RustRv64imacCustomized.compile(&guest_path),
+            _ => bail!(unsupported_compiler_kind_err(
+                compiler_kind,
+                [CompilerKind::Rust, CompilerKind::RustCustomized]
+            )),
+        }
     };
 
     #[cfg(feature = "miden")]
-    let result = ere_miden::compiler::MidenAsm.compile(&guest_path);
+    let result = {
+        use ere_miden::compiler::*;
+        match compiler_kind {
+            CompilerKind::MidenAsm => MidenAsm.compile(&guest_path),
+            _ => bail!(unsupported_compiler_kind_err(
+                compiler_kind,
+                [CompilerKind::MidenAsm]
+            )),
+        }
+    };
 
     #[cfg(feature = "nexus")]
-    let result = ere_nexus::compiler::RustRv32i.compile(&guest_path);
+    let result = {
+        use ere_nexus::compiler::*;
+        match compiler_kind {
+            CompilerKind::Rust | CompilerKind::RustCustomized => RustRv32i.compile(&guest_path),
+            _ => bail!(unsupported_compiler_kind_err(
+                compiler_kind,
+                [CompilerKind::Rust, CompilerKind::RustCustomized]
+            )),
+        }
+    };
 
     #[cfg(feature = "openvm")]
-    let result = if use_stock_rust() {
-        ere_openvm::compiler::RustRv32ima.compile(&guest_path)
-    } else {
-        ere_openvm::compiler::RustRv32imaCustomized.compile(&guest_path)
+    let result = {
+        use ere_openvm::compiler::*;
+        match compiler_kind {
+            CompilerKind::Rust => RustRv32ima.compile(&guest_path),
+            CompilerKind::RustCustomized => RustRv32imaCustomized.compile(&guest_path),
+            _ => bail!(unsupported_compiler_kind_err(
+                compiler_kind,
+                [CompilerKind::Rust, CompilerKind::RustCustomized]
+            )),
+        }
     };
 
     #[cfg(feature = "pico")]
-    let result = if use_stock_rust() {
-        ere_pico::compiler::RustRv32ima.compile(&guest_path)
-    } else {
-        ere_pico::compiler::RustRv32imaCustomized.compile(&guest_path)
+    let result = {
+        use ere_pico::compiler::*;
+        match compiler_kind {
+            CompilerKind::Rust => RustRv32ima.compile(&guest_path),
+            CompilerKind::RustCustomized => RustRv32imaCustomized.compile(&guest_path),
+            _ => bail!(unsupported_compiler_kind_err(
+                compiler_kind,
+                [CompilerKind::Rust, CompilerKind::RustCustomized]
+            )),
+        }
     };
 
     #[cfg(feature = "risc0")]
-    let result = if use_stock_rust() {
-        ere_risc0::compiler::RustRv32ima.compile(&guest_path)
-    } else {
-        ere_risc0::compiler::RustRv32imaCustomized.compile(&guest_path)
+    let result = {
+        use ere_risc0::compiler::*;
+        match compiler_kind {
+            CompilerKind::Rust => RustRv32ima.compile(&guest_path),
+            CompilerKind::RustCustomized => RustRv32imaCustomized.compile(&guest_path),
+            _ => bail!(unsupported_compiler_kind_err(
+                compiler_kind,
+                [CompilerKind::Rust, CompilerKind::RustCustomized]
+            )),
+        }
     };
 
     #[cfg(feature = "sp1")]
-    let result = if use_stock_rust() {
-        ere_sp1::compiler::RustRv32ima.compile(&guest_path)
-    } else {
-        ere_sp1::compiler::RustRv32imaCustomized.compile(&guest_path)
+    let result = {
+        use ere_sp1::compiler::*;
+        match compiler_kind {
+            CompilerKind::Rust => RustRv32ima.compile(&guest_path),
+            CompilerKind::RustCustomized => RustRv32imaCustomized.compile(&guest_path),
+            _ => bail!(unsupported_compiler_kind_err(
+                compiler_kind,
+                [CompilerKind::Rust, CompilerKind::RustCustomized]
+            )),
+        }
     };
 
     #[cfg(feature = "ziren")]
-    let result = ere_ziren::compiler::RustMips32r2Customized.compile(&guest_path);
+    let result = {
+        use ere_ziren::compiler::*;
+        match compiler_kind {
+            CompilerKind::RustCustomized => RustMips32r2Customized.compile(&guest_path),
+            _ => bail!(unsupported_compiler_kind_err(
+                compiler_kind,
+                [CompilerKind::RustCustomized]
+            )),
+        }
+    };
 
     #[cfg(feature = "zisk")]
-    let result = ere_zisk::compiler::RustRv64imaCustomized.compile(&guest_path);
+    let result = {
+        use ere_zisk::compiler::*;
+        match compiler_kind {
+            CompilerKind::RustCustomized => RustRv64imaCustomized.compile(&guest_path),
+            CompilerKind::GoCustomized => GoCustomized.compile(&guest_path),
+            _ => bail!(unsupported_compiler_kind_err(
+                compiler_kind,
+                [CompilerKind::RustCustomized, CompilerKind::GoCustomized]
+            )),
+        }
+    };
 
     result.with_context(|| "Failed to compile program")
 }
 
-#[allow(dead_code)]
-/// Returns whether to use stock Rust compiler instead of customized compiler.
-fn use_stock_rust() -> bool {
-    env::var_os("ERE_RUST_TOOLCHAIN").is_some()
+fn unsupported_compiler_kind_err(
+    compiler_kind: CompilerKind,
+    supported: impl IntoIterator<Item = CompilerKind>,
+) -> anyhow::Error {
+    let supported = supported.into_iter().collect::<Vec<_>>();
+    anyhow::anyhow!("Unsupported compiler kind {compiler_kind:?}, expect one of {supported:?}",)
 }

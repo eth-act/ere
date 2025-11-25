@@ -44,13 +44,6 @@ ENV RUSTUP_HOME=/usr/local/rustup \
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain ${RUST_VERSION} --no-modify-path
 
-# Copy the TamaGo installer script from the workspace context
-COPY --chmod=755 scripts/install_tamago.sh /tmp/install_tamago.sh
-
-# Run the TamaGo installation script.
-RUN /tmp/install_tamago.sh && \
-    rm /tmp/install_tamago.sh
-
 # Add a non-root user for subsequent stages or use in derived images
 # This is generally best practice.
 ARG USERNAME=ere_user

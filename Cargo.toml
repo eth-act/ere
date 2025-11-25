@@ -24,8 +24,8 @@ members = [
     "crates/zkvm/zisk",
     "crates/zkvm/zisk/platform",
     # Dockerized zkVM
+    "crates/dockerized",
     "crates/dockerized/compiler",
-    "crates/dockerized/dockerized",
     "crates/dockerized/server",
     # Utils
     "crates/io-serde",
@@ -36,7 +36,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.0.14"
+version = "0.0.15"
 edition = "2024"
 rust-version = "1.85"
 license = "MIT OR Apache-2.0"
@@ -56,6 +56,7 @@ dashmap = "6.1.0"
 digest = { version = "0.10.7", default-features = false }
 eyre = "0.6.12"
 indexmap = "2.10.0"
+paste = "1.0.15"
 postcard = { version = "1.0.8", default-features = false }
 prost = "0.13"
 prost-build = "0.13"
@@ -155,8 +156,8 @@ ere-platform-sp1 = { path = "crates/zkvm/sp1/platform" }
 ere-platform-ziren = { path = "crates/zkvm/ziren/platform" }
 ere-platform-zisk = { path = "crates/zkvm/zisk/platform" }
 
+ere-dockerized = { path = "crates/dockerized" }
 ere-compiler = { path = "crates/dockerized/compiler" }
-ere-dockerized = { path = "crates/dockerized/dockerized" }
 ere-server = { path = "crates/dockerized/server" }
 
 ere-io-serde = { path = "crates/io-serde" }

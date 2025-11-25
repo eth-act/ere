@@ -130,7 +130,7 @@ ere-dockerized = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.12" }
 
 ```rust
 // main.rs
-use ere_dockerized::{EreDockerizedCompiler, EreDockerizedzkVM, ErezkVM};
+use ere_dockerized::{CompilerKind, DockerizedCompiler, DockerizedzkVM, zkVMKind};
 use ere_zkvm_interface::{
     compiler::Compiler,
     zkvm::{ProofKind, ProverResourceType, zkVM},
@@ -140,11 +140,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let guest_directory = std::path::Path::new("workspace/guest");
 
     // Compile guest
-    let compiler = EreDockerizedCompiler::new(ErezkVM::SP1, std::path::Path::new("workspace"));
+    let compiler = DockerizedCompiler::new(
+        zkVMKind::SP1,
+        CompilerKind::RustCustomized,
+        std::path::Path::new("workspace"),
+    );
     let program = compiler.compile(guest_directory)?;
 
     // Create zkVM instance
-    let zkvm = EreDockerizedzkVM::new(ErezkVM::SP1, program, ProverResourceType::Cpu)?;
+    let zkvm = DockerizedzkVM::new(zkVMKind::SP1, program, ProverResourceType::Cpu)?;
 
     // Serialize input
     let input = 42u32.to_le_bytes();

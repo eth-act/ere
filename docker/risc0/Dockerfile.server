@@ -1,14 +1,11 @@
 ARG BASE_ZKVM_IMAGE=ere-base-risc0:latest
-ARG BASE_ZKVM_CUDA_IMAGE=ere-base-risc0:latest-cuda
 ARG RUNTIME_IMAGE=ubuntu:24.04
 ARG RUNTIME_CUDA_IMAGE=nvidia/cuda:12.9.1-runtime-ubuntu24.04
 
 # Whether to enable CUDA feature or not.
 ARG CUDA
 
-FROM $BASE_ZKVM_IMAGE AS base
-FROM $BASE_ZKVM_CUDA_IMAGE AS base_cuda
-FROM base${CUDA:+_cuda} AS build_stage
+FROM $BASE_ZKVM_IMAGE AS build_stage
 
 COPY . /ere
 
@@ -19,7 +16,7 @@ ARG RUSTFLAGS
 
 RUN cargo build --release --package ere-server --bin ere-server --features risc0${CUDA:+,cuda} \
     && mkdir bin && mv target/release/ere-server bin/ere-server \
-    && cargo clean && rm -rf $CARGO_HOME/registry/src $CARGO_HOME/registry/cache
+    && cargo clean && rm -rf $CARGO_HOME/registry/
 
 FROM $RUNTIME_IMAGE AS runtime
 FROM $RUNTIME_CUDA_IMAGE AS runtime_cuda

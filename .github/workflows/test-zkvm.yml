@@ -59,7 +59,7 @@ jobs:
         uses: tj-actions/changed-files@v46
         with:
           files: |
-            docker/base/Dockerfile.base
+            docker/Dockerfile.base
             docker/${{ inputs.zkvm }}/**
             scripts/sdk_installers/install_${{ inputs.zkvm }}_sdk.sh
 
@@ -97,7 +97,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: docker/base/Dockerfile.base
+          file: docker/Dockerfile.base
           push: true
           tags: ${{ steps.image_meta.outputs.base_image }}
 
@@ -123,7 +123,7 @@ jobs:
           tags: ${{ steps.image_meta.outputs.compiler_zkvm_image }}
           build-args: |
             BASE_ZKVM_IMAGE=${{ steps.image_meta.outputs.base_zkvm_image }}
-            
+
       - name: Build ere-server-${{ inputs.zkvm }} image
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         uses: docker/build-push-action@v6
@@ -290,4 +290,4 @@ jobs:
       - name: Run cargo test for ere-${{ inputs.zkvm }} via ere-dockerized
         run: |
           cargo test --release --package ere-dockerized \
-            -- ${{ inputs.zkvm }} ${{ inputs.skip_prove_test && '--skip prove' || ''  }}
+            -- ${{ inputs.zkvm }} ${{ inputs.skip_prove_test && '--skip prove' || ''  }} --test-threads=1

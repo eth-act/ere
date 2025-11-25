@@ -9,7 +9,7 @@ WORKDIR /ere
 
 RUN cargo build --release --package ere-compiler --bin ere-compiler --features zisk \
     && mkdir bin && mv target/release/ere-compiler bin/ere-compiler \
-    && cargo clean && rm -rf $CARGO_HOME/registry/src $CARGO_HOME/registry/cache
+    && cargo clean && rm -rf $CARGO_HOME/registry/
 
 FROM $RUNTIME_IMAGE AS runtime_stage
 
@@ -27,6 +27,12 @@ COPY --from=build_stage /usr/local/rustup /usr/local/rustup
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH
+
+# Copy TamaGo
+COPY --from=build_stage /root/.tamago /root/.tamago
+
+# Add TamaGo to path
+ENV PATH=/root/.tamago/bin:$PATH
 
 # Copy ZisK SDK
 COPY --from=build_stage /root/.zisk/toolchains /root/.zisk/toolchains

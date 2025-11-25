@@ -8,6 +8,9 @@ pub enum Error {
     CommonError(#[from] CommonError),
 
     // Common
+    #[error("Invalid AppConfig: {0}")]
+    InvalidAppConfig(toml::de::Error),
+
     #[error("Initialize SDK failed: {0}")]
     SdkInit(SdkError),
 
