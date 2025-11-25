@@ -123,8 +123,8 @@ risc0-zkvm = { version = "3.0.4", default-features = false }
 risc0-zkvm-platform = { version = "2.2.1", default-features = false }
 
 # SP1 dependencies
-sp1-sdk = "5.2.2"
-sp1-zkvm = "5.2.2"
+sp1-sdk = "5.2.3"
+sp1-zkvm = "5.2.3"
 
 # Ziren dependencies
 zkm-sdk = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.2.1" }
