@@ -26,7 +26,7 @@ ensure_tool_installed "rustup" "to manage Rust toolchains"
 ensure_tool_installed "git" "to install airbender-cli from a git repository"
 ensure_tool_installed "cargo" "to build and install Rust packages"
 
-AIRBENDER_CLI_VERSION_TAG="v0.5.0"
+AIRBENDER_CLI_VERSION_TAG="v0.5.1"
 
 # Install airbender-cli using the specified toolchain and version tag
 echo "Installing airbender-cli (version ${AIRBENDER_CLI_VERSION_TAG}) from GitHub repository (matter-labs/zksync-airbender)..."

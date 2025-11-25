@@ -1,4 +1,4 @@
-/* Copied from https://github.com/matter-labs/zksync-airbender/blob/v0.5.0/examples/scripts/asm/asm_reduced.S */
+/* Copied from https://github.com/matter-labs/zksync-airbender/blob/v0.5.1/examples/scripts/asm/asm_reduced.S */
 
 /*
     Entry point of all programs (_start).
