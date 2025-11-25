@@ -23,4 +23,8 @@ impl<H: FixedOutputHasher<OutputSize = U32>> Platform for OpenVMPlatform<H> {
         let hash = H::output_hash(output).deref().try_into().unwrap();
         openvm::io::reveal_bytes32(hash);
     }
+
+    fn print(message: &str) {
+        openvm::io::print(message)
+    }
 }

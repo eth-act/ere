@@ -89,4 +89,8 @@ impl<C: JoltMemoryConfig, H: OutputHasher> Platform for JoltPlatform<C, H> {
         let output_slice = unsafe { core::slice::from_raw_parts_mut(output_ptr, max_output_len) };
         jolt::postcard::to_slice(&*hash, output_slice).unwrap();
     }
+
+    fn print(message: &str) {
+        jolt::print(message);
+    }
 }
