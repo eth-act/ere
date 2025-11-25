@@ -254,6 +254,32 @@ pub fn stop_docker_container(container_name: impl AsRef<str>) -> Result<(), Comm
     Ok(())
 }
 
+pub fn docker_container_exists(container_name: impl AsRef<str>) -> Result<bool, CommonError> {
+    let mut cmd = Command::new("docker");
+    let output = cmd
+        .args([
+            "ps",
+            "--filter",
+            &format!("name={}", container_name.as_ref()),
+            "--format",
+            "{{.Names}}",
+        ])
+        .output()
+        .map_err(|err| CommonError::command(&cmd, err))?;
+
+    if !output.status.success() {
+        Err(CommonError::command_exit_non_zero(
+            &cmd,
+            output.status,
+            Some(&output),
+        ))?
+    }
+
+    // If container exists and is running, its name will be printed
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    Ok(stdout.trim() == container_name.as_ref())
+}
+
 pub fn docker_image_exists(image: impl AsRef<str>) -> Result<bool, CommonError> {
     let mut cmd = Command::new("docker");
     let output = cmd

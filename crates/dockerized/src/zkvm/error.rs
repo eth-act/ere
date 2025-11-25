@@ -17,6 +17,8 @@ impl From<client::Error> for Error {
 pub enum Error {
     #[error(transparent)]
     CommonError(#[from] CommonError),
+    #[error("Server container RwLock poisoned, panic not caught properly")]
+    RwLockPoisoned,
     #[error("zkVM method error: {0}")]
     zkVM(String),
     #[error("Connection to zkVM server timeout after 5 minutes")]
