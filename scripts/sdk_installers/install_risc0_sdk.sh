@@ -63,7 +63,7 @@ fi
 # Now that rzup is confirmed to be in PATH for this script, install the Risc0 toolchain
 echo "Running 'rzup install' to install/update Risc0 toolchain..."
 
-RISC0_VERSION="${RISC0_VERSION:-3.0.3}"
+RISC0_VERSION="${RISC0_VERSION:-3.0.4}"
 RISC0_CPP_VERSION="${RISC0_CPP_VERSION:-2024.1.5}"
 RISC0_RUST_VERSION="${RISC0_RUST_VERSION:-1.88.0}"
 

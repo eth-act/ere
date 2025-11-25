@@ -116,10 +116,10 @@ pico-vm = { git = "https://github.com/brevis-network/pico.git", tag = "v1.1.7" }
 pico-sdk = { git = "https://github.com/brevis-network/pico", tag = "v1.1.7" }
 
 # Risc0 dependencies
-risc0-binfmt = { version = "3.0.2", default-features = false }
-risc0-build = "3.0.3"
-risc0-zkp = { version = "3.0.2", default-features = false }
-risc0-zkvm = { version = "3.0.3", default-features = false }
+risc0-binfmt = { version = "3.0.3", default-features = false }
+risc0-build = "3.0.4"
+risc0-zkp = { version = "3.0.3", default-features = false }
+risc0-zkvm = { version = "3.0.4", default-features = false }
 risc0-zkvm-platform = { version = "2.2.1", default-features = false }
 
 # SP1 dependencies
