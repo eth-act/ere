@@ -1,4 +1,5 @@
 use crate::zkvm::Error;
+use core::cmp::min;
 use ere_zkvm_interface::zkvm::{CommonError, PublicValues};
 use jolt_ark_serialize::{self as ark_serialize, CanonicalDeserialize, CanonicalSerialize};
 use jolt_common::constants::{
@@ -116,8 +117,14 @@ fn deserialize_output(output: &[u8]) -> Result<Vec<u8>, Error> {
     Ok(if output.is_empty() {
         Vec::new()
     } else {
-        postcard::take_from_bytes(output)
-            .map_err(|err| CommonError::deserialize("output", "postcard", err))?
-            .0
+        let (len, bytes) = postcard::take_from_bytes::<u64>(output)
+            .map_err(|err| CommonError::deserialize("output", "postcard", err))?;
+        let mut output = vec![0; len as usize];
+        // For execute the bytes are padded to size of multiple of 8, but for
+        // prove the bytes are truncated if there are trailing zeros, so here we
+        // take the min.
+        let len = min(bytes.len(), output.len());
+        output[..len].copy_from_slice(&bytes[..len]);
+        output
     })
 }
