@@ -5,7 +5,8 @@ use crate::{
     util::{
         cuda::cuda_arch,
         docker::{
-            DockerBuildCmd, DockerRunCmd, docker_image_exists, force_rebuild, stop_docker_container,
+            DockerBuildCmd, DockerRunCmd, docker_container_exists, docker_image_exists,
+            force_rebuild, stop_docker_container,
         },
         home_dir, workspace_dir,
     },
@@ -19,7 +20,8 @@ use ere_zkvm_interface::{
         PublicValues, zkVM,
     },
 };
-use std::iter;
+use parking_lot::RwLock;
+use std::{future::Future, iter};
 use tempfile::TempDir;
 use tracing::{error, info};
 
@@ -111,7 +113,7 @@ fn build_server_image(zkvm_kind: zkVMKind, gpu: bool) -> Result<(), Error> {
 
 struct ServerContainer {
     name: String,
-    port: u16,
+    client: zkVMClient,
     #[allow(dead_code)]
     tempdir: TempDir,
 }
@@ -215,15 +217,14 @@ impl ServerContainer {
             &program.0,
         )?;
 
+        let endpoint = Url::parse(&format!("http://127.0.0.1:{port}")).unwrap();
+        let client = block_on(zkVMClient::new(endpoint))?;
+
         Ok(ServerContainer {
             name,
-            port,
             tempdir,
+            client,
         })
-    }
-
-    fn endpoint(&self) -> Url {
-        Url::parse(&format!("http://127.0.0.1:{}", self.port)).unwrap()
     }
 }
 
@@ -231,9 +232,7 @@ pub struct DockerizedzkVM {
     zkvm_kind: zkVMKind,
     program: SerializedProgram,
     resource: ProverResourceType,
-    #[allow(dead_code)]
-    server_container: ServerContainer,
-    client: zkVMClient,
+    container: RwLock<Option<ServerContainer>>,
 }
 
 impl DockerizedzkVM {
@@ -244,15 +243,13 @@ impl DockerizedzkVM {
     ) -> Result<Self, Error> {
         build_server_image(zkvm_kind, matches!(resource, ProverResourceType::Gpu))?;
 
-        let server_container = ServerContainer::new(zkvm_kind, &program, &resource)?;
-        let client = block_on(zkVMClient::new(server_container.endpoint()))?;
+        let container = ServerContainer::new(zkvm_kind, &program, &resource)?;
 
         Ok(Self {
             zkvm_kind,
             program,
             resource,
-            server_container,
-            client,
+            container: RwLock::new(Some(container)),
         })
     }
 
@@ -267,14 +264,53 @@ impl DockerizedzkVM {
     pub fn resource(&self) -> &ProverResourceType {
         &self.resource
     }
+
+    fn with_retry<T, F>(&self, mut f: F) -> anyhow::Result<T>
+    where
+        F: FnMut(&zkVMClient) -> Result<T, ere_server::client::Error>,
+    {
+        const MAX_RETRY: usize = 3;
+
+        let mut attempt = 1;
+        loop {
+            let err = match f(&self.container.read().as_ref().unwrap().client) {
+                Ok(ok) => return Ok(ok),
+                Err(err) => Error::from(err),
+            };
+
+            if matches!(&err, Error::zkVM(_))
+                // Rpc error but not connection one
+                || matches!(&err, Error::Rpc(err) if err.rust_error().is_none_or(|err| !err.to_lowercase().contains("connect")))
+                || attempt > MAX_RETRY
+            {
+                return Err(err.into());
+            }
+
+            error!("Rpc failed (attempt {attempt}/{MAX_RETRY}): {err}, checking container...");
+
+            let mut container = self.container.write();
+            if docker_container_exists(&container.as_ref().unwrap().name).is_ok_and(|exists| exists)
+            {
+                info!("Container is still running, retrying...");
+            } else {
+                info!("Container not found, recreating...");
+
+                drop(container.take());
+                *container = Some(ServerContainer::new(
+                    self.zkvm_kind,
+                    &self.program,
+                    &self.resource,
+                )?);
+            }
+            attempt += 1;
+        }
+    }
 }
 
 impl zkVM for DockerizedzkVM {
     fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
-        let (public_values, report) =
-            block_on(self.client.execute(input.to_vec())).map_err(Error::from)?;
-
-        Ok((public_values, report))
+        let input = input.to_vec();
+        self.with_retry(|client| block_on(client.execute(input.clone())))
     }
 
     fn prove(
@@ -282,16 +318,13 @@ impl zkVM for DockerizedzkVM {
         input: &[u8],
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
-        let (public_values, proof, report) =
-            block_on(self.client.prove(input.to_vec(), proof_kind)).map_err(Error::from)?;
-
-        Ok((public_values, proof, report))
+        let input = input.to_vec();
+        self.with_retry(|client| block_on(client.prove(input.clone(), proof_kind)))
     }
 
     fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
-        let public_values = block_on(self.client.verify(proof)).map_err(Error::from)?;
-
-        Ok(public_values)
+        let proof = proof.clone();
+        self.with_retry(|client| block_on(client.verify(&proof)))
     }
 
     fn name(&self) -> &'static str {
