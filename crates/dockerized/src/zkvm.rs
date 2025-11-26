@@ -20,11 +20,8 @@ use ere_zkvm_interface::{
         PublicValues, zkVM,
     },
 };
-use std::{
-    future::Future,
-    iter,
-    sync::{RwLock, RwLockReadGuard, RwLockWriteGuard},
-};
+use parking_lot::RwLock;
+use std::{future::Future, iter};
 use tempfile::TempDir;
 use tracing::{error, info};
 
@@ -235,7 +232,7 @@ pub struct DockerizedzkVM {
     zkvm_kind: zkVMKind,
     program: SerializedProgram,
     resource: ProverResourceType,
-    server_container: RwLock<ServerContainer>,
+    container: RwLock<Option<ServerContainer>>,
 }
 
 impl DockerizedzkVM {
@@ -246,13 +243,13 @@ impl DockerizedzkVM {
     ) -> Result<Self, Error> {
         build_server_image(zkvm_kind, matches!(resource, ProverResourceType::Gpu))?;
 
-        let server_container = ServerContainer::new(zkvm_kind, &program, &resource)?;
+        let container = ServerContainer::new(zkvm_kind, &program, &resource)?;
 
         Ok(Self {
             zkvm_kind,
             program,
             resource,
-            server_container: RwLock::new(server_container),
+            container: RwLock::new(Some(container)),
         })
     }
 
@@ -268,18 +265,6 @@ impl DockerizedzkVM {
         &self.resource
     }
 
-    fn server_container(&'_ self) -> Result<RwLockReadGuard<'_, ServerContainer>, Error> {
-        self.server_container
-            .read()
-            .map_err(|_| Error::RwLockPoisoned)
-    }
-
-    fn server_container_mut(&'_ self) -> Result<RwLockWriteGuard<'_, ServerContainer>, Error> {
-        self.server_container
-            .write()
-            .map_err(|_| Error::RwLockPoisoned)
-    }
-
     fn with_retry<T, F>(&self, mut f: F) -> anyhow::Result<T>
     where
         F: FnMut(&zkVMClient) -> Result<T, ere_server::client::Error>,
@@ -288,7 +273,7 @@ impl DockerizedzkVM {
 
         let mut attempt = 1;
         loop {
-            let err = match f(&self.server_container()?.client) {
+            let err = match f(&self.container.read().as_ref().unwrap().client) {
                 Ok(ok) => return Ok(ok),
                 Err(err) => Error::from(err),
             };
@@ -303,13 +288,19 @@ impl DockerizedzkVM {
 
             error!("Rpc failed (attempt {attempt}/{MAX_RETRY}): {err}, checking container...");
 
-            let mut server_container = self.server_container_mut()?;
-            if docker_container_exists(&server_container.name).is_ok_and(|exists| exists) {
+            let mut container = self.container.write();
+            if docker_container_exists(&container.as_ref().unwrap().name).is_ok_and(|exists| exists)
+            {
                 info!("Container is still running, retrying...");
             } else {
                 info!("Container not found, recreating...");
-                *server_container =
-                    ServerContainer::new(self.zkvm_kind, &self.program, &self.resource)?;
+
+                drop(container.take());
+                *container = Some(ServerContainer::new(
+                    self.zkvm_kind,
+                    &self.program,
+                    &self.resource,
+                )?);
             }
             attempt += 1;
         }

@@ -7,6 +7,7 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
+parking_lot.workspace = true
 serde = { workspace = true, features = ["derive"] }
 tempfile.workspace = true
 thiserror.workspace = true
