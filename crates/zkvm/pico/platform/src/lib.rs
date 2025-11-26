@@ -2,7 +2,7 @@
 
 extern crate alloc;
 
-use alloc::vec::Vec;
+use alloc::{format, vec::Vec};
 use core::marker::PhantomData;
 use ere_platform_trait::output_hasher::OutputHasher;
 
@@ -21,6 +21,19 @@ impl<H: OutputHasher> Platform for PicoPlatform<H> {
 
     fn write_whole_output(output: &[u8]) {
         let hash = H::output_hash(output);
-        pico_sdk::io::commit_bytes(&*hash);
+        pico_sdk::io::commit_bytes(&hash);
+    }
+
+    fn print(message: &str) {
+        let bytes = message.as_bytes();
+        pico_sdk::riscv_ecalls::sys_write(1, bytes.as_ptr(), bytes.len());
+    }
+
+    fn cycle_scope_start(name: &str) {
+        Self::print(&format!("cycle-tracker-start: {name}"))
+    }
+
+    fn cycle_scope_end(name: &str) {
+        Self::print(&format!("cycle-tracker-end: {name}"))
     }
 }

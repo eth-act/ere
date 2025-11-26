@@ -21,6 +21,11 @@ impl<H: OutputHasher> Platform for ZirenPlatform<H> {
 
     fn write_whole_output(output: &[u8]) {
         let hash = H::output_hash(output);
-        zkm_zkvm::io::commit_slice(&*hash);
+        zkm_zkvm::io::commit_slice(&hash);
+    }
+
+    fn print(message: &str) {
+        let bytes = message.as_bytes();
+        zkm_zkvm::syscalls::sys_write(1, bytes.as_ptr(), bytes.len());
     }
 }

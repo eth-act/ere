@@ -29,4 +29,9 @@ impl<H: FixedOutputHasher<OutputSize = U32>> Platform for AirbenderPlatform<H> {
         let words = array::from_fn(|i| u32::from_le_bytes(array::from_fn(|j| hash[4 * i + j])));
         riscv_common::zksync_os_finish_success(&words);
     }
+
+    fn print(message: &str) {
+        #[cfg(feature = "uart")]
+        core::fmt::Write::write_str(&mut riscv_common::QuasiUART::new(), message).unwrap();
+    }
 }

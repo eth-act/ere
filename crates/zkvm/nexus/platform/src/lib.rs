@@ -23,4 +23,8 @@ impl<H: OutputHasher> Platform for NexusPlatform<H> {
         let hash = H::output_hash(output);
         nexus_rt::write_public_output(&*hash).unwrap()
     }
+
+    fn print(message: &str) {
+        nexus_rt::print!("{message}")
+    }
 }

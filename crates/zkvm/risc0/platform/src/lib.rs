@@ -5,6 +5,7 @@ extern crate alloc;
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 use ere_platform_trait::output_hasher::OutputHasher;
+use risc0_zkvm::guest::env::Write;
 
 pub use ere_platform_trait::{
     Platform,
@@ -28,6 +29,14 @@ impl<H: OutputHasher> Platform for Risc0Platform<H> {
 
     fn write_whole_output(output: &[u8]) {
         let hash = H::output_hash(output);
-        risc0_zkvm::guest::env::commit_slice(&*hash);
+        risc0_zkvm::guest::env::commit_slice(&hash);
+    }
+
+    fn print(message: &str) {
+        risc0_zkvm::guest::env::stdout().write_slice(message.as_bytes());
+    }
+
+    fn cycle_count() -> Option<u64> {
+        Some(risc0_zkvm::guest::env::cycle_count())
     }
 }
