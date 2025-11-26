@@ -12,6 +12,7 @@ pub use ere_platform_trait::{
 };
 pub use pico_sdk;
 
+/// Pico [`Platform`] implementation.
 pub struct PicoPlatform<H = IdentityOutput>(PhantomData<H>);
 
 impl<H: OutputHasher> Platform for PicoPlatform<H> {

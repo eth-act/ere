@@ -12,6 +12,13 @@ pub use ere_platform_trait::{
     output_hasher::{IdentityOutput, PaddedOutput, digest::typenum::U32},
 };
 
+/// Airbender [`Platform`] implementation.
+///
+/// Because Airbender only support public values up to 32 bytes, so
+/// - If the guest has output bytes more than 32 bytes, it should use a
+/// cryptographic hash function for the generic `H` (for example `Sha256`).
+/// - If the guest has output bytes less than 32 bytes, it should use
+/// [`PaddedOutput`] for the generic `H`
 pub struct AirbenderPlatform<H>(PhantomData<H>);
 
 impl<H: FixedOutputHasher<OutputSize = U32>> Platform for AirbenderPlatform<H> {
