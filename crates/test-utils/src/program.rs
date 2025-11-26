@@ -7,7 +7,7 @@ pub mod basic;
 
 /// Program that can be ran given [`Platform`] implementation.
 pub trait Program {
-    type Input: Serialize + DeserializeOwned;
+    type Input: Clone + Serialize + DeserializeOwned;
     type Output: Debug + PartialEq + Serialize + DeserializeOwned;
 
     fn io_serde() -> impl IoSerde;

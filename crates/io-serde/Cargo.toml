@@ -6,10 +6,17 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-bincode = { workspace = true, features = ["alloc", "serde"] }
+bincode = { workspace = true, features = ["alloc", "serde"], optional = true }
+ciborium = { workspace = true, optional = true }
+ciborium-io = { workspace = true, optional = true }
 serde.workspace = true
 
 [dev-dependencies]
+
+[features]
+default = []
+bincode = ["dep:bincode"]
+cbor = ["dep:ciborium", "dep:ciborium-io"]
 
 [lints]
 workspace = true
