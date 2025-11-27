@@ -4,6 +4,9 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
+    #[error("Deserialize proofs in Input failed: {0:?}")]
+    DeserializeInputProofs(bincode::error::DecodeError),
+
     // Execute
     #[error("Failed to build `ExecutorEnv`: {0}")]
     BuildExecutorEnv(anyhow::Error),
