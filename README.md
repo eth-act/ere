@@ -84,7 +84,7 @@ ere-sp1        = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.12" }
 use ere_sp1::{EreSP1, RV32_IM_SUCCINCT_ZKVM_ELF};
 use ere_zkvm_interface::{
     compiler::Compiler,
-    zkvm::{ProofKind, ProverResourceType, zkVM},
+    zkvm::{Input, ProofKind, ProverResourceType, zkVM},
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -98,7 +98,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let zkvm = EreSP1::new(program, ProverResourceType::Cpu)?;
 
     // Serialize input
-    let input = 42u32.to_le_bytes();
+    let input = Input::new(42u32.to_le_bytes().to_vec());
 
     // Execute
     let (public_values, report) = zkvm.execute(&input)?;
@@ -133,7 +133,7 @@ ere-dockerized = { git = "https://github.com/eth-act/ere.git", tag = "v0.0.12" }
 use ere_dockerized::{CompilerKind, DockerizedCompiler, DockerizedzkVM, zkVMKind};
 use ere_zkvm_interface::{
     compiler::Compiler,
-    zkvm::{ProofKind, ProverResourceType, zkVM},
+    zkvm::{Input, ProofKind, ProverResourceType, zkVM},
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -151,7 +151,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let zkvm = DockerizedzkVM::new(zkVMKind::SP1, program, ProverResourceType::Cpu)?;
 
     // Serialize input
-    let input = 42u32.to_le_bytes();
+    let input = Input::new(42u32.to_le_bytes().to_vec());
 
     // Execute
     let (public_values, report) = zkvm.execute(&input)?;
