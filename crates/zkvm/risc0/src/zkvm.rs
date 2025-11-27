@@ -5,8 +5,8 @@ use ere_zkvm_interface::zkvm::{
     ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
 };
 use risc0_zkvm::{
-    DEFAULT_MAX_PO2, DefaultProver, Digest, ExecutorEnv, ExternalProver, InnerReceipt, ProverOpts,
-    Receipt, default_executor, default_prover,
+    AssumptionReceipt, DEFAULT_MAX_PO2, DefaultProver, Digest, ExecutorEnv, ExternalProver,
+    InnerReceipt, ProverOpts, Receipt, default_executor, default_prover,
 };
 use std::{env, ops::RangeInclusive, rc::Rc, time::Instant};
 
@@ -83,12 +83,9 @@ impl EreRisc0 {
 
 impl zkVM for EreRisc0 {
     fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+        let env = self.input_to_env(input)?;
+
         let executor = default_executor();
-        let env = ExecutorEnv::builder()
-            .write_slice(&(input.stdin().len() as u32).to_le_bytes())
-            .write_slice(input.stdin())
-            .build()
-            .map_err(Error::BuildExecutorEnv)?;
 
         let start = Instant::now();
         let session_info = executor
@@ -112,6 +109,8 @@ impl zkVM for EreRisc0 {
         input: &Input,
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
+        let env = self.input_to_env(input)?;
+
         let prover = match self.resource {
             ProverResourceType::Cpu => Rc::new(ExternalProver::new("ipc", "r0vm")),
             ProverResourceType::Gpu => {
@@ -134,14 +133,6 @@ impl zkVM for EreRisc0 {
                 );
             }
         };
-
-        let env = ExecutorEnv::builder()
-            .write_slice(&(input.stdin().len() as u32).to_le_bytes())
-            .write_slice(input.stdin())
-            .segment_limit_po2(self.segment_po2 as _)
-            .keccak_max_po2(self.keccak_po2 as _)
-            .and_then(|builder| builder.build())
-            .map_err(Error::BuildExecutorEnv)?;
 
         let opts = match proof_kind {
             ProofKind::Compressed => ProverOpts::succinct(),
@@ -212,6 +203,23 @@ impl zkVMProgramDigest for EreRisc0 {
 
     fn program_digest(&self) -> anyhow::Result<Self::ProgramDigest> {
         Ok(self.program.image_id)
+    }
+}
+
+impl EreRisc0 {
+    fn input_to_env(&self, input: &Input) -> Result<ExecutorEnv<'static>, Error> {
+        let mut env = ExecutorEnv::builder();
+        env.segment_limit_po2(self.segment_po2 as _)
+            .keccak_max_po2(self.keccak_po2 as _)
+            .expect("keccak_po2 in valid range");
+        env.write_slice(&(input.stdin().len() as u32).to_le_bytes())
+            .write_slice(input.stdin());
+        if let Some(receipts) = input.proofs() {
+            for receipt in receipts.map_err(Error::DeserializeInputProofs)? {
+                env.add_assumption(AssumptionReceipt::Proven(receipt));
+            }
+        }
+        env.build().map_err(Error::BuildExecutorEnv)
     }
 }
 
