@@ -62,8 +62,7 @@ impl EreSP1 {
 
 impl zkVM for EreSP1 {
     fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
-        let mut stdin = SP1Stdin::new();
-        stdin.write_slice(input.stdin());
+        let stdin = input_to_stdin(input)?;
 
         let prover = self.prover()?;
 
@@ -88,8 +87,7 @@ impl zkVM for EreSP1 {
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         info!("Generating proof…");
 
-        let mut stdin = SP1Stdin::new();
-        stdin.write_slice(input.stdin());
+        let stdin = input_to_stdin(input)?;
 
         let mode = match proof_kind {
             ProofKind::Compressed => SP1ProofMode::Compressed,
@@ -167,6 +165,17 @@ impl zkVMProgramDigest for EreSP1 {
     fn program_digest(&self) -> anyhow::Result<Self::ProgramDigest> {
         Ok(self.vk.clone())
     }
+}
+
+fn input_to_stdin(input: &Input) -> Result<SP1Stdin, Error> {
+    let mut stdin = SP1Stdin::new();
+    stdin.write_slice(input.stdin());
+    if let Some(proofs) = input.proofs() {
+        for (proof, vk) in proofs.map_err(Error::DeserializeInputProofs)? {
+            stdin.write_proof(proof, vk);
+        }
+    }
+    Ok(stdin)
 }
 
 fn panic_msg(err: Box<dyn std::any::Any + Send + 'static>) -> String {
