@@ -38,8 +38,7 @@ impl EreZiren {
 
 impl zkVM for EreZiren {
     fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
-        let mut stdin = ZKMStdin::new();
-        stdin.write_slice(input.stdin());
+        let stdin = input_to_stdin(input)?;
 
         let start = Instant::now();
         let (public_inputs, exec_report) = CpuProver::new()
@@ -64,8 +63,7 @@ impl zkVM for EreZiren {
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         info!("Generating proof…");
 
-        let mut stdin = ZKMStdin::new();
-        stdin.write_slice(input.stdin());
+        let stdin = input_to_stdin(input)?;
 
         let inner_proof_kind = match proof_kind {
             ProofKind::Compressed => ZKMProofKind::Compressed,
@@ -133,6 +131,17 @@ impl zkVMProgramDigest for EreZiren {
     fn program_digest(&self) -> anyhow::Result<Self::ProgramDigest> {
         Ok(self.vk.clone())
     }
+}
+
+fn input_to_stdin(input: &Input) -> Result<ZKMStdin, Error> {
+    let mut stdin = ZKMStdin::new();
+    stdin.write_slice(input.stdin());
+    if let Some(proofs) = input.proofs() {
+        for (proof, vk) in proofs.map_err(Error::DeserializeInputProofs)? {
+            stdin.write_proof(proof, vk);
+        }
+    }
+    Ok(stdin)
 }
 
 fn panic_msg(err: Box<dyn std::any::Any + Send + 'static>) -> String {

@@ -8,6 +8,9 @@ pub enum Error {
     #[error("Ziren execution failed: {0}")]
     Execute(#[source] anyhow::Error),
 
+    #[error("Deserialize proofs in Input failed: {0:?}")]
+    DeserializeInputProofs(bincode::error::DecodeError),
+
     // Prove
     #[error("Ziren proving failed: {0}")]
     Prove(#[source] anyhow::Error),
