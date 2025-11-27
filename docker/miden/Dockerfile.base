@@ -2,7 +2,9 @@ ARG BASE_IMAGE=ere-base:latest
 
 FROM $BASE_IMAGE
 
+RUN rustup default 1.90.0
+
 # Miden Configuration
-ENV MIDEN_VERSION="v0.18.3"
+ENV MIDEN_VERSION="v0.19.1"
 
 CMD ["/bin/bash"]
