@@ -1,7 +1,7 @@
 use crate::program::ZirenProgram;
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
-    CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
     ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
 };
 use std::{panic, time::Instant};
@@ -37,9 +37,9 @@ impl EreZiren {
 }
 
 impl zkVM for EreZiren {
-    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+    fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         let mut stdin = ZKMStdin::new();
-        stdin.write_slice(input);
+        stdin.write_slice(input.stdin());
 
         let start = Instant::now();
         let (public_inputs, exec_report) = CpuProver::new()
@@ -59,13 +59,13 @@ impl zkVM for EreZiren {
 
     fn prove(
         &self,
-        input: &[u8],
+        input: &Input,
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         info!("Generating proof…");
 
         let mut stdin = ZKMStdin::new();
-        stdin.write_slice(input);
+        stdin.write_slice(input.stdin());
 
         let inner_proof_kind = match proof_kind {
             ProofKind::Compressed => ZKMProofKind::Compressed,
@@ -151,7 +151,7 @@ mod tests {
     };
     use ere_zkvm_interface::{
         compiler::Compiler,
-        zkvm::{ProofKind, ProverResourceType, zkVM},
+        zkvm::{Input, ProofKind, ProverResourceType, zkVM},
     };
     use std::sync::OnceLock;
 
@@ -181,8 +181,8 @@ mod tests {
         let zkvm = EreZiren::new(program, ProverResourceType::Cpu).unwrap();
 
         for input in [
-            Vec::new(),
-            BasicProgram::<BincodeLegacy>::invalid_test_case().serialized_input(),
+            Input::default(),
+            BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
             zkvm.execute(&input).unwrap_err();
         }
@@ -203,8 +203,8 @@ mod tests {
         let zkvm = EreZiren::new(program, ProverResourceType::Cpu).unwrap();
 
         for input in [
-            Vec::new(),
-            BasicProgram::<BincodeLegacy>::invalid_test_case().serialized_input(),
+            Input::default(),
+            BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }

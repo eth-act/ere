@@ -14,7 +14,8 @@ service ZkvmService {
 }
 
 message ExecuteRequest {
-    bytes input = 1;
+    bytes input_stdin = 1;
+    optional bytes input_proofs = 2;
 }
 
 message ExecuteResponse {
@@ -30,8 +31,9 @@ message ExecuteOk {
 }
 
 message ProveRequest {
-    bytes input = 1;
-    ProofKind proof_kind = 2;
+    bytes input_stdin = 1;
+    optional bytes input_proofs = 2;
+    ProofKind proof_kind = 3;
 }
 
 message ProveResponse {

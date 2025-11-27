@@ -2,7 +2,7 @@ use crate::{program::AirbenderProgram, zkvm::sdk::AirbenderSdk};
 use airbender_execution_utils::ProgramProof;
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
-    CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
     ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
 };
 use std::time::Instant;
@@ -28,9 +28,9 @@ impl EreAirbender {
 }
 
 impl zkVM for EreAirbender {
-    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+    fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         let start = Instant::now();
-        let (public_values, cycles) = self.sdk.execute(input)?;
+        let (public_values, cycles) = self.sdk.execute(input.stdin())?;
         let execution_duration = start.elapsed();
 
         Ok((
@@ -45,7 +45,7 @@ impl zkVM for EreAirbender {
 
     fn prove(
         &self,
-        input: &[u8],
+        input: &Input,
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         if proof_kind != ProofKind::Compressed {
@@ -55,7 +55,7 @@ impl zkVM for EreAirbender {
             ))
         }
         let start = Instant::now();
-        let (public_values, proof) = self.sdk.prove(input)?;
+        let (public_values, proof) = self.sdk.prove(input.stdin())?;
         let proving_time = start.elapsed();
 
         let proof_bytes = bincode::serde::encode_to_vec(&proof, bincode::config::legacy())
@@ -112,7 +112,7 @@ mod tests {
     };
     use ere_zkvm_interface::{
         compiler::Compiler,
-        zkvm::{ProofKind, ProverResourceType, zkVM},
+        zkvm::{Input, ProofKind, ProverResourceType, zkVM},
     };
     use std::sync::OnceLock;
 
@@ -142,8 +142,8 @@ mod tests {
         let zkvm = EreAirbender::new(program, ProverResourceType::Cpu).unwrap();
 
         for input in [
-            Vec::new(),
-            BasicProgram::<BincodeLegacy>::invalid_test_case().serialized_input(),
+            Input::default(),
+            BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
             zkvm.execute(&input).unwrap_err();
         }
@@ -164,8 +164,8 @@ mod tests {
         let zkvm = EreAirbender::new(program, ProverResourceType::Cpu).unwrap();
 
         for input in [
-            Vec::new(),
-            BasicProgram::<BincodeLegacy>::invalid_test_case().serialized_input(),
+            Input::default(),
+            BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }

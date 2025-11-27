@@ -4,7 +4,7 @@ use crate::api::{
     verify_response::Result as VerifyResult,
 };
 use ere_zkvm_interface::zkvm::{
-    ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, PublicValues,
+    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, PublicValues,
 };
 use std::time::{Duration, Instant};
 use thiserror::Error;
@@ -56,9 +56,12 @@ impl zkVMClient {
 
     pub async fn execute(
         &self,
-        input: Vec<u8>,
+        input: &Input,
     ) -> Result<(PublicValues, ProgramExecutionReport), Error> {
-        let request = Request::new(ExecuteRequest { input });
+        let request = Request::new(ExecuteRequest {
+            input_stdin: input.stdin.clone(),
+            input_proofs: input.proofs.clone(),
+        });
 
         let response = self.client.execute(request).await?;
 
@@ -75,11 +78,12 @@ impl zkVMClient {
 
     pub async fn prove(
         &self,
-        input: Vec<u8>,
+        input: &Input,
         proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, ProgramProvingReport), Error> {
         let request = Request::new(ProveRequest {
-            input,
+            input_stdin: input.stdin.clone(),
+            input_proofs: input.proofs.clone(),
             proof_kind: proof_kind as i32,
         });
 

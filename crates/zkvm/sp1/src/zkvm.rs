@@ -1,7 +1,7 @@
 use crate::{program::SP1Program, zkvm::sdk::Prover};
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
-    CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
     ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
 };
 use sp1_sdk::{SP1ProofMode, SP1ProofWithPublicValues, SP1ProvingKey, SP1Stdin, SP1VerifyingKey};
@@ -61,9 +61,9 @@ impl EreSP1 {
 }
 
 impl zkVM for EreSP1 {
-    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+    fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         let mut stdin = SP1Stdin::new();
-        stdin.write_slice(input);
+        stdin.write_slice(input.stdin());
 
         let prover = self.prover()?;
 
@@ -83,13 +83,13 @@ impl zkVM for EreSP1 {
 
     fn prove(
         &self,
-        input: &[u8],
+        input: &Input,
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         info!("Generating proof…");
 
         let mut stdin = SP1Stdin::new();
-        stdin.write_slice(input);
+        stdin.write_slice(input.stdin());
 
         let mode = match proof_kind {
             ProofKind::Compressed => SP1ProofMode::Compressed,
@@ -184,6 +184,7 @@ mod tests {
         program::basic::BasicProgram,
     };
     use ere_zkvm_interface::{
+        Input,
         compiler::Compiler,
         zkvm::{NetworkProverConfig, ProofKind, ProverResourceType, zkVM},
     };
@@ -215,8 +216,8 @@ mod tests {
         let zkvm = EreSP1::new(program, ProverResourceType::Cpu).unwrap();
 
         for input in [
-            Vec::new(),
-            BasicProgram::<BincodeLegacy>::invalid_test_case().serialized_input(),
+            Input::default(),
+            BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
             zkvm.execute(&input).unwrap_err();
         }
@@ -237,8 +238,8 @@ mod tests {
         let zkvm = EreSP1::new(program, ProverResourceType::Cpu).unwrap();
 
         for input in [
-            Vec::new(),
-            BasicProgram::<BincodeLegacy>::invalid_test_case().serialized_input(),
+            Input::default(),
+            BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }
