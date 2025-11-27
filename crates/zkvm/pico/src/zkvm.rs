@@ -4,7 +4,7 @@ use crate::{
 };
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
-    CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
     ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
 };
 use pico_p3_field::PrimeField32;
@@ -44,9 +44,9 @@ impl ErePico {
 }
 
 impl zkVM for ErePico {
-    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+    fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         let mut stdin = EmulatorStdinBuilder::default();
-        stdin.write_slice(input);
+        stdin.write_slice(input.stdin());
 
         let ((total_num_cycles, region_cycles, public_values), execution_duration) =
             panic::catch_unwind(|| {
@@ -69,7 +69,7 @@ impl zkVM for ErePico {
 
     fn prove(
         &self,
-        input: &[u8],
+        input: &Input,
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         if proof_kind != ProofKind::Compressed {
@@ -80,7 +80,7 @@ impl zkVM for ErePico {
         }
 
         let mut stdin = EmulatorStdinBuilder::default();
-        stdin.write_slice(input);
+        stdin.write_slice(input.stdin());
 
         let ((public_values, proof), proving_time) = panic::catch_unwind(|| {
             let client = self.client();
@@ -187,7 +187,7 @@ mod tests {
     };
     use ere_zkvm_interface::{
         compiler::Compiler,
-        zkvm::{ProofKind, ProverResourceType, zkVM},
+        zkvm::{Input, ProofKind, ProverResourceType, zkVM},
     };
     use std::sync::OnceLock;
 
@@ -216,7 +216,7 @@ mod tests {
         let program = basic_program();
         let zkvm = ErePico::new(program, ProverResourceType::Cpu).unwrap();
 
-        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+        for input in [Input::default(), BasicProgramInput::invalid().input()] {
             zkvm.execute(&input).unwrap_err();
         }
     }
@@ -235,7 +235,7 @@ mod tests {
         let program = basic_program();
         let zkvm = ErePico::new(program, ProverResourceType::Cpu).unwrap();
 
-        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+        for input in [Input::default(), BasicProgramInput::invalid().input()] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }
     }

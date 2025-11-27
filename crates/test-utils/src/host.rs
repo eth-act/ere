@@ -1,6 +1,6 @@
 use crate::program::{Program, ProgramInput};
 use ere_io_serde::IoSerde;
-use ere_zkvm_interface::zkvm::{ProofKind, PublicValues, zkVM};
+use ere_zkvm_interface::zkvm::{Input, ProofKind, PublicValues, zkVM};
 use sha2::Digest;
 use std::{marker::PhantomData, path::PathBuf};
 
@@ -17,7 +17,7 @@ pub fn testing_guest_directory(zkvm_name: &str, program: &str) -> PathBuf {
 
 pub fn run_zkvm_execute(zkvm: &impl zkVM, test_case: &impl TestCase) -> PublicValues {
     let (public_values, _report) = zkvm
-        .execute(&test_case.serialized_input())
+        .execute(&test_case.input())
         .expect("execute should not fail with valid input");
 
     test_case.assert_output(&public_values);
@@ -27,7 +27,7 @@ pub fn run_zkvm_execute(zkvm: &impl zkVM, test_case: &impl TestCase) -> PublicVa
 
 pub fn run_zkvm_prove(zkvm: &impl zkVM, test_case: &impl TestCase) -> PublicValues {
     let (prover_public_values, proof, _report) = zkvm
-        .prove(&test_case.serialized_input(), ProofKind::default())
+        .prove(&test_case.input(), ProofKind::default())
         .expect("prove should not fail with valid input");
 
     let verifier_public_values = zkvm
@@ -45,7 +45,7 @@ pub fn run_zkvm_prove(zkvm: &impl zkVM, test_case: &impl TestCase) -> PublicValu
 /// [`Program::Input`], and is able to assert if the [`PublicValues`] returned
 /// by [`zkVM`] methods is correct or not.
 pub trait TestCase {
-    fn serialized_input(&self) -> Vec<u8>;
+    fn input(&self) -> Input;
 
     fn assert_output(&self, public_values: &[u8]);
 }
@@ -53,8 +53,8 @@ pub trait TestCase {
 /// Auto-implementation [`TestCase`] for [`ProgramInput`] that can be shared
 /// between host and guest, if the guest is also written in Rust.
 impl<T: ProgramInput> TestCase for T {
-    fn serialized_input(&self) -> Vec<u8> {
-        T::Program::io_serde().serialize(&self.clone()).unwrap()
+    fn input(&self) -> Input {
+        Input::new(T::Program::io_serde().serialize(&self.clone()).unwrap())
     }
 
     fn assert_output(&self, public_values: &[u8]) {
@@ -85,8 +85,8 @@ where
     T: ProgramInput,
     D: Digest,
 {
-    fn serialized_input(&self) -> Vec<u8> {
-        self.inner.serialized_input()
+    fn input(&self) -> Input {
+        self.inner.input()
     }
 
     fn assert_output(&self, public_values: &[u8]) {

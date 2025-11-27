@@ -1,7 +1,7 @@
 use crate::program::Risc0Program;
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
-    CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
     ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
 };
 use risc0_zkvm::{
@@ -82,11 +82,11 @@ impl EreRisc0 {
 }
 
 impl zkVM for EreRisc0 {
-    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+    fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         let executor = default_executor();
         let env = ExecutorEnv::builder()
-            .write_slice(&(input.len() as u32).to_le_bytes())
-            .write_slice(input)
+            .write_slice(&(input.stdin().len() as u32).to_le_bytes())
+            .write_slice(input.stdin())
             .build()
             .map_err(Error::BuildExecutorEnv)?;
 
@@ -109,7 +109,7 @@ impl zkVM for EreRisc0 {
 
     fn prove(
         &self,
-        input: &[u8],
+        input: &Input,
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         let prover = match self.resource {
@@ -136,8 +136,8 @@ impl zkVM for EreRisc0 {
         };
 
         let env = ExecutorEnv::builder()
-            .write_slice(&(input.len() as u32).to_le_bytes())
-            .write_slice(input)
+            .write_slice(&(input.stdin().len() as u32).to_le_bytes())
+            .write_slice(input.stdin())
             .segment_limit_po2(self.segment_po2 as _)
             .keccak_max_po2(self.keccak_po2 as _)
             .and_then(|builder| builder.build())
@@ -223,6 +223,7 @@ mod tests {
         program::basic::BasicProgramInput,
     };
     use ere_zkvm_interface::{
+        Input,
         compiler::Compiler,
         zkvm::{ProofKind, ProverResourceType, zkVM},
     };
@@ -253,7 +254,7 @@ mod tests {
         let program = basic_program();
         let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
-        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+        for input in [Input::default(), BasicProgramInput::invalid().input()] {
             zkvm.execute(&input).unwrap_err();
         }
     }
@@ -272,7 +273,7 @@ mod tests {
         let program = basic_program();
         let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
-        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+        for input in [Input::default(), BasicProgramInput::invalid().input()] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }
     }
@@ -286,7 +287,7 @@ mod tests {
         for i in 1..=16_u32 {
             let zkvm = EreRisc0::new(program.clone(), ProverResourceType::Cpu).unwrap();
 
-            let input = i.to_le_bytes();
+            let input = Input::new(i.to_le_bytes().to_vec());
 
             if i.is_power_of_two() {
                 zkvm.execute(&input)
