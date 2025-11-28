@@ -88,8 +88,12 @@ impl<C: JoltMemoryConfig, H: OutputHasher> Platform for JoltPlatform<C, H> {
         let output_ptr = memory_layout.output_start as *mut u8;
         let max_output_len = memory_layout.max_output_size as usize;
         let output_slice = unsafe { core::slice::from_raw_parts_mut(output_ptr, max_output_len) };
-        jolt::postcard::to_slice(&*hash, output_slice)
-            .unwrap_or_else(|_| panic!("Maximum output size is {max_output_len} bytes"));
+        jolt::postcard::to_slice(&*hash, output_slice).unwrap_or_else(|err| match err {
+            jolt::postcard::Error::SerializeBufferFull => {
+                panic!("Maximum output size is {max_output_len} bytes")
+            }
+            err => panic!("`postcard::to_slice` failed: {err:?}"),
+        });
     }
 
     fn print(message: &str) {
