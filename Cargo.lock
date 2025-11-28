@@ -2874,6 +2874,7 @@ dependencies = [
  "cfg-if",
  "cpufeatures",
  "curve25519-dalek-derive",
+ "digest 0.10.7",
  "fiat-crypto",
  "rustc_version 0.4.1",
  "subtle",
@@ -3381,6 +3382,30 @@ dependencies = [
  "serdect",
  "signature",
  "spki",
+]
+
+[[package]]
+name = "ed25519"
+version = "2.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "115531babc129696a58c64a4fef0a8bf9e9698629fb97e9e40767d235cfbcd53"
+dependencies = [
+ "pkcs8",
+ "signature",
+]
+
+[[package]]
+name = "ed25519-dalek"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "70e796c081cee67dc755e1a36a0a172b897fab85fc3f6bc48307991f64e4eca9"
+dependencies = [
+ "curve25519-dalek",
+ "ed25519",
+ "serde",
+ "sha2",
+ "subtle",
+ "zeroize",
 ]
 
 [[package]]
@@ -6648,10 +6673,11 @@ dependencies = [
 
 [[package]]
 name = "miden-air"
-version = "0.18.3"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.18.3#cbe205dfffc5563a06dafc4152d604d69f864e29"
+version = "0.19.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.19.1#81cc603c1b9d5e6a55d82daee5fc1016cee33c02"
 dependencies = [
  "miden-core",
+ "miden-utils-indexing",
  "thiserror 2.0.12",
  "winter-air",
  "winter-prover",
@@ -6659,8 +6685,8 @@ dependencies = [
 
 [[package]]
 name = "miden-assembly"
-version = "0.18.3"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.18.3#cbe205dfffc5563a06dafc4152d604d69f864e29"
+version = "0.19.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.19.1#81cc603c1b9d5e6a55d82daee5fc1016cee33c02"
 dependencies = [
  "log",
  "miden-assembly-syntax",
@@ -6672,8 +6698,8 @@ dependencies = [
 
 [[package]]
 name = "miden-assembly-syntax"
-version = "0.18.3"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.18.3#cbe205dfffc5563a06dafc4152d604d69f864e29"
+version = "0.19.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.19.1#81cc603c1b9d5e6a55d82daee5fc1016cee33c02"
 dependencies = [
  "aho-corasick",
  "lalrpop 0.22.2",
@@ -6693,13 +6719,14 @@ dependencies = [
 
 [[package]]
 name = "miden-core"
-version = "0.18.3"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.18.3#cbe205dfffc5563a06dafc4152d604d69f864e29"
+version = "0.19.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.19.1#81cc603c1b9d5e6a55d82daee5fc1016cee33c02"
 dependencies = [
  "enum_dispatch",
  "miden-crypto",
  "miden-debug-types",
  "miden-formatting",
+ "miden-utils-indexing",
  "num-derive",
  "num-traits",
  "thiserror 2.0.12",
@@ -6709,18 +6736,19 @@ dependencies = [
 
 [[package]]
 name = "miden-crypto"
-version = "0.17.1"
+version = "0.18.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87b287c7a76b95be7ef5588e98a9dbe1973395dbb19eb59dd34d82b06e47f02a"
+checksum = "0048d2d987f215bc9633ced499a8c488d0e2474350c765f904b87cae3462acb7"
 dependencies = [
  "blake3",
  "cc",
  "chacha20poly1305",
+ "ed25519-dalek",
  "flume",
- "getrandom 0.2.16",
  "glob",
  "hkdf",
  "k256",
+ "miden-crypto-derive",
  "num",
  "num-complex",
  "rand 0.9.2",
@@ -6728,22 +6756,34 @@ dependencies = [
  "rand_core 0.9.3",
  "rand_hc",
  "sha3",
+ "subtle",
  "thiserror 2.0.12",
  "winter-crypto",
  "winter-math",
  "winter-utils",
- "zeroize",
+ "x25519-dalek",
+]
+
+[[package]]
+name = "miden-crypto-derive"
+version = "0.18.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca3b38aace84e157fb02aba8f8ae85bbf8c3afdcdbdf8190fbe7476f3be7ef44"
+dependencies = [
+ "quote",
+ "syn 2.0.101",
 ]
 
 [[package]]
 name = "miden-debug-types"
-version = "0.18.3"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.18.3#cbe205dfffc5563a06dafc4152d604d69f864e29"
+version = "0.19.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.19.1#81cc603c1b9d5e6a55d82daee5fc1016cee33c02"
 dependencies = [
  "memchr",
  "miden-crypto",
  "miden-formatting",
  "miden-miette",
+ "miden-utils-indexing",
  "miden-utils-sync",
  "paste",
  "serde",
@@ -6762,8 +6802,8 @@ dependencies = [
 
 [[package]]
 name = "miden-mast-package"
-version = "0.18.3"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.18.3#cbe205dfffc5563a06dafc4152d604d69f864e29"
+version = "0.19.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.19.1#81cc603c1b9d5e6a55d82daee5fc1016cee33c02"
 dependencies = [
  "derive_more 2.0.1",
  "miden-assembly-syntax",
@@ -6815,23 +6855,27 @@ dependencies = [
 
 [[package]]
 name = "miden-processor"
-version = "0.18.3"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.18.3#cbe205dfffc5563a06dafc4152d604d69f864e29"
+version = "0.19.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.19.1#81cc603c1b9d5e6a55d82daee5fc1016cee33c02"
 dependencies = [
+ "itertools 0.14.0",
  "miden-air",
  "miden-core",
  "miden-debug-types",
  "miden-utils-diagnostics",
+ "miden-utils-indexing",
  "paste",
+ "rayon",
  "thiserror 2.0.12",
+ "tokio",
  "tracing",
  "winter-prover",
 ]
 
 [[package]]
 name = "miden-prover"
-version = "0.18.3"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.18.3#cbe205dfffc5563a06dafc4152d604d69f864e29"
+version = "0.19.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.19.1#81cc603c1b9d5e6a55d82daee5fc1016cee33c02"
 dependencies = [
  "miden-air",
  "miden-debug-types",
@@ -6843,8 +6887,8 @@ dependencies = [
 
 [[package]]
 name = "miden-stdlib"
-version = "0.18.3"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.18.3#cbe205dfffc5563a06dafc4152d604d69f864e29"
+version = "0.19.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.19.1#81cc603c1b9d5e6a55d82daee5fc1016cee33c02"
 dependencies = [
  "env_logger",
  "fs-err",
@@ -6858,8 +6902,8 @@ dependencies = [
 
 [[package]]
 name = "miden-utils-diagnostics"
-version = "0.18.3"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.18.3#cbe205dfffc5563a06dafc4152d604d69f864e29"
+version = "0.19.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.19.1#81cc603c1b9d5e6a55d82daee5fc1016cee33c02"
 dependencies = [
  "miden-crypto",
  "miden-debug-types",
@@ -6869,9 +6913,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "miden-utils-indexing"
+version = "0.19.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.19.1#81cc603c1b9d5e6a55d82daee5fc1016cee33c02"
+dependencies = [
+ "thiserror 2.0.12",
+]
+
+[[package]]
 name = "miden-utils-sync"
-version = "0.18.3"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.18.3#cbe205dfffc5563a06dafc4152d604d69f864e29"
+version = "0.19.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.19.1#81cc603c1b9d5e6a55d82daee5fc1016cee33c02"
 dependencies = [
  "lock_api",
  "loom",
@@ -6880,8 +6932,8 @@ dependencies = [
 
 [[package]]
 name = "miden-verifier"
-version = "0.18.3"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.18.3#cbe205dfffc5563a06dafc4152d604d69f864e29"
+version = "0.19.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.19.1#81cc603c1b9d5e6a55d82daee5fc1016cee33c02"
 dependencies = [
  "miden-air",
  "miden-core",
@@ -11067,9 +11119,9 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.11.1"
+version = "1.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b544ef1b4eac5dc2db33ea63606ae9ffcfac26c1416a2806ae0bf5f56b201191"
+checksum = "843bc0191f75f3e22651ae5f1e72939ab2f72a4bc30fa80a066bd66edefc24d4"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -11079,9 +11131,9 @@ dependencies = [
 
 [[package]]
 name = "regex-automata"
-version = "0.4.9"
+version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "809e8dc61f6de73b46c85f4c96486310fe304c434cfa43669d7b40f711150908"
+checksum = "5276caf25ac86c8d810222b3dbb938e512c55c6831a10f3e6ed1c93b84041f1c"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -15668,6 +15720,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "05f360fc0b24296329c78fda852a1e9ae82de9cf7b27dae4b7f62f118f77b9ed"
 dependencies = [
  "tap",
+]
+
+[[package]]
+name = "x25519-dalek"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c7e468321c81fb07fa7f4c636c3972b9100f0346e5b6a9f2bd0603a52f7ed277"
+dependencies = [
+ "curve25519-dalek",
+ "rand_core 0.6.4",
 ]
 
 [[package]]

@@ -14,4 +14,4 @@ jobs:
       packages: write
     with:
       zkvm: miden
-      toolchain: 1.88.0
+      toolchain: 1.90.0
