@@ -12,6 +12,7 @@ pub use ere_platform_trait::{
 };
 pub use sp1_zkvm;
 
+/// SP1 [`Platform`] implementation.
 pub struct SP1Platform<H = IdentityOutput>(PhantomData<H>);
 
 impl<H: OutputHasher> Platform for SP1Platform<H> {

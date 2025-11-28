@@ -12,6 +12,7 @@ pub use ere_platform_trait::{
 };
 pub use nexus_rt;
 
+/// Nexus [`Platform`] implementation.
 pub struct NexusPlatform<H = IdentityOutput>(PhantomData<H>);
 
 impl<H: OutputHasher> Platform for NexusPlatform<H> {

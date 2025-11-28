@@ -3844,6 +3844,7 @@ version = "0.0.15"
 dependencies = [
  "ere-platform-trait",
  "risc0-zkvm",
+ "risc0-zkvm-platform",
 ]
 
 [[package]]

@@ -170,7 +170,7 @@ mod tests {
         let program = basic_program();
         let zkvm = EreZisk::new(program, ProverResourceType::Cpu).unwrap();
 
-        let test_case = BasicProgramInput::valid().into_output_sha256();
+        let test_case = BasicProgramInput::valid();
         run_zkvm_execute(&zkvm, &test_case);
     }
 
@@ -191,7 +191,7 @@ mod tests {
 
         let _guard = PROVE_LOCK.lock().unwrap();
 
-        let test_case = BasicProgramInput::valid().into_output_sha256();
+        let test_case = BasicProgramInput::valid();
         run_zkvm_prove(&zkvm, &test_case);
     }
 

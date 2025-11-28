@@ -13,6 +13,7 @@ pub use ere_platform_trait::{
 };
 pub use risc0_zkvm;
 
+/// Risc0 [`Platform`] implementation.
 pub struct Risc0Platform<H = IdentityOutput>(PhantomData<H>);
 
 impl<H: OutputHasher> Platform for Risc0Platform<H> {

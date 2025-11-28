@@ -12,6 +12,7 @@ pub use ere_platform_trait::{
 };
 pub use zkm_zkvm;
 
+/// Ziren [`Platform`] implementation.
 pub struct ZirenPlatform<H = IdentityOutput>(PhantomData<H>);
 
 impl<H: OutputHasher> Platform for ZirenPlatform<H> {
