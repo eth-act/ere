@@ -28,7 +28,7 @@ pub struct EreSP1 {
     pk: SP1ProvingKey,
     /// Verification key
     vk: SP1VerifyingKey,
-    // The current version of SP1 (v5.2.2) has a problem where if GPU proving
+    // The current version of SP1 (v5.2.3) has a problem where if GPU proving
     // the program crashes in the Moongate container, it leaves an internal
     // mutex poisoned, which prevents further proving attempts.
     // This is a workaround to avoid the poisoned mutex issue by creating a new

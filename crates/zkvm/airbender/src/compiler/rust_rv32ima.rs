@@ -9,7 +9,7 @@ use std::{
 };
 
 const TARGET_TRIPLE: &str = "riscv32ima-unknown-none-elf";
-// Rust flags according to https://github.com/matter-labs/zksync-airbender/blob/v0.5.0/examples/dynamic_fibonacci/.cargo/config.toml.
+// Rust flags according to https://github.com/matter-labs/zksync-airbender/blob/v0.5.1/examples/dynamic_fibonacci/.cargo/config.toml.
 const RUSTFLAGS: &[&str] = &[
     // Replace atomic ops with nonatomic versions since the guest is single threaded.
     "-C",

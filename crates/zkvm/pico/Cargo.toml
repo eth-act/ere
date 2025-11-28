@@ -8,6 +8,7 @@ license.workspace = true
 [dependencies]
 anyhow.workspace = true
 bincode = { workspace = true, features = ["alloc", "serde"] }
+indexmap.workspace = true
 sha2.workspace = true
 serde.workspace = true
 tempfile.workspace = true

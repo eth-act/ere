@@ -1,13 +1,14 @@
-// Copied and modified from https://github.com/brevis-network/pico/blob/v1.1.7/sdk/sdk/src/client.rs.
+// Copied and modified from https://github.com/brevis-network/pico/blob/v1.1.8/sdk/sdk/src/client.rs.
 // The `EmbedProver` is removed because we don't need the proof to be verified
 // on chain. Issue for tracking: https://github.com/eth-act/ere/issues/140.
 
 use anyhow::{Error, Ok, Result};
 use ere_zkvm_interface::zkvm::PublicValues;
+use indexmap::IndexMap;
 use pico_vm::{
     compiler::riscv::program::Program,
     configs::{config::StarkGenericConfig, stark_config::KoalaBearPoseidon2},
-    emulator::stdin::EmulatorStdinBuilder,
+    emulator::{opts::EmulatorOpts, stdin::EmulatorStdinBuilder},
     instances::compiler::shapes::{
         recursion_shape::RecursionShapeConfig, riscv_shape::RiscvShapeConfig,
     },
@@ -33,7 +34,7 @@ impl ProverClient {
     pub fn new(elf: &[u8]) -> Self {
         let riscv = RiscvProver::new_initial_prover(
             (SC::new(), elf),
-            Default::default(),
+            EmulatorOpts::default().with_cycle_tracker(),
             Some(RiscvShapeConfig::default()),
         );
         let convert = ConvertProver::new_with_prev(
@@ -64,9 +65,25 @@ impl ProverClient {
     }
 
     /// Execute the program and return the cycles and public values
-    pub fn execute(&self, stdin: EmulatorStdinBuilder<Vec<u8>, SC>) -> (u64, Vec<u8>) {
+    pub fn execute(
+        &self,
+        stdin: EmulatorStdinBuilder<Vec<u8>, SC>,
+    ) -> (u64, IndexMap<String, u64>, Vec<u8>) {
         let (stdin, _) = stdin.finalize();
-        self.riscv.emulate(stdin)
+        let (reports, public_values) = self.riscv.emulate(stdin);
+        let total_num_cycles = reports.last().unwrap().current_cycle;
+        let region_cycles = reports
+            .into_iter()
+            .fold(IndexMap::new(), |mut map, report| {
+                if let Some(cycle_tracker) = report.cycle_tracker {
+                    for (name, cycle_counts) in cycle_tracker {
+                        let cycle_count = cycle_counts.iter().sum::<u64>();
+                        *map.entry(name).or_default() += cycle_count;
+                    }
+                }
+                map
+            });
+        (total_num_cycles, region_cycles, public_values)
     }
 
     /// Prove until `CompressProver`.

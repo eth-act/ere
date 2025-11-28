@@ -48,20 +48,21 @@ impl zkVM for ErePico {
         let mut stdin = EmulatorStdinBuilder::default();
         stdin.write_slice(input);
 
-        let ((total_num_cycles, public_values), execution_duration) = panic::catch_unwind(|| {
-            let client = self.client();
-            let start = Instant::now();
-            let result = client.execute(stdin);
-            (result, start.elapsed())
-        })
-        .map_err(|err| Error::ExecutePanic(panic_msg(err)))?;
+        let ((total_num_cycles, region_cycles, public_values), execution_duration) =
+            panic::catch_unwind(|| {
+                let client = self.client();
+                let start = Instant::now();
+                let result = client.execute(stdin);
+                (result, start.elapsed())
+            })
+            .map_err(|err| Error::ExecutePanic(panic_msg(err)))?;
 
         Ok((
             public_values,
             ProgramExecutionReport {
                 total_num_cycles,
+                region_cycles,
                 execution_duration,
-                ..Default::default()
             },
         ))
     }
