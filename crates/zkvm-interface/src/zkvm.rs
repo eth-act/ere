@@ -50,7 +50,7 @@ impl Input {
 
     /// Consumes `self` and returns a new `Input` with the serialized proofs, or
     /// returns an error if serialization failed.
-    pub fn with_proof<T: Serialize>(mut self, proofs: &[T]) -> Result<Self, EncodeError> {
+    pub fn with_proofs<T: Serialize>(mut self, proofs: &[T]) -> Result<Self, EncodeError> {
         self.proofs = Some(bincode::serde::encode_to_vec(
             proofs,
             bincode::config::legacy(),
