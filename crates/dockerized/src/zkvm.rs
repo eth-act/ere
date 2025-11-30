@@ -16,7 +16,7 @@ use ere_server::client::{Url, zkVMClient};
 use ere_zkvm_interface::{
     CommonError,
     zkvm::{
-        ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
+        Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
         PublicValues, zkVM,
     },
 };
@@ -308,23 +308,20 @@ impl DockerizedzkVM {
 }
 
 impl zkVM for DockerizedzkVM {
-    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
-        let input = input.to_vec();
-        self.with_retry(|client| block_on(client.execute(input.clone())))
+    fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+        self.with_retry(|client| block_on(client.execute(input)))
     }
 
     fn prove(
         &self,
-        input: &[u8],
+        input: &Input,
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
-        let input = input.to_vec();
-        self.with_retry(|client| block_on(client.prove(input.clone(), proof_kind)))
+        self.with_retry(|client| block_on(client.prove(input, proof_kind)))
     }
 
     fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
-        let proof = proof.clone();
-        self.with_retry(|client| block_on(client.verify(&proof)))
+        self.with_retry(|client| block_on(client.verify(proof)))
     }
 
     fn name(&self) -> &'static str {
@@ -352,7 +349,7 @@ mod test {
         zkvm::{DockerizedzkVM, Error},
     };
     use ere_test_utils::{host::*, program::basic::BasicProgramInput};
-    use ere_zkvm_interface::zkvm::{ProofKind, ProverResourceType, zkVM};
+    use ere_zkvm_interface::zkvm::{Input, ProofKind, ProverResourceType, zkVM};
 
     fn zkvm(
         zkvm_kind: zkVMKind,
@@ -406,7 +403,7 @@ mod test {
             Rust,
             "basic",
             [BasicProgramInput::valid().into_output_sha256()],
-            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+            [Input::default(), BasicProgramInput::invalid().input()]
         );
     }
 
@@ -417,7 +414,7 @@ mod test {
             RustCustomized,
             "basic",
             [BasicProgramInput::valid()],
-            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+            [Input::default(), BasicProgramInput::invalid().input()]
         );
     }
 
@@ -428,7 +425,7 @@ mod test {
             Rust,
             "basic",
             [BasicProgramInput::valid()],
-            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+            [Input::default(), BasicProgramInput::invalid().input()]
         );
     }
 
@@ -439,7 +436,7 @@ mod test {
             RustCustomized,
             "basic",
             [BasicProgramInput::valid().into_output_sha256()],
-            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+            [Input::default(), BasicProgramInput::invalid().input()]
         );
     }
 
@@ -450,7 +447,7 @@ mod test {
             RustCustomized,
             "basic",
             [BasicProgramInput::valid()],
-            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+            [Input::default(), BasicProgramInput::invalid().input()]
         );
     }
 
@@ -461,7 +458,7 @@ mod test {
             RustCustomized,
             "basic",
             [BasicProgramInput::valid()],
-            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+            [Input::default(), BasicProgramInput::invalid().input()]
         );
     }
 
@@ -472,7 +469,7 @@ mod test {
             RustCustomized,
             "basic",
             [BasicProgramInput::valid()],
-            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+            [Input::default(), BasicProgramInput::invalid().input()]
         );
     }
 
@@ -483,7 +480,7 @@ mod test {
             RustCustomized,
             "basic",
             [BasicProgramInput::valid()],
-            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+            [Input::default(), BasicProgramInput::invalid().input()]
         );
     }
 
@@ -494,7 +491,7 @@ mod test {
             RustCustomized,
             "basic_rust",
             [BasicProgramInput::valid()],
-            [Vec::new(), BasicProgramInput::invalid().serialized_input()]
+            [Input::default(), BasicProgramInput::invalid().input()]
         );
     }
 }

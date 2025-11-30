@@ -4,7 +4,7 @@ use crate::{
 };
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
-    CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
     ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
 };
 use std::{
@@ -68,9 +68,9 @@ impl EreZisk {
 }
 
 impl zkVM for EreZisk {
-    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+    fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         let start = Instant::now();
-        let (public_values, total_num_cycles) = self.sdk.execute(input)?;
+        let (public_values, total_num_cycles) = self.sdk.execute(input.stdin())?;
         let execution_duration = start.elapsed();
 
         Ok((
@@ -85,7 +85,7 @@ impl zkVM for EreZisk {
 
     fn prove(
         &self,
-        input: &[u8],
+        input: &Input,
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         if proof_kind != ProofKind::Compressed {
@@ -99,7 +99,7 @@ impl zkVM for EreZisk {
         let server = server.as_mut().expect("server initialized");
 
         let start = Instant::now();
-        let (public_values, proof) = server.prove(input)?;
+        let (public_values, proof) = server.prove(input.stdin())?;
         let proving_time = start.elapsed();
 
         Ok((
@@ -146,7 +146,7 @@ mod tests {
     };
     use ere_zkvm_interface::{
         compiler::Compiler,
-        zkvm::{ProofKind, ProverResourceType, zkVM},
+        zkvm::{Input, ProofKind, ProverResourceType, zkVM},
     };
     use std::sync::{Mutex, OnceLock};
 
@@ -179,7 +179,7 @@ mod tests {
         let program = basic_program();
         let zkvm = EreZisk::new(program, ProverResourceType::Cpu).unwrap();
 
-        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+        for input in [Input::default(), BasicProgramInput::invalid().input()] {
             zkvm.execute(&input).unwrap_err();
         }
     }
@@ -202,7 +202,7 @@ mod tests {
 
         let _guard = PROVE_LOCK.lock().unwrap();
 
-        for input in [Vec::new(), BasicProgramInput::invalid().serialized_input()] {
+        for input in [Input::default(), BasicProgramInput::invalid().input()] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }
     }
