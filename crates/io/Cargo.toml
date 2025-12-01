@@ -1,0 +1,22 @@
+[package]
+name = "ere-io"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+bincode = { workspace = true, features = ["alloc", "serde"], optional = true }
+serde = { workspace = true, optional = true }
+rkyv = { workspace = true, features = ["alloc", "bytecheck", "unaligned"], optional = true }
+
+[dev-dependencies]
+
+[features]
+default = []
+serde = ["dep:serde"]
+bincode = ["dep:bincode", "serde"]
+rkyv = ["dep:rkyv"]
+
+[lints]
+workspace = true
