@@ -37,7 +37,7 @@ impl<H: OutputHasher> Platform for Risc0Platform<H> {
         risc0_zkvm::guest::env::stdout().write_slice(message.as_bytes());
     }
 
-    fn cycle_count() -> Option<u64> {
-        Some(risc0_zkvm::guest::env::cycle_count())
+    fn cycle_count() -> u64 {
+        risc0_zkvm::guest::env::cycle_count()
     }
 }
