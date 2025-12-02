@@ -1,28 +1,19 @@
-use core::fmt::Debug;
-use ere_io_serde::IoSerde;
+use ere_io::Io;
 use ere_platform_trait::Platform;
-use serde::{Serialize, de::DeserializeOwned};
 
 pub mod basic;
 
 /// Program that can be ran given [`Platform`] implementation.
 pub trait Program {
-    type Input: Serialize + DeserializeOwned;
-    type Output: Debug + PartialEq + Serialize + DeserializeOwned;
+    type Io: Io;
 
-    fn io_serde() -> impl IoSerde;
-
-    fn compute(input: Self::Input) -> Self::Output;
+    fn compute(input: <Self::Io as Io>::Input) -> <Self::Io as Io>::Output;
 
     fn run<P: Platform>() {
-        let io_serde = Self::io_serde();
-        let input = io_serde.deserialize(&P::read_whole_input()).unwrap();
-        let output = io_serde.serialize(&Self::compute(input)).unwrap();
-        P::write_whole_output(&output);
+        let input_bytes = P::read_whole_input();
+        let input = Self::Io::deserialize_input(&input_bytes).unwrap();
+        let output = Self::compute(input);
+        let output_bytes = Self::Io::serialize_output(&output).unwrap();
+        P::write_whole_output(&output_bytes);
     }
-}
-
-/// [`Program::Input`] that has [`TestCase`] auto-implemented.
-pub trait ProgramInput: Clone + Serialize {
-    type Program: Program<Input = Self>;
 }

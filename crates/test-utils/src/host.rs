@@ -1,7 +1,8 @@
-use crate::program::{Program, ProgramInput};
-use ere_io_serde::IoSerde;
+use crate::program::Program;
+use core::ops::Deref;
+use ere_io::Io;
 use ere_zkvm_interface::zkvm::{ProofKind, PublicValues, zkVM};
-use sha2::Digest;
+use sha2::{Digest, Sha256};
 use std::{marker::PhantomData, path::PathBuf};
 
 fn workspace() -> PathBuf {
@@ -50,48 +51,74 @@ pub trait TestCase {
     fn assert_output(&self, public_values: &[u8]);
 }
 
-/// Auto-implementation [`TestCase`] for [`ProgramInput`] that can be shared
-/// between host and guest, if the guest is also written in Rust.
-impl<T: ProgramInput> TestCase for T {
+/// Wrapper for [`ProgramInput`] that implements [`TestCase`].
+pub struct ProgramTestCase<P: Program> {
+    input: <P::Io as Io>::Input,
+    _marker: PhantomData<P>,
+}
+
+impl<P: Program> ProgramTestCase<P> {
+    pub fn new(input: <P::Io as Io>::Input) -> Self {
+        Self {
+            input,
+            _marker: PhantomData,
+        }
+    }
+
+    /// Wrap into [`OutputHashedProgramTestCase`] with [`Sha256`].
+    pub fn into_output_sha256(self) -> impl TestCase {
+        OutputHashedProgramTestCase::<_, Sha256>::new(self)
+    }
+}
+
+impl<P: Program> Deref for ProgramTestCase<P> {
+    type Target = <P::Io as Io>::Input;
+
+    fn deref(&self) -> &Self::Target {
+        &self.input
+    }
+}
+
+impl<P: Program> TestCase for ProgramTestCase<P> {
     fn serialized_input(&self) -> Vec<u8> {
-        T::Program::io_serde().serialize(&self.clone()).unwrap()
+        P::Io::serialize_input(&self.input).unwrap()
     }
 
     fn assert_output(&self, public_values: &[u8]) {
         assert_eq!(
-            T::Program::compute(self.clone()),
-            T::Program::io_serde().deserialize(public_values).unwrap()
+            P::compute(self.input.clone()),
+            P::Io::deserialize_output(public_values).unwrap()
         )
     }
 }
 
-/// Wrapper for [`TestCase`] that asserts output to be hashed.
-pub struct OutputHashedTestCase<T, D> {
-    inner: T,
+/// Wrapper for [`ProgramTestCase`] that asserts output to be hashed.
+pub struct OutputHashedProgramTestCase<P: Program, D> {
+    test_case: ProgramTestCase<P>,
     _marker: PhantomData<D>,
 }
 
-impl<T, D> OutputHashedTestCase<T, D> {
-    pub fn new(inner: T) -> Self {
+impl<P: Program, D> OutputHashedProgramTestCase<P, D> {
+    pub fn new(test_case: ProgramTestCase<P>) -> Self {
         Self {
-            inner,
+            test_case,
             _marker: PhantomData,
         }
     }
 }
 
-impl<T, D> TestCase for OutputHashedTestCase<T, D>
+impl<P, D> TestCase for OutputHashedProgramTestCase<P, D>
 where
-    T: ProgramInput,
+    P: Program,
     D: Digest,
 {
     fn serialized_input(&self) -> Vec<u8> {
-        self.inner.serialized_input()
+        self.test_case.serialized_input()
     }
 
     fn assert_output(&self, public_values: &[u8]) {
-        let output = T::Program::compute(self.inner.clone());
-        let digest = D::digest(T::Program::io_serde().serialize(&output).unwrap());
+        let output = P::compute(self.test_case.clone());
+        let digest = D::digest(P::Io::serialize_output(&output).unwrap());
         assert_eq!(&*digest, public_values)
     }
 }

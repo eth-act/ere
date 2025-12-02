@@ -25,27 +25,32 @@ pub trait Platform {
 
     /// Returns the current cycle count.
     ///
-    /// Note that this function will return `None` if the platform doesn't support.
-    fn cycle_count() -> Option<u64> {
-        None
+    /// Note that this function will return `0` if the platform doesn't support.
+    #[inline]
+    fn cycle_count() -> u64 {
+        0
     }
 
     /// Enters a cycle scope of `name`.
     ///
     /// Note that this function will be a no-op if the platform doesn't support.
+    #[inline]
     fn cycle_scope_start(_name: &str) {}
 
     /// Exits a cycle scope of `name`.
     ///
     /// Note that this function will be a no-op if the platform doesn't support.
+    #[inline]
     fn cycle_scope_end(_name: &str) {}
 
     /// Runs a given function `f` within a cycle scope `name`.
     ///
     /// Note that this function will be a no-op if the platform doesn't support.
-    fn cycle_scope(name: &str, f: impl Fn()) {
+    #[inline]
+    fn cycle_scope<T>(name: &str, f: impl FnOnce() -> T) -> T {
         Self::cycle_scope_start(name);
-        f();
+        let t = f();
         Self::cycle_scope_end(name);
+        t
     }
 }

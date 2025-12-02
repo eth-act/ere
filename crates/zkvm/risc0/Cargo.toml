@@ -23,7 +23,7 @@ ere-compile-utils = { workspace = true, optional = true }
 ere-zkvm-interface.workspace = true
 
 [dev-dependencies]
-ere-io-serde.workspace = true
+ere-io.workspace = true
 ere-test-utils = { workspace = true, features = ["host"] }
 
 [build-dependencies]

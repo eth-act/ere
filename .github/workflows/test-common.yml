@@ -21,7 +21,7 @@ jobs:
             run_test: true
           - crate: ere-dockerized
             run_test: false # They are run in per-zkVM workflows
-          - crate: ere-io-serde
+          - crate: ere-io
             run_test: true
           - crate: ere-build-utils
             run_test: true

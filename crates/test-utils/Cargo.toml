@@ -8,12 +8,13 @@ license.workspace = true
 [dependencies]
 rand = { workspace = true, optional = true }
 serde = { workspace = true, features = ["derive"] }
+serde_bytes = { workspace = true, features = ["alloc"] }
 sha2.workspace = true
 
 # Local dependencies
 ere-zkvm-interface = { workspace = true, optional = true }
 ere-platform-trait.workspace = true
-ere-io-serde.workspace = true
+ere-io = { workspace = true, features = ["bincode"] }
 
 [lints]
 workspace = true

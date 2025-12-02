@@ -247,7 +247,7 @@ mod tests {
     }
 
     #[test]
-    fn test_invalid_input() {
+    fn test_invalid_test_case() {
         let program = load_miden_program("add");
         let zkvm = EreMiden::new(program, ProverResourceType::Cpu).unwrap();
 

@@ -8,6 +8,7 @@
 use ere_platform_airbender::AirbenderPlatform;
 use ere_test_utils::{
     guest::Sha256,
+    io::serde::bincode::BincodeLegacy,
     program::{basic::BasicProgram, Program},
 };
 
@@ -15,5 +16,5 @@ mod airbender_rt;
 
 #[inline(never)]
 fn main() {
-    BasicProgram::run::<AirbenderPlatform<Sha256>>();
+    BasicProgram::<BincodeLegacy>::run::<AirbenderPlatform<Sha256>>();
 }
