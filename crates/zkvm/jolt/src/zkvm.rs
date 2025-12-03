@@ -33,6 +33,10 @@ impl EreJolt {
 
 impl zkVM for EreJolt {
     fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+        if input.proofs.is_some() {
+            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+        }
+
         let start = Instant::now();
         let (public_values, total_num_cycles) = self.sdk.execute(input.stdin())?;
         let execution_duration = start.elapsed();
@@ -52,12 +56,16 @@ impl zkVM for EreJolt {
         input: &Input,
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
+        if input.proofs.is_some() {
+            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+        }
         if proof_kind != ProofKind::Compressed {
             bail!(CommonError::unsupported_proof_kind(
                 proof_kind,
                 [ProofKind::Compressed]
             ))
         }
+
         let start = Instant::now();
         let (public_values, proof) = self.sdk.prove(input.stdin())?;
         let proving_time = start.elapsed();

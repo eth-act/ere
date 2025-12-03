@@ -57,6 +57,10 @@ impl EreMiden {
 
 impl zkVM for EreMiden {
     fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+        if input.proofs.is_some() {
+            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+        }
+
         let stack_inputs = StackInputs::default();
         let advice_inputs = AdviceInputs::default().with_stack(bytes_to_felts(input.stdin())?);
         let mut host = Self::setup_host()?;
@@ -87,6 +91,9 @@ impl zkVM for EreMiden {
         input: &Input,
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
+        if input.proofs.is_some() {
+            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+        }
         if proof_kind != ProofKind::Compressed {
             bail!(CommonError::unsupported_proof_kind(
                 proof_kind,

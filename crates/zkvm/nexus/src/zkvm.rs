@@ -41,6 +41,10 @@ impl EreNexus {
 
 impl zkVM for EreNexus {
     fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+        if input.proofs.is_some() {
+            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+        }
+
         let elf = ElfFile::from_bytes(self.program.elf()).map_err(Error::ParseElf)?;
 
         // Nexus sdk does not provide a trace, so we need to use core `nvm`
@@ -82,6 +86,9 @@ impl zkVM for EreNexus {
         input: &Input,
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
+        if input.proofs.is_some() {
+            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+        }
         if proof_kind != ProofKind::Compressed {
             bail!(CommonError::unsupported_proof_kind(
                 proof_kind,

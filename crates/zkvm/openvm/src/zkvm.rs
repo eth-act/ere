@@ -123,6 +123,10 @@ impl EreOpenVM {
 
 impl zkVM for EreOpenVM {
     fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+        if input.proofs.is_some() {
+            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+        }
+
         let mut stdin = StdIn::default();
         stdin.write_bytes(input.stdin());
 
@@ -146,6 +150,9 @@ impl zkVM for EreOpenVM {
         input: &Input,
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
+        if input.proofs.is_some() {
+            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+        }
         if proof_kind != ProofKind::Compressed {
             bail!(CommonError::unsupported_proof_kind(
                 proof_kind,
