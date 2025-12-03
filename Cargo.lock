@@ -3934,7 +3934,6 @@ version = "0.0.15"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
- "borsh",
  "ere-build-utils",
  "ere-compile-utils",
  "ere-io",

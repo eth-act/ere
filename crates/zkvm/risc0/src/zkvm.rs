@@ -148,8 +148,8 @@ impl zkVM for EreRisc0 {
         let public_values = prove_info.receipt.journal.bytes.clone();
         let proof = Proof::new(
             proof_kind,
-            borsh::to_vec(&prove_info.receipt)
-                .map_err(|err| CommonError::serialize("proof", "borsh", err))?,
+            bincode::serde::encode_to_vec(&prove_info.receipt, bincode::config::legacy())
+                .map_err(|err| CommonError::serialize("proof", "bincode", err))?,
         );
 
         Ok((
@@ -162,8 +162,9 @@ impl zkVM for EreRisc0 {
     fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
         let proof_kind = proof.kind();
 
-        let receipt: Receipt = borsh::from_slice(proof.as_bytes())
-            .map_err(|err| CommonError::deserialize("proof", "borsh", err))?;
+        let (receipt, _): (Receipt, _) =
+            bincode::serde::decode_from_slice(proof.as_bytes(), bincode::config::legacy())
+                .map_err(|err| CommonError::deserialize("proof", "bincode", err))?;
 
         if !matches!(
             (proof_kind, &receipt.inner),
