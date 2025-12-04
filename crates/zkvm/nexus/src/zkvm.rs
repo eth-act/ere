@@ -1,7 +1,7 @@
 use crate::program::NexusProgram;
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
-    CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
     ProverResourceType, PublicValues, zkVM,
 };
 use nexus_core::nvm::{self, ElfFile};
@@ -40,15 +40,19 @@ impl EreNexus {
 }
 
 impl zkVM for EreNexus {
-    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+    fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+        if input.proofs.is_some() {
+            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+        }
+
         let elf = ElfFile::from_bytes(self.program.elf()).map_err(Error::ParseElf)?;
 
         // Nexus sdk does not provide a trace, so we need to use core `nvm`
         // Encoding is copied directly from `prove_with_input`
-        let mut private_encoded = if input.is_empty() {
+        let mut private_encoded = if input.stdin().is_empty() {
             Vec::new()
         } else {
-            postcard::to_stdvec_cobs(&input)
+            postcard::to_stdvec_cobs(&input.stdin())
                 .map_err(|err| CommonError::serialize("input", "postcard", err))?
         };
 
@@ -79,9 +83,12 @@ impl zkVM for EreNexus {
 
     fn prove(
         &self,
-        input: &[u8],
+        input: &Input,
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
+        if input.proofs.is_some() {
+            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+        }
         if proof_kind != ProofKind::Compressed {
             bail!(CommonError::unsupported_proof_kind(
                 proof_kind,
@@ -94,7 +101,9 @@ impl zkVM for EreNexus {
         let prover = Stwo::new(&elf).map_err(Error::Prove)?;
 
         let start = Instant::now();
-        let (view, proof) = prover.prove_with_input(&input, &()).map_err(Error::Prove)?;
+        let (view, proof) = prover
+            .prove_with_input(&input.stdin(), &())
+            .map_err(Error::Prove)?;
         let proving_time = start.elapsed();
 
         let public_values = view
@@ -164,6 +173,7 @@ mod tests {
         program::basic::BasicProgram,
     };
     use ere_zkvm_interface::{
+        Input,
         compiler::Compiler,
         zkvm::{ProofKind, ProverResourceType, zkVM},
     };
@@ -195,8 +205,8 @@ mod tests {
         let zkvm = EreNexus::new(program, ProverResourceType::Cpu).unwrap();
 
         for input in [
-            Vec::new(),
-            BasicProgram::<BincodeLegacy>::invalid_test_case().serialized_input(),
+            Input::default(),
+            BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
             zkvm.execute(&input).unwrap_err();
         }
@@ -217,8 +227,8 @@ mod tests {
         let zkvm = EreNexus::new(program, ProverResourceType::Cpu).unwrap();
 
         for input in [
-            Vec::new(),
-            BasicProgram::<BincodeLegacy>::invalid_test_case().serialized_input(),
+            Input::default(),
+            BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }

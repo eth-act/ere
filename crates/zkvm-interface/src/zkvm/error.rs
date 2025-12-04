@@ -48,6 +48,9 @@ pub enum CommonError {
         stderr: String,
     },
 
+    #[error("Unsupported input: {0}")]
+    UnsupportedInput(String),
+
     #[error("Unsupported proof kind {unsupported:?}, expect one of {supported:?}")]
     UnsupportedProofKind {
         unsupported: ProofKind,
@@ -132,6 +135,10 @@ impl CommonError {
                 .map(|output| String::from_utf8_lossy(&output.stderr).to_string())
                 .unwrap_or_default(),
         }
+    }
+
+    pub fn unsupported_input(reason: impl AsRef<str>) -> Self {
+        Self::UnsupportedInput(reason.as_ref().to_string())
     }
 
     pub fn unsupported_proof_kind(

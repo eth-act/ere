@@ -6,7 +6,7 @@ use crate::api::{
 };
 use anyhow::Context;
 use ere_zkvm_interface::zkvm::{
-    ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, PublicValues, zkVM,
+    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, PublicValues, zkVM,
 };
 use std::sync::Arc;
 use twirp::{
@@ -31,7 +31,7 @@ impl<T: 'static + zkVM + Send + Sync> zkVMServer<T> {
 
     async fn execute(
         &self,
-        input: Vec<u8>,
+        input: Input,
     ) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         let zkvm = Arc::clone(&self.zkvm);
         tokio::task::spawn_blocking(move || zkvm.execute(&input))
@@ -41,7 +41,7 @@ impl<T: 'static + zkVM + Send + Sync> zkVMServer<T> {
 
     async fn prove(
         &self,
-        input: Vec<u8>,
+        input: Input,
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         let zkvm = Arc::clone(&self.zkvm);
@@ -64,9 +64,12 @@ impl<T: 'static + zkVM + Send + Sync> ZkvmService for zkVMServer<T> {
         &self,
         request: Request<ExecuteRequest>,
     ) -> twirp::Result<Response<ExecuteResponse>> {
-        let request = request.into_body();
+        let ExecuteRequest {
+            input_stdin: stdin,
+            input_proofs: proofs,
+        } = request.into_body();
 
-        let input = request.input;
+        let input = Input { stdin, proofs };
 
         let result = match self.execute(input).await {
             Ok((public_values, report)) => ExecuteResult::Ok(ExecuteOk {
@@ -86,11 +89,15 @@ impl<T: 'static + zkVM + Send + Sync> ZkvmService for zkVMServer<T> {
         &self,
         request: Request<ProveRequest>,
     ) -> twirp::Result<Response<ProveResponse>> {
-        let request = request.into_body();
+        let ProveRequest {
+            input_stdin: stdin,
+            input_proofs: proofs,
+            proof_kind,
+        } = request.into_body();
 
-        let input = request.input;
-        let proof_kind = ProofKind::from_repr(request.proof_kind as usize)
-            .ok_or_else(|| invalid_proof_kind_err(request.proof_kind))?;
+        let input = Input { stdin, proofs };
+        let proof_kind = ProofKind::from_repr(proof_kind as usize)
+            .ok_or_else(|| invalid_proof_kind_err(proof_kind))?;
 
         let result = match self.prove(input, proof_kind).await {
             Ok((public_values, proof, report)) => ProveResult::Ok(ProveOk {

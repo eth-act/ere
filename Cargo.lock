@@ -3933,7 +3933,7 @@ name = "ere-risc0"
 version = "0.0.15"
 dependencies = [
  "anyhow",
- "borsh",
+ "bincode 2.0.1",
  "ere-build-utils",
  "ere-compile-utils",
  "ere-io",

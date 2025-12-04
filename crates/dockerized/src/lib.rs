@@ -29,7 +29,7 @@
 //! use ere_dockerized::{CompilerKind, DockerizedCompiler, DockerizedzkVM, zkVMKind};
 //! use ere_zkvm_interface::{
 //!     compiler::Compiler,
-//!     zkvm::{ProofKind, ProverResourceType, zkVM},
+//!     zkvm::{Input, ProofKind, ProverResourceType, zkVM},
 //! };
 //! use std::path::Path;
 //!
@@ -49,7 +49,7 @@
 //! let zkvm = DockerizedzkVM::new(zkvm_kind, program, resource)?;
 //!
 //! // Serialize input
-//! let input = 42u32.to_le_bytes();
+//! let input = Input::new(42u32.to_le_bytes().to_vec());
 //!
 //! // Execute program
 //! let (public_values, execution_report) = zkvm.execute(&input)?;

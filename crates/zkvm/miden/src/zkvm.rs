@@ -1,7 +1,7 @@
 use crate::program::{MidenProgram, MidenProgramInfo, MidenSerdeWrapper};
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
-    CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
     ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
 };
 use miden_core::{
@@ -56,9 +56,13 @@ impl EreMiden {
 }
 
 impl zkVM for EreMiden {
-    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+    fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+        if input.proofs.is_some() {
+            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+        }
+
         let stack_inputs = StackInputs::default();
-        let advice_inputs = AdviceInputs::default().with_stack(bytes_to_felts(input)?);
+        let advice_inputs = AdviceInputs::default().with_stack(bytes_to_felts(input.stdin())?);
         let mut host = Self::setup_host()?;
 
         let start = Instant::now();
@@ -84,9 +88,12 @@ impl zkVM for EreMiden {
 
     fn prove(
         &self,
-        input: &[u8],
+        input: &Input,
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
+        if input.proofs.is_some() {
+            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+        }
         if proof_kind != ProofKind::Compressed {
             bail!(CommonError::unsupported_proof_kind(
                 proof_kind,
@@ -95,7 +102,7 @@ impl zkVM for EreMiden {
         }
 
         let stack_inputs = StackInputs::default();
-        let advice_inputs = AdviceInputs::default().with_stack(bytes_to_felts(input)?);
+        let advice_inputs = AdviceInputs::default().with_stack(bytes_to_felts(input.stdin())?);
         let mut host = Self::setup_host()?;
         let proving_options = ProvingOptions::with_128_bit_security(HashFunction::Blake3_256);
 
@@ -191,6 +198,7 @@ mod tests {
     };
     use ere_test_utils::host::testing_guest_directory;
     use ere_zkvm_interface::{
+        Input,
         compiler::Compiler,
         zkvm::{ProofKind, ProverResourceType, zkVM},
     };
@@ -213,7 +221,9 @@ mod tests {
         let input = felts_to_bytes(&[const_a, const_b]);
 
         // Prove
-        let (prover_public_values, proof, _) = zkvm.prove(&input, ProofKind::default()).unwrap();
+        let (prover_public_values, proof, _) = zkvm
+            .prove(&Input::new(input), ProofKind::default())
+            .unwrap();
 
         // Verify
         let verifier_public_values = zkvm.verify(&proof).unwrap();
@@ -235,7 +245,9 @@ mod tests {
         let input = felts_to_bytes(&[Felt::from(0u32), Felt::from(1u32), Felt::from(n_iterations)]);
 
         // Prove
-        let (prover_public_values, proof, _) = zkvm.prove(&input, ProofKind::default()).unwrap();
+        let (prover_public_values, proof, _) = zkvm
+            .prove(&Input::new(input), ProofKind::default())
+            .unwrap();
 
         // Verify
         let verifier_public_values = zkvm.verify(&proof).unwrap();
@@ -251,10 +263,10 @@ mod tests {
         let program = load_miden_program("add");
         let zkvm = EreMiden::new(program, ProverResourceType::Cpu).unwrap();
 
-        let empty_inputs = Vec::new();
+        let empty_inputs = Input::new(Vec::new());
         assert!(zkvm.execute(&empty_inputs).is_err());
 
-        let insufficient_inputs = felts_to_bytes(&[Felt::from(5u32)]);
+        let insufficient_inputs = Input::new(felts_to_bytes(&[Felt::from(5u32)]));
         assert!(zkvm.execute(&insufficient_inputs).is_err());
     }
 }

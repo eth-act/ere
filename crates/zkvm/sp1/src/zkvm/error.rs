@@ -10,6 +10,9 @@ pub enum Error {
     #[error("Prover RwLock posioned, panic not catched properly")]
     RwLockPosioned,
 
+    #[error("Deserialize proofs in Input failed: {0:?}")]
+    DeserializeInputProofs(bincode::error::DecodeError),
+
     // Execute
     #[error("SP1 execution failed: {0}")]
     Execute(#[source] anyhow::Error),

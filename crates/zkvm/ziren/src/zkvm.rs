@@ -1,7 +1,7 @@
 use crate::program::ZirenProgram;
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
-    CommonError, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
     ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
 };
 use std::{panic, time::Instant};
@@ -37,9 +37,8 @@ impl EreZiren {
 }
 
 impl zkVM for EreZiren {
-    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
-        let mut stdin = ZKMStdin::new();
-        stdin.write_slice(input);
+    fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+        let stdin = input_to_stdin(input)?;
 
         let start = Instant::now();
         let (public_inputs, exec_report) = CpuProver::new()
@@ -59,13 +58,12 @@ impl zkVM for EreZiren {
 
     fn prove(
         &self,
-        input: &[u8],
+        input: &Input,
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         info!("Generating proof…");
 
-        let mut stdin = ZKMStdin::new();
-        stdin.write_slice(input);
+        let stdin = input_to_stdin(input)?;
 
         let inner_proof_kind = match proof_kind {
             ProofKind::Compressed => ZKMProofKind::Compressed,
@@ -135,6 +133,17 @@ impl zkVMProgramDigest for EreZiren {
     }
 }
 
+fn input_to_stdin(input: &Input) -> Result<ZKMStdin, Error> {
+    let mut stdin = ZKMStdin::new();
+    stdin.write_slice(input.stdin());
+    if let Some(proofs) = input.proofs() {
+        for (proof, vk) in proofs.map_err(Error::DeserializeInputProofs)? {
+            stdin.write_proof(proof, vk);
+        }
+    }
+    Ok(stdin)
+}
+
 fn panic_msg(err: Box<dyn std::any::Any + Send + 'static>) -> String {
     None.or_else(|| err.downcast_ref::<String>().cloned())
         .or_else(|| err.downcast_ref::<&'static str>().map(ToString::to_string))
@@ -151,7 +160,7 @@ mod tests {
     };
     use ere_zkvm_interface::{
         compiler::Compiler,
-        zkvm::{ProofKind, ProverResourceType, zkVM},
+        zkvm::{Input, ProofKind, ProverResourceType, zkVM},
     };
     use std::sync::OnceLock;
 
@@ -181,8 +190,8 @@ mod tests {
         let zkvm = EreZiren::new(program, ProverResourceType::Cpu).unwrap();
 
         for input in [
-            Vec::new(),
-            BasicProgram::<BincodeLegacy>::invalid_test_case().serialized_input(),
+            Input::default(),
+            BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
             zkvm.execute(&input).unwrap_err();
         }
@@ -203,8 +212,8 @@ mod tests {
         let zkvm = EreZiren::new(program, ProverResourceType::Cpu).unwrap();
 
         for input in [
-            Vec::new(),
-            BasicProgram::<BincodeLegacy>::invalid_test_case().serialized_input(),
+            Input::default(),
+            BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }

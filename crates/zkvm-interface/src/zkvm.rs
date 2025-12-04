@@ -1,5 +1,6 @@
 #![allow(non_camel_case_types)]
 
+use bincode::error::{DecodeError, EncodeError};
 use serde::{Serialize, de::DeserializeOwned};
 
 mod error;
@@ -11,6 +12,63 @@ pub use error::CommonError;
 pub use proof::{Proof, ProofKind};
 pub use report::{ProgramExecutionReport, ProgramProvingReport};
 pub use resource::{NetworkProverConfig, ProverResourceType};
+
+/// Input for the prover to execute/prove a guest program.
+#[derive(Clone, Debug, Default)]
+pub struct Input {
+    pub stdin: Vec<u8>,
+    /// Serialized proofs to be verified in guest program for proof composition.
+    pub proofs: Option<Vec<u8>>,
+}
+
+impl Input {
+    /// Creates a new `Input` with the given stdin.
+    pub fn new(stdin: Vec<u8>) -> Self {
+        Self {
+            stdin,
+            proofs: None,
+        }
+    }
+
+    /// Returns a reference to the stdin as a byte slice.
+    pub fn stdin(&self) -> &[u8] {
+        &self.stdin
+    }
+
+    /// Deserializes and returns the proofs if present.
+    ///
+    /// # Returns
+    ///
+    /// - `None` if no proofs are set
+    /// - `Some(Ok(..))` if the proofs were successfully deserialized
+    /// - `Some(Err(..))` if deserialization failed
+    pub fn proofs<T: DeserializeOwned>(&self) -> Option<Result<Vec<T>, DecodeError>> {
+        self.proofs.as_ref().map(|proofs| {
+            bincode::serde::decode_from_slice(proofs, bincode::config::legacy())
+                .map(|(proofs, _)| proofs)
+        })
+    }
+
+    /// Serializes the given proofs and returns a new `Input` with them set.
+    ///
+    /// Consumes `self` and returns an error if serialization fails.
+    pub fn with_proofs<T: Serialize>(mut self, proofs: &[T]) -> Result<Self, EncodeError> {
+        self.proofs = Some(bincode::serde::encode_to_vec(
+            proofs,
+            bincode::config::legacy(),
+        )?);
+        Ok(self)
+    }
+
+    /// Sets serialized proofs and returns a new `Input`.
+    ///
+    /// The proofs must be serialized using [`bincode::serde`] with
+    /// [`bincode::config::legacy`] configuration.
+    pub fn with_serialized_proofs(mut self, proofs: Vec<u8>) -> Self {
+        self.proofs = Some(proofs);
+        self
+    }
+}
 
 /// Public values committed/revealed by guest program.
 ///
@@ -29,12 +87,12 @@ pub type PublicValues = Vec<u8>;
 #[auto_impl::auto_impl(&, Arc, Box)]
 pub trait zkVM {
     /// Executes the program with the given input.
-    fn execute(&self, input: &[u8]) -> anyhow::Result<(PublicValues, ProgramExecutionReport)>;
+    fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)>;
 
     /// Creates a proof of the program execution with given input.
     fn prove(
         &self,
-        input: &[u8],
+        input: &Input,
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)>;
 

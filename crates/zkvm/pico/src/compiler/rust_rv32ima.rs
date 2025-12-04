@@ -52,6 +52,7 @@ mod tests {
     use crate::{compiler::RustRv32ima, zkvm::ErePico};
     use ere_test_utils::host::testing_guest_directory;
     use ere_zkvm_interface::{
+        Input,
         compiler::Compiler,
         zkvm::{ProverResourceType, zkVM},
     };
@@ -69,6 +70,6 @@ mod tests {
         let program = RustRv32ima.compile(&guest_directory).unwrap();
         let zkvm = ErePico::new(program, ProverResourceType::Cpu).unwrap();
 
-        zkvm.execute(&[]).unwrap();
+        zkvm.execute(&Input::default()).unwrap();
     }
 }

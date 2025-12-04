@@ -1,7 +1,10 @@
 use crate::program::Program;
 use core::ops::Deref;
 use ere_io::Io;
-use ere_zkvm_interface::zkvm::{ProofKind, PublicValues, zkVM};
+use ere_zkvm_interface::{
+    Input,
+    zkvm::{ProofKind, PublicValues, zkVM},
+};
 use sha2::{Digest, Sha256};
 use std::{marker::PhantomData, path::PathBuf};
 
@@ -18,7 +21,7 @@ pub fn testing_guest_directory(zkvm_name: &str, program: &str) -> PathBuf {
 
 pub fn run_zkvm_execute(zkvm: &impl zkVM, test_case: &impl TestCase) -> PublicValues {
     let (public_values, _report) = zkvm
-        .execute(&test_case.serialized_input())
+        .execute(&test_case.input())
         .expect("execute should not fail with valid input");
 
     test_case.assert_output(&public_values);
@@ -28,7 +31,7 @@ pub fn run_zkvm_execute(zkvm: &impl zkVM, test_case: &impl TestCase) -> PublicVa
 
 pub fn run_zkvm_prove(zkvm: &impl zkVM, test_case: &impl TestCase) -> PublicValues {
     let (prover_public_values, proof, _report) = zkvm
-        .prove(&test_case.serialized_input(), ProofKind::default())
+        .prove(&test_case.input(), ProofKind::default())
         .expect("prove should not fail with valid input");
 
     let verifier_public_values = zkvm
@@ -46,7 +49,7 @@ pub fn run_zkvm_prove(zkvm: &impl zkVM, test_case: &impl TestCase) -> PublicValu
 /// [`Program::Input`], and is able to assert if the [`PublicValues`] returned
 /// by [`zkVM`] methods is correct or not.
 pub trait TestCase {
-    fn serialized_input(&self) -> Vec<u8>;
+    fn input(&self) -> Input;
 
     fn assert_output(&self, public_values: &[u8]);
 }
@@ -80,8 +83,8 @@ impl<P: Program> Deref for ProgramTestCase<P> {
 }
 
 impl<P: Program> TestCase for ProgramTestCase<P> {
-    fn serialized_input(&self) -> Vec<u8> {
-        P::Io::serialize_input(&self.input).unwrap()
+    fn input(&self) -> Input {
+        Input::new(P::Io::serialize_input(&self.input).unwrap())
     }
 
     fn assert_output(&self, public_values: &[u8]) {
@@ -112,8 +115,8 @@ where
     P: Program,
     D: Digest,
 {
-    fn serialized_input(&self) -> Vec<u8> {
-        self.test_case.serialized_input()
+    fn input(&self) -> Input {
+        self.test_case.input()
     }
 
     fn assert_output(&self, public_values: &[u8]) {
