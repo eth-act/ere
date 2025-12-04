@@ -243,11 +243,6 @@ jobs:
       - name: Free up disk space
         run: bash .github/scripts/free-up-disk-space.sh
 
-      - name: Install protoc
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y protobuf-compiler
-
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:

@@ -16,23 +16,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        crate:
+          - ere-zkvm-interface
+          - ere-io
+          - ere-dockerized
+          - ere-compiler
+          - ere-server
+          - ere-build-utils
+          - ere-compile-utils
+          - ere-test-utils
         include:
-          - crate: ere-zkvm-interface
-            run_test: true
+          # Test disabled (Test in per-zkVM workflows)
           - crate: ere-dockerized
-            run_test: false # They are run in per-zkVM workflows
-          - crate: ere-io
-            run_test: true
-          - crate: ere-build-utils
-            run_test: true
-          - crate: ere-compile-utils
-            run_test: true
-          - crate: ere-test-utils
-            run_test: true
+            skip_test: true
+          # Clippy only lib (Binary clippy in per-zkVM workflows)
+          - crate: ere-compiler
+            clippy_only_lib: true
+          - crate: ere-server
+            clippy_only_lib: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Needed to run test of ere-server
       - name: Install protoc
         run: |
           sudo apt-get update
@@ -47,11 +53,11 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Run cargo clippy
-        run: cargo clippy --all-targets --package ${{ matrix.crate }} -- -D warnings
+        run: cargo clippy ${{ matrix.clippy_only_lib == true && '--lib' || '--all-targets' }} --package ${{ matrix.crate }} -- -D warnings
 
       - name: Run cargo test on documentation
         run: cargo test --doc --package ${{ matrix.crate }}
 
       - name: Run cargo test
-        if: ${{ matrix.run_test }} 
-        run: cargo test --release --package ${{ matrix.crate }}
+        if: ${{ matrix.skip_test != true }} 
+        run: cargo test --lib --release --package ${{ matrix.crate }}
