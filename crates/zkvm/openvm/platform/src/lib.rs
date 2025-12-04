@@ -2,9 +2,8 @@
 
 extern crate alloc;
 
-use alloc::vec::Vec;
 use core::{marker::PhantomData, ops::Deref};
-use ere_platform_trait::output_hasher::FixedOutputHasher;
+use ere_platform_trait::{LengthPrefixedStdin, output_hasher::FixedOutputHasher};
 
 pub use ere_platform_trait::{
     Platform,
@@ -22,8 +21,8 @@ pub use openvm;
 pub struct OpenVMPlatform<H>(PhantomData<H>);
 
 impl<H: FixedOutputHasher<OutputSize = U32>> Platform for OpenVMPlatform<H> {
-    fn read_whole_input() -> Vec<u8> {
-        openvm::io::read_vec()
+    fn read_whole_input() -> impl Deref<Target = [u8]> {
+        LengthPrefixedStdin::new(openvm::io::read_vec())
     }
 
     fn write_whole_output(output: &[u8]) {

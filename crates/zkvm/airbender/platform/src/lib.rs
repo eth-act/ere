@@ -3,7 +3,7 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
-use core::{array, iter::repeat_with, marker::PhantomData};
+use core::{array, iter::repeat_with, marker::PhantomData, ops::Deref};
 use ere_platform_trait::output_hasher::FixedOutputHasher;
 
 pub use airbender_riscv_common as riscv_common;
@@ -22,13 +22,13 @@ pub use ere_platform_trait::{
 pub struct AirbenderPlatform<H>(PhantomData<H>);
 
 impl<H: FixedOutputHasher<OutputSize = U32>> Platform for AirbenderPlatform<H> {
-    fn read_whole_input() -> Vec<u8> {
+    fn read_whole_input() -> impl Deref<Target = [u8]> {
         let len = riscv_common::csr_read_word() as usize;
         repeat_with(riscv_common::csr_read_word)
             .take(len.div_ceil(4))
             .flat_map(u32::to_le_bytes)
             .take(len)
-            .collect()
+            .collect::<Vec<_>>()
     }
 
     fn write_whole_output(output: &[u8]) {

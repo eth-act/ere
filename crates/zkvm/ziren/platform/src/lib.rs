@@ -2,9 +2,8 @@
 
 extern crate alloc;
 
-use alloc::vec::Vec;
-use core::marker::PhantomData;
-use ere_platform_trait::output_hasher::OutputHasher;
+use core::{marker::PhantomData, ops::Deref};
+use ere_platform_trait::{LengthPrefixedStdin, output_hasher::OutputHasher};
 
 pub use ere_platform_trait::{
     Platform,
@@ -16,8 +15,8 @@ pub use zkm_zkvm;
 pub struct ZirenPlatform<H = IdentityOutput>(PhantomData<H>);
 
 impl<H: OutputHasher> Platform for ZirenPlatform<H> {
-    fn read_whole_input() -> Vec<u8> {
-        zkm_zkvm::io::read_vec()
+    fn read_whole_input() -> impl Deref<Target = [u8]> {
+        LengthPrefixedStdin::new(zkm_zkvm::io::read_vec())
     }
 
     fn write_whole_output(output: &[u8]) {

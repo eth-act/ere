@@ -2,8 +2,7 @@
 
 extern crate alloc;
 
-use alloc::vec::Vec;
-use core::{marker::PhantomData, slice};
+use core::{marker::PhantomData, ops::Deref};
 use ere_platform_trait::output_hasher::OutputHasher;
 
 pub use ere_platform_trait::{
@@ -73,13 +72,17 @@ impl JoltMemoryConfig for DefaulJoltMemoryConfig {
 pub struct JoltPlatform<C = DefaulJoltMemoryConfig, H = IdentityOutput>(PhantomData<(C, H)>);
 
 impl<C: JoltMemoryConfig, H: OutputHasher> Platform for JoltPlatform<C, H> {
-    fn read_whole_input() -> Vec<u8> {
+    fn read_whole_input() -> impl Deref<Target = [u8]> {
         let memory_layout = C::memory_layout();
         let input_ptr = memory_layout.input_start as *const u8;
         let max_input_len = memory_layout.max_input_size as usize;
-        let input_slice = unsafe { slice::from_raw_parts(input_ptr, max_input_len) };
-        let (input, _) = jolt::postcard::take_from_bytes(input_slice).unwrap();
-        input
+        let input_slice = unsafe { core::slice::from_raw_parts(input_ptr, max_input_len) };
+        let len = u32::from_le_bytes(input_slice[..4].try_into().unwrap()) as usize;
+        assert!(
+            len <= max_input_len,
+            "Maximum input size is {max_input_len} bytes"
+        );
+        unsafe { core::slice::from_raw_parts(input_ptr.add(4), len) }.to_vec()
     }
 
     fn write_whole_output(output: &[u8]) {
@@ -88,12 +91,12 @@ impl<C: JoltMemoryConfig, H: OutputHasher> Platform for JoltPlatform<C, H> {
         let output_ptr = memory_layout.output_start as *mut u8;
         let max_output_len = memory_layout.max_output_size as usize;
         let output_slice = unsafe { core::slice::from_raw_parts_mut(output_ptr, max_output_len) };
-        jolt::postcard::to_slice(&*hash, output_slice).unwrap_or_else(|err| match err {
-            jolt::postcard::Error::SerializeBufferFull => {
-                panic!("Maximum output size is {max_output_len} bytes")
-            }
-            err => panic!("`postcard::to_slice` failed: {err:?}"),
-        });
+        assert!(
+            hash.len() + 4 <= max_output_len,
+            "Maximum output size is {max_output_len} bytes"
+        );
+        output_slice[..4].copy_from_slice(&(hash.len() as u32).to_le_bytes());
+        output_slice[4..4 + hash.len()].copy_from_slice(&hash);
     }
 
     fn print(message: &str) {

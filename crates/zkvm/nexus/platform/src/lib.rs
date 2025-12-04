@@ -2,9 +2,8 @@
 
 extern crate alloc;
 
-use alloc::vec::Vec;
-use core::marker::PhantomData;
-use ere_platform_trait::output_hasher::OutputHasher;
+use core::{marker::PhantomData, ops::Deref};
+use ere_platform_trait::{LengthPrefixedStdin, output_hasher::OutputHasher};
 
 pub use ere_platform_trait::{
     Platform,
@@ -16,8 +15,8 @@ pub use nexus_rt;
 pub struct NexusPlatform<H = IdentityOutput>(PhantomData<H>);
 
 impl<H: OutputHasher> Platform for NexusPlatform<H> {
-    fn read_whole_input() -> Vec<u8> {
-        nexus_rt::read_private_input().unwrap()
+    fn read_whole_input() -> impl Deref<Target = [u8]> {
+        LengthPrefixedStdin::new(nexus_rt::read_private_input().unwrap())
     }
 
     fn write_whole_output(output: &[u8]) {

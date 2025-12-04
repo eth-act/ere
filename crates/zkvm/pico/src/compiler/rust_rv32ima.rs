@@ -70,6 +70,6 @@ mod tests {
         let program = RustRv32ima.compile(&guest_directory).unwrap();
         let zkvm = ErePico::new(program, ProverResourceType::Cpu).unwrap();
 
-        zkvm.execute(&Input::default()).unwrap();
+        zkvm.execute(&Input::new()).unwrap();
     }
 }

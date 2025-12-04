@@ -4,7 +4,7 @@ use airbender_execution_utils::{
     universal_circuit_verifier_vk, verify_recursion_log_23_layer,
 };
 use ere_zkvm_interface::zkvm::{CommonError, PublicValues};
-use std::{array, fs, io::BufRead, iter, process::Command};
+use std::{array, fs, io::BufRead, process::Command};
 use tempfile::tempdir;
 
 /// Verification key hash chain.
@@ -217,8 +217,8 @@ impl AirbenderSdk {
 
 /// Encode input with length prefixed to hex string for `airbender-cli`.
 fn encode_input(input: &[u8]) -> String {
-    iter::once((input.len() as u32).to_le_bytes().as_slice())
-        .chain(input.chunks(4))
+    input
+        .chunks(4)
         .map(|chunk| {
             let mut bytes = [0u8; 4];
             bytes[..chunk.len()].copy_from_slice(chunk);

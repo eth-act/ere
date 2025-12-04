@@ -1,8 +1,9 @@
 #![no_std]
 
-extern crate alloc;
-
 use alloc::vec::Vec;
+use core::ops::Deref;
+
+extern crate alloc;
 
 pub mod output_hasher;
 
@@ -10,8 +11,11 @@ pub mod output_hasher;
 pub trait Platform {
     /// Reads the whole input at once from host.
     ///
+    /// The `stdin` passed must have a LE u32 length prefix for efficiency
+    /// reason. Use `Input::new().with_prefixed_stdin(stdin)` for convenience.
+    ///
     /// Note that this function should only be called once.
-    fn read_whole_input() -> Vec<u8>;
+    fn read_whole_input() -> impl Deref<Target = [u8]>;
 
     /// Writes the whole output at once to host.
     ///
@@ -52,5 +56,30 @@ pub trait Platform {
         let t = f();
         Self::cycle_scope_end(name);
         t
+    }
+}
+
+/// Stdin with a LE u32 length prefix.
+///
+/// Dereferencing it returns slice to the actual data.
+pub struct LengthPrefixedStdin(Vec<u8>);
+
+impl Deref for LengthPrefixedStdin {
+    type Target = [u8];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0[4..]
+    }
+}
+
+impl LengthPrefixedStdin {
+    pub fn new(stdin: Vec<u8>) -> Self {
+        let len = u32::from_le_bytes(stdin[..4].try_into().unwrap());
+        assert_eq!(
+            stdin.len(),
+            len as usize + 4,
+            "stdin must have a LE u32 length prefix"
+        );
+        Self(stdin)
     }
 }

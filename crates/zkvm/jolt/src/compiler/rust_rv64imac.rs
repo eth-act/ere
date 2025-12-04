@@ -78,6 +78,6 @@ mod tests {
         let program = RustRv64imac.compile(&guest_directory).unwrap();
         let zkvm = EreJolt::new(program, ProverResourceType::Cpu).unwrap();
 
-        zkvm.execute(&Input::default()).unwrap();
+        zkvm.execute(&Input::new()).unwrap();
     }
 }

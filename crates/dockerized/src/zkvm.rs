@@ -406,7 +406,7 @@ mod test {
             "basic",
             [BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256()],
             [
-                Input::default(),
+                Input::new(),
                 BasicProgram::<BincodeLegacy>::invalid_test_case().input()
             ]
         );
@@ -420,7 +420,7 @@ mod test {
             "basic",
             [BasicProgram::<BincodeLegacy>::valid_test_case()],
             [
-                Input::default(),
+                Input::new(),
                 BasicProgram::<BincodeLegacy>::invalid_test_case().input()
             ]
         );
@@ -434,7 +434,7 @@ mod test {
             "basic",
             [BasicProgram::<BincodeLegacy>::valid_test_case()],
             [
-                Input::default(),
+                Input::new(),
                 BasicProgram::<BincodeLegacy>::invalid_test_case().input()
             ]
         );
@@ -448,7 +448,7 @@ mod test {
             "basic",
             [BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256()],
             [
-                Input::default(),
+                Input::new(),
                 BasicProgram::<BincodeLegacy>::invalid_test_case().input()
             ]
         );
@@ -462,7 +462,7 @@ mod test {
             "basic",
             [BasicProgram::<BincodeLegacy>::valid_test_case()],
             [
-                Input::default(),
+                Input::new(),
                 BasicProgram::<BincodeLegacy>::invalid_test_case().input()
             ]
         );
@@ -476,7 +476,7 @@ mod test {
             "basic",
             [BasicProgram::<BincodeLegacy>::valid_test_case()],
             [
-                Input::default(),
+                Input::new(),
                 BasicProgram::<BincodeLegacy>::invalid_test_case().input()
             ]
         );
@@ -490,7 +490,7 @@ mod test {
             "basic",
             [BasicProgram::<BincodeLegacy>::valid_test_case()],
             [
-                Input::default(),
+                Input::new(),
                 BasicProgram::<BincodeLegacy>::invalid_test_case().input()
             ]
         );
@@ -504,7 +504,7 @@ mod test {
             "basic",
             [BasicProgram::<BincodeLegacy>::valid_test_case()],
             [
-                Input::default(),
+                Input::new(),
                 BasicProgram::<BincodeLegacy>::invalid_test_case().input()
             ]
         );
@@ -518,7 +518,7 @@ mod test {
             "basic_rust",
             [BasicProgram::<BincodeLegacy>::valid_test_case()],
             [
-                Input::default(),
+                Input::new(),
                 BasicProgram::<BincodeLegacy>::invalid_test_case().input()
             ]
         );

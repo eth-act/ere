@@ -22,10 +22,10 @@ pub struct Input {
 }
 
 impl Input {
-    /// Creates a new `Input` with the given stdin.
-    pub fn new(stdin: Vec<u8>) -> Self {
+    /// Creates a new `Input` with the empty stdin.
+    pub fn new() -> Self {
         Self {
-            stdin,
+            stdin: Vec::new(),
             proofs: None,
         }
     }
@@ -47,6 +47,23 @@ impl Input {
             bincode::serde::decode_from_slice(proofs, bincode::config::legacy())
                 .map(|(proofs, _)| proofs)
         })
+    }
+
+    /// Sets stdin and returns a new `Input`.
+    pub fn with_stdin(mut self, stdin: Vec<u8>) -> Self {
+        self.stdin = stdin;
+        self
+    }
+
+    /// Sets stdin with a LE u32 length prefix and returns a new `Input`.
+    ///
+    /// The `Platform::read_whole_input` requires stdin to have a LE u32 length
+    /// prefix for efficiency reason.
+    pub fn with_prefixed_stdin(mut self, stdin: Vec<u8>) -> Self {
+        self.stdin = Vec::with_capacity(4 + stdin.len());
+        self.stdin.extend((stdin.len() as u32).to_le_bytes());
+        self.stdin.extend(stdin);
+        self
     }
 
     /// Serializes the given proofs and returns a new `Input` with them set.

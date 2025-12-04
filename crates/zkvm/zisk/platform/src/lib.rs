@@ -2,9 +2,8 @@
 
 extern crate alloc;
 
-use alloc::vec::Vec;
-use core::{array::from_fn, marker::PhantomData};
-use ere_platform_trait::output_hasher::OutputHasher;
+use core::{array::from_fn, marker::PhantomData, ops::Deref};
+use ere_platform_trait::{LengthPrefixedStdin, output_hasher::OutputHasher};
 use ziskos::ziskos_definitions::ziskos_config::UART_ADDR;
 
 pub use ere_platform_trait::{
@@ -20,8 +19,8 @@ pub use ziskos;
 pub struct ZiskPlatform<H = IdentityOutput>(PhantomData<H>);
 
 impl<H: OutputHasher> Platform for ZiskPlatform<H> {
-    fn read_whole_input() -> Vec<u8> {
-        ziskos::read_input()
+    fn read_whole_input() -> impl Deref<Target = [u8]> {
+        LengthPrefixedStdin::new(ziskos::read_input())
     }
 
     fn write_whole_output(output: &[u8]) {
