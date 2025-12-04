@@ -175,7 +175,7 @@ pub fn felts_to_bytes(felts: &[Felt]) -> Vec<u8> {
 
 /// Convert bytes into Miden field elements.
 pub fn bytes_to_felts(bytes: &[u8]) -> Result<Vec<Felt>, Error> {
-    if bytes.len() % 8 != 0 {
+    if !bytes.len().is_multiple_of(8) {
         let err = anyhow::anyhow!(
             "Invalid bytes length {}, expected multiple of 8",
             bytes.len()
@@ -263,7 +263,7 @@ mod tests {
         let program = load_miden_program("add");
         let zkvm = EreMiden::new(program, ProverResourceType::Cpu).unwrap();
 
-        let empty_inputs = Input::new(Vec::new());
+        let empty_inputs = Input::default();
         assert!(zkvm.execute(&empty_inputs).is_err());
 
         let insufficient_inputs = Input::new(felts_to_bytes(&[Felt::from(5u32)]));
