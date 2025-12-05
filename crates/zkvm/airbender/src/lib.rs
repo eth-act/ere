@@ -20,7 +20,8 @@
 //! The `zkVM` implementation requires external tools installed and available in
 //! `PATH`:
 //!
-//! - `airbender-cli` - Used by `zkVM::execute` and `zkVM::prove`
+//! - Installation via [`install_airbender_sdk.sh`] - `airbender-cli` used by
+//!   `zkVM::execute` and `zkVM::prove`
 //!
 //! # `Compiler` implementation
 //!

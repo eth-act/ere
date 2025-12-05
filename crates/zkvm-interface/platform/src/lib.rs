@@ -1,9 +1,9 @@
 #![no_std]
 
+extern crate alloc;
+
 use alloc::vec::Vec;
 use core::{marker::PhantomData, ops::Deref};
-
-extern crate alloc;
 
 pub use digest::Digest;
 

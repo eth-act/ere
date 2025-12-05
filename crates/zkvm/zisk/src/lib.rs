@@ -11,6 +11,7 @@
 //! ## `Compiler` requirements
 //!
 //! - Installation via [`ziskup`] - Custom Rust toolchain used by `RustRv64imaCustomized`
+//! - Installation via [`install_tamago.sh`] - Custom Go toolchain used by `GoCustomized`
 //!
 //! ## `zkVM` requirements
 //!
@@ -25,6 +26,7 @@
 //! | Compiler                | Language | Target                     | Note               |
 //! | ----------------------- | :------: | -------------------------- | ------------------ |
 //! | `RustRv64imaCustomized` |   Rust   | `riscv64ima-zisk-zkvm-elf` | With `std` support |
+//! | `GoCustomized`          |    Go    | `riscv64`                  |                    |
 //!
 //! # `zkVM` implementation
 //!
@@ -37,6 +39,7 @@
 //! | `Network` |    No     |
 //!
 //! [`install_zisk_sdk.sh`]: https://github.com/eth-act/ere/blob/master/scripts/sdk_installers/install_zisk_sdk.sh
+//! [`install_tamago.sh`]: https://github.com/eth-act/ere/blob/master/scripts/install_tamago.sh
 //! [`ziskup`]: https://raw.githubusercontent.com/0xPolygonHermez/zisk/main/ziskup/install.sh
 
 #![cfg_attr(

@@ -12,7 +12,7 @@ pub use ziskos;
 /// ZisK [`Platform`] implementation.
 ///
 /// Note that the maximum output size is 256 bytes, and output size will be
-/// padded to multiple of 4 bytes.
+/// padded to multiple of 4.
 pub struct ZiskPlatform;
 
 impl Platform for ZiskPlatform {

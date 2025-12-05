@@ -72,8 +72,9 @@ impl<C: JoltMemoryConfig> Platform for JoltPlatform<C> {
         let memory_layout = C::memory_layout();
         let input_ptr = memory_layout.input_start as *const u8;
         let max_input_len = memory_layout.max_input_size as usize;
-        let input_slice = unsafe { core::slice::from_raw_parts(input_ptr, max_input_len) };
-        let len = u32::from_le_bytes(input_slice[..4].try_into().unwrap()) as usize;
+        assert!(max_input_len > 4);
+        let len_bytes = unsafe { core::slice::from_raw_parts(input_ptr, 4) };
+        let len = u32::from_le_bytes(len_bytes.try_into().unwrap()) as usize;
         assert!(
             len <= max_input_len - 4,
             "Maximum input size is {} bytes, got {len}",

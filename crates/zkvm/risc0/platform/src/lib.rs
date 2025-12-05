@@ -14,9 +14,12 @@ pub struct Risc0Platform;
 
 impl Platform for Risc0Platform {
     fn read_whole_input() -> impl Deref<Target = [u8]> {
-        let mut len = 0u32;
-        risc0_zkvm::guest::env::read_slice(slice::from_mut(&mut len));
-        let mut input = vec![0u8; len as usize];
+        let len = {
+            let mut bytes = [0; 4];
+            risc0_zkvm::guest::env::read_slice(&mut bytes);
+            u32::from_le_bytes(bytes) as usize
+        };
+        let mut input = vec![0u8; len];
         risc0_zkvm::guest::env::read_slice(&mut input);
         input
     }
