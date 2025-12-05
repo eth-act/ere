@@ -1,3 +1,4 @@
+#[rustfmt::skip]
 pub mod api;
 
 #[cfg(feature = "client")]

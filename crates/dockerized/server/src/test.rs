@@ -21,7 +21,7 @@ fn api_generation() {
     let current = dir.join("src").join("api.rs");
 
     // If it's in CI env, don't overwrite but only check if it's up-to-date.
-    if !env::var_os("GITHUB_ACTIONS").is_some() {
+    if env::var_os("GITHUB_ACTIONS").is_none() {
         fs::copy(&latest, &current).unwrap();
     }
     assert_eq!(fs::read(&latest).unwrap(), fs::read(&current).unwrap());

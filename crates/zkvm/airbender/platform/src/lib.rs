@@ -37,8 +37,8 @@ impl<H: FixedOutputHasher<OutputSize = U32>> Platform for AirbenderPlatform<H> {
         riscv_common::zksync_os_finish_success(&words);
     }
 
-    fn print(message: &str) {
+    fn print(_message: &str) {
         #[cfg(feature = "uart")]
-        core::fmt::Write::write_str(&mut riscv_common::QuasiUART::new(), message).unwrap();
+        core::fmt::Write::write_str(&mut riscv_common::QuasiUART::new(), _message).unwrap();
     }
 }
