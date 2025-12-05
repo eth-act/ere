@@ -49,7 +49,7 @@
 //! let zkvm = DockerizedzkVM::new(zkvm_kind, program, resource)?;
 //!
 //! // Serialize input
-//! let input = Input::new(42u32.to_le_bytes().to_vec());
+//! let input = Input::new().with_stdin(42u32.to_le_bytes().to_vec());
 //!
 //! // Execute program
 //! let (public_values, execution_report) = zkvm.execute(&input)?;

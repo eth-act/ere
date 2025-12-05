@@ -3,26 +3,22 @@
 extern crate alloc;
 
 use alloc::format;
-use core::{marker::PhantomData, ops::Deref};
-use ere_platform_trait::{LengthPrefixedStdin, output_hasher::OutputHasher};
+use core::ops::Deref;
+use ere_platform_trait::LengthPrefixedStdin;
 
-pub use ere_platform_trait::{
-    Platform,
-    output_hasher::{IdentityOutput, PaddedOutput, digest::typenum},
-};
+pub use ere_platform_trait::{Digest, OutputHashedPlatform, Platform};
 pub use pico_sdk;
 
 /// Pico [`Platform`] implementation.
-pub struct PicoPlatform<H = IdentityOutput>(PhantomData<H>);
+pub struct PicoPlatform;
 
-impl<H: OutputHasher> Platform for PicoPlatform<H> {
+impl Platform for PicoPlatform {
     fn read_whole_input() -> impl Deref<Target = [u8]> {
         LengthPrefixedStdin::new(pico_sdk::io::read_vec())
     }
 
     fn write_whole_output(output: &[u8]) {
-        let hash = H::output_hash(output);
-        pico_sdk::io::commit_bytes(&hash);
+        pico_sdk::io::commit_bytes(output);
     }
 
     fn print(message: &str) {

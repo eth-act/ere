@@ -3,12 +3,8 @@
 extern crate alloc;
 
 use core::{marker::PhantomData, ops::Deref};
-use ere_platform_trait::output_hasher::OutputHasher;
 
-pub use ere_platform_trait::{
-    Platform,
-    output_hasher::{IdentityOutput, PaddedOutput, digest::typenum},
-};
+pub use ere_platform_trait::{Digest, OutputHashedPlatform, Platform};
 pub use jolt_sdk as jolt;
 
 // FIXME: Because the crate `jolt-common` is not `no_std` compatible, so we have
@@ -69,9 +65,9 @@ impl JoltMemoryConfig for DefaulJoltMemoryConfig {
 }
 
 /// Jolt [`Platform`] implementation.
-pub struct JoltPlatform<C = DefaulJoltMemoryConfig, H = IdentityOutput>(PhantomData<(C, H)>);
+pub struct JoltPlatform<C = DefaulJoltMemoryConfig>(PhantomData<C>);
 
-impl<C: JoltMemoryConfig, H: OutputHasher> Platform for JoltPlatform<C, H> {
+impl<C: JoltMemoryConfig> Platform for JoltPlatform<C> {
     fn read_whole_input() -> impl Deref<Target = [u8]> {
         let memory_layout = C::memory_layout();
         let input_ptr = memory_layout.input_start as *const u8;
@@ -79,24 +75,26 @@ impl<C: JoltMemoryConfig, H: OutputHasher> Platform for JoltPlatform<C, H> {
         let input_slice = unsafe { core::slice::from_raw_parts(input_ptr, max_input_len) };
         let len = u32::from_le_bytes(input_slice[..4].try_into().unwrap()) as usize;
         assert!(
-            len <= max_input_len,
-            "Maximum input size is {max_input_len} bytes"
+            len <= max_input_len - 4,
+            "Maximum input size is {} bytes, got {len}",
+            max_input_len - 4,
         );
         unsafe { core::slice::from_raw_parts(input_ptr.add(4), len) }.to_vec()
     }
 
     fn write_whole_output(output: &[u8]) {
-        let hash = H::output_hash(output);
         let memory_layout = C::memory_layout();
         let output_ptr = memory_layout.output_start as *mut u8;
         let max_output_len = memory_layout.max_output_size as usize;
-        let output_slice = unsafe { core::slice::from_raw_parts_mut(output_ptr, max_output_len) };
+        let len = output.len();
         assert!(
-            hash.len() + 4 <= max_output_len,
-            "Maximum output size is {max_output_len} bytes"
+            len <= max_output_len - 4,
+            "Maximum output size is {} bytes, got {len}",
+            max_output_len - 4,
         );
-        output_slice[..4].copy_from_slice(&(hash.len() as u32).to_le_bytes());
-        output_slice[4..4 + hash.len()].copy_from_slice(&hash);
+        let output_slice = unsafe { core::slice::from_raw_parts_mut(output_ptr, len + 4) };
+        output_slice[..4].copy_from_slice(&(output.len() as u32).to_le_bytes());
+        output_slice[4..].copy_from_slice(&output);
     }
 
     fn print(message: &str) {

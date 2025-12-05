@@ -3,25 +3,18 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
-use core::{array, iter::repeat_with, marker::PhantomData, ops::Deref};
-use ere_platform_trait::output_hasher::FixedOutputHasher;
+use core::{array, iter::repeat_with, ops::Deref};
 
 pub use airbender_riscv_common as riscv_common;
-pub use ere_platform_trait::{
-    Platform,
-    output_hasher::{IdentityOutput, PaddedOutput, digest::typenum::U32},
-};
+pub use ere_platform_trait::{Digest, OutputHashedPlatform, Platform};
 
 /// Airbender [`Platform`] implementation.
 ///
-/// Because Airbender only support public values up to 32 bytes, so
-/// - If the guest has output bytes more than 32 bytes, it should use a
-/// cryptographic hash function for the generic `H` (for example `Sha256`).
-/// - If the guest has output bytes less than 32 bytes, it should use
-/// [`PaddedOutput`] for the generic `H`
-pub struct AirbenderPlatform<H>(PhantomData<H>);
+/// Note that the maximum output size is 32 bytes, and output less than 32
+/// bytes will be padded to 32 bytes.
+pub struct AirbenderPlatform;
 
-impl<H: FixedOutputHasher<OutputSize = U32>> Platform for AirbenderPlatform<H> {
+impl Platform for AirbenderPlatform {
     fn read_whole_input() -> impl Deref<Target = [u8]> {
         let len = riscv_common::csr_read_word() as usize;
         repeat_with(riscv_common::csr_read_word)
@@ -32,8 +25,12 @@ impl<H: FixedOutputHasher<OutputSize = U32>> Platform for AirbenderPlatform<H> {
     }
 
     fn write_whole_output(output: &[u8]) {
-        let hash = H::output_hash(output);
-        let words = array::from_fn(|i| u32::from_le_bytes(array::from_fn(|j| hash[4 * i + j])));
+        assert!(
+            output.len() <= 32,
+            "Maximum output size is 32 bytes, got {} bytes",
+            output.len()
+        );
+        let words = array::from_fn(|i| u32::from_le_bytes(array::from_fn(|j| output[4 * i + j])));
         riscv_common::zksync_os_finish_success(&words);
     }
 

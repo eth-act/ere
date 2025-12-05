@@ -149,7 +149,26 @@ The `Input` structure holds stdin as raw bytes. There are 2 ways to use it:
 
 Public values written in the guest program (via `Platform::write_whole_output()` or zkVM-specific output APIs) are returned as raw bytes to the host after `zkVM::execute`, `zkVM::prove` and `zkVM::verify` methods.
 
-Note that for OpenVM it has fixed-size public values that are always padded to 32 bytes by default.
+Different zkVMs handles public values in different approaches:
+
+| zkVM      | Size Limit                | Note                          |
+| --------- | ------------------------- | ----------------------------- |
+| Airbender | 32 bytes                  | Padded to 32 bytes with zeros |
+| Jolt      | 4096 bytes (Configurable) |                               |
+| Miden     | 16 words                  |                               |
+| Nexus     | unlimited                 | Size configured automatically |
+| OpenVM    | 32 bytes                  | Padded to 32 bytes with zeros |
+| Pico      | unlimited                 | Hashed internally             |
+| Risc0     | unlimited                 | Hashed internally             |
+| SP1       | unlimited                 | Hashed internally             |
+| Ziren     | unlimited                 | Hashed internally             |
+| Zisk      | 256 bytes                 |                               |
+
+For zkVMs with size limits on public values, `OutputHashedPlatform<P, D>` serves as a wrapper that hashes outputs before calling the inner `P::write_whole_output`. This enables the same guest program to run across all zkVMs regardless of their size constraints:
+
+```rust
+OutputHashedPlatform::<OpenVMPlatform, Sha256>::write_whole_output(&large_output);
+```
 
 ## Supported zkVMs
 
