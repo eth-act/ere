@@ -1,10 +1,11 @@
 #![no_std]
 #![no_main]
+
 extern crate alloc;
 
 use alloc::vec::Vec;
-use core::sync::atomic::Ordering;
 use core::sync::atomic::AtomicU16;
+use core::sync::atomic::Ordering;
 
 mod sp1;
 

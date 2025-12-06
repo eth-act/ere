@@ -1,9 +1,11 @@
-pub mod client;
+#[rustfmt::skip]
+pub mod api;
 
-#[allow(dead_code)]
-pub(crate) mod api {
-    include!(concat!(env!("OUT_DIR"), "/api.rs"));
-}
+#[cfg(feature = "client")]
+pub mod client;
 
 #[cfg(feature = "server")]
 pub mod server;
+
+#[cfg(test)]
+mod test;

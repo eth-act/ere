@@ -84,7 +84,7 @@ impl<P: Program> Deref for ProgramTestCase<P> {
 
 impl<P: Program> TestCase for ProgramTestCase<P> {
     fn input(&self) -> Input {
-        Input::new(P::Io::serialize_input(&self.input).unwrap())
+        Input::new().with_prefixed_stdin(P::Io::serialize_input(&self.input).unwrap())
     }
 
     fn assert_output(&self, public_values: &[u8]) {

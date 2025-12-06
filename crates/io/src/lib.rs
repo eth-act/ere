@@ -4,10 +4,10 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 #![no_std]
 
+extern crate alloc;
+
 use alloc::vec::Vec;
 use core::{error::Error, fmt::Debug};
-
-extern crate alloc;
 
 #[cfg(feature = "serde")]
 pub mod serde;

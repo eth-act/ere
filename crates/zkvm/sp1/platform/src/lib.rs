@@ -2,27 +2,23 @@
 
 extern crate alloc;
 
-use alloc::{format, vec::Vec};
-use core::marker::PhantomData;
-use ere_platform_trait::output_hasher::OutputHasher;
+use alloc::format;
+use core::ops::Deref;
+use ere_platform_trait::LengthPrefixedStdin;
 
-pub use ere_platform_trait::{
-    Platform,
-    output_hasher::{IdentityOutput, PaddedOutput, digest::typenum},
-};
+pub use ere_platform_trait::{Digest, OutputHashedPlatform, Platform};
 pub use sp1_zkvm;
 
 /// SP1 [`Platform`] implementation.
-pub struct SP1Platform<H = IdentityOutput>(PhantomData<H>);
+pub struct SP1Platform;
 
-impl<H: OutputHasher> Platform for SP1Platform<H> {
-    fn read_whole_input() -> Vec<u8> {
-        sp1_zkvm::io::read_vec()
+impl Platform for SP1Platform {
+    fn read_whole_input() -> impl Deref<Target = [u8]> {
+        LengthPrefixedStdin::new(sp1_zkvm::io::read_vec())
     }
 
     fn write_whole_output(output: &[u8]) {
-        let hash = H::output_hash(output);
-        sp1_zkvm::io::commit_slice(&hash);
+        sp1_zkvm::io::commit_slice(output);
     }
 
     fn print(message: &str) {

@@ -34,16 +34,16 @@ ere-zisk = { workspace = true, features = ["zkvm"], optional = true }
 ere-zkvm-interface = { workspace = true, features = ["clap"] }
 
 [dev-dependencies]
+prost-build.workspace = true
+tempfile.workspace = true
+twirp-build.workspace = true
 
 [lints]
 workspace = true
 
-[build-dependencies]
-prost-build.workspace = true
-twirp-build.workspace = true
-
 [features]
-default = []
+default = ["client"]
+client = []
 server = ["dep:clap", "dep:tower-http", "dep:tracing", "dep:tracing-subscriber", "tokio/macros", "tokio/rt-multi-thread", "tokio/signal"]
 
 # zkVM

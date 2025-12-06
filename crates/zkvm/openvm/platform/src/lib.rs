@@ -2,33 +2,30 @@
 
 extern crate alloc;
 
-use alloc::vec::Vec;
-use core::{marker::PhantomData, ops::Deref};
-use ere_platform_trait::output_hasher::FixedOutputHasher;
+use core::{array::from_fn, ops::Deref};
+use ere_platform_trait::LengthPrefixedStdin;
 
-pub use ere_platform_trait::{
-    Platform,
-    output_hasher::{IdentityOutput, PaddedOutput, digest::typenum::U32},
-};
+pub use ere_platform_trait::{Digest, OutputHashedPlatform, Platform};
 pub use openvm;
 
 /// OpenVM [`Platform`] implementation.
 ///
-/// Because OpenVM only support public values up to 32 bytes, so
-/// - If the guest has output bytes more than 32 bytes, it should use a
-/// cryptographic hash function for the generic `H` (for example `Sha256`).
-/// - If the guest has output bytes less than 32 bytes, it should use
-/// [`PaddedOutput`] for the generic `H`
-pub struct OpenVMPlatform<H>(PhantomData<H>);
+/// Note that the maximum output size is 32 bytes, and output less than 32
+/// bytes will be padded to 32 bytes.
+pub struct OpenVMPlatform;
 
-impl<H: FixedOutputHasher<OutputSize = U32>> Platform for OpenVMPlatform<H> {
-    fn read_whole_input() -> Vec<u8> {
-        openvm::io::read_vec()
+impl Platform for OpenVMPlatform {
+    fn read_whole_input() -> impl Deref<Target = [u8]> {
+        LengthPrefixedStdin::new(openvm::io::read_vec())
     }
 
     fn write_whole_output(output: &[u8]) {
-        let hash = H::output_hash(output).deref().try_into().unwrap();
-        openvm::io::reveal_bytes32(hash);
+        assert!(
+            output.len() <= 32,
+            "Maximum output size is 32 bytes, got {} bytes",
+            output.len()
+        );
+        openvm::io::reveal_bytes32(from_fn(|i| output.get(i).copied().unwrap_or(0)));
     }
 
     fn print(message: &str) {

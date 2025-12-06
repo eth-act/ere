@@ -153,7 +153,7 @@ mod tests {
         let zkvm = EreJolt::new(program, ProverResourceType::Cpu).unwrap();
 
         for input in [
-            Input::default(),
+            Input::new(),
             BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
             zkvm.execute(&input).unwrap_err();
@@ -179,7 +179,7 @@ mod tests {
         let _guard = PROVE_LOCK.lock().unwrap();
 
         for input in [
-            Input::default(),
+            Input::new(),
             BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();

@@ -175,7 +175,7 @@ pub fn felts_to_bytes(felts: &[Felt]) -> Vec<u8> {
 
 /// Convert bytes into Miden field elements.
 pub fn bytes_to_felts(bytes: &[u8]) -> Result<Vec<Felt>, Error> {
-    if bytes.len() % 8 != 0 {
+    if !bytes.len().is_multiple_of(8) {
         let err = anyhow::anyhow!(
             "Invalid bytes length {}, expected multiple of 8",
             bytes.len()
@@ -218,11 +218,11 @@ mod tests {
         let const_b = Felt::ONE / Felt::ONE.double();
         let expected_sum = const_a + const_b;
 
-        let input = felts_to_bytes(&[const_a, const_b]);
+        let stdin = felts_to_bytes(&[const_a, const_b]);
 
         // Prove
         let (prover_public_values, proof, _) = zkvm
-            .prove(&Input::new(input), ProofKind::default())
+            .prove(&Input::new().with_stdin(stdin), ProofKind::default())
             .unwrap();
 
         // Verify
@@ -242,11 +242,11 @@ mod tests {
         let n_iterations = 50u32;
         let expected_fib = Felt::try_from(12_586_269_025u64).unwrap();
 
-        let input = felts_to_bytes(&[Felt::from(0u32), Felt::from(1u32), Felt::from(n_iterations)]);
+        let stdin = felts_to_bytes(&[Felt::from(0u32), Felt::from(1u32), Felt::from(n_iterations)]);
 
         // Prove
         let (prover_public_values, proof, _) = zkvm
-            .prove(&Input::new(input), ProofKind::default())
+            .prove(&Input::new().with_stdin(stdin), ProofKind::default())
             .unwrap();
 
         // Verify
@@ -263,10 +263,10 @@ mod tests {
         let program = load_miden_program("add");
         let zkvm = EreMiden::new(program, ProverResourceType::Cpu).unwrap();
 
-        let empty_inputs = Input::new(Vec::new());
+        let empty_inputs = Input::new();
         assert!(zkvm.execute(&empty_inputs).is_err());
 
-        let insufficient_inputs = Input::new(felts_to_bytes(&[Felt::from(5u32)]));
+        let insufficient_inputs = Input::new().with_stdin(felts_to_bytes(&[Felt::from(5u32)]));
         assert!(zkvm.execute(&insufficient_inputs).is_err());
     }
 }

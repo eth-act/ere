@@ -2,35 +2,30 @@
 
 extern crate alloc;
 
-use alloc::{vec, vec::Vec};
-use core::marker::PhantomData;
-use ere_platform_trait::output_hasher::OutputHasher;
+use alloc::vec;
+use core::{ops::Deref, slice};
 use risc0_zkvm::guest::env::Write;
 
-pub use ere_platform_trait::{
-    Platform,
-    output_hasher::{IdentityOutput, PaddedOutput, digest::typenum},
-};
+pub use ere_platform_trait::{Digest, OutputHashedPlatform, Platform};
 pub use risc0_zkvm;
 
 /// Risc0 [`Platform`] implementation.
-pub struct Risc0Platform<H = IdentityOutput>(PhantomData<H>);
+pub struct Risc0Platform;
 
-impl<H: OutputHasher> Platform for Risc0Platform<H> {
-    fn read_whole_input() -> Vec<u8> {
+impl Platform for Risc0Platform {
+    fn read_whole_input() -> impl Deref<Target = [u8]> {
         let len = {
             let mut bytes = [0; 4];
             risc0_zkvm::guest::env::read_slice(&mut bytes);
-            u32::from_le_bytes(bytes)
+            u32::from_le_bytes(bytes) as usize
         };
-        let mut input = vec![0u8; len as usize];
+        let mut input = vec![0u8; len];
         risc0_zkvm::guest::env::read_slice(&mut input);
         input
     }
 
     fn write_whole_output(output: &[u8]) {
-        let hash = H::output_hash(output);
-        risc0_zkvm::guest::env::commit_slice(&hash);
+        risc0_zkvm::guest::env::commit_slice(output);
     }
 
     fn print(message: &str) {

@@ -7,6 +7,9 @@ pub enum Error {
     #[error(transparent)]
     CommonError(#[from] CommonError),
 
+    #[error("Output is expected to have length prefix")]
+    InvalidOutput,
+
     // Execute
     #[error("Execution panics")]
     ExecutionPanic,

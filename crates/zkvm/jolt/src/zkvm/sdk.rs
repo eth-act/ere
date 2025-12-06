@@ -1,6 +1,6 @@
 use crate::zkvm::Error;
-use core::cmp::min;
-use ere_zkvm_interface::zkvm::{CommonError, PublicValues};
+use core::{array::from_fn, cmp::min};
+use ere_zkvm_interface::zkvm::PublicValues;
 use jolt_ark_serialize::{self as ark_serialize, CanonicalDeserialize, CanonicalSerialize};
 use jolt_common::constants::{
     DEFAULT_MAX_INPUT_SIZE, DEFAULT_MAX_OUTPUT_SIZE, DEFAULT_MAX_TRACE_LENGTH, DEFAULT_MEMORY_SIZE,
@@ -14,7 +14,6 @@ use jolt_sdk::{
     F, Jolt, JoltDevice, JoltProverPreprocessing, JoltRV64IMAC, JoltVerifierPreprocessing,
     MemoryConfig, MemoryLayout, PCS,
     guest::program::{decode, trace},
-    postcard,
 };
 
 #[derive(CanonicalSerialize, CanonicalDeserialize)]
@@ -64,25 +63,20 @@ impl JoltSdk {
     }
 
     pub fn execute(&self, input: &[u8]) -> Result<(PublicValues, u64), Error> {
-        let (cycles, _, io) = trace(
-            &self.elf,
-            None,
-            &serialize_input(input)?,
-            &self.memory_config,
-        );
+        let (cycles, _, io) = trace(&self.elf, None, input, &self.memory_config);
         if io.panic {
             return Err(Error::ExecutionPanic);
         }
-        let public_values = deserialize_output(&io.outputs)?;
+        let public_values = extract_public_values(&io.outputs)?;
         Ok((public_values, cycles.len() as _))
     }
 
     pub fn prove(&self, input: &[u8]) -> Result<(PublicValues, JoltProof), Error> {
-        let (proof, io, _) = JoltRV64IMAC::prove(&self.pk, &self.elf, &serialize_input(input)?);
+        let (proof, io, _) = JoltRV64IMAC::prove(&self.pk, &self.elf, input);
         if io.panic {
             return Err(Error::ExecutionPanic);
         }
-        let public_values = deserialize_output(&io.outputs)?;
+        let public_values = extract_public_values(&io.outputs)?;
         let proof = JoltProof {
             proof,
             inputs: io.inputs,
@@ -103,28 +97,26 @@ impl JoltSdk {
             },
             None,
         )?;
-        let public_values = deserialize_output(&proof.outputs)?;
+        let public_values = extract_public_values(&proof.outputs)?;
         Ok(public_values)
     }
 }
 
-fn serialize_input(bytes: &[u8]) -> Result<Vec<u8>, Error> {
-    Ok(postcard::to_stdvec(bytes)
-        .map_err(|err| CommonError::serialize("input", "postcard", err))?)
-}
-
-fn deserialize_output(output: &[u8]) -> Result<Vec<u8>, Error> {
+// Note taht for execute the bytes are padded to size of multiple of 8, but for
+// prove the bytes are truncated.
+fn extract_public_values(output: &[u8]) -> Result<Vec<u8>, Error> {
     Ok(if output.is_empty() {
         Vec::new()
     } else {
-        let (len, bytes) = postcard::take_from_bytes::<u64>(output)
-            .map_err(|err| CommonError::deserialize("output", "postcard", err))?;
-        let mut output = vec![0; len as usize];
-        // For execute the bytes are padded to size of multiple of 8, but for
-        // prove the bytes are truncated if there are trailing zeros, so here we
-        // take the min.
-        let len = min(bytes.len(), output.len());
-        output[..len].copy_from_slice(&bytes[..len]);
-        output
+        let len = u32::from_le_bytes(from_fn(|i| output.get(i).copied().unwrap_or(0))) as usize;
+        if output.len() > (len + 4).next_multiple_of(8) {
+            return Err(Error::InvalidOutput);
+        }
+        let mut public_values = vec![0; len];
+        if let Some((_, output)) = output.split_at_checked(4) {
+            let len = min(len, output.len());
+            public_values[..len].copy_from_slice(&output[..len]);
+        }
+        public_values
     })
 }

@@ -213,8 +213,7 @@ impl EreRisc0 {
         env.segment_limit_po2(self.segment_po2 as _)
             .keccak_max_po2(self.keccak_po2 as _)
             .expect("keccak_po2 in valid range");
-        env.write_slice(&(input.stdin().len() as u32).to_le_bytes())
-            .write_slice(input.stdin());
+        env.write_slice(input.stdin());
         if let Some(receipts) = input.proofs() {
             for receipt in receipts.map_err(Error::DeserializeInputProofs)? {
                 env.add_assumption(AssumptionReceipt::Proven(receipt));
@@ -265,7 +264,7 @@ mod tests {
         let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
         for input in [
-            Input::default(),
+            Input::new(),
             BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
             zkvm.execute(&input).unwrap_err();
@@ -287,7 +286,7 @@ mod tests {
         let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
 
         for input in [
-            Input::default(),
+            Input::new(),
             BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();
@@ -303,7 +302,7 @@ mod tests {
         for i in 1..=16_u32 {
             let zkvm = EreRisc0::new(program.clone(), ProverResourceType::Cpu).unwrap();
 
-            let input = Input::new(i.to_le_bytes().to_vec());
+            let input = Input::new().with_stdin(i.to_le_bytes().to_vec());
 
             if i.is_power_of_two() {
                 zkvm.execute(&input)
