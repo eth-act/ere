@@ -151,18 +151,18 @@ Public values written in the guest program (via `Platform::write_whole_output()`
 
 Different zkVMs handles public values in different approaches:
 
-| zkVM      | Size Limit                | Note                          |
-| --------- | ------------------------- | ----------------------------- |
-| Airbender | 32 bytes                  | Padded to 32 bytes with zeros |
-| Jolt      | 4096 bytes (Configurable) |                               |
-| Miden     | 16 words                  |                               |
-| Nexus     | unlimited                 | Size configured automatically |
-| OpenVM    | 32 bytes                  | Padded to 32 bytes with zeros |
-| Pico      | unlimited                 | Hashed internally             |
-| Risc0     | unlimited                 | Hashed internally             |
-| SP1       | unlimited                 | Hashed internally             |
-| Ziren     | unlimited                 | Hashed internally             |
-| Zisk      | 256 bytes                 |                               |
+| zkVM      | Size Limit                | Note                            |
+| --------- | ------------------------- | ------------------------------- |
+| Airbender | 32 bytes                  | Padded to 32 bytes with zeros   |
+| Jolt      | 4096 bytes (Configurable) |                                 |
+| Miden     | 16 words                  | Word = Goldilocks field element |
+| Nexus     | unlimited                 | Size configured automatically   |
+| OpenVM    | 32 bytes                  | Padded to 32 bytes with zeros   |
+| Pico      | unlimited                 | Hashed internally               |
+| Risc0     | unlimited                 | Hashed internally               |
+| SP1       | unlimited                 | Hashed internally               |
+| Ziren     | unlimited                 | Hashed internally               |
+| Zisk      | 256 bytes                 |                                 |
 
 For zkVMs with size limits on public values, `OutputHashedPlatform<P, D>` serves as a wrapper that hashes outputs before calling the inner `P::write_whole_output`. This enables the same guest program to run across all zkVMs regardless of their size constraints:
 

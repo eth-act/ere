@@ -120,11 +120,16 @@ impl Deref for LengthPrefixedStdin {
 
 impl LengthPrefixedStdin {
     pub fn new(stdin: Vec<u8>) -> Self {
-        let len = u32::from_le_bytes(stdin[..4].try_into().unwrap());
+        assert!(
+            stdin.len() >= 4,
+            "stdin must have a LE u32 length prefix; use Input::with_prefixed_length(stdin) on the host side"
+        );
+        let len = u32::from_le_bytes(stdin[..4].try_into().unwrap()) as usize;
         assert_eq!(
-            stdin.len(),
-            len as usize + 4,
-            "stdin must have a LE u32 length prefix"
+            len,
+            stdin.len() - 4,
+            "Length mismatch: stdin length prefix indicated {len} bytes, but got {} bytes; use Input::with_prefixed_length(stdin) on the host side",
+            stdin.len() - 4
         );
         Self(stdin)
     }
