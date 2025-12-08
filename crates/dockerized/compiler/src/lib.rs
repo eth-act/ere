@@ -1,10 +1,12 @@
+use serde::{Deserialize, Serialize};
 use std::{
     fmt::{self, Display, Formatter},
     str::FromStr,
 };
 
 /// Compiler kind to use to compile the guest.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(into = "String", try_from = "String")]
 pub enum CompilerKind {
     /// Stock Rust compiler
     Rust,
@@ -27,6 +29,12 @@ impl CompilerKind {
     }
 }
 
+impl From<CompilerKind> for String {
+    fn from(value: CompilerKind) -> Self {
+        value.as_str().to_string()
+    }
+}
+
 impl FromStr for CompilerKind {
     type Err = String;
 
@@ -38,6 +46,14 @@ impl FromStr for CompilerKind {
             "miden-asm" => Self::MidenAsm,
             _ => return Err(format!("Unsupported compiler kind {s}")),
         })
+    }
+}
+
+impl TryFrom<String> for CompilerKind {
+    type Error = String;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        s.parse()
     }
 }
 

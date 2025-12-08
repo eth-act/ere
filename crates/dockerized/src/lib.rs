@@ -68,6 +68,7 @@
 
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
+use serde::{Deserialize, Serialize};
 use std::{
     fmt::{self, Display, Formatter},
     str::FromStr,
@@ -88,7 +89,8 @@ include!(concat!(env!("OUT_DIR"), "/crate_version.rs"));
 include!(concat!(env!("OUT_DIR"), "/zkvm_sdk_version_impl.rs"));
 
 #[allow(non_camel_case_types)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(into = "String", try_from = "String")]
 pub enum zkVMKind {
     Airbender,
     Jolt,
@@ -119,6 +121,12 @@ impl zkVMKind {
     }
 }
 
+impl From<zkVMKind> for String {
+    fn from(value: zkVMKind) -> Self {
+        value.as_str().to_string()
+    }
+}
+
 impl FromStr for zkVMKind {
     type Err = String;
 
@@ -136,6 +144,14 @@ impl FromStr for zkVMKind {
             "zisk" => Self::Zisk,
             _ => return Err(format!("Unsupported zkvm kind {s}")),
         })
+    }
+}
+
+impl TryFrom<String> for zkVMKind {
+    type Error = String;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        s.parse()
     }
 }
 
