@@ -35,7 +35,7 @@ fn __start(_argc: isize, _argv: *const *const u8) -> isize {
     unreachable!()
 }
 
-// According to https://github.com/openvm-org/openvm/blob/v1.4.2-rc.1/crates/toolchain/openvm/src/process.rs
+// According to https://github.com/openvm-org/openvm/blob/v1.4.2/crates/toolchain/openvm/src/process.rs
 #[inline(always)]
 fn terminate() {
     unsafe {
@@ -45,7 +45,7 @@ fn terminate() {
     }
 }
 
-// According to https://github.com/openvm-org/openvm/blob/v1.4.2-rc.1/crates/toolchain/openvm/src/process.rs
+// According to https://github.com/openvm-org/openvm/blob/v1.4.2/crates/toolchain/openvm/src/process.rs
 #[panic_handler]
 fn panic_impl(_panic_info: &core::panic::PanicInfo) -> ! {
     unsafe {

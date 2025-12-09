@@ -1,4 +1,4 @@
-// Copied and modified from https://github.com/brevis-network/pico/blob/v1.1.8/sdk/sdk/src/client.rs.
+// Copied and modified from https://github.com/brevis-network/pico/blob/v1.1.10/sdk/sdk/src/client.rs.
 // The `EmbedProver` is removed because we don't need the proof to be verified
 // on chain. Issue for tracking: https://github.com/eth-act/ere/issues/140.
 
