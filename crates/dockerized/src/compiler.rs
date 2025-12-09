@@ -77,8 +77,9 @@ fn build_compiler_image(zkvm_kind: zkVMKind) -> Result<(), Error> {
 }
 
 /// Wrapper for serialized program.
-#[derive(Clone, Serialize, Deserialize)]
-pub struct SerializedProgram(pub(crate) Vec<u8>);
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct SerializedProgram(pub Vec<u8>);
 
 pub struct DockerizedCompiler {
     zkvm_kind: zkVMKind,
