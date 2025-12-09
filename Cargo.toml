@@ -113,8 +113,8 @@ openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", def
 
 # Pico dependencies
 pico-p3-field = { git = "https://github.com/brevis-network/Plonky3.git", package = "p3-field", rev = "a4d376b" }
-pico-vm = { git = "https://github.com/brevis-network/pico.git", tag = "v1.1.8" }
-pico-sdk = { git = "https://github.com/brevis-network/pico", tag = "v1.1.8" }
+pico-vm = { git = "https://github.com/brevis-network/pico.git", tag = "v1.1.10" }
+pico-sdk = { git = "https://github.com/brevis-network/pico", tag = "v1.1.10" }
 
 # Risc0 dependencies
 risc0-binfmt = { version = "3.0.3", default-features = false }
