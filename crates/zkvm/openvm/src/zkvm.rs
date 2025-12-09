@@ -52,7 +52,7 @@ impl EreOpenVM {
         let app_config = if let Some(value) = program.app_config() {
             toml::from_str(value).map_err(Error::InvalidAppConfig)?
         } else {
-            // The default `AppConfig` copied from https://github.com/openvm-org/openvm/blob/v1.4.2-rc.1/crates/cli/src/default.rs#L35.
+            // The default `AppConfig` copied from https://github.com/openvm-org/openvm/blob/v1.4.2/crates/cli/src/default.rs#L35.
             AppConfig {
                 app_fri_params: FriParameters::standard_with_100_bits_conjectured_security(
                     DEFAULT_APP_LOG_BLOWUP,

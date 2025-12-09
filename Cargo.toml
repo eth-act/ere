@@ -103,13 +103,13 @@ nexus-vm = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.5"
 nexus-rt = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.5" }
 
 # OpenVM dependencies
-openvm-build = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2-rc.1" }
-openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2-rc.1" }
-openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2-rc.1" }
-openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2-rc.1" }
-openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.2-rc.1" }
-openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2-rc.1" }
-openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2-rc.1", default-features = false }
+openvm-build = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2" }
+openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2" }
+openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2" }
+openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2" }
+openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.2" }
+openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2" }
+openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
 
 # Pico dependencies
 pico-p3-field = { git = "https://github.com/brevis-network/Plonky3.git", package = "p3-field", rev = "a4d376b" }

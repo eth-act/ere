@@ -7,7 +7,7 @@ use ere_zkvm_interface::compiler::Compiler;
 use std::{env, path::Path};
 
 const TARGET_TRIPLE: &str = "riscv32ima-unknown-none-elf";
-// Rust flags according to https://github.com/openvm-org/openvm/blob/v1.4.2-rc.1/crates/toolchain/build/src/lib.rs#L291
+// Rust flags according to https://github.com/openvm-org/openvm/blob/v1.4.2/crates/toolchain/build/src/lib.rs#L291
 const RUSTFLAGS: &[&str] = &[
     // Replace atomic ops with nonatomic versions since the guest is single threaded.
     "-C",
