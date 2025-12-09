@@ -161,8 +161,8 @@ impl Display for zkVMKind {
     }
 }
 
-/// Tag of images in format of `{version}{suffix}`.
-fn image_tag(zkvm_kind: zkVMKind, gpu: bool) -> String {
+/// Returns tag of images in format of `{version}{suffix}`.
+pub fn image_tag(zkvm_kind: zkVMKind, gpu: bool) -> String {
     let suffix = match (zkvm_kind, gpu) {
         // Only the following zkVMs requires CUDA setup in the base image
         // when GPU support is required.
@@ -174,22 +174,26 @@ fn image_tag(zkvm_kind: zkVMKind, gpu: bool) -> String {
     format!("{CRATE_VERSION}{suffix}")
 }
 
-fn base_image(zkvm_kind: zkVMKind, gpu: bool) -> String {
+/// Returns `ere-base:{image_tag}`
+pub fn base_image(zkvm_kind: zkVMKind, gpu: bool) -> String {
     let image_tag = image_tag(zkvm_kind, gpu);
     format!("ere-base:{image_tag}")
 }
 
-fn base_zkvm_image(zkvm_kind: zkVMKind, gpu: bool) -> String {
+/// Returns `ere-base-{zkvm_kind}:{image_tag}`
+pub fn base_zkvm_image(zkvm_kind: zkVMKind, gpu: bool) -> String {
     let image_tag = image_tag(zkvm_kind, gpu);
     format!("ere-base-{zkvm_kind}:{image_tag}")
 }
 
-fn server_zkvm_image(zkvm_kind: zkVMKind, gpu: bool) -> String {
+/// Returns `ere-server-{zkvm_kind}:{image_tag}`
+pub fn server_zkvm_image(zkvm_kind: zkVMKind, gpu: bool) -> String {
     let image_tag = image_tag(zkvm_kind, gpu);
     format!("ere-server-{zkvm_kind}:{image_tag}")
 }
 
-fn compiler_zkvm_image(zkvm_kind: zkVMKind) -> String {
+/// Returns `ere-compiler-{zkvm_kind}:{image_tag}`
+pub fn compiler_zkvm_image(zkvm_kind: zkVMKind) -> String {
     let image_tag = image_tag(zkvm_kind, false);
     format!("ere-compiler-{zkvm_kind}:{image_tag}")
 }
