@@ -11,6 +11,7 @@ use std::{
     sync::{Mutex, MutexGuard},
     time::Instant,
 };
+use tracing::error;
 
 mod error;
 mod sdk;
@@ -54,6 +55,7 @@ impl EreZisk {
                 match self.sdk.server() {
                     Ok(server) => break Some(server),
                     Err(Error::TimeoutWaitingServerReady) if retry < MAX_RETRY => {
+                        error!("Timeout waiting server ready, restarting...");
                         retry += 1;
                         continue;
                     }
