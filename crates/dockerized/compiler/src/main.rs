@@ -1,6 +1,6 @@
 use anyhow::{Context, Error, bail};
 use clap::Parser;
-use ere_compiler::CompilerKind;
+use ere_common::CompilerKind;
 use ere_zkvm_interface::compiler::Compiler;
 use serde::Serialize;
 use std::{fs::File, path::PathBuf};
