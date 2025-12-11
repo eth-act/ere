@@ -1,7 +1,9 @@
 ARG BASE_ZKVM_IMAGE=ere-base-miden:latest
 ARG RUNTIME_IMAGE=ubuntu:24.04
 
-FROM $BASE_ZKVM_IMAGE AS build_stage
+FROM $BASE_ZKVM_IMAGE AS base_zkvm
+
+FROM base_zkvm AS build_stage
 
 COPY . /ere
 
