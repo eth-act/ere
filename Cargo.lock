@@ -3820,6 +3820,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "ere-common"
+version = "0.0.15"
+dependencies = [
+ "ere-build-utils",
+ "serde",
+]
+
+[[package]]
 name = "ere-compile-utils"
 version = "0.0.15"
 dependencies = [
@@ -3837,6 +3845,7 @@ dependencies = [
  "bincode 2.0.1",
  "clap",
  "ere-airbender",
+ "ere-common",
  "ere-jolt",
  "ere-miden",
  "ere-nexus",
@@ -3848,6 +3857,7 @@ dependencies = [
  "ere-zisk",
  "ere-zkvm-interface",
  "serde",
+ "tracing",
  "tracing-subscriber 0.3.20",
 ]
 
@@ -3856,8 +3866,7 @@ name = "ere-dockerized"
 version = "0.0.15"
 dependencies = [
  "anyhow",
- "ere-build-utils",
- "ere-compiler",
+ "ere-common",
  "ere-server",
  "ere-test-utils",
  "ere-zkvm-interface",

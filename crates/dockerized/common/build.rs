@@ -9,7 +9,7 @@ fn main() {
 
 fn generate_crate_version() {
     let crate_version = format!(
-        "const CRATE_VERSION: &str = \"{}\";",
+        "/// Crate version in format of `{{semantic_version}}{{git_sha:7}}`\npub const CRATE_VERSION: &str = \"{}\";",
         detect_self_crate_version()
     );
 

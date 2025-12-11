@@ -1,5 +1,6 @@
 use crate::{
-    CompilerKind, base_image, base_zkvm_image, compiler_zkvm_image,
+    CompilerKind,
+    image::{base_image, base_zkvm_image, compiler_zkvm_image},
     util::{
         docker::{DockerBuildCmd, DockerRunCmd, docker_image_exists, force_rebuild},
         workspace_dir,
@@ -37,6 +38,11 @@ fn build_compiler_image(zkvm_kind: zkVMKind) -> Result<(), Error> {
     let base_zkvm_image = base_zkvm_image(zkvm_kind, false);
     let compiler_zkvm_image = compiler_zkvm_image(zkvm_kind);
 
+    if !force_rebuild && docker_image_exists(&compiler_zkvm_image)? {
+        info!("Image {compiler_zkvm_image} exists, skip building");
+        return Ok(());
+    }
+
     // Build `ere-base`
     if force_rebuild || !docker_image_exists(&base_image)? {
         info!("Building image {base_image}...");
@@ -60,22 +66,21 @@ fn build_compiler_image(zkvm_kind: zkVMKind) -> Result<(), Error> {
     }
 
     // Build `ere-compiler-{zkvm_kind}`
-    if force_rebuild || !docker_image_exists(&compiler_zkvm_image)? {
-        info!("Building image {compiler_zkvm_image}...");
+    info!("Building image {compiler_zkvm_image}...");
 
-        DockerBuildCmd::new()
-            .file(docker_zkvm_dir.join("Dockerfile.compiler"))
-            .tag(&compiler_zkvm_image)
-            .build_arg("BASE_ZKVM_IMAGE", &base_zkvm_image)
-            .exec(&workspace_dir)?;
-    }
+    DockerBuildCmd::new()
+        .file(docker_zkvm_dir.join("Dockerfile.compiler"))
+        .tag(&compiler_zkvm_image)
+        .build_arg("BASE_ZKVM_IMAGE", &base_zkvm_image)
+        .exec(&workspace_dir)?;
 
     Ok(())
 }
 
 /// Wrapper for serialized program.
-#[derive(Clone, Serialize, Deserialize)]
-pub struct SerializedProgram(pub(crate) Vec<u8>);
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct SerializedProgram(pub Vec<u8>);
 
 pub struct DockerizedCompiler {
     zkvm_kind: zkVMKind,

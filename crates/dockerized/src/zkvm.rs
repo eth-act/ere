@@ -1,7 +1,6 @@
 use crate::{
-    base_image, base_zkvm_image,
     compiler::SerializedProgram,
-    server_zkvm_image,
+    image::{base_image, base_zkvm_image, server_zkvm_image},
     util::{
         cuda::cuda_arch,
         docker::{
@@ -50,6 +49,11 @@ fn build_server_image(zkvm_kind: zkVMKind, gpu: bool) -> Result<(), Error> {
     let base_zkvm_image = base_zkvm_image(zkvm_kind, gpu);
     let server_zkvm_image = server_zkvm_image(zkvm_kind, gpu);
 
+    if !force_rebuild && docker_image_exists(&server_zkvm_image)? {
+        info!("Image {server_zkvm_image} exists, skip building");
+        return Ok(());
+    }
+
     // Build `ere-base`
     if force_rebuild || !docker_image_exists(&base_image)? {
         info!("Building image {base_image}...");
@@ -92,21 +96,19 @@ fn build_server_image(zkvm_kind: zkVMKind, gpu: bool) -> Result<(), Error> {
     }
 
     // Build `ere-server-{zkvm_kind}`
-    if force_rebuild || !docker_image_exists(&server_zkvm_image)? {
-        info!("Building image {server_zkvm_image}...");
+    info!("Building image {server_zkvm_image}...");
 
-        let mut cmd = DockerBuildCmd::new()
-            .file(docker_zkvm_dir.join("Dockerfile.server"))
-            .tag(&server_zkvm_image)
-            .build_arg("BASE_ZKVM_IMAGE", &base_zkvm_image)
-            .build_arg_from_env("RUSTFLAGS");
+    let mut cmd = DockerBuildCmd::new()
+        .file(docker_zkvm_dir.join("Dockerfile.server"))
+        .tag(&server_zkvm_image)
+        .build_arg("BASE_ZKVM_IMAGE", &base_zkvm_image)
+        .build_arg_from_env("RUSTFLAGS");
 
-        if gpu {
-            cmd = cmd.build_arg("CUDA", "1");
-        }
-
-        cmd.exec(&workspace_dir)?;
+    if gpu {
+        cmd = cmd.build_arg("CUDA", "1");
     }
+
+    cmd.exec(&workspace_dir)?;
 
     Ok(())
 }

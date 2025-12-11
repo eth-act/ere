@@ -10,6 +10,7 @@ anyhow.workspace = true
 bincode = { workspace = true, features = ["std", "serde"] }
 clap = { workspace = true, features = ["derive"] }
 serde.workspace = true
+tracing.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 # Local dependencies
@@ -24,6 +25,7 @@ ere-sp1 = { workspace = true, features = ["compiler"], optional = true }
 ere-ziren = { workspace = true, features = ["compiler"], optional = true }
 ere-zisk = { workspace = true, features = ["compiler"], optional = true }
 ere-zkvm-interface.workspace = true
+ere-common.workspace = true
 
 [dev-dependencies]
 

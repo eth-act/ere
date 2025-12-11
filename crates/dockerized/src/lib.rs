@@ -68,112 +68,14 @@
 
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use std::{
-    fmt::{self, Display, Formatter},
-    str::FromStr,
-};
-
 mod util;
 
 pub mod compiler;
+pub mod image;
 pub mod zkvm;
 
 pub use crate::{
     compiler::{DockerizedCompiler, SerializedProgram},
     zkvm::DockerizedzkVM,
 };
-pub use ere_compiler::CompilerKind;
-
-include!(concat!(env!("OUT_DIR"), "/crate_version.rs"));
-include!(concat!(env!("OUT_DIR"), "/zkvm_sdk_version_impl.rs"));
-
-#[allow(non_camel_case_types)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum zkVMKind {
-    Airbender,
-    Jolt,
-    Miden,
-    Nexus,
-    OpenVM,
-    Pico,
-    Risc0,
-    SP1,
-    Ziren,
-    Zisk,
-}
-
-impl zkVMKind {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Airbender => "airbender",
-            Self::Jolt => "jolt",
-            Self::Miden => "miden",
-            Self::Nexus => "nexus",
-            Self::OpenVM => "openvm",
-            Self::Pico => "pico",
-            Self::Risc0 => "risc0",
-            Self::SP1 => "sp1",
-            Self::Ziren => "ziren",
-            Self::Zisk => "zisk",
-        }
-    }
-}
-
-impl FromStr for zkVMKind {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s {
-            "airbender" => Self::Airbender,
-            "jolt" => Self::Jolt,
-            "miden" => Self::Miden,
-            "nexus" => Self::Nexus,
-            "openvm" => Self::OpenVM,
-            "pico" => Self::Pico,
-            "risc0" => Self::Risc0,
-            "sp1" => Self::SP1,
-            "ziren" => Self::Ziren,
-            "zisk" => Self::Zisk,
-            _ => return Err(format!("Unsupported zkvm kind {s}")),
-        })
-    }
-}
-
-impl Display for zkVMKind {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.as_str())
-    }
-}
-
-/// Tag of images in format of `{version}{suffix}`.
-fn image_tag(zkvm_kind: zkVMKind, gpu: bool) -> String {
-    let suffix = match (zkvm_kind, gpu) {
-        // Only the following zkVMs requires CUDA setup in the base image
-        // when GPU support is required.
-        (zkVMKind::Airbender | zkVMKind::OpenVM | zkVMKind::Risc0 | zkVMKind::Zisk, true) => {
-            "-cuda"
-        }
-        _ => "",
-    };
-    format!("{CRATE_VERSION}{suffix}")
-}
-
-fn base_image(zkvm_kind: zkVMKind, gpu: bool) -> String {
-    let image_tag = image_tag(zkvm_kind, gpu);
-    format!("ere-base:{image_tag}")
-}
-
-fn base_zkvm_image(zkvm_kind: zkVMKind, gpu: bool) -> String {
-    let image_tag = image_tag(zkvm_kind, gpu);
-    format!("ere-base-{zkvm_kind}:{image_tag}")
-}
-
-fn server_zkvm_image(zkvm_kind: zkVMKind, gpu: bool) -> String {
-    let image_tag = image_tag(zkvm_kind, gpu);
-    format!("ere-server-{zkvm_kind}:{image_tag}")
-}
-
-fn compiler_zkvm_image(zkvm_kind: zkVMKind) -> String {
-    let image_tag = image_tag(zkvm_kind, false);
-    format!("ere-compiler-{zkvm_kind}:{image_tag}")
-}
+pub use ere_common::{CRATE_VERSION, CompilerKind, zkVMKind};
