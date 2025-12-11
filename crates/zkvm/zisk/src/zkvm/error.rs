@@ -26,6 +26,9 @@ pub enum Error {
     #[error("Server crashed")]
     ServerCrashed,
 
+    #[error("Timeout waiting for server proving")]
+    TimeoutWaitingServerProving,
+
     #[error("Timeout waiting for server ready")]
     TimeoutWaitingServerReady,
 
