@@ -3,5 +3,5 @@ mod rust;
 
 pub use {
     error::CommonError,
-    rust::{CargoBuildCmd, cargo_metadata, install_rust_src, rustc_path},
+    rust::{CargoBuildCmd, cargo_metadata, rustc_path, rustup_add_components, rustup_add_rust_src},
 };

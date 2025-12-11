@@ -66,6 +66,11 @@ impl CommonError {
         Self::io("Failed to create temporary dir", err)
     }
 
+    pub fn canonicalize(path: impl AsRef<Path>, err: io::Error) -> Self {
+        let path = path.as_ref().display();
+        Self::io(format!("Failed to canonicalize {path}"), err)
+    }
+
     pub fn create_dir(id: impl AsRef<str>, path: impl AsRef<Path>, err: io::Error) -> Self {
         let (id, path) = (id.as_ref(), path.as_ref().display());
         Self::io(format!("Failed to create dir {id} at {path}"), err)

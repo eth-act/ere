@@ -1,5 +1,5 @@
 use crate::{compiler::Error, program::AirbenderProgram};
-use ere_compile_utils::{CargoBuildCmd, CommonError};
+use ere_compile_utils::{CargoBuildCmd, CommonError, rustup_add_components};
 use ere_zkvm_interface::compiler::Compiler;
 use std::{
     env,
@@ -43,19 +43,22 @@ impl Compiler for RustRv32ima {
         let toolchain = env::var("ERE_RUST_TOOLCHAIN").unwrap_or_else(|_| "nightly".into());
         let elf = CargoBuildCmd::new()
             .linker_script(Some(LINKER_SCRIPT))
-            .toolchain(toolchain)
+            .toolchain(&toolchain)
             .build_options(CARGO_BUILD_OPTIONS)
             .rustflags(RUSTFLAGS)
             .exec(guest_directory, TARGET_TRIPLE)?;
-        let bin = objcopy_binary(&elf)?;
+        let bin = objcopy_binary(&toolchain, &elf)?;
         Ok(AirbenderProgram { bin })
     }
 }
 
-fn objcopy_binary(elf: &[u8]) -> Result<Vec<u8>, Error> {
+fn objcopy_binary(toolchain: &str, elf: &[u8]) -> Result<Vec<u8>, Error> {
+    rustup_add_components(toolchain, ["llvm-tools"])?;
+
     let mut cmd = Command::new("rust-objcopy");
     let mut child = cmd
         .args(["-O", "binary", "-", "-"])
+        .env("RUSTUP_TOOLCHAIN", toolchain)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
