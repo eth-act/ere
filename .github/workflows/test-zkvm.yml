@@ -253,7 +253,7 @@ jobs:
           key: rust-${{ inputs.toolchain }}-${{ inputs.zkvm }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Pull images or build locally
-        if: ! (github.event_name == 'push' && github.ref == 'refs/heads/master')
+        if: github.event_name == 'pull_request'
         run: |
           bash .github/scripts/pull-or-build-base-zkvm-image.sh \
             ${{ inputs.zkvm }} \
