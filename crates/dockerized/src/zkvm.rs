@@ -164,7 +164,8 @@ impl ServerContainer {
                 .inherit_env("ZISK_SHARED_TABLES")
                 .inherit_env("ZISK_MAX_STREAMS")
                 .inherit_env("ZISK_NUMBER_THREADS_WITNESS")
-                .inherit_env("ZISK_MAX_WITNESS_STORED"),
+                .inherit_env("ZISK_MAX_WITNESS_STORED")
+                .inherit_env("ZISK_PROVE_TIMEOUT_SEC"),
             _ => cmd,
         };
 

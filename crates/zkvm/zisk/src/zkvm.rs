@@ -1,6 +1,6 @@
 use crate::{
     program::ZiskProgram,
-    zkvm::sdk::{RomDigest, ZiskOptions, ZiskSdk, ZiskServer},
+    zkvm::sdk::{RomDigest, START_SERVER_TIMEOUT, ZiskOptions, ZiskSdk, ZiskServer},
 };
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
@@ -46,7 +46,7 @@ impl EreZisk {
 
         if server
             .as_ref()
-            .is_none_or(|server| server.status().is_err())
+            .is_none_or(|server| server.status(START_SERVER_TIMEOUT).is_err())
         {
             const MAX_RETRY: usize = 3;
             let mut retry = 0;
