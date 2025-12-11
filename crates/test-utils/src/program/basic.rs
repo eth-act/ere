@@ -1,7 +1,7 @@
 use crate::program::Program;
 use alloc::vec::Vec;
 use core::{marker::PhantomData, panic};
-use ere_io::serde::{IoSerde, Serde, bincode::BincodeLegacy};
+use ere_io::serde::{IoSerde, Serde};
 use serde::{Deserialize, Serialize};
 
 /// The basic program takes `BasicProgramInput` as input, and computes
@@ -12,7 +12,7 @@ impl<S> Program for BasicProgram<S>
 where
     S: Serde,
 {
-    type Io = IoSerde<BasicProgramInput, BasicProgramOutput, BincodeLegacy>;
+    type Io = IoSerde<BasicProgramInput, BasicProgramOutput, S>;
 
     fn compute(input: BasicProgramInput) -> BasicProgramOutput {
         if input.should_panic {

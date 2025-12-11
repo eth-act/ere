@@ -6,6 +6,9 @@ use serde::{Serialize, de::DeserializeOwned};
 #[cfg(feature = "bincode")]
 pub mod bincode;
 
+#[cfg(feature = "cbor")]
+pub mod cbor;
+
 pub trait Serde: Clone + Default + Send + Sync {
     type Error: 'static + Error + Send + Sync;
 

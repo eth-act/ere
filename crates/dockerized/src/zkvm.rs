@@ -152,9 +152,9 @@ impl ServerContainer {
                 .inherit_env("RISC0_SEGMENT_PO2")
                 .inherit_env("RISC0_KECCAK_PO2"),
             // ZisK uses shared memory to exchange data between processes, it
-            // requires at least 8G shared memory, here we set 16G for safety.
+            // requires at least 16G shared memory, here we set 32G for safety.
             zkVMKind::Zisk => cmd
-                .option("shm-size", "16G")
+                .option("shm-size", "32G")
                 .option("ulimit", "memlock=-1:-1")
                 .inherit_env("ZISK_PORT")
                 .inherit_env("ZISK_CHUNK_SIZE_BITS")

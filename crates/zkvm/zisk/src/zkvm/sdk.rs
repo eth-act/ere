@@ -251,6 +251,8 @@ impl ZiskSdk {
             ("cargo-zisk", None)
         };
 
+        info!("Starting ZisK server...");
+
         let mut cmd = Command::new(cargo_zisk);
         cmd.arg("server")
             .args(self.options.server_args())
@@ -456,6 +458,8 @@ impl ZiskServer {
         const TIMEOUT: Duration = Duration::from_secs(120); // 2mins
         const INTERVAL: Duration = Duration::from_secs(1);
 
+        info!("Waiting until server is ready...");
+
         let start = Instant::now();
         while !matches!(self.status(), Ok(ZiskServerStatus::Idle)) {
             if start.elapsed() > TIMEOUT {
@@ -540,7 +544,7 @@ fn rom_setup(elf_path: &Path) -> Result<RomDigest, Error> {
 
 /// Send shutdown request to ZisK asm services.
 fn shutdown_asm_service(port: u16) {
-    // According to https://github.com/0xPolygonHermez/zisk/blob/v0.13.0/emulator-asm/asm-runner/src/asm_services/mod.rs#L34.
+    // According to https://github.com/0xPolygonHermez/zisk/blob/v0.14.0/emulator-asm/asm-runner/src/asm_services/mod.rs#L34.
     const CMD_SHUTDOWN_REQUEST_ID: u64 = 1000000;
     if let Ok(mut stream) = TcpStream::connect((Ipv4Addr::LOCALHOST, port)) {
         let _ = stream.write_all(
@@ -563,7 +567,7 @@ fn remove_shm_files() {
         if path
             .file_name()
             .and_then(|n| n.to_str())
-            .is_some_and(|name| name.contains("ZISK"))
+            .is_some_and(|name| name.starts_with("ZISK") || name.starts_with("sem"))
         {
             let _ = fs::remove_file(&path);
         }
