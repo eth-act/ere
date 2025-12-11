@@ -3,7 +3,7 @@
 extern crate alloc;
 
 use alloc::vec;
-use core::{ops::Deref, slice};
+use core::ops::Deref;
 use risc0_zkvm::guest::env::Write;
 
 pub use ere_platform_trait::{Digest, OutputHashedPlatform, Platform};
