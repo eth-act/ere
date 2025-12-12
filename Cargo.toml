@@ -132,8 +132,8 @@ sp1-sdk = "5.2.3"
 sp1-zkvm = "5.2.3"
 
 # Ziren dependencies
-zkm-sdk = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.2.2" }
-zkm-zkvm = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.2.2" }
+zkm-sdk = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.2.3" }
+zkm-zkvm = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.2.3" }
 
 # ZisK dependencies
 ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.14.0" }

@@ -173,7 +173,7 @@ OutputHashedPlatform::<OpenVMPlatform, Sha256>::write_whole_output(&large_output
 ## Supported zkVMs
 
 | zkVM      | Version                                                                | GPU |
-| --------- | ---------------------------------------------------------------------- | --- |
+| --------- |------------------------------------------------------------------------| --- |
 | Airbender | [`0.5.1`](https://github.com/matter-labs/zksync-airbender/tree/v0.5.1) | Yes |
 | Jolt      | [`0.3.0-alpha`](https://github.com/a16z/jolt/tree/v0.3.0-alpha)        | No  |
 | Miden     | [`0.19.1`](https://github.com/0xMiden/miden-vm/tree/v0.19.1)           | No  |
@@ -182,7 +182,7 @@ OutputHashedPlatform::<OpenVMPlatform, Sha256>::write_whole_output(&large_output
 | Pico      | [`1.1.10`](https://github.com/brevis-network/pico/tree/v1.1.10)        | No  |
 | Risc0     | [`3.0.4`](https://github.com/risc0/risc0/tree/v3.0.4)                  | Yes |
 | SP1       | [`5.2.3`](https://github.com/succinctlabs/sp1/tree/v5.2.3)             | Yes |
-| Ziren     | [`1.2.2`](https://github.com/ProjectZKM/Ziren/tree/v1.2.2)             | No  |
+| Ziren     | [`1.2.3`](https://github.com/ProjectZKM/Ziren/tree/v1.2.3)             | No  |
 | Zisk      | [`0.13.0`](https://github.com/0xPolygonHermez/zisk/tree/v0.13.0)       | Yes |
 
 ## Examples
