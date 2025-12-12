@@ -176,7 +176,7 @@ OutputHashedPlatform::<OpenVMPlatform, Sha256>::write_whole_output(&large_output
 | --------- |------------------------------------------------------------------------| --- |
 | Airbender | [`0.5.1`](https://github.com/matter-labs/zksync-airbender/tree/v0.5.1) | Yes |
 | Jolt      | [`0.3.0-alpha`](https://github.com/a16z/jolt/tree/v0.3.0-alpha)        | No  |
-| Miden     | [`0.19.1`](https://github.com/0xMiden/miden-vm/tree/v0.19.1)           | No  |
+| Miden     | [`0.19.1`](https://github.com/0xMiden/miden-vm/tree/v0.20.0)           | No  |
 | Nexus     | [`0.3.5`](https://github.com/nexus-xyz/nexus-zkvm/tree/v0.3.5)         | No  |
 | OpenVM    | [`1.4.2`](https://github.com/openvm-org/openvm/tree/v1.4.2)            | Yes |
 | Pico      | [`1.2.0`](https://github.com/brevis-network/pico/tree/v1.2.0)        | No  |

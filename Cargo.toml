@@ -72,8 +72,8 @@ serde_yaml = "0.9.34"
 sha2 = { version = "0.10.9", default-features = false }
 strum = "0.27.2"
 tempfile = "3.20.0"
-thiserror = "2.0.12"
-tokio = "1.0"
+thiserror = "2.0.12"# Locked by `miden-processor`
+tokio = "^1.48"
 toml = "0.8.23"
 tower-http = "0.6.6"
 tracing = "0.1.41"
@@ -93,12 +93,12 @@ jolt-core = { git = "https://github.com/a16z/jolt.git", tag = "v0.3.0-alpha" }
 jolt-sdk = { git = "https://github.com/a16z/jolt.git", tag = "v0.3.0-alpha", default-features = false }
 
 # Miden dependencies
-miden-assembly = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.19.1" }
-miden-core = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.19.1" }
-miden-processor = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.19.1" }
-miden-prover = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.19.1" }
-miden-stdlib = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.19.1" }
-miden-verifier = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.19.1" }
+miden-assembly = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.0" }
+miden-core = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.0" }
+miden-processor = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.0" }
+miden-prover = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.0" }
+miden-core-lib = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.0" }
+miden-verifier = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.0" }
 
 # Nexus dependencies
 nexus-core = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.5" }

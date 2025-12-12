@@ -20,8 +20,8 @@ pub enum Error {
         err: std::io::Error,
     },
 
-    #[error("Failed to load Miden standard library: {0}")]
-    LoadStdLibrary(Report),
+    #[error("Failed to load Miden core library: {0}")]
+    LoadCoreLibrary(Report),
 
     #[error("Miden assembly compilation failed: {0}")]
     AssemblyCompilation(Report),

@@ -14,7 +14,6 @@ use miden_processor::{
 use miden_prover::{
     AdviceInputs, ExecutionProof, HashFunction, ProvingOptions, prove as miden_prove,
 };
-use miden_stdlib::StdLibrary;
 use miden_verifier::verify as miden_verify;
 use std::{env, time::Instant};
 
@@ -22,6 +21,7 @@ mod error;
 
 pub use error::Error;
 pub use miden_core::{Felt, FieldElement};
+use miden_core_lib::CoreLibrary;
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
@@ -48,7 +48,7 @@ impl EreMiden {
     fn setup_host() -> Result<DefaultHost, Error> {
         let mut host = DefaultHost::default();
 
-        host.load_library(&StdLibrary::default())
+        host.load_library(&CoreLibrary::default())
             .map_err(Error::Execute)?;
 
         Ok(host)
