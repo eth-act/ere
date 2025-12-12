@@ -4,7 +4,7 @@ use ere_zkvm_interface::compiler::Compiler;
 use std::{env, path::Path};
 
 const TARGET_TRIPLE: &str = "riscv32ima-unknown-none-elf";
-// According to https://github.com/brevis-network/pico/blob/v1.1.10/sdk/cli/src/build/build.rs#L104
+// According to https://github.com/brevis-network/pico/blob/v1.2.0/sdk/cli/src/build/build.rs#L104
 const RUSTFLAGS: &[&str] = &[
     // Replace atomic ops with nonatomic versions since the guest is single threaded.
     "-C",
