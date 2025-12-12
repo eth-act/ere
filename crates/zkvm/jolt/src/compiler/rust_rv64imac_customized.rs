@@ -15,13 +15,17 @@ impl Compiler for RustRv64imacCustomized {
     type Program = JoltProgram;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
+        let guest_directory = guest_directory
+            .canonicalize()
+            .map_err(|err| CommonError::canonicalize(guest_directory, err))?;
+
         // Change current directory for `Program::build` to build guest program.
-        set_current_dir(guest_directory).map_err(|err| Error::SetCurrentDirFailed {
+        set_current_dir(&guest_directory).map_err(|err| Error::SetCurrentDirFailed {
             err,
             path: guest_directory.to_path_buf(),
         })?;
 
-        let metadata = cargo_metadata(guest_directory)?;
+        let metadata = cargo_metadata(&guest_directory)?;
         let package_name = &metadata.root_package().unwrap().name;
 
         let tempdir = tempdir().map_err(CommonError::tempdir)?;

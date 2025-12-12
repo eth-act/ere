@@ -25,6 +25,7 @@ members = [
     "crates/zkvm/zisk/platform",
     # Dockerized zkVM
     "crates/dockerized",
+    "crates/dockerized/common",
     "crates/dockerized/compiler",
     "crates/dockerized/server",
     # Utils
@@ -163,6 +164,7 @@ ere-platform-ziren = { path = "crates/zkvm/ziren/platform" }
 ere-platform-zisk = { path = "crates/zkvm/zisk/platform" }
 
 ere-dockerized = { path = "crates/dockerized" }
+ere-common = { path = "crates/dockerized/common" }
 ere-compiler = { path = "crates/dockerized/compiler" }
 ere-server = { path = "crates/dockerized/server" }
 

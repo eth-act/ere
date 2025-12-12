@@ -88,7 +88,7 @@ impl CargoBuildCmd {
             .iter()
             .any(|opt| opt.contains("build-std"))
         {
-            install_rust_src(&self.toolchain)?;
+            rustup_add_rust_src(&self.toolchain)?;
         }
 
         let tempdir = tempdir().map_err(CommonError::tempdir)?;
@@ -186,15 +186,24 @@ pub fn rustc_path(toolchain: &str) -> Result<PathBuf, CommonError> {
     )
 }
 
-/// Install component `rust-src` for the given `toolchain` if not found.
-pub fn install_rust_src(toolchain: &str) -> Result<(), CommonError> {
+/// Install `rust-src` for the given `toolchain` if not found.
+pub fn rustup_add_rust_src(toolchain: &str) -> Result<(), CommonError> {
+    rustup_add_components(toolchain, ["rust-src"])
+}
+
+/// Install `components` for the given `toolchain` if not found.
+pub fn rustup_add_components(
+    toolchain: &str,
+    components: impl IntoIterator<Item: ToString>,
+) -> Result<(), CommonError> {
     static LOCK: Mutex<()> = Mutex::new(());
 
     let _guard = LOCK.lock().unwrap_or_else(|err| err.into_inner());
 
     let mut cmd = Command::new("rustup");
     let output = cmd
-        .args([&plus_toolchain(toolchain), "component", "add", "rust-src"])
+        .args([&plus_toolchain(toolchain), "component", "add"])
+        .args(components.into_iter().map(|comp| comp.to_string()))
         .output()
         .map_err(|err| CommonError::command(&cmd, err))?;
 

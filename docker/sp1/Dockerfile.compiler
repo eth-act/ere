@@ -1,7 +1,9 @@
 ARG BASE_ZKVM_IMAGE=ere-base-sp1:latest
 ARG RUNTIME_IMAGE=ubuntu:24.04
 
-FROM $BASE_ZKVM_IMAGE AS build_stage
+FROM $BASE_ZKVM_IMAGE AS base_zkvm
+
+FROM base_zkvm AS build_stage
 
 COPY . /ere
 
@@ -21,8 +23,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy Rust
-COPY --from=build_stage /usr/local/cargo /usr/local/cargo
-COPY --from=build_stage /usr/local/rustup /usr/local/rustup
+COPY --from=base_zkvm /usr/local/cargo /usr/local/cargo
+COPY --from=base_zkvm /usr/local/rustup /usr/local/rustup
 
 # Add Rust to path
 ENV RUSTUP_HOME=/usr/local/rustup \
@@ -30,7 +32,7 @@ ENV RUSTUP_HOME=/usr/local/rustup \
     PATH=/usr/local/cargo/bin:$PATH
 
 # Copy SP1 SDK
-COPY --from=build_stage /root/.sp1 /root/.sp1
+COPY --from=base_zkvm /root/.sp1 /root/.sp1
 
 # Add SP1 SDK to path
 ENV PATH=/root/.sp1/bin:$PATH

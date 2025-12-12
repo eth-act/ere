@@ -20,6 +20,7 @@ jobs:
           - ere-zkvm-interface
           - ere-io
           - ere-dockerized
+          - ere-common
           - ere-compiler
           - ere-server
           - ere-build-utils
@@ -59,5 +60,5 @@ jobs:
         run: cargo test --doc --package ${{ matrix.crate }}
 
       - name: Run cargo test
-        if: ${{ matrix.skip_test != true }} 
+        if: matrix.skip_test != true
         run: cargo test --lib --release --package ${{ matrix.crate }}

@@ -16,17 +16,14 @@ tracing.workspace = true
 
 # Local dependencies
 ere-zkvm-interface = { workspace = true, features = ["clap"] }
+ere-common.workspace = true
 ere-server.workspace = true
-ere-compiler.workspace = true
 
 [dev-dependencies]
 paste.workspace = true
 
 # Local dependencies
 ere-test-utils = { workspace = true, features = ["host"] }
-
-[build-dependencies]
-ere-build-utils.workspace = true
 
 [lints]
 workspace = true

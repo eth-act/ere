@@ -24,6 +24,7 @@ impl Compiler for RustMips32r2Customized {
         let mut cmd = Command::new("cargo");
         let output = cmd
             .current_dir(guest_directory)
+            .env("RUSTUP_TOOLCHAIN", "nightly")
             .env("RUSTC", rustc_path(ZKM_TOOLCHAIN)?)
             .env("ZIREN_ZKM_CC", "mipsel-zkm-zkvm-elf-gcc")
             .args(["ziren", "build"])
