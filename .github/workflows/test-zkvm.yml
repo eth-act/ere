@@ -111,7 +111,6 @@ jobs:
           tags: ${{ steps.image_meta.outputs.base_zkvm_image }}
           build-args: |
             BASE_IMAGE=${{ steps.image_meta.outputs.base_image }}
-            CI=1
 
       - name: Build ere-compiler-${{ inputs.zkvm }} image
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
