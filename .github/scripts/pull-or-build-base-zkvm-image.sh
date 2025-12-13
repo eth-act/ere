@@ -19,7 +19,7 @@ if docker image pull $CACHED_BASE_IMAGE; then
 else
     echo "Building ere-base"
     docker build \
-        --file docker/base/Dockerfile.base \
+        --file docker/Dockerfile.base \
         --tag $BASE_IMAGE \
         .
 fi
@@ -34,6 +34,5 @@ else
         --file docker/$ZKVM/Dockerfile.base \
         --tag $BASE_ZKVM_IMAGE \
         --build-arg BASE_IMAGE=$BASE_IMAGE \
-        --build-arg CI=1 \
         .
 fi

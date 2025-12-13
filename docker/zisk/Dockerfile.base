@@ -45,9 +45,6 @@ COPY --chmod=755 scripts/sdk_installers/install_zisk_sdk.sh /tmp/install_zisk_sd
 
 # Run the ZisK SDK installation script using ziskup.
 # This script installs the 'zisk' Rust toolchain and `cargo-zisk`
-#
-# If argument `CI` is set, we only install verifying key, this is used by GitHub
-# CI runner which only has small disk space (proving key requires ~27 GB).
 RUN /tmp/install_zisk_sdk.sh && \
     rm /tmp/install_zisk_sdk.sh && \
     # Remove the merkle tree of proving key to reduce docker image size (~20 GB).
