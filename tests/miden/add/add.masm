@@ -1,6 +1,6 @@
 # Adds two numbers from advice stack
 # Input: advice_stack contains second_number, first_number
-use.std::sys
+use miden::core::sys
 
 begin
     adv_push.1

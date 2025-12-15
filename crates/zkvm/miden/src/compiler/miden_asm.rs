@@ -4,8 +4,8 @@ use crate::{
 };
 use ere_zkvm_interface::compiler::Compiler;
 use miden_assembly::Assembler;
-use miden_stdlib::StdLibrary;
-use std::{env, fs, path::Path};
+use miden_core_lib::CoreLibrary;
+use std::{fs, path::Path};
 
 /// Compiler for Miden assembly guest program.
 pub struct MidenAsm;
@@ -34,11 +34,10 @@ impl Compiler for MidenAsm {
         })?;
 
         // Compile using Miden assembler
-        let mut assembler =
-            Assembler::default().with_debug_mode(env::var_os("MIDEN_DEBUG").is_some());
+        let mut assembler = Assembler::default();
         assembler
-            .link_dynamic_library(StdLibrary::default())
-            .map_err(Error::LoadStdLibrary)?;
+            .link_dynamic_library(CoreLibrary::default())
+            .map_err(Error::LoadCoreLibrary)?;
 
         let program = assembler
             .assemble_program(&source)

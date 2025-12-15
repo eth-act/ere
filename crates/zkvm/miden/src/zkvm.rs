@@ -8,13 +8,13 @@ use miden_core::{
     Program,
     utils::{Deserializable, Serializable},
 };
+use miden_core_lib::CoreLibrary;
 use miden_processor::{
     DefaultHost, ExecutionOptions, ProgramInfo, StackInputs, StackOutputs, execute as miden_execute,
 };
 use miden_prover::{
     AdviceInputs, ExecutionProof, HashFunction, ProvingOptions, prove as miden_prove,
 };
-use miden_stdlib::StdLibrary;
 use miden_verifier::verify as miden_verify;
 use std::{env, time::Instant};
 
@@ -48,7 +48,7 @@ impl EreMiden {
     fn setup_host() -> Result<DefaultHost, Error> {
         let mut host = DefaultHost::default();
 
-        host.load_library(&StdLibrary::default())
+        host.load_library(&CoreLibrary::default())
             .map_err(Error::Execute)?;
 
         Ok(host)

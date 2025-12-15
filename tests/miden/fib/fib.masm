@@ -1,7 +1,7 @@
 # Fibonacci
 # Reads three u64 values from advice stack: fib_a, fib_b, n
 # Returns nth fibonacci number
-use.std::sys
+use miden::core::sys
 
 begin
     # Read inputs from advice stack

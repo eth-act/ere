@@ -14,7 +14,7 @@ RUN rustup default nightly
 COPY --chmod=755 scripts/sdk_installers/install_ziren_sdk.sh /tmp/install_ziren_sdk.sh
 
 # The install_ziren_sdk.sh script will respect these ENV variables.
-ENV ZIREM_VERSION="1.2.2"
+ENV ZIREM_VERSION="1.2.3"
 
 # Run the Ziren SDK installation script
 RUN /tmp/install_ziren_sdk.sh && rm /tmp/install_ziren_sdk.sh

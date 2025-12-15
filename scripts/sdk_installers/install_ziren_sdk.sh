@@ -28,7 +28,7 @@ echo "Installing ZKM Toolchain using zkmup (latest release versions)..."
 ensure_tool_installed "curl" "to download the zkmup installer"
 ensure_tool_installed "sh" "as the zkmup installer script uses sh"
 
-ZIREM_VERSION="1.2.2"
+ZIREM_VERSION="1.2.3"
 
 # Step 1: Download and run the script that installs the zkmup binary itself.
 curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/ProjectZKM/toolchain/refs/heads/main/setup.sh | sh

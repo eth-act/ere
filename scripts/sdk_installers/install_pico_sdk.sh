@@ -29,7 +29,7 @@ ensure_tool_installed "git" "to install pico-cli from a git repository"
 ensure_tool_installed "cargo" "to build and install Rust packages"
 
 PICO_TOOLCHAIN_VERSION="nightly-2025-08-04"
-PICO_CLI_VERSION_TAG="v1.1.10"
+PICO_CLI_VERSION_TAG="v1.2.0"
 
 # Install the specific nightly toolchain for Pico
 echo "Installing Pico-specific Rust toolchain: ${PICO_TOOLCHAIN_VERSION}..."

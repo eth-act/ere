@@ -93,12 +93,12 @@ jolt-core = { git = "https://github.com/a16z/jolt.git", tag = "v0.3.0-alpha" }
 jolt-sdk = { git = "https://github.com/a16z/jolt.git", tag = "v0.3.0-alpha", default-features = false }
 
 # Miden dependencies
-miden-assembly = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.19.1" }
-miden-core = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.19.1" }
-miden-processor = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.19.1" }
-miden-prover = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.19.1" }
-miden-stdlib = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.19.1" }
-miden-verifier = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.19.1" }
+miden-assembly = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.0" }
+miden-core = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.0" }
+miden-processor = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.0" }
+miden-prover = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.0" }
+miden-core-lib = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.0" }
+miden-verifier = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.0" }
 
 # Nexus dependencies
 nexus-core = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.5" }
@@ -116,9 +116,9 @@ openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v
 openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", default-features = false }
 
 # Pico dependencies
-pico-p3-field = { git = "https://github.com/brevis-network/Plonky3.git", package = "p3-field", rev = "a4d376b" }
-pico-vm = { git = "https://github.com/brevis-network/pico.git", tag = "v1.1.10" }
-pico-sdk = { git = "https://github.com/brevis-network/pico", tag = "v1.1.10" }
+pico-p3-field = { git = "https://github.com/brevis-network/Plonky3.git", package = "p3-field", rev = "411a80d" }
+pico-vm = { git = "https://github.com/brevis-network/pico.git", tag = "v1.2.0" }
+pico-sdk = { git = "https://github.com/brevis-network/pico", tag = "v1.2.0" }
 
 # Risc0 dependencies
 risc0-binfmt = { version = "3.0.3", default-features = false }
@@ -132,8 +132,8 @@ sp1-sdk = "5.2.3"
 sp1-zkvm = "5.2.3"
 
 # Ziren dependencies
-zkm-sdk = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.2.2" }
-zkm-zkvm = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.2.2" }
+zkm-sdk = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.2.3" }
+zkm-zkvm = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.2.3" }
 
 # ZisK dependencies
 ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.14.0" }
