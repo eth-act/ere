@@ -7,6 +7,7 @@ license.workspace = true
 
 [dependencies]
 serde = { workspace = true, features = ["alloc", "derive"] }
+strum = { workspace = true, features = ["derive"] }
 
 [build-dependencies]
 ere-build-utils.workspace = true
