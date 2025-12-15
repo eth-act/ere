@@ -4,7 +4,6 @@ use crate::{
 };
 use ere_zkvm_interface::compiler::Compiler;
 use miden_assembly::Assembler;
-// use miden_core_lib::StdLibrary;
 use miden_core_lib::CoreLibrary;
 use std::{fs, path::Path};
 

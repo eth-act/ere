@@ -8,6 +8,7 @@ use miden_core::{
     Program,
     utils::{Deserializable, Serializable},
 };
+use miden_core_lib::CoreLibrary;
 use miden_processor::{
     DefaultHost, ExecutionOptions, ProgramInfo, StackInputs, StackOutputs, execute as miden_execute,
 };
@@ -21,7 +22,6 @@ mod error;
 
 pub use error::Error;
 pub use miden_core::{Felt, FieldElement};
-use miden_core_lib::CoreLibrary;
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
