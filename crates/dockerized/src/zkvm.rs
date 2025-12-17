@@ -40,10 +40,6 @@ pub use error::Error;
 /// Images are cached and only rebuilt if they don't exist or if the
 /// `ERE_FORCE_REBUILD_DOCKER_IMAGE` environment variable is set.
 fn build_server_image(zkvm_kind: zkVMKind, gpu: bool) -> Result<(), Error> {
-    let workspace_dir = workspace_dir();
-    let docker_dir = workspace_dir.join("docker");
-    let docker_zkvm_dir = docker_dir.join(zkvm_kind.as_str());
-
     let force_rebuild = force_rebuild();
     let base_image = base_image(zkvm_kind, gpu);
     let base_zkvm_image = base_zkvm_image(zkvm_kind, gpu);
@@ -53,6 +49,10 @@ fn build_server_image(zkvm_kind: zkVMKind, gpu: bool) -> Result<(), Error> {
         info!("Image {server_zkvm_image} exists, skip building");
         return Ok(());
     }
+
+    let workspace_dir = workspace_dir()?;
+    let docker_dir = workspace_dir.join("docker");
+    let docker_zkvm_dir = docker_dir.join(zkvm_kind.as_str());
 
     // Build `ere-base`
     if force_rebuild || !docker_image_exists(&base_image)? {

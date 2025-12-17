@@ -1,13 +1,33 @@
 use serde::{Deserialize, Serialize};
 use std::{
+    error::Error,
     fmt::{self, Display, Formatter},
-    str::FromStr,
 };
+use strum::{Display, EnumIter, EnumString, IntoEnumIterator, IntoStaticStr};
 
 /// zkVM kind supported in Ere.
 #[allow(non_camel_case_types)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    PartialEq,
+    Eq,
+    Hash,
+    Serialize,
+    Deserialize,
+    EnumIter,
+    EnumString,
+    IntoStaticStr,
+    Display,
+)]
 #[serde(into = "String", try_from = "String")]
+#[strum(
+    ascii_case_insensitive,
+    serialize_all = "lowercase",
+    parse_err_fn = ParseError::from,
+    parse_err_ty = ParseError
+)]
 pub enum zkVMKind {
     Airbender,
     Jolt,
@@ -23,18 +43,7 @@ pub enum zkVMKind {
 
 impl zkVMKind {
     pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Airbender => "airbender",
-            Self::Jolt => "jolt",
-            Self::Miden => "miden",
-            Self::Nexus => "nexus",
-            Self::OpenVM => "openvm",
-            Self::Pico => "pico",
-            Self::Risc0 => "risc0",
-            Self::SP1 => "sp1",
-            Self::Ziren => "ziren",
-            Self::Zisk => "zisk",
-        }
+        self.into()
     }
 }
 
@@ -44,36 +53,66 @@ impl From<zkVMKind> for String {
     }
 }
 
-impl FromStr for zkVMKind {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s {
-            "airbender" => Self::Airbender,
-            "jolt" => Self::Jolt,
-            "miden" => Self::Miden,
-            "nexus" => Self::Nexus,
-            "openvm" => Self::OpenVM,
-            "pico" => Self::Pico,
-            "risc0" => Self::Risc0,
-            "sp1" => Self::SP1,
-            "ziren" => Self::Ziren,
-            "zisk" => Self::Zisk,
-            _ => return Err(s.to_string()),
-        })
-    }
-}
-
 impl TryFrom<String> for zkVMKind {
-    type Error = String;
+    type Error = ParseError;
 
     fn try_from(s: String) -> Result<Self, Self::Error> {
         s.parse()
     }
 }
 
-impl Display for zkVMKind {
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct ParseError(String);
+
+impl From<&str> for ParseError {
+    fn from(s: &str) -> Self {
+        Self(s.to_string())
+    }
+}
+
+impl Display for ParseError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.as_str())
+        let unsupported = &self.0;
+        let supported = Vec::from_iter(zkVMKind::iter().map(|k| k.as_str())).join(", ");
+        write!(
+            f,
+            "Unsupported zkVM kind `{unsupported}`, expect one of [{supported}]",
+        )
+    }
+}
+
+impl Error for ParseError {}
+
+#[cfg(test)]
+mod test {
+    use crate::zkvm::{ParseError, zkVMKind};
+
+    #[test]
+    fn parse_zkvm_kind() {
+        // Valid
+        for (ss, kind) in [
+            (["airbender", "Airbender"], zkVMKind::Airbender),
+            (["jolt", "Jolt"], zkVMKind::Jolt),
+            (["miden", "Miden"], zkVMKind::Miden),
+            (["nexus", "Nexus"], zkVMKind::Nexus),
+            (["openvm", "OpenVM"], zkVMKind::OpenVM),
+            (["pico", "Pico"], zkVMKind::Pico),
+            (["risc0", "Risc0"], zkVMKind::Risc0),
+            (["sp1", "SP1"], zkVMKind::SP1),
+            (["ziren", "Ziren"], zkVMKind::Ziren),
+            (["zisk", "Zisk"], zkVMKind::Zisk),
+        ] {
+            ss.iter().for_each(|s| assert_eq!(s.parse(), Ok(kind)));
+            assert_eq!(kind.as_str(), ss[0]);
+        }
+
+        // Invalid
+        assert_eq!("xxx".parse::<zkVMKind>(), Err(ParseError::from("xxx")));
+        assert_eq!(
+            ParseError::from("xxx").to_string(),
+            "Unsupported zkVM kind `xxx`, expect one of \
+                        [airbender, jolt, miden, nexus, openvm, pico, risc0, sp1, ziren, zisk]"
+                .to_string()
+        );
     }
 }
