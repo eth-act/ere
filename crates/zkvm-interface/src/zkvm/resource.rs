@@ -26,7 +26,7 @@ impl NetworkProverConfig {
 
 /// ResourceType specifies what resource will be used to create the proofs.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(untagged, rename_all = "kebab-case")]
+#[serde(rename_all = "kebab-case")]
 #[cfg_attr(feature = "clap", derive(clap::Subcommand))]
 pub enum ProverResourceType {
     #[default]
