@@ -401,7 +401,6 @@ ERE_GPU_DEVICES="device=0,1" ere prove ...
 
 # Can also signal to use any available GPUs
 ERE_GPU_DEVICES="4" ere prove ...
-
 ```
 
 ## Directory Layout
