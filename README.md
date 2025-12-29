@@ -30,6 +30,7 @@
   - [Docker-Only Setup](#docker-only-setup)
     - [1. Create Guest Program](#1-create-guest-program)
     - [2. Create Host](#2-create-host)
+- [Environment Variables](#environment-variables)
 - [Directory Layout](#directory-layout)
 - [Contributing](#contributing)
 - [Disclaimer](#disclaimer)
@@ -378,6 +379,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+```
+
+## Environment Variables
+
+| Variable          | Description                                                                                                     | Default |
+| ----------------- | --------------------------------------------------------------------------------------------------------------- | ------- |
+| `ERE_GPU_DEVICES` | Specifies which GPU devices to use when running Docker containers for GPU-enabled zkVMs. The value is passed to Docker's `--gpus` flag. | `all`   |
+
+Example usage:
+
+```bash
+# Use all GPUs (default)
+ere prove ...
+
+# Use specific GPU devices
+ERE_GPU_DEVICES="device=0" ere prove ...
+
+# Use multiple specific GPUs
+ERE_GPU_DEVICES="device=0,1" ere prove ...
+
+# Can also signal to use any available GPUs
+ERE_GPU_DEVICES="4" ere prove ...
 ```
 
 ## Directory Layout

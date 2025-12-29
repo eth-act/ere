@@ -151,8 +151,9 @@ impl DockerRunCmd {
         self.volume(DOCKER_SOCKET, DOCKER_SOCKET)
     }
 
-    pub fn gpus(self, devices: impl AsRef<str>) -> Self {
-        self.option("gpus", devices)
+    pub fn gpus(self) -> Self {
+        let devices = env::var("ERE_GPU_DEVICES").unwrap_or_else(|_| "all".to_string());
+        self.option("gpus", &devices)
     }
 
     pub fn network(self, name: impl AsRef<str>) -> Self {
