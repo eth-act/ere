@@ -188,6 +188,9 @@ impl zkVM for EreOpenVM {
             });
         }
 
+        // FIXME: Remove this if the `sdk.prove()` above checks exit code.
+        CpuSdk::verify_proof(&self.agg_vk, self.app_commit, &proof).map_err(Error::Prove)?;
+
         let public_values = extract_public_values(&proof.user_public_values)?;
         let proof_bytes = proof
             .encode_to_vec()

@@ -22,6 +22,11 @@ FROM $RUNTIME_IMAGE AS runtime
 FROM $RUNTIME_CUDA_IMAGE AS runtime_cuda
 FROM runtime${CUDA:+_cuda} AS runtime_stage
 
+# Install build-essential for AOT compilation
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Copy OpenVM SDK
 COPY --from=build_stage /root/.openvm/agg_stark.pk /root/.openvm/agg_stark.pk
 

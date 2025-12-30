@@ -24,6 +24,9 @@ openvm-transpiler = { workspace = true, optional = true }
 ere-compile-utils = { workspace = true, optional = true }
 ere-zkvm-interface.workspace = true
 
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+openvm-sdk = { workspace = true, features = ["aot", "nightly-features"], optional = true }
+
 [dev-dependencies]
 ere-test-utils = { workspace = true, features = ["host"] }
 

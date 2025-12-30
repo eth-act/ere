@@ -1790,7 +1790,7 @@ dependencies = [
 [[package]]
 name = "bigint_with_control"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "prover",
  "serde",
@@ -1976,7 +1976,7 @@ dependencies = [
 [[package]]
 name = "blake2_with_compression"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "prover",
  "serde",
@@ -1998,7 +1998,7 @@ dependencies = [
 [[package]]
 name = "blake2s_u32"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "unroll",
 ]
@@ -2426,7 +2426,7 @@ dependencies = [
 [[package]]
 name = "circuit_common"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "fft",
  "field",
@@ -2899,7 +2899,7 @@ dependencies = [
 [[package]]
 name = "cs"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "arrayvec",
  "bincode 1.3.3",
@@ -3797,7 +3797,7 @@ dependencies = [
 
 [[package]]
 name = "ere-airbender"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -3814,14 +3814,14 @@ dependencies = [
 
 [[package]]
 name = "ere-build-utils"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "cargo_metadata 0.19.2",
 ]
 
 [[package]]
 name = "ere-common"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "ere-build-utils",
  "serde",
@@ -3830,7 +3830,7 @@ dependencies = [
 
 [[package]]
 name = "ere-compile-utils"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "anyhow",
  "cargo_metadata 0.19.2",
@@ -3840,7 +3840,7 @@ dependencies = [
 
 [[package]]
 name = "ere-compiler"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -3864,7 +3864,7 @@ dependencies = [
 
 [[package]]
 name = "ere-dockerized"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "anyhow",
  "ere-common",
@@ -3882,7 +3882,7 @@ dependencies = [
 
 [[package]]
 name = "ere-io"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "bincode 2.0.1",
  "ciborium",
@@ -3893,7 +3893,7 @@ dependencies = [
 
 [[package]]
 name = "ere-jolt"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "anyhow",
  "ark-serialize 0.5.0",
@@ -3911,7 +3911,7 @@ dependencies = [
 
 [[package]]
 name = "ere-miden"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "anyhow",
  "ere-build-utils",
@@ -3929,7 +3929,7 @@ dependencies = [
 
 [[package]]
 name = "ere-nexus"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -3948,7 +3948,7 @@ dependencies = [
 
 [[package]]
 name = "ere-openvm"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "anyhow",
  "ere-build-utils",
@@ -3969,7 +3969,7 @@ dependencies = [
 
 [[package]]
 name = "ere-pico"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -3988,7 +3988,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-airbender"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "ere-platform-trait",
  "riscv_common",
@@ -3996,7 +3996,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-jolt"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "ere-platform-trait",
  "jolt-sdk",
@@ -4005,7 +4005,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-nexus"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "ere-platform-trait",
  "nexus-rt",
@@ -4013,7 +4013,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-openvm"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "ere-platform-trait",
  "openvm",
@@ -4021,7 +4021,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-pico"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "ere-platform-trait",
  "pico-sdk",
@@ -4029,7 +4029,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-risc0"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "ere-platform-trait",
  "risc0-zkvm",
@@ -4038,7 +4038,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-sp1"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "ere-platform-trait",
  "sp1-zkvm",
@@ -4046,14 +4046,14 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-trait"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "digest 0.10.7",
 ]
 
 [[package]]
 name = "ere-platform-ziren"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "ere-platform-trait",
  "zkm-zkvm",
@@ -4061,7 +4061,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-zisk"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "ere-platform-trait",
  "ziskos",
@@ -4069,7 +4069,7 @@ dependencies = [
 
 [[package]]
 name = "ere-risc0"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -4089,7 +4089,7 @@ dependencies = [
 
 [[package]]
 name = "ere-server"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -4120,7 +4120,7 @@ dependencies = [
 
 [[package]]
 name = "ere-sp1"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -4137,7 +4137,7 @@ dependencies = [
 
 [[package]]
 name = "ere-test-utils"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "ere-io",
  "ere-platform-trait",
@@ -4150,7 +4150,7 @@ dependencies = [
 
 [[package]]
 name = "ere-ziren"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -4166,7 +4166,7 @@ dependencies = [
 
 [[package]]
 name = "ere-zisk"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "anyhow",
  "blake3",
@@ -4185,7 +4185,7 @@ dependencies = [
 
 [[package]]
 name = "ere-zkvm-interface"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "anyhow",
  "auto_impl",
@@ -4540,7 +4540,7 @@ dependencies = [
 [[package]]
 name = "execution_utils"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "clap",
  "risc_v_simulator",
@@ -4636,7 +4636,7 @@ dependencies = [
 [[package]]
 name = "fft"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "field",
  "itertools 0.14.0",
@@ -4656,7 +4656,7 @@ checksum = "28dea519a9695b9977216879a3ebfddf92f1c08c05d984f8996aecd6ecdc811d"
 [[package]]
 name = "field"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "rand 0.9.2",
  "seq-macro",
@@ -4666,7 +4666,7 @@ dependencies = [
 [[package]]
 name = "final_reduced_risc_v_machine"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "circuit_common",
  "prover",
@@ -5345,6 +5345,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "hash32"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "47d60b12902ba28e2730cd37e95b8c9223af2808df9e902d4df49588d1470606"
+dependencies = [
+ "byteorder",
+]
+
+[[package]]
 name = "hashbrown"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5398,10 +5407,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cdc6457c0eb62c71aac4bc17216026d8410337c4126773b9c5daba343f17964f"
 dependencies = [
  "atomic-polyfill",
- "hash32",
+ "hash32 0.2.1",
  "rustc_version 0.4.1",
  "serde",
  "spin 0.9.8",
+ "stable_deref_trait",
+]
+
+[[package]]
+name = "heapless"
+version = "0.9.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2af2455f757db2b292a9b1768c4b70186d443bcb3b316252d6b540aec1cd89ed"
+dependencies = [
+ "hash32 0.3.1",
  "stable_deref_trait",
 ]
 
@@ -6619,7 +6638,7 @@ checksum = "112b39cec0b298b6c1999fee3e31427f74f676e4cb9879ed1a121b43661a4154"
 [[package]]
 name = "machine_without_signed_mul_div"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "circuit_common",
  "prover",
@@ -6859,8 +6878,8 @@ dependencies = [
 
 [[package]]
 name = "miden-air"
-version = "0.20.0"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.0#17b785770a8630ce9a44a51525d620652c4bec28"
+version = "0.20.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.1#858f4cf58bab03d342ed2677fcc95ac755128dfe"
 dependencies = [
  "miden-core",
  "miden-utils-indexing",
@@ -6871,8 +6890,8 @@ dependencies = [
 
 [[package]]
 name = "miden-assembly"
-version = "0.20.0"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.0#17b785770a8630ce9a44a51525d620652c4bec28"
+version = "0.20.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.1#858f4cf58bab03d342ed2677fcc95ac755128dfe"
 dependencies = [
  "log",
  "miden-assembly-syntax",
@@ -6884,8 +6903,8 @@ dependencies = [
 
 [[package]]
 name = "miden-assembly-syntax"
-version = "0.20.0"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.0#17b785770a8630ce9a44a51525d620652c4bec28"
+version = "0.20.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.1#858f4cf58bab03d342ed2677fcc95ac755128dfe"
 dependencies = [
  "aho-corasick",
  "lalrpop 0.22.2",
@@ -6905,8 +6924,8 @@ dependencies = [
 
 [[package]]
 name = "miden-core"
-version = "0.20.0"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.0#17b785770a8630ce9a44a51525d620652c4bec28"
+version = "0.20.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.1#858f4cf58bab03d342ed2677fcc95ac755128dfe"
 dependencies = [
  "derive_more 2.0.1",
  "itertools 0.14.0",
@@ -6924,8 +6943,8 @@ dependencies = [
 
 [[package]]
 name = "miden-core-lib"
-version = "0.20.0"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.0#17b785770a8630ce9a44a51525d620652c4bec28"
+version = "0.20.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.1#858f4cf58bab03d342ed2677fcc95ac755128dfe"
 dependencies = [
  "env_logger",
  "fs-err",
@@ -6982,8 +7001,8 @@ dependencies = [
 
 [[package]]
 name = "miden-debug-types"
-version = "0.20.0"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.0#17b785770a8630ce9a44a51525d620652c4bec28"
+version = "0.20.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.1#858f4cf58bab03d342ed2677fcc95ac755128dfe"
 dependencies = [
  "memchr",
  "miden-crypto",
@@ -7008,8 +7027,8 @@ dependencies = [
 
 [[package]]
 name = "miden-mast-package"
-version = "0.20.0"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.0#17b785770a8630ce9a44a51525d620652c4bec28"
+version = "0.20.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.1#858f4cf58bab03d342ed2677fcc95ac755128dfe"
 dependencies = [
  "derive_more 2.0.1",
  "miden-assembly-syntax",
@@ -7061,8 +7080,8 @@ dependencies = [
 
 [[package]]
 name = "miden-processor"
-version = "0.20.0"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.0#17b785770a8630ce9a44a51525d620652c4bec28"
+version = "0.20.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.1#858f4cf58bab03d342ed2677fcc95ac755128dfe"
 dependencies = [
  "itertools 0.14.0",
  "miden-air",
@@ -7080,8 +7099,8 @@ dependencies = [
 
 [[package]]
 name = "miden-prover"
-version = "0.20.0"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.0#17b785770a8630ce9a44a51525d620652c4bec28"
+version = "0.20.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.1#858f4cf58bab03d342ed2677fcc95ac755128dfe"
 dependencies = [
  "miden-air",
  "miden-debug-types",
@@ -7093,8 +7112,8 @@ dependencies = [
 
 [[package]]
 name = "miden-utils-core-derive"
-version = "0.20.0"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.0#17b785770a8630ce9a44a51525d620652c4bec28"
+version = "0.20.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.1#858f4cf58bab03d342ed2677fcc95ac755128dfe"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -7103,8 +7122,8 @@ dependencies = [
 
 [[package]]
 name = "miden-utils-diagnostics"
-version = "0.20.0"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.0#17b785770a8630ce9a44a51525d620652c4bec28"
+version = "0.20.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.1#858f4cf58bab03d342ed2677fcc95ac755128dfe"
 dependencies = [
  "miden-crypto",
  "miden-debug-types",
@@ -7115,16 +7134,16 @@ dependencies = [
 
 [[package]]
 name = "miden-utils-indexing"
-version = "0.20.0"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.0#17b785770a8630ce9a44a51525d620652c4bec28"
+version = "0.20.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.1#858f4cf58bab03d342ed2677fcc95ac755128dfe"
 dependencies = [
  "thiserror 2.0.12",
 ]
 
 [[package]]
 name = "miden-utils-sync"
-version = "0.20.0"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.0#17b785770a8630ce9a44a51525d620652c4bec28"
+version = "0.20.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.1#858f4cf58bab03d342ed2677fcc95ac755128dfe"
 dependencies = [
  "lock_api",
  "loom",
@@ -7133,8 +7152,8 @@ dependencies = [
 
 [[package]]
 name = "miden-verifier"
-version = "0.20.0"
-source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.0#17b785770a8630ce9a44a51525d620652c4bec28"
+version = "0.20.1"
+source = "git+https://github.com/0xPolygonMiden/miden-vm.git?tag=v0.20.1#858f4cf58bab03d342ed2677fcc95ac755128dfe"
 dependencies = [
  "miden-air",
  "miden-core",
@@ -7479,7 +7498,7 @@ dependencies = [
 [[package]]
 name = "non_determinism_source"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 
 [[package]]
 name = "ntapi"
@@ -8082,6 +8101,7 @@ dependencies = [
  "getset",
  "itertools 0.14.0",
  "libc",
+ "libloading 0.8.7",
  "memmap2",
  "openvm-circuit-derive",
  "openvm-circuit-primitives",
@@ -8091,6 +8111,7 @@ dependencies = [
  "openvm-cuda-common",
  "openvm-instructions",
  "openvm-poseidon2-air",
+ "openvm-rv32im-transpiler",
  "openvm-stark-backend",
  "openvm-stark-sdk",
  "p3-baby-bear 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=539bbc84085efb609f4f62cb03cf49588388abdb)",
@@ -8100,6 +8121,7 @@ dependencies = [
  "serde",
  "serde-big-array",
  "static_assertions",
+ "tempfile",
  "thiserror 1.0.69",
  "tracing",
 ]
@@ -10410,8 +10432,8 @@ dependencies = [
 
 [[package]]
 name = "pico-derive"
-version = "1.1.8"
-source = "git+https://github.com/brevis-network/pico.git?tag=v1.2.0#76a3214ff447568909cd371a1cdab627cfee1335"
+version = "1.2.2"
+source = "git+https://github.com/brevis-network/pico.git?tag=v1.2.2#57ff6c5c0755f38bfa55a54eda053eae664ebcd2"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -10420,8 +10442,8 @@ dependencies = [
 
 [[package]]
 name = "pico-patch-libs"
-version = "1.1.8"
-source = "git+https://github.com/brevis-network/pico.git?tag=v1.2.0#76a3214ff447568909cd371a1cdab627cfee1335"
+version = "1.2.2"
+source = "git+https://github.com/brevis-network/pico.git?tag=v1.2.2#57ff6c5c0755f38bfa55a54eda053eae664ebcd2"
 dependencies = [
  "bincode 1.3.3",
  "serde",
@@ -10429,8 +10451,8 @@ dependencies = [
 
 [[package]]
 name = "pico-sdk"
-version = "1.1.8"
-source = "git+https://github.com/brevis-network/pico.git?tag=v1.2.0#76a3214ff447568909cd371a1cdab627cfee1335"
+version = "1.2.2"
+source = "git+https://github.com/brevis-network/pico.git?tag=v1.2.2#57ff6c5c0755f38bfa55a54eda053eae664ebcd2"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
@@ -10455,8 +10477,8 @@ dependencies = [
 
 [[package]]
 name = "pico-vm"
-version = "1.1.8"
-source = "git+https://github.com/brevis-network/pico.git?tag=v1.2.0#76a3214ff447568909cd371a1cdab627cfee1335"
+version = "1.2.2"
+source = "git+https://github.com/brevis-network/pico.git?tag=v1.2.2#57ff6c5c0755f38bfa55a54eda053eae664ebcd2"
 dependencies = [
  "anyhow",
  "arrayref",
@@ -10626,7 +10648,7 @@ dependencies = [
 [[package]]
 name = "poseidon2"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "field",
  "non_determinism_source",
@@ -10644,7 +10666,7 @@ dependencies = [
  "crc",
  "embedded-io 0.4.0",
  "embedded-io 0.6.1",
- "heapless",
+ "heapless 0.7.17",
  "paste",
  "serde",
 ]
@@ -10928,7 +10950,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "81bddcdb20abf9501610992b6759a4c888aef7d1a7247ef75e2404275ac24af1"
 dependencies = [
  "anyhow",
- "itertools 0.10.5",
+ "itertools 0.12.1",
  "proc-macro2",
  "quote",
  "syn 2.0.101",
@@ -10941,7 +10963,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a56d757972c98b346a9b766e3f02746cde6dd1cd1d1d563472929fdd74bec4d"
 dependencies = [
  "anyhow",
- "itertools 0.10.5",
+ "itertools 0.14.0",
  "proc-macro2",
  "quote",
  "syn 2.0.101",
@@ -10977,7 +10999,7 @@ dependencies = [
 [[package]]
 name = "prover"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "bit-set 0.8.0",
  "blake2s_u32",
@@ -11359,7 +11381,7 @@ dependencies = [
 [[package]]
 name = "reduced_risc_v_log_23_machine"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "circuit_common",
  "prover",
@@ -11371,7 +11393,7 @@ dependencies = [
 [[package]]
 name = "reduced_risc_v_machine"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "circuit_common",
  "prover",
@@ -11633,6 +11655,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3df6368f71f205ff9c33c076d170dd56ebf68e8161c733c0caa07a7a5509ed53"
 
 [[package]]
+name = "ringbuffer"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57b0b88a509053cbfd535726dcaaceee631313cef981266119527a1d110f6d2b"
+
+[[package]]
 name = "ripemd"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -11796,7 +11824,7 @@ dependencies = [
  "postcard",
  "rand 0.9.2",
  "rayon",
- "ringbuffer",
+ "ringbuffer 0.15.0",
  "risc0-binfmt",
  "risc0-circuit-rv32im-sys",
  "risc0-core",
@@ -11983,7 +12011,7 @@ dependencies = [
 [[package]]
 name = "risc_v_cycles"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "circuit_common",
  "prover",
@@ -11995,7 +12023,7 @@ dependencies = [
 [[package]]
 name = "risc_v_simulator"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "addr2line 0.22.0",
  "blake2s_u32",
@@ -12006,7 +12034,7 @@ dependencies = [
  "object 0.37.3",
  "poseidon2",
  "rand 0.9.2",
- "ringbuffer",
+ "ringbuffer 0.16.0",
  "ruint",
  "serde",
 ]
@@ -12014,9 +12042,9 @@ dependencies = [
 [[package]]
 name = "riscv_common"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
- "heapless",
+ "heapless 0.9.2",
 ]
 
 [[package]]
@@ -12856,7 +12884,7 @@ dependencies = [
 [[package]]
 name = "setups"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "bigint_with_control",
  "blake2_with_compression",
@@ -13073,9 +13101,9 @@ dependencies = [
 
 [[package]]
 name = "sp1-build"
-version = "5.2.3"
+version = "5.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7bcc9e463a19749f6080f69ee6410aadda0576115d60bed68d2ebc2d8af3fe4"
+checksum = "c6c620b00f468a4eeb6050d5641d971b35aa623d2142ecb55d02fd64840c5f02"
 dependencies = [
  "anyhow",
  "cargo_metadata 0.18.1",
@@ -13087,9 +13115,9 @@ dependencies = [
 
 [[package]]
 name = "sp1-core-executor"
-version = "5.2.3"
+version = "5.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3fb8bc70057a88164e479e367e2f83f7e7fba52d66acfbeef3b2174dc98c3627"
+checksum = "ca2363566d0d4213d0ffd93cfcc1a5e413e2af8682213d3e65b90ac0af5623e3"
 dependencies = [
  "bincode 1.3.3",
  "bytemuck",
@@ -13126,9 +13154,9 @@ dependencies = [
 
 [[package]]
 name = "sp1-core-machine"
-version = "5.2.3"
+version = "5.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe446bea36feb189af83cda6ea5420150e877764e2ed4ab4cb2ee5cd3e20355c"
+checksum = "1bd3ff75c100e24b89a7b513e082ec3e040c4c9f1cd779b6ba475c5bdc1aa7ad"
 dependencies = [
  "bincode 1.3.3",
  "cbindgen",
@@ -13182,9 +13210,9 @@ dependencies = [
 
 [[package]]
 name = "sp1-cuda"
-version = "5.2.3"
+version = "5.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae79f89725c6e21dadb62be31a1c218292f5489559a848faf533419c722a3b3b"
+checksum = "e7d3b98d9dd20856176aa7048e2da05d0c3e497f500ea8590292ffbd25002ec1"
 dependencies = [
  "bincode 1.3.3",
  "ctrlc",
@@ -13199,9 +13227,9 @@ dependencies = [
 
 [[package]]
 name = "sp1-curves"
-version = "5.2.3"
+version = "5.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a6a7ce14c504360349f3eda564a0c9de286c35e1dfbcc979921a3384db02ae82"
+checksum = "b7a5dc6007e0c1f35afe334e45531e17b8b347fdf73f6e7786ef5c1bc2218e30"
 dependencies = [
  "cfg-if",
  "dashu",
@@ -13221,9 +13249,9 @@ dependencies = [
 
 [[package]]
 name = "sp1-derive"
-version = "5.2.3"
+version = "5.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e1144840e0b75e988f3b8d24ffd015bc5fd76599f7864bfd994f3eaf2eb261a"
+checksum = "83a1ed8d5acbb6cea056401791e79ca3cba7c7d5e17d0d44cd60e117f16b11ca"
 dependencies = [
  "quote",
  "syn 1.0.109",
@@ -13231,9 +13259,9 @@ dependencies = [
 
 [[package]]
 name = "sp1-lib"
-version = "5.2.3"
+version = "5.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eb1a9935d58cb1dcd757a1b10d727090f5b718f1f03b512d48f0c1952e6ead00"
+checksum = "b73b8ff343f2405d5935440e56b7aba5cee6d87303f0051974cbd6f5de502f57"
 dependencies = [
  "bincode 1.3.3",
  "elliptic-curve",
@@ -13243,9 +13271,9 @@ dependencies = [
 
 [[package]]
 name = "sp1-primitives"
-version = "5.2.3"
+version = "5.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7d2a6187e394c30097ea7a975a4832f172918690dc89a979f0fad67422d3a8b"
+checksum = "7e69a03098f827102c54c31a5e57280eb45b2c085de433b3f702e4f9e3ec1641"
 dependencies = [
  "bincode 1.3.3",
  "blake3",
@@ -13263,15 +13291,14 @@ dependencies = [
 
 [[package]]
 name = "sp1-prover"
-version = "5.2.3"
+version = "5.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfc62e3139fdb1671067987f78ca85a24ea34dbc2f61dbbe3f92b9739e7aa2b9"
+checksum = "b66f439f716cfc44c38d2aea975f1c4a9ed2cc40074ca7e4df8a37a3ff3795eb"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
  "clap",
  "dirs 5.0.1",
- "downloader",
  "enum-map",
  "eyre",
  "hashbrown 0.14.5",
@@ -13288,6 +13315,7 @@ dependencies = [
  "p3-symmetric 0.2.3-succinct",
  "p3-util 0.2.3-succinct",
  "rayon",
+ "reqwest 0.12.15",
  "serde",
  "serde_json",
  "serial_test",
@@ -13309,9 +13337,9 @@ dependencies = [
 
 [[package]]
 name = "sp1-recursion-circuit"
-version = "5.2.3"
+version = "5.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44f16af7722bb0f7adabbfc0e60b7fe71ca546959d251c450afb79daaa589c56"
+checksum = "9c4a3739e84f154becfc7d2a57d23c825ac83313feec64569b86090395c33fab"
 dependencies = [
  "hashbrown 0.14.5",
  "itertools 0.13.0",
@@ -13344,9 +13372,9 @@ dependencies = [
 
 [[package]]
 name = "sp1-recursion-compiler"
-version = "5.2.3"
+version = "5.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c83564beb23361e0b93d64f3b8d4a503eac8ced246648f727d44b0827165014"
+checksum = "06aa784cfdc5c979da22ad6c36fe393e9005b6b57702fa9bdd041f112ead5ec5"
 dependencies = [
  "backtrace",
  "itertools 0.13.0",
@@ -13366,9 +13394,9 @@ dependencies = [
 
 [[package]]
 name = "sp1-recursion-core"
-version = "5.2.3"
+version = "5.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c209fa6e384ff56ea7761ccc65426da08516d72ae55b6d8e4021b58bd4022f8"
+checksum = "5be0db07b18f95f4e04f63f7f12a6547efd10601e2ce180aaf7868aa1bd98257"
 dependencies = [
  "backtrace",
  "cbindgen",
@@ -13409,9 +13437,9 @@ dependencies = [
 
 [[package]]
 name = "sp1-recursion-derive"
-version = "5.2.3"
+version = "5.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a8ca2e82fea312a406f4ad4cba1a11812da4cea806607c56ec1670fd55b2ea6"
+checksum = "1b190465c0c0377f3cacfac2d0ac8a630adf8e1bfac8416be593753bfa4f668e"
 dependencies = [
  "quote",
  "syn 1.0.109",
@@ -13419,9 +13447,9 @@ dependencies = [
 
 [[package]]
 name = "sp1-recursion-gnark-ffi"
-version = "5.2.3"
+version = "5.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e146d24ce91c08e36b270a73de9817b9847e759a3d66923b009c67f24a3b9b2"
+checksum = "933ef703fb1c7a25e987a76ad705e60bb53730469766363b771baf3082a50fa0"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
@@ -13445,9 +13473,9 @@ dependencies = [
 
 [[package]]
 name = "sp1-sdk"
-version = "5.2.3"
+version = "5.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f9655067dcadba91f01491729cc78a60ad3a5ffaaf9adab817502f729ddb3761"
+checksum = "ed3ae8bc52d12e8fbfdb10c4c8ce7651af04b63d390c152e6ce43d7744bbaf6f"
 dependencies = [
  "alloy-primitives",
  "alloy-signer",
@@ -13498,9 +13526,9 @@ dependencies = [
 
 [[package]]
 name = "sp1-stark"
-version = "5.2.3"
+version = "5.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40477690a0bb6d7102322947407439a8f1d05aecd535f0081db05e9a31f808f2"
+checksum = "0e99d1cc89ba28fc95736afb1e6ad22b9eb689e95a1dbb29cf0e9d1fa4fc2a5c"
 dependencies = [
  "arrayref",
  "hashbrown 0.14.5",
@@ -13532,9 +13560,9 @@ dependencies = [
 
 [[package]]
 name = "sp1-verifier"
-version = "5.2.3"
+version = "5.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f95bd323fde5d19116873b29e5f8e20da371466d70185732bbfd3511ca0fd31"
+checksum = "1904bbb3c2d16a7a11db32900f468149bc66253825e222f2db76f64fb8ffd1ab"
 dependencies = [
  "blake3",
  "cfg-if",
@@ -13547,9 +13575,9 @@ dependencies = [
 
 [[package]]
 name = "sp1-zkvm"
-version = "5.2.3"
+version = "5.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e767ed85f89b1c8d84188c2cc035833079529bb0ddd8f7bd252de91ce562acc7"
+checksum = "d6247de4d980d1f3311fa877cc5d2d3b7e111258878c8196a8bb9728aec98c8c"
 dependencies = [
  "blake3",
  "cfg-if",
@@ -14629,7 +14657,7 @@ checksum = "8df9b6e13f2d32c91b9bd719c00d1958837bc7dec474d94952798cc8e69eeec3"
 [[package]]
 name = "trace_and_split"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "prover",
  "serde",
@@ -14641,7 +14669,7 @@ dependencies = [
 [[package]]
 name = "trace_holder"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "field",
  "worker",
@@ -14813,7 +14841,7 @@ dependencies = [
 [[package]]
 name = "transcript"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "blake2s_u32",
  "unroll",
@@ -15242,7 +15270,7 @@ dependencies = [
 [[package]]
 name = "verifier_common"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "blake2s_u32",
  "cs",
@@ -15258,7 +15286,7 @@ dependencies = [
 [[package]]
 name = "verifier_generator"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "proc-macro-error2",
  "proc-macro2",
@@ -16033,7 +16061,7 @@ dependencies = [
 [[package]]
 name = "worker"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.1#0a0b78c1f14bd4cf8c3719b7c5c1f074c343690b"
+source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
  "num_cpus",
  "rayon",

@@ -37,7 +37,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.0.15"
+version = "0.0.16"
 edition = "2024"
 rust-version = "1.88"
 license = "MIT OR Apache-2.0"
@@ -83,8 +83,8 @@ twirp-build = "0.9.0"
 wait-timeout = "0.2.1"
 
 # Airbender dependencies
-airbender_execution_utils = { git = "https://github.com/matter-labs/zksync-airbender", package = "execution_utils", tag = "v0.5.1" }
-airbender_riscv_common = { git = "https://github.com/matter-labs/zksync-airbender", package = "riscv_common", tag = "v0.5.1" }
+airbender_execution_utils = { git = "https://github.com/matter-labs/zksync-airbender", package = "execution_utils", tag = "v0.5.2" }
+airbender_riscv_common = { git = "https://github.com/matter-labs/zksync-airbender", package = "riscv_common", tag = "v0.5.2" }
 
 # Jolt dependencies
 jolt-ark-serialize = { git = "https://github.com/a16z/arkworks-algebra", package = "ark-serialize", branch = "feat/fewer-reductions" }
@@ -93,12 +93,12 @@ jolt-core = { git = "https://github.com/a16z/jolt.git", tag = "v0.3.0-alpha" }
 jolt-sdk = { git = "https://github.com/a16z/jolt.git", tag = "v0.3.0-alpha", default-features = false }
 
 # Miden dependencies
-miden-assembly = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.0" }
-miden-core = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.0" }
-miden-processor = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.0" }
-miden-prover = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.0" }
-miden-core-lib = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.0" }
-miden-verifier = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.0" }
+miden-assembly = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.1" }
+miden-core = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.1" }
+miden-processor = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.1" }
+miden-prover = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.1" }
+miden-core-lib = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.1" }
+miden-verifier = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.1" }
 
 # Nexus dependencies
 nexus-core = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.5" }
@@ -117,8 +117,8 @@ openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2", def
 
 # Pico dependencies
 pico-p3-field = { git = "https://github.com/brevis-network/Plonky3.git", package = "p3-field", rev = "411a80d" }
-pico-vm = { git = "https://github.com/brevis-network/pico.git", tag = "v1.2.0" }
-pico-sdk = { git = "https://github.com/brevis-network/pico", tag = "v1.2.0" }
+pico-vm = { git = "https://github.com/brevis-network/pico.git", tag = "v1.2.2" }
+pico-sdk = { git = "https://github.com/brevis-network/pico", tag = "v1.2.2" }
 
 # Risc0 dependencies
 risc0-binfmt = { version = "3.0.3", default-features = false }
@@ -128,8 +128,8 @@ risc0-zkvm = { version = "3.0.4", default-features = false }
 risc0-zkvm-platform = { version = "2.2.1", default-features = false }
 
 # SP1 dependencies
-sp1-sdk = "5.2.3"
-sp1-zkvm = "5.2.3"
+sp1-sdk = "5.2.4"
+sp1-zkvm = "5.2.4"
 
 # Ziren dependencies
 zkm-sdk = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.2.3" }
