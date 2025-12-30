@@ -34,8 +34,11 @@ NEXUS_TOOLCHAIN_VERSION="nightly-2025-04-06"
 NEXUS_CLI_VERSION_TAG="v0.3.5"
 
 # Install the Nexus CLI
-echo "Installing Nexus CLI from GitHub repository..."
-cargo "+${NEXUS_TOOLCHAIN_VERSION}" install --git https://github.com/nexus-xyz/nexus-zkvm cargo-nexus --tag "$NEXUS_CLI_VERSION_TAG"
+WORKSPACE=$(mktemp -d)
+git clone --depth 1 --branch "$NEXUS_CLI_VERSION_TAG" https://github.com/nexus-xyz/nexus-zkvm "$WORKSPACE"
+cargo update --manifest-path "$WORKSPACE/Cargo.toml" --package serde_json --precise 1.0.145
+cargo "+${NEXUS_TOOLCHAIN_VERSION}" install --locked --path "$WORKSPACE/cli"
+rm -rf "$WORKSPACE"
 
 # Install Nexus's target
 rustup "+${NEXUS_TOOLCHAIN_VERSION}" target add riscv32i-unknown-none-elf
