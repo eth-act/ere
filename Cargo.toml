@@ -136,7 +136,7 @@ zkm-sdk = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.2.3" }
 zkm-zkvm = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.2.3" }
 
 # ZisK dependencies
-ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.14.0" }
+ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.15.0" }
 
 # Local dependencies
 ere-zkvm-interface = { path = "crates/zkvm-interface" }
