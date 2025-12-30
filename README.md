@@ -383,8 +383,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Environment Variables
 
-| Variable          | Description                                                                                                     | Default |
-| ----------------- | --------------------------------------------------------------------------------------------------------------- | ------- |
+| Variable          | Description                                                                                                                             | Default |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------- |
 | `ERE_GPU_DEVICES` | Specifies which GPU devices to use when running Docker containers for GPU-enabled zkVMs. The value is passed to Docker's `--gpus` flag. | `all`   |
 
 Example usage:
