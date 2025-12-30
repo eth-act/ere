@@ -8101,6 +8101,7 @@ dependencies = [
  "getset",
  "itertools 0.14.0",
  "libc",
+ "libloading 0.8.7",
  "memmap2",
  "openvm-circuit-derive",
  "openvm-circuit-primitives",
@@ -8110,6 +8111,7 @@ dependencies = [
  "openvm-cuda-common",
  "openvm-instructions",
  "openvm-poseidon2-air",
+ "openvm-rv32im-transpiler",
  "openvm-stark-backend",
  "openvm-stark-sdk",
  "p3-baby-bear 0.1.0 (git+https://github.com/Plonky3/Plonky3.git?rev=539bbc84085efb609f4f62cb03cf49588388abdb)",
@@ -8119,6 +8121,7 @@ dependencies = [
  "serde",
  "serde-big-array",
  "static_assertions",
+ "tempfile",
  "thiserror 1.0.69",
  "tracing",
 ]
