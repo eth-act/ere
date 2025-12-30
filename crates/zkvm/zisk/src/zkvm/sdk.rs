@@ -590,7 +590,7 @@ fn rom_setup(elf_path: &Path) -> Result<RomDigest, Error> {
 
 /// Send shutdown request to ZisK asm services.
 fn shutdown_asm_service(port: u16) {
-    // According to https://github.com/0xPolygonHermez/zisk/blob/v0.14.0/emulator-asm/asm-runner/src/asm_services/mod.rs#L34.
+    // According to https://github.com/0xPolygonHermez/zisk/blob/v0.15.0/emulator-asm/asm-runner/src/asm_services/mod.rs#L34.
     const CMD_SHUTDOWN_REQUEST_ID: u64 = 1000000;
     if let Ok(mut stream) = TcpStream::connect((Ipv4Addr::LOCALHOST, port)) {
         let _ = stream.write_all(
