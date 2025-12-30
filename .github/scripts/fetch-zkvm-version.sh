@@ -33,7 +33,7 @@ get_crates_io_latest() {
     curl -sL -A "EreCI" "https://crates.io/api/v1/crates/$crate" | grep -oP '"max_version":"\K[^"]+'
 }
 
-LINE=$(grep "$CRATE" Cargo.toml)
+LINE=$(grep "$CRATE = " Cargo.toml)
 
 if echo "$LINE" | grep -q "git ="; then
     # Dependency from github.com
