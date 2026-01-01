@@ -13,7 +13,11 @@ zkm-zkvm.workspace = true
 ere-platform-trait.workspace = true
 
 [features]
-default = []
+default = ["libm", "bump"]
+bump = ["zkm-zkvm/bump"]
+embedded = ["zkm-zkvm/embedded"]
+libm = ["zkm-zkvm/libm"]
+verify = ["zkm-zkvm/verify"]
 
 [lints]
 workspace = true

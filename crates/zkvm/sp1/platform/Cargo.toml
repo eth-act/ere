@@ -7,7 +7,7 @@ license.workspace = true
 
 [dependencies]
 # SP1 dependencies
-sp1-zkvm.workspace = true
+sp1-zkvm = { workspace = true, features = ["lib"] }
 
 # Local dependencies
 ere-platform-trait.workspace = true
