@@ -1,11 +1,11 @@
 use crate::{
     compiler::SerializedProgram,
-    image::{base_image, base_zkvm_image, server_zkvm_image},
+    image::{base_image, base_zkvm_image, image_registry, server_zkvm_image},
     util::{
         cuda::cuda_arch,
         docker::{
             DockerBuildCmd, DockerRunCmd, docker_container_exists, docker_image_exists,
-            force_rebuild, stop_docker_container,
+            docker_pull_image, force_rebuild, stop_docker_container,
         },
         home_dir, workspace_dir,
     },
@@ -45,9 +45,19 @@ fn build_server_image(zkvm_kind: zkVMKind, gpu: bool) -> Result<(), Error> {
     let base_zkvm_image = base_zkvm_image(zkvm_kind, gpu);
     let server_zkvm_image = server_zkvm_image(zkvm_kind, gpu);
 
-    if !force_rebuild && docker_image_exists(&server_zkvm_image)? {
-        info!("Image {server_zkvm_image} exists, skip building");
-        return Ok(());
+    if !force_rebuild {
+        if docker_image_exists(&server_zkvm_image)? {
+            info!("Image {server_zkvm_image} exists, skip building");
+            return Ok(());
+        }
+
+        if image_registry().is_some()
+            && docker_pull_image(&server_zkvm_image).is_ok()
+            && docker_image_exists(&server_zkvm_image)?
+        {
+            info!("Image {server_zkvm_image} pulled, skip building");
+            return Ok(());
+        }
     }
 
     let workspace_dir = workspace_dir()?;
