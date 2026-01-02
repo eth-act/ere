@@ -7,13 +7,14 @@ license.workspace = true
 
 [dependencies]
 # Pico dependencies
-pico-sdk.workspace = true
+pico-sdk = { workspace = true, features = ["kb"] }
 
 # Local dependencies
 ere-platform-trait.workspace = true
 
 [features]
 default = []
+libm = ["pico-sdk/libm"]
 
 [lints]
 workspace = true

@@ -1,8 +1,10 @@
 use crate::{
     CompilerKind,
-    image::{base_image, base_zkvm_image, compiler_zkvm_image},
+    image::{base_image, base_zkvm_image, compiler_zkvm_image, image_registry},
     util::{
-        docker::{DockerBuildCmd, DockerRunCmd, docker_image_exists, force_rebuild},
+        docker::{
+            DockerBuildCmd, DockerRunCmd, docker_image_exists, docker_pull_image, force_rebuild,
+        },
         workspace_dir,
     },
     zkVMKind,
@@ -34,9 +36,19 @@ fn build_compiler_image(zkvm_kind: zkVMKind) -> Result<(), Error> {
     let base_zkvm_image = base_zkvm_image(zkvm_kind, false);
     let compiler_zkvm_image = compiler_zkvm_image(zkvm_kind);
 
-    if !force_rebuild && docker_image_exists(&compiler_zkvm_image)? {
-        info!("Image {compiler_zkvm_image} exists, skip building");
-        return Ok(());
+    if !force_rebuild {
+        if docker_image_exists(&compiler_zkvm_image)? {
+            info!("Image {compiler_zkvm_image} exists, skip building");
+            return Ok(());
+        }
+
+        if image_registry().is_some()
+            && docker_pull_image(&compiler_zkvm_image).is_ok()
+            && docker_image_exists(&compiler_zkvm_image)?
+        {
+            info!("Image {compiler_zkvm_image} pulled, skip building");
+            return Ok(());
+        }
     }
 
     let workspace_dir = workspace_dir()?;

@@ -30,7 +30,9 @@ impl Platform for AirbenderPlatform {
             "Maximum output size is 32 bytes, got {} bytes",
             output.len()
         );
-        let words = array::from_fn(|i| u32::from_le_bytes(array::from_fn(|j| output[4 * i + j])));
+        let words = array::from_fn(|i| {
+            u32::from_le_bytes(array::from_fn(|j| *output.get(4 * i + j).unwrap_or(&0)))
+        });
         riscv_common::zksync_os_finish_success(&words);
     }
 
