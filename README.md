@@ -383,9 +383,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Environment Variables
 
-| Variable          | Description                                                                                                                             | Default |
-| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `ERE_GPU_DEVICES` | Specifies which GPU devices to use when running Docker containers for GPU-enabled zkVMs. The value is passed to Docker's `--gpus` flag. | `all`   |
+| Variable                         | Description                                                                                                                             | Default |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `ERE_IMAGE_REGISTRY`             | Specifies docker image registry of the images. When specified, it will try to pull image from the registry and possibly skip building.  | ``      |
+| `ERE_FORCE_REBUILD_DOCKER_IMAGE` | Force to rebuild docker images locally even they exist, it also prevents pulling image from registry.                                   | `false` |
+| `ERE_GPU_DEVICES`                | Specifies which GPU devices to use when running Docker containers for GPU-enabled zkVMs. The value is passed to Docker's `--gpus` flag. | `all`   |
 
 Example usage:
 
