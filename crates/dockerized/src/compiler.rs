@@ -1,10 +1,9 @@
 use crate::{
     CompilerKind,
-    image::{base_image, base_zkvm_image, compiler_zkvm_image, image_registry},
+    image::{base_image, base_zkvm_image, compiler_zkvm_image},
     util::{
-        docker::{
-            DockerBuildCmd, DockerRunCmd, docker_image_exists, docker_pull_image, force_rebuild,
-        },
+        docker::{DockerBuildCmd, DockerRunCmd, docker_image_exists, docker_pull_image},
+        env::{force_rebuild_docker_image, image_registry},
         workspace_dir,
     },
     zkVMKind,
@@ -31,7 +30,7 @@ pub use error::Error;
 /// Images are cached and only rebuilt if they don't exist or if the
 /// `ERE_FORCE_REBUILD_DOCKER_IMAGE` environment variable is set.
 fn build_compiler_image(zkvm_kind: zkVMKind) -> Result<(), Error> {
-    let force_rebuild = force_rebuild();
+    let force_rebuild = force_rebuild_docker_image();
     let base_image = base_image(zkvm_kind, false);
     let base_zkvm_image = base_zkvm_image(zkvm_kind, false);
     let compiler_zkvm_image = compiler_zkvm_image(zkvm_kind);
