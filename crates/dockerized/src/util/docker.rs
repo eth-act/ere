@@ -323,6 +323,10 @@ pub fn force_rebuild() -> bool {
     env::var_os("ERE_FORCE_REBUILD_DOCKER_IMAGE").is_some()
 }
 
+pub fn docker_network() -> Option<String> {
+    env::var("ERE_DOCKER_NETWORK").ok()
+}
+
 fn to_string(s: impl AsRef<str>) -> String {
     s.as_ref().to_string()
 }

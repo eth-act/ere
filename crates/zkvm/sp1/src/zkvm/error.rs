@@ -10,6 +10,12 @@ pub enum Error {
     #[error("Prover RwLock posioned, panic not catched properly")]
     RwLockPosioned,
 
+    #[error("Failed to setup ELF: {0}")]
+    SetupElfFailed(String),
+
+    #[error("Failed to initialize cuda prover: {0}")]
+    InitCudaProverFailed(String),
+
     #[error("Deserialize proofs in Input failed: {0:?}")]
     DeserializeInputProofs(bincode::error::DecodeError),
 
