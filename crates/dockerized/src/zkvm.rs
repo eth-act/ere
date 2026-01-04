@@ -158,6 +158,14 @@ impl ServerContainer {
             .publish(port.to_string(), port.to_string())
             .name(&name);
 
+        let docker_network = std::env::var("ERE_DOCKER_NETWORK").ok();
+        let host = if let Some(ref network) = docker_network {
+            cmd = cmd.network(network);
+            name.as_str()
+        } else {
+            "127.0.0.1"
+        };
+
         // zkVM specific options
         cmd = match zkvm_kind {
             zkVMKind::Risc0 => cmd
@@ -230,7 +238,7 @@ impl ServerContainer {
             &program.0,
         )?;
 
-        let endpoint = Url::parse(&format!("http://127.0.0.1:{port}")).unwrap();
+        let endpoint = Url::parse(&format!("http://{host}:{port}")).unwrap();
         let client = block_on(zkVMClient::new(endpoint))?;
 
         Ok(ServerContainer {
