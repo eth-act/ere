@@ -1,11 +1,15 @@
 use crate::{
     compiler::SerializedProgram,
-    image::{base_image, base_zkvm_image, image_registry, server_zkvm_image},
+    image::{base_image, base_zkvm_image, server_zkvm_image},
     util::{
         cuda::cuda_arch,
         docker::{
             DockerBuildCmd, DockerRunCmd, docker_container_exists, docker_image_exists,
-            docker_pull_image, force_rebuild, stop_docker_container,
+            docker_pull_image, stop_docker_container,
+        },
+        env::{
+            ERE_DOCKER_NETWORK, ERE_GPU_DEVICES, docker_network, force_rebuild_docker_image,
+            image_registry,
         },
         home_dir, workspace_dir,
     },
@@ -40,7 +44,7 @@ pub use error::Error;
 /// Images are cached and only rebuilt if they don't exist or if the
 /// `ERE_FORCE_REBUILD_DOCKER_IMAGE` environment variable is set.
 fn build_server_image(zkvm_kind: zkVMKind, gpu: bool) -> Result<(), Error> {
-    let force_rebuild = force_rebuild();
+    let force_rebuild = force_rebuild_docker_image();
     let base_image = base_image(zkvm_kind, gpu);
     let base_zkvm_image = base_zkvm_image(zkvm_kind, gpu);
     let server_zkvm_image = server_zkvm_image(zkvm_kind, gpu);
@@ -149,7 +153,7 @@ impl ServerContainer {
     ) -> Result<Self, Error> {
         let port = Self::PORT_OFFSET + zkvm_kind as u16;
 
-        let name = format!("ere-server-{zkvm_kind}-{port}");
+        let name = format!("ere-server-{zkvm_kind}");
         let gpu = matches!(resource, ProverResourceType::Gpu);
         let mut cmd = DockerRunCmd::new(server_zkvm_image(zkvm_kind, gpu))
             .rm()
@@ -158,8 +162,7 @@ impl ServerContainer {
             .publish(port.to_string(), port.to_string())
             .name(&name);
 
-        let docker_network = std::env::var("ERE_DOCKER_NETWORK").ok();
-        let host = if let Some(ref network) = docker_network {
+        let host = if let Some(network) = docker_network() {
             cmd = cmd.network(network);
             name.as_str()
         } else {
@@ -196,8 +199,15 @@ impl ServerContainer {
                 zkVMKind::OpenVM => cmd.gpus(),
                 // SP1 runs docker command to spin up the server to do GPU
                 // proving, to give the client access to the prover service, we
-                // need to use the host networking driver.
-                zkVMKind::SP1 => cmd.mount_docker_socket().network("host"),
+                // need to use the host networking driver if env variable
+                // `ERE_DOCKER_NETWORK` is not set.
+                zkVMKind::SP1 => match docker_network() {
+                    Some(_) => cmd.inherit_env(ERE_DOCKER_NETWORK),
+                    None => cmd.network("host"),
+                }
+                .mount_docker_socket()
+                .inherit_env("SP1_GPU_IMAGE")
+                .inherit_env(ERE_GPU_DEVICES),
                 zkVMKind::Risc0 => cmd.gpus().inherit_env("RISC0_DEFAULT_PROVER_NUM_GPUS"),
                 zkVMKind::Zisk => cmd.gpus(),
                 _ => cmd,

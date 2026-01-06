@@ -1,14 +1,4 @@
-use crate::{CRATE_VERSION, zkVMKind};
-use std::env;
-
-/// Returns image registry from env variable `ERE_IMAGE_REGISTRY`.
-///
-/// If env varialbe is valid, it will be prepended to all images. For example
-/// if `ERE_IMAGE_REGISTRY=ghcr.io/eth-act/ere`, the [`base_image`] will return
-/// `ghcr.io/eth-act/ere/ere-base:{image_tag}`.
-pub fn image_registry() -> Option<String> {
-    env::var("ERE_IMAGE_REGISTRY").ok()
-}
+use crate::{CRATE_VERSION, util::env::image_registry, zkVMKind};
 
 /// Returns tag of images in format of `{version}{suffix}`.
 pub fn image_tag(zkvm_kind: zkVMKind, gpu: bool) -> String {

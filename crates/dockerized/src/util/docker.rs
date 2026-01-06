@@ -1,3 +1,4 @@
+use crate::util::env::gpu_devices;
 use ere_zkvm_interface::CommonError;
 use std::{
     env,
@@ -152,7 +153,7 @@ impl DockerRunCmd {
     }
 
     pub fn gpus(self) -> Self {
-        let devices = env::var("ERE_GPU_DEVICES").unwrap_or_else(|_| "all".to_string());
+        let devices = gpu_devices().unwrap_or_else(|| "all".to_string());
         self.option("gpus", &devices)
     }
 
@@ -317,10 +318,6 @@ pub fn docker_image_exists(image: impl AsRef<str>) -> Result<bool, CommonError> 
 
     // If image exists, image id will be printed hence stdout will be non-empty.
     Ok(!output.stdout.is_empty())
-}
-
-pub fn force_rebuild() -> bool {
-    env::var_os("ERE_FORCE_REBUILD_DOCKER_IMAGE").is_some()
 }
 
 fn to_string(s: impl AsRef<str>) -> String {

@@ -4,6 +4,7 @@ use ere_zkvm_interface::CommonError;
 
 pub mod cuda;
 pub mod docker;
+pub mod env;
 
 pub fn workspace_dir() -> Result<PathBuf, CommonError> {
     let mut dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));

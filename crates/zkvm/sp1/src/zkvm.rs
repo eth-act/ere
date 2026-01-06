@@ -40,8 +40,8 @@ pub struct EreSP1 {
 
 impl EreSP1 {
     pub fn new(program: SP1Program, resource: ProverResourceType) -> Result<Self, Error> {
-        let prover = Prover::new(&resource);
-        let (pk, vk) = prover.setup(&program.elf);
+        let prover = Prover::new(&resource)?;
+        let (pk, vk) = prover.setup(&program.elf)?;
         Ok(Self {
             program,
             resource,
@@ -96,15 +96,21 @@ impl zkVM for EreSP1 {
 
         let mut prover = self.prover_mut()?;
 
+        // Restart GPU prover if the prover is dropped before.
+        if matches!(self.resource, ProverResourceType::Gpu) && matches!(&*prover, Prover::Cpu(_)) {
+            *prover = Prover::new(&self.resource).and_then(|prover| {
+                prover.setup(&self.program.elf)?;
+                Ok(prover)
+            })?;
+        }
+
         let start = Instant::now();
         let proof =
             panic::catch_unwind(|| prover.prove(&self.pk, &stdin, mode)).map_err(|err| {
                 if matches!(self.resource, ProverResourceType::Gpu) {
-                    // Drop the panicked prover and create a new one.
-                    // Note that `take` has to be done explicitly first so the
-                    // Moongate container could be removed properly.
+                    // Drop the panicked GPU prover and replace it with CPU one,
+                    // next prove call will try to restart it.
                     take(&mut *prover);
-                    *prover = Prover::new(&self.resource);
                 }
 
                 Error::Panic(panic_msg(err))
