@@ -35,6 +35,40 @@ pub enum Error {
     #[error("Uknown server status, stdout: {stdout}")]
     UnknownServerStatus { stdout: String },
 
+    // Network prove
+    #[error("Failed to create tokio runtime: {0}")]
+    TokioRuntimeCreation(String),
+
+    #[error("Invalid coordinator URL: {0}")]
+    InvalidCoordinatorUrl(String),
+
+    #[error("Failed to connect to coordinator: {0}")]
+    CoordinatorConnection(String),
+
+    #[error("LaunchProof RPC failed: {0}")]
+    LaunchProofRpc(String),
+
+    #[error("Coordinator returned error: {0}")]
+    CoordinatorError(String),
+
+    #[error("SubscribeToProof RPC failed: {0}")]
+    SubscribeToProofRpc(String),
+
+    #[error("Proof stream error: {0}")]
+    ProofStreamError(String),
+
+    #[error("Proof job failed: {0}")]
+    ProofJobFailed(String),
+
+    #[error("Unknown proof status: {0}")]
+    UnknownProofStatus(i32),
+
+    #[error("Stream ended without completion status")]
+    StreamEndedPrematurely,
+
+    #[error("No proof data received")]
+    NoProofData,
+
     // Verify
     #[error("Invalid proof: {0}")]
     InvalidProof(String),

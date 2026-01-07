@@ -31,9 +31,6 @@ pub struct EreZisk {
 
 impl EreZisk {
     pub fn new(program: ZiskProgram, resource: ProverResourceType) -> Result<Self, Error> {
-        if matches!(resource, ProverResourceType::Network(_)) {
-            panic!("Network proving not yet implemented for ZisK. Use CPU or GPU resource type.");
-        }
         let sdk = ZiskSdk::new(program.elf, resource, ZiskOptions::from_env())?;
         Ok(Self {
             sdk,
@@ -104,12 +101,18 @@ impl zkVM for EreZisk {
             ))
         }
 
-        let mut server = self.server()?;
-        let server = server.as_mut().expect("server initialized");
+        let (public_values, proof, proving_time) =
+            if let ProverResourceType::Network(_) = self.sdk.resource() {
+                self.sdk.network_prove(input.stdin())?
+            } else {
+                let mut server = self.server()?;
+                let server = server.as_mut().expect("server initialized");
 
-        let start = Instant::now();
-        let (public_values, proof) = server.prove(input.stdin())?;
-        let proving_time = start.elapsed();
+                let start = Instant::now();
+                let (public_values, proof) = server.prove(input.stdin())?;
+                let proving_time = start.elapsed();
+                (public_values, proof, proving_time)
+            };
 
         Ok((
             public_values,
@@ -155,6 +158,7 @@ mod tests {
         program::basic::BasicProgram,
     };
     use ere_zkvm_interface::{
+        NetworkProverConfig,
         compiler::Compiler,
         zkvm::{Input, ProofKind, ProverResourceType, zkVM},
     };
@@ -221,5 +225,24 @@ mod tests {
         ] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }
+    }
+
+    #[test]
+    #[ignore = "Requires ZisK cluster running"]
+    fn test_network_prove() {
+        let program = basic_program();
+        let zkvm = EreZisk::new(
+            program,
+            ProverResourceType::Network(NetworkProverConfig {
+                endpoint: "http://127.0.0.1:50051".to_string(),
+                ..Default::default()
+            }),
+        )
+        .unwrap();
+
+        let _guard = PROVE_LOCK.lock().unwrap();
+
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+        run_zkvm_prove(&zkvm, &test_case);
     }
 }

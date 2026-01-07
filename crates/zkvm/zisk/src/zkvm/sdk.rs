@@ -1,5 +1,9 @@
 use crate::zkvm::Error;
-use ere_zkvm_interface::zkvm::{CommonError, ProverResourceType, PublicValues};
+use ere_zkvm_interface::{
+    NetworkProverConfig,
+    zkvm::{CommonError, ProverResourceType, PublicValues},
+};
+use futures_util::StreamExt;
 use std::{
     collections::BTreeMap,
     env, fs,
@@ -14,8 +18,14 @@ use std::{
 };
 use strum::{EnumIter, IntoEnumIterator};
 use tempfile::tempdir;
+use tonic::transport::Channel;
 use tracing::{error, info};
 use wait_timeout::ChildExt;
+use zisk_distributed_grpc_api::{
+    InputMode, LaunchProofRequest, ProofStatusType, SubscribeToProofRequest, SystemStatusRequest,
+    launch_proof_response, system_status_response,
+    zisk_distributed_api_client::ZiskDistributedApiClient,
+};
 
 pub const START_SERVER_TIMEOUT: Duration = Duration::from_secs(120); // 2 mins
 pub const SHUTDOWN_SERVER_TIMEOUT: Duration = Duration::from_secs(30); // 30 secs
@@ -138,7 +148,7 @@ impl ZiskOptions {
 
 pub struct ZiskSdk {
     elf_path: PathBuf,
-    cuda: bool,
+    resource: ProverResourceType,
     options: ZiskOptions,
     /// ROM digest will be setup only when `ZiskSdk::server` is called.
     ///
@@ -154,9 +164,6 @@ impl ZiskSdk {
         resource: ProverResourceType,
         options: ZiskOptions,
     ) -> Result<Self, Error> {
-        if matches!(resource, ProverResourceType::Network(_)) {
-            panic!("Network proving not yet implemented for ZisK. Use CPU or GPU resource type.");
-        }
         // Save ELF to `~/.zisk/cache` along with the ROM binaries, to avoid it
         // been cleaned up during a long run process.
         let cache_dir_path = dot_zisk_dir_path().join("cache");
@@ -172,10 +179,14 @@ impl ZiskSdk {
 
         Ok(Self {
             elf_path,
-            cuda: matches!(resource, ProverResourceType::Gpu),
+            resource,
             options,
             rom_digest: OnceLock::new(),
         })
+    }
+
+    pub fn resource(&self) -> &ProverResourceType {
+        &self.resource
     }
 
     /// Execute the ELF with the given `input`.
@@ -233,7 +244,7 @@ impl ZiskSdk {
         // FIXME: Use `get_or_try_init` when it is stabilized
         let mut result = Ok(());
         let rom_digest = *self.rom_digest.get_or_init(|| {
-            check_setup(self.cuda)
+            check_setup(matches!(self.resource, ProverResourceType::Gpu))
                 .and_then(|_| rom_setup(&self.elf_path))
                 .map_err(|err| result = Err(err))
                 .ok()
@@ -242,12 +253,170 @@ impl ZiskSdk {
         rom_digest.ok_or(Error::RomSetupFailedBefore)
     }
 
+    /// Send proof request to distributed coordinator and wait for completion.
+    ///
+    /// This method connects to the distributed ZisK coordinator via gRPC,
+    /// submits a proof job with the given input, subscribes to job completion,
+    /// and returns the proof when ready.
+    pub fn network_prove(&self, input: &[u8]) -> Result<(PublicValues, Vec<u8>, Duration), Error> {
+        let ProverResourceType::Network(NetworkProverConfig { endpoint, .. }) = &self.resource
+        else {
+            unreachable!()
+        };
+
+        // Run the async network_prove_async in a blocking context
+        block_on(async {
+            let channel = Channel::from_shared(endpoint.to_string())
+                .map_err(|err| Error::InvalidCoordinatorUrl(err.to_string()))?
+                .connect()
+                .await
+                .map_err(|err| Error::CoordinatorConnection(err.to_string()))?;
+
+            let mut client = ZiskDistributedApiClient::new(channel);
+
+            // Check system status to get available compute capacity
+            info!("Checking system status...");
+
+            let status_response = client
+                .system_status(SystemStatusRequest {})
+                .await
+                .map_err(|err| {
+                    Error::CoordinatorConnection(format!("System status failed: {}", err))
+                })?
+                .into_inner();
+
+            let compute_capacity = match status_response.result {
+                Some(system_status_response::Result::Status(status)) => {
+                    info!(
+                        "System status - Total workers: {}, Compute capacity: {}, Idle: {}, Busy: {}, Active jobs: {}",
+                        status.total_workers,
+                        status.compute_capacity,
+                        status.idle_workers,
+                        status.busy_workers,
+                        status.active_jobs
+                    );
+
+                    if status.compute_capacity == 0 {
+                        return Err(Error::CoordinatorError(
+                            "No compute capacity available in the system".to_string(),
+                        ));
+                    }
+
+                    status.compute_capacity
+                }
+                Some(system_status_response::Result::Error(error)) => {
+                    return Err(Error::CoordinatorError(format!(
+                        "System status error: {} - {}",
+                        error.code, error.message
+                    )));
+                }
+                None => {
+                    return Err(Error::CoordinatorError(
+                        "Received empty system status response".to_string(),
+                    ));
+                }
+            };
+
+            let launch_request = LaunchProofRequest {
+                data_id: blake3::hash(input).to_string(),
+                compute_capacity,
+                input_mode: InputMode::Data.into(),
+                input_path: None,
+                input_data: Some(input.to_vec()),
+                simulated_node: None,
+            };
+
+            let launch_response = client
+                .launch_proof(launch_request)
+                .await
+                .map_err(|err| Error::LaunchProofRpc(err.to_string()))?;
+
+            let job_id = match launch_response.into_inner().result {
+                Some(launch_proof_response::Result::JobId(job_id)) => {
+                    info!("Proof job launched successfully with job_id: {}", job_id);
+                    job_id
+                }
+                Some(launch_proof_response::Result::Error(error)) => {
+                    return Err(Error::CoordinatorError(format!(
+                        "{} - {}",
+                        error.code, error.message
+                    )));
+                }
+                None => {
+                    return Err(Error::CoordinatorError(
+                        "Received empty response".to_string(),
+                    ));
+                }
+            };
+
+            // Subscribe to proof completion
+            info!("Subscribing to job completion for job_id: {}", job_id);
+
+            let subscribe_request = SubscribeToProofRequest { job_id };
+
+            let mut stream = client
+                .subscribe_to_proof(subscribe_request)
+                .await
+                .map_err(|err: tonic::Status| Error::SubscribeToProofRpc(err.to_string()))?
+                .into_inner();
+
+            info!("Waiting for proof completion...");
+
+            // Wait for completion message
+            if let Some(update_result) = stream.next().await {
+                let update = update_result
+                    .map_err(|err: tonic::Status| Error::ProofStreamError(err.to_string()))?;
+
+                match ProofStatusType::try_from(update.status) {
+                    Ok(ProofStatusType::ProofStatusCompleted) => {
+                        if let Some(final_proof) = update.final_proof {
+                            // Convert proof from Vec<u64> to Vec<u8>
+                            let proof_bytes =
+                                bytemuck::cast_slice::<u64, u8>(&final_proof.values).to_vec();
+
+                            // Deserialize and validate public values
+                            let (proved_rom_digest, public_values) =
+                                deserialize_public_values(&proof_bytes)?;
+
+                            // Verify ROM digest matches
+                            let rom_digest = self.rom_digest()?;
+                            if proved_rom_digest != rom_digest {
+                                return Err(Error::UnexpectedRomDigest {
+                                    preprocessed: rom_digest,
+                                    proved: proved_rom_digest,
+                                });
+                            }
+
+                            Ok((
+                                public_values,
+                                proof_bytes,
+                                Duration::from_millis(update.duration_ms),
+                            ))
+                        } else {
+                            Err(Error::NoProofData)
+                        }
+                    }
+                    Ok(ProofStatusType::ProofStatusFailed) => {
+                        let error_msg = update
+                            .error
+                            .map(|e| format!("{}: {}", e.code, e.message))
+                            .unwrap_or_else(|| "Unknown error".to_string());
+                        Err(Error::ProofJobFailed(error_msg))
+                    }
+                    Err(_) => Err(Error::UnknownProofStatus(update.status)),
+                }
+            } else {
+                Err(Error::StreamEndedPrematurely)
+            }
+        })
+    }
+
     /// Start a server of the ELF.
     pub fn server(&self) -> Result<ZiskServer, Error> {
         // Setup ROM and get ROM digest if it's not done yet.
         let rom_digest = self.rom_digest()?;
 
-        let (cargo_zisk, witness_lib_path) = if self.cuda {
+        let (cargo_zisk, witness_lib_path) = if matches!(self.resource, ProverResourceType::Gpu) {
             let witness_lib_path = dot_zisk_dir_path()
                 .join("bin")
                 .join("libzisk_witness_cuda.so");
@@ -656,4 +825,11 @@ fn deserialize_public_values(proof: &[u8]) -> Result<(RomDigest, Vec<u8>), Error
 /// Returns path to `~/.zisk` directory.
 fn dot_zisk_dir_path() -> PathBuf {
     PathBuf::from(env::var("HOME").expect("env `$HOME` should be set")).join(".zisk")
+}
+
+fn block_on<T>(future: impl Future<Output = T>) -> T {
+    match tokio::runtime::Handle::try_current() {
+        Ok(handle) => tokio::task::block_in_place(|| handle.block_on(future)),
+        Err(_) => tokio::runtime::Runtime::new().unwrap().block_on(future),
+    }
 }

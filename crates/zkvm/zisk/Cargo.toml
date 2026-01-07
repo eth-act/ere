@@ -16,6 +16,12 @@ thiserror.workspace = true
 tracing.workspace = true
 wait-timeout.workspace = true
 
+# TODO: Move the workspace
+futures-util = "0.3"
+tokio = { version = "1", features = ["rt"] }
+tonic = "0.14"
+zisk-distributed-grpc-api = { git = "https://github.com/han0110/zisk", branch = "ere/v0.15.0" }
+
 # Local dependencies
 ere-compile-utils = { workspace = true, optional = true }
 ere-zkvm-interface.workspace = true
