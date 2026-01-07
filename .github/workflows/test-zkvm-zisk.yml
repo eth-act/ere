@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - han/feature/zisk-network-prover
   pull_request:
 
 jobs:
