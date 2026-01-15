@@ -40,8 +40,13 @@ const _: () = {
 #[derive(Parser)]
 #[command(author, version)]
 struct Args {
+    /// Port number for the server to listen on.
     #[arg(long, default_value = "3000")]
     port: u16,
+    /// Optional path to read the program from. If not specified, reads from stdin.
+    #[arg(long)]
+    program_path: Option<String>,
+    /// Prover resource type.
     #[command(subcommand)]
     resource: ProverResourceType,
 }
@@ -54,9 +59,16 @@ async fn main() -> Result<(), Error> {
 
     let args = Args::parse();
 
-    // Read serialized program from stdin.
-    let mut program = Vec::new();
-    io::stdin().read_to_end(&mut program)?;
+    // Read serialized program from file or stdin.
+    let program = if let Some(path) = args.program_path {
+        std::fs::read(&path).with_context(|| format!("Failed to read program from {}", path))?
+    } else {
+        let mut program = Vec::new();
+        io::stdin()
+            .read_to_end(&mut program)
+            .context("Failed to read program from stdin")?;
+        program
+    };
 
     let zkvm = construct_zkvm(program, args.resource)?;
     let server = Arc::new(zkVMServer::new(zkvm));
