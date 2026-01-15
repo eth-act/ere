@@ -61,7 +61,7 @@ async fn main() -> Result<(), Error> {
 
     // Read serialized program from file or stdin.
     let program = if let Some(path) = args.program_path {
-        std::fs::read(&path).with_context(|| format!("Failed to read program from {}", path))?
+        std::fs::read(&path).with_context(|| format!("Failed to read program from {path}"))?
     } else {
         let mut program = Vec::new();
         io::stdin()
