@@ -15,7 +15,10 @@ use crate::{
     },
     zkVMKind,
 };
-use ere_server::client::{Url, zkVMClient};
+use ere_server::{
+    api::twirp::reqwest::Client,
+    client::{Url, zkVMClient},
+};
 use ere_zkvm_interface::{
     CommonError,
     zkvm::{
@@ -24,8 +27,13 @@ use ere_zkvm_interface::{
     },
 };
 use parking_lot::RwLock;
-use std::{future::Future, iter};
+use std::{
+    future::Future,
+    iter,
+    time::{Duration, Instant},
+};
 use tempfile::TempDir;
+use tokio::time::sleep;
 use tracing::{error, info};
 
 mod error;
@@ -248,13 +256,14 @@ impl ServerContainer {
             &program.0,
         )?;
 
-        let endpoint = Url::parse(&format!("http://{host}:{port}")).unwrap();
-        let client = block_on(zkVMClient::new(endpoint))?;
+        let endpoint = Url::parse(&format!("http://{host}:{port}"))?;
+        let http_client = Client::new();
+        block_on(wait_until_healthy(&endpoint, http_client.clone()))?;
 
         Ok(ServerContainer {
             name,
             tempdir,
-            client,
+            client: zkVMClient::new(endpoint, http_client)?,
         })
     }
 }
@@ -361,6 +370,24 @@ impl zkVM for DockerizedzkVM {
 
     fn sdk_version(&self) -> &'static str {
         self.zkvm_kind.sdk_version()
+    }
+}
+
+async fn wait_until_healthy(endpoint: &Url, http_client: Client) -> Result<(), Error> {
+    const TIMEOUT: Duration = Duration::from_secs(300); // 5mins
+    const INTERVAL: Duration = Duration::from_millis(500);
+
+    let http_client = http_client.clone();
+    let start = Instant::now();
+    loop {
+        if start.elapsed() > TIMEOUT {
+            return Err(Error::ConnectionTimeout);
+        }
+
+        match http_client.get(endpoint.join("health")?).send().await {
+            Ok(response) if response.status().is_success() => break Ok(()),
+            _ => sleep(INTERVAL).await,
+        }
     }
 }
 

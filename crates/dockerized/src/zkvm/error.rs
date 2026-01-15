@@ -1,12 +1,12 @@
-use ere_server::client::{self, TwirpErrorResponse};
+use ere_server::client::{self, ParseError, TwirpErrorResponse};
 use ere_zkvm_interface::CommonError;
 use thiserror::Error;
 
 impl From<client::Error> for Error {
     fn from(value: client::Error) -> Self {
         match value {
+            client::Error::ParseUrl(err) => Self::ParseUrl(err),
             client::Error::zkVM(err) => Self::zkVM(err),
-            client::Error::ConnectionTimeout => Self::ConnectionTimeout,
             client::Error::Rpc(err) => Self::Rpc(err),
         }
     }
@@ -17,6 +17,8 @@ impl From<client::Error> for Error {
 pub enum Error {
     #[error(transparent)]
     CommonError(#[from] CommonError),
+    #[error(transparent)]
+    ParseUrl(#[from] ParseError),
     #[error("zkVM method error: {0}")]
     zkVM(String),
     #[error("Connection to zkVM server timeout after 5 minutes")]
