@@ -3871,7 +3871,6 @@ dependencies = [
  "ere-server",
  "ere-test-utils",
  "ere-zkvm-interface",
- "parking_lot",
  "paste",
  "serde",
  "tempfile",

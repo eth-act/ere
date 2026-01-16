@@ -45,11 +45,11 @@ impl zkVMClient {
 
     pub async fn execute(
         &self,
-        input: &Input,
+        input: Input,
     ) -> Result<(PublicValues, ProgramExecutionReport), Error> {
         let request = Request::new(ExecuteRequest {
-            input_stdin: input.stdin.clone(),
-            input_proofs: input.proofs.clone(),
+            input_stdin: input.stdin,
+            input_proofs: input.proofs,
         });
 
         let response = self.client.execute(request).await?;
@@ -67,12 +67,12 @@ impl zkVMClient {
 
     pub async fn prove(
         &self,
-        input: &Input,
+        input: Input,
         proof_kind: ProofKind,
     ) -> Result<(PublicValues, Proof, ProgramProvingReport), Error> {
         let request = Request::new(ProveRequest {
-            input_stdin: input.stdin.clone(),
-            input_proofs: input.proofs.clone(),
+            input_stdin: input.stdin,
+            input_proofs: input.proofs,
             proof_kind: proof_kind as i32,
         });
 
@@ -90,10 +90,11 @@ impl zkVMClient {
         }
     }
 
-    pub async fn verify(&self, proof: &Proof) -> Result<PublicValues, Error> {
+    pub async fn verify(&self, proof: Proof) -> Result<PublicValues, Error> {
+        let proof_kind = proof.kind() as i32;
         let request = Request::new(VerifyRequest {
-            proof: proof.as_bytes().to_vec(),
-            proof_kind: proof.kind() as i32,
+            proof: proof.into_bytes(),
+            proof_kind,
         });
 
         let response = self.client.verify(request).await?;

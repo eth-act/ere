@@ -17,7 +17,7 @@ use crate::{
 };
 use ere_server::{
     api::twirp::reqwest::Client,
-    client::{Url, zkVMClient},
+    client::{self, Url, zkVMClient},
 };
 use ere_zkvm_interface::{
     CommonError,
@@ -26,14 +26,15 @@ use ere_zkvm_interface::{
         PublicValues, zkVM,
     },
 };
-use parking_lot::RwLock;
 use std::{
     future::Future,
     iter,
+    pin::Pin,
+    sync::OnceLock,
     time::{Duration, Instant},
 };
 use tempfile::TempDir;
-use tokio::time::sleep;
+use tokio::{sync::RwLock, time::sleep};
 use tracing::{error, info};
 
 mod error;
@@ -305,15 +306,46 @@ impl DockerizedzkVM {
         &self.resource
     }
 
-    fn with_retry<T, F>(&self, mut f: F) -> anyhow::Result<T>
+    pub async fn execute_async(
+        &self,
+        input: Input,
+    ) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+        self.with_retry(|client| {
+            let input = input.clone();
+            Box::pin(async move { client.execute(input).await })
+        })
+        .await
+    }
+
+    pub async fn prove_async(
+        &self,
+        input: Input,
+        proof_kind: ProofKind,
+    ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
+        self.with_retry(|client| {
+            let input = input.clone();
+            Box::pin(async move { client.prove(input, proof_kind).await })
+        })
+        .await
+    }
+
+    pub async fn verify_async(&self, proof: Proof) -> anyhow::Result<PublicValues> {
+        self.with_retry(|client| {
+            let proof = proof.clone();
+            Box::pin(async move { client.verify(proof).await })
+        })
+        .await
+    }
+
+    async fn with_retry<T, F>(&self, f: F) -> anyhow::Result<T>
     where
-        F: FnMut(&zkVMClient) -> Result<T, ere_server::client::Error>,
+        F: Fn(zkVMClient) -> Pin<Box<dyn Future<Output = Result<T, client::Error>> + Send>>,
     {
         const MAX_RETRY: usize = 3;
 
         let mut attempt = 1;
         loop {
-            let err = match f(&self.container.read().as_ref().unwrap().client) {
+            let err = match f(self.container.read().await.as_ref().unwrap().client.clone()).await {
                 Ok(ok) => return Ok(ok),
                 Err(err) => Error::from(err),
             };
@@ -328,7 +360,7 @@ impl DockerizedzkVM {
 
             error!("Rpc failed (attempt {attempt}/{MAX_RETRY}): {err}, checking container...");
 
-            let mut container = self.container.write();
+            let mut container = self.container.write().await;
             if docker_container_exists(&container.as_ref().unwrap().name).is_ok_and(|exists| exists)
             {
                 info!("Container is still running, retrying...");
@@ -349,7 +381,7 @@ impl DockerizedzkVM {
 
 impl zkVM for DockerizedzkVM {
     fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
-        self.with_retry(|client| block_on(client.execute(input)))
+        block_on(self.execute_async(input.clone()))
     }
 
     fn prove(
@@ -357,11 +389,11 @@ impl zkVM for DockerizedzkVM {
         input: &Input,
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
-        self.with_retry(|client| block_on(client.prove(input, proof_kind)))
+        block_on(self.prove_async(input.clone(), proof_kind))
     }
 
     fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
-        self.with_retry(|client| block_on(client.verify(proof)))
+        block_on(self.verify_async(proof.clone()))
     }
 
     fn name(&self) -> &'static str {
@@ -392,10 +424,14 @@ async fn wait_until_healthy(endpoint: &Url, http_client: Client) -> Result<(), E
 }
 
 fn block_on<T>(future: impl Future<Output = T>) -> T {
-    match tokio::runtime::Handle::try_current() {
-        Ok(handle) => tokio::task::block_in_place(|| handle.block_on(future)),
-        Err(_) => tokio::runtime::Runtime::new().unwrap().block_on(future),
-    }
+    static FALLBACK_RT: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
+    let handle = tokio::runtime::Handle::try_current().unwrap_or_else(|_| {
+        FALLBACK_RT
+            .get_or_init(|| tokio::runtime::Runtime::new().expect("Failed to create runtime"))
+            .handle()
+            .clone()
+    });
+    tokio::task::block_in_place(|| handle.block_on(future))
 }
 
 #[cfg(test)]
