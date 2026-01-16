@@ -3,7 +3,6 @@ use serde_untagged::UntaggedEnumVisitor;
 
 /// Configuration for network-based proving
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
 #[cfg_attr(feature = "clap", derive(clap::Args))]
 pub struct NetworkProverConfig {
     /// The endpoint URL of the prover network service
@@ -114,7 +113,7 @@ resources:
 - cpu
 - gpu
 - endpoint: http://localhost:3000
-  api-key: null
+  api_key: null
 "#;
         test_round_trip(YAML, serde_yaml::to_string, serde_yaml::from_str);
     }
@@ -128,7 +127,7 @@ resources:
     "gpu",
     {
       "endpoint": "",
-      "api-key": null
+      "api_key": null
     }
   ]
 }
