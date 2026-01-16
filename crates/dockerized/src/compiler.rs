@@ -204,49 +204,81 @@ pub(crate) mod test {
         };
     }
 
+    macro_rules! test_reproducible_elf {
+        ($zkvm_kind:ident, $compiler_kind:ident, $program:literal) => {
+            paste::paste! {
+                #[test]
+                fn [<test_reproducible_elf_ $compiler_kind:snake>]() {
+                    let zkvm_kind = crate::zkVMKind::$zkvm_kind;
+                    let compiler_kind = crate::CompilerKind::$compiler_kind;
+                    let program_1 = crate::compiler::test::compile(zkvm_kind, compiler_kind, $program);
+                    let program_2 = crate::compiler::test::compile(zkvm_kind, compiler_kind, $program);
+
+                    assert!(program_1.0 == program_2.0, "Programs should be equal");
+                }
+            }
+        };
+    }
+
     mod airbender {
         test_compile!(Airbender, Rust, "basic");
+        test_reproducible_elf!(Airbender, Rust, "basic");
     }
 
     mod jolt {
         test_compile!(Jolt, RustCustomized, "basic");
         test_compile!(Jolt, Rust, "stock_nightly_no_std");
+        test_reproducible_elf!(Jolt, RustCustomized, "basic");
+        test_reproducible_elf!(Jolt, Rust, "stock_nightly_no_std");
     }
 
     mod miden {
         test_compile!(Miden, MidenAsm, "fib");
+        test_reproducible_elf!(Miden, MidenAsm, "fib");
     }
 
     mod nexus {
         test_compile!(Nexus, Rust, "basic");
+        test_reproducible_elf!(Nexus, Rust, "basic");
     }
 
     mod openvm {
         test_compile!(OpenVM, RustCustomized, "basic");
         test_compile!(OpenVM, Rust, "stock_nightly_no_std");
+        test_reproducible_elf!(OpenVM, RustCustomized, "basic");
+        test_reproducible_elf!(OpenVM, Rust, "stock_nightly_no_std");
     }
 
     mod pico {
         test_compile!(Pico, RustCustomized, "basic");
         test_compile!(Pico, Rust, "stock_nightly_no_std");
+        test_reproducible_elf!(Pico, RustCustomized, "basic");
+        test_reproducible_elf!(Pico, Rust, "stock_nightly_no_std");
     }
 
     mod risc0 {
         test_compile!(Risc0, RustCustomized, "basic");
         test_compile!(Risc0, Rust, "stock_nightly_no_std");
+        test_reproducible_elf!(Risc0, RustCustomized, "basic");
+        test_reproducible_elf!(Risc0, Rust, "stock_nightly_no_std");
     }
 
     mod sp1 {
         test_compile!(SP1, RustCustomized, "basic");
         test_compile!(SP1, Rust, "stock_nightly_no_std");
+        test_reproducible_elf!(SP1, RustCustomized, "basic");
+        test_reproducible_elf!(SP1, Rust, "stock_nightly_no_std");
     }
 
     mod ziren {
         test_compile!(Ziren, RustCustomized, "basic");
+        test_reproducible_elf!(Ziren, RustCustomized, "basic");
     }
 
     mod zisk {
         test_compile!(Zisk, RustCustomized, "basic_rust");
         test_compile!(Zisk, GoCustomized, "basic_go");
+        test_reproducible_elf!(Zisk, RustCustomized, "basic_rust");
+        test_reproducible_elf!(Zisk, GoCustomized, "basic_go");
     }
 }
