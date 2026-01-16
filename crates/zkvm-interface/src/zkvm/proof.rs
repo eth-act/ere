@@ -30,8 +30,16 @@ impl Proof {
         ProofKind::from(self)
     }
 
-    /// Returns inner proof as bytes.
+    /// Returns inner proof as bytes slice.
     pub fn as_bytes(&self) -> &[u8] {
+        match self {
+            Self::Compressed(bytes) => bytes,
+            Self::Groth16(bytes) => bytes,
+        }
+    }
+
+    /// Returns inner proof as bytes vec.
+    pub fn into_bytes(self) -> Vec<u8> {
         match self {
             Self::Compressed(bytes) => bytes,
             Self::Groth16(bytes) => bytes,
