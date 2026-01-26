@@ -139,12 +139,17 @@ jobs:
           key: rust-${{ inputs.toolchain }}-${{ inputs.zkvm }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Pull base zkvm image or build locally
+        if: github.event_name == 'pull_request'
         run: |
           bash .github/scripts/pull-or-build-base-zkvm-image.sh \
             --zkvm ${{ inputs.zkvm }} \
             --registry ${{ needs.build_image.outputs.image_registry }} \
             --tag ${{ needs.build_image.outputs.image_tag }} \
             --cached-tag "${{ needs.build_image.outputs.cached_image_tag }}"
+
+      - name: Pull base zkvm image
+        if: github.event_name == 'push'
+        run: docker pull ${{ needs.build_image.outputs.base_zkvm_image }}
 
       - name: Run cargo clippy for ere-${{ inputs.zkvm }} via Docker
         run: |
@@ -188,12 +193,17 @@ jobs:
           key: rust-${{ inputs.toolchain }}-${{ inputs.zkvm }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Pull base zkvm image or build locally
+        if: github.event_name == 'pull_request'
         run: |
           bash .github/scripts/pull-or-build-base-zkvm-image.sh \
             --zkvm ${{ inputs.zkvm }} \
             --registry ${{ needs.build_image.outputs.image_registry }} \
             --tag ${{ needs.build_image.outputs.image_tag }} \
             --cached-tag "${{ needs.build_image.outputs.cached_image_tag }}"
+
+      - name: Pull base zkvm image
+        if: github.event_name == 'push'
+        run: docker pull ${{ needs.build_image.outputs.base_zkvm_image }}
 
       - name: Run cargo test for ere-${{ inputs.zkvm }} via Docker
         run: |
