@@ -1,5 +1,9 @@
 name: Test and clippy SP1
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches:

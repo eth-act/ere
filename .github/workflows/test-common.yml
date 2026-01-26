@@ -1,5 +1,9 @@
 name: Test and clippy common crates
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches:
