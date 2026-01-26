@@ -2,8 +2,8 @@ ARG BASE_IMAGE=ere-base:latest
 
 FROM $BASE_IMAGE
 
-# Set default toolchain to nightly
-RUN rustup default nightly
+# Set default toolchain to nightly-2025-07-25
+RUN rustup default nightly-2025-07-25
 
 # Whether to enable CUDA feature or not.
 ARG CUDA

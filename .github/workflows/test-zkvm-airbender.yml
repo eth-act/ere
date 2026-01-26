@@ -14,5 +14,5 @@ jobs:
       packages: write
     with:
       zkvm: airbender
-      toolchain: nightly
+      toolchain: nightly-2025-07-25
       skip_prove_test: true
