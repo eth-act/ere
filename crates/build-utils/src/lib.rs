@@ -47,12 +47,13 @@ pub fn get_docker_image_tag() -> String {
         .args(["describe", "--tags", "--exact-match", "HEAD"])
         .output();
 
-    if let Ok(output) = tag_output
-        && output.status.success()
-    {
-        let tag = String::from_utf8_lossy(&output.stdout).trim().to_string();
-        // Remove 'v' prefix if present
-        return tag.strip_prefix('v').unwrap_or(&tag).to_string();
+    match tag_output {
+        Ok(output) if output.status.success() => {
+            let tag = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            // Remove 'v' prefix if present
+            return tag.strip_prefix('v').unwrap_or(&tag).to_string();
+        }
+        _ => {}
     }
 
     // No tag found, try to get short revision
@@ -60,13 +61,14 @@ pub fn get_docker_image_tag() -> String {
         .args(["rev-parse", "--short=7", "HEAD"])
         .output();
 
-    if let Ok(output) = rev_output
-        && output.status.success()
-    {
-        let rev = String::from_utf8_lossy(&output.stdout).trim().to_string();
-        if !rev.is_empty() {
-            return rev;
+    match rev_output {
+        Ok(output) if output.status.success() => {
+            let rev = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if !rev.is_empty() {
+                return rev;
+            }
         }
+        _ => {}
     }
 
     // Fallback to crate version
