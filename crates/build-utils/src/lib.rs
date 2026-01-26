@@ -1,7 +1,20 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 use cargo_metadata::MetadataCommand;
-use std::{env, fs, path::Path};
+use std::{
+    env, fs, io,
+    path::{Path, PathBuf},
+};
+
+/// Returns path of `Cargo.lock` from the `CARGO_MANIFEST_DIR` of caller, which
+/// is `depth` far from the workspace.
+pub fn cargo_lock_path(depth: usize) -> io::Result<PathBuf> {
+    let mut manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+    for _ in 0..depth {
+        manifest_dir.pop();
+    }
+    manifest_dir.join("Cargo.lock").canonicalize()
+}
 
 // Detect and generate a Rust source file that contains the name and version of the SDK.
 pub fn detect_and_generate_name_and_sdk_version(name: &str, sdk_dep_name: &str) {
@@ -32,7 +45,6 @@ pub fn gen_name_and_sdk_version(name: &str, version: &str) {
         format!("const NAME: &str = \"{name}\";\nconst SDK_VERSION: &str = \"{version}\";"),
     )
     .unwrap();
-    println!("cargo:rerun-if-changed=Cargo.lock");
 }
 
 /// Generate tag for Docker image.
@@ -51,7 +63,10 @@ pub fn get_docker_image_tag() -> String {
         Ok(output) if output.status.success() => {
             let tag = String::from_utf8_lossy(&output.stdout).trim().to_string();
             // Remove 'v' prefix if present
-            return tag.strip_prefix('v').unwrap_or(&tag).to_string();
+            let semver_or_tag = tag.strip_prefix('v').unwrap_or(&tag);
+            if !semver_or_tag.is_empty() {
+                return semver_or_tag.to_string();
+            }
         }
         _ => {}
     }
