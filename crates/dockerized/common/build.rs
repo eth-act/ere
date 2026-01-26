@@ -1,21 +1,21 @@
-use ere_build_utils::{detect_sdk_version, detect_self_crate_version};
+use ere_build_utils::{detect_sdk_version, get_docker_image_tag};
 use std::{env, fs, path::Path};
 
 fn main() {
-    generate_crate_version();
+    generate_docker_image_tag();
     generate_zkvm_sdk_version_impl();
     println!("cargo:rerun-if-changed=Cargo.lock");
 }
 
-fn generate_crate_version() {
-    let crate_version = format!(
-        "/// Crate version in format of `{{semantic_version}}-{{git_sha:7}}`\npub const CRATE_VERSION: &str = \"{}\";",
-        detect_self_crate_version()
+fn generate_docker_image_tag() {
+    let docker_image_tag = format!(
+        "/// Docker image tag.\npub const DOCKER_IMAGE_TAG: &str = \"{}\";",
+        get_docker_image_tag()
     );
 
     let out_dir = env::var("OUT_DIR").unwrap();
-    let dst = Path::new(&out_dir).join("crate_version.rs");
-    fs::write(dst, crate_version).unwrap();
+    let dst = Path::new(&out_dir).join("docker_image_tag.rs");
+    fs::write(dst, docker_image_tag).unwrap();
 }
 
 fn generate_zkvm_sdk_version_impl() {
