@@ -16,4 +16,3 @@ jobs:
       packages: write
     with:
       zkvm: jolt
-      toolchain: 1.88.0

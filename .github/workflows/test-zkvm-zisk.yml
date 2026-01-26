@@ -16,5 +16,4 @@ jobs:
       packages: write
     with:
       zkvm: zisk
-      toolchain: 1.88.0
       skip_prove_test: true

@@ -16,4 +16,3 @@ jobs:
       packages: write
     with:
       zkvm: pico
-      toolchain: nightly-2025-08-04

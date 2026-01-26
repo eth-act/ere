@@ -7,11 +7,6 @@ on:
         description: 'zkVM to test'
         required: true
         type: string
-      toolchain:
-        description: 'Rust toolchain to use'
-        required: false
-        type: string
-        default: 1.88.0
       # Remove when we use larger runners, currently only needed to skip for zisk
       skip_prove_test:
         description: 'Whether to skip prove test and ere-dockerized test or not'
@@ -136,7 +131,7 @@ jobs:
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          key: rust-${{ inputs.toolchain }}-${{ inputs.zkvm }}-${{ hashFiles('Cargo.lock') }}
+          key: rust-${{ inputs.zkvm }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Pull base zkvm image or build locally
         if: github.event_name == 'pull_request'
@@ -190,7 +185,7 @@ jobs:
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          key: rust-${{ inputs.toolchain }}-${{ inputs.zkvm }}-${{ hashFiles('Cargo.lock') }}
+          key: rust-${{ inputs.zkvm }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Pull base zkvm image or build locally
         if: github.event_name == 'pull_request'
@@ -242,12 +237,12 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: ${{ inputs.toolchain }}
+          toolchain: 1.88.0
 
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          key: rust-${{ inputs.toolchain }}-${{ inputs.zkvm }}-${{ hashFiles('Cargo.lock') }}
+          key: rust-${{ inputs.zkvm }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Pull images or build locally
         if: github.event_name == 'pull_request'

@@ -16,4 +16,3 @@ jobs:
       packages: write
     with:
       zkvm: nexus
-      toolchain: nightly-2025-04-06

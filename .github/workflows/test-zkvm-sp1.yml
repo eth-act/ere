@@ -16,4 +16,3 @@ jobs:
       packages: write
     with:
       zkvm: sp1
-      toolchain: 1.88.0
