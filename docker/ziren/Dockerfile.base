@@ -7,8 +7,8 @@ RUN curl -fsSL https://golang.org/dl/go1.23.1.linux-amd64.tar.gz | tar -C /usr/l
 
 ENV PATH=/usr/local/go/bin:$PATH
 
-# Set default toolchain to nightly
-RUN rustup default nightly
+# Set default toolchain to nightly-2025-07-17
+RUN rustup default nightly-2025-07-17
 
 # Copy the Ziren SDK installer script
 COPY --chmod=755 scripts/sdk_installers/install_ziren_sdk.sh /tmp/install_ziren_sdk.sh
