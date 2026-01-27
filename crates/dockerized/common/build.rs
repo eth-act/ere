@@ -1,8 +1,5 @@
-use ere_build_utils::{detect_sdk_version, get_docker_image_tag};
-use std::{
-    env, fs,
-    path::{Path, PathBuf},
-};
+use ere_build_utils::{cargo_lock_path, detect_sdk_version, get_docker_image_tag, workspace};
+use std::{env, fs, path::Path};
 
 fn main() {
     generate_docker_image_tag();
@@ -19,7 +16,9 @@ fn generate_docker_image_tag() {
     let dst = Path::new(&out_dir).join("docker_image_tag.rs");
     fs::write(dst, docker_image_tag).unwrap();
 
-    if let Ok(dot_git) = workspace().join(".git").canonicalize() {
+    if let Some(dot_git) =
+        workspace().and_then(|workspace| workspace.join(".git").canonicalize().ok())
+    {
         for dir in ["HEAD", "refs", "packed-refs"] {
             if dot_git.join(dir).exists() {
                 println!("cargo:rerun-if-changed={}", dot_git.join(dir).display());
@@ -77,15 +76,7 @@ fn generate_zkvm_sdk_version_impl() {
     let dst = Path::new(&out_dir).join("zkvm_sdk_version_impl.rs");
     fs::write(dst, zkvm_sdk_version_impl).unwrap();
 
-    if let Ok(cargo_lock) = workspace().join("Cargo.lock").canonicalize() {
+    if let Some(cargo_lock) = cargo_lock_path() {
         println!("cargo:rerun-if-changed={}", cargo_lock.display());
     }
-}
-
-fn workspace() -> PathBuf {
-    let mut manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
-    manifest_dir.pop();
-    manifest_dir.pop();
-    manifest_dir.pop();
-    manifest_dir
 }
