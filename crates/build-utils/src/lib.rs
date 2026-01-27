@@ -2,23 +2,38 @@
 
 use cargo_metadata::MetadataCommand;
 use std::{
-    env, fs, io,
+    env, fs,
     path::{Path, PathBuf},
 };
 
-/// Returns path of `Cargo.lock` from the `CARGO_MANIFEST_DIR` of caller, which
-/// is `depth` far from the workspace.
-pub fn cargo_lock_path(depth: usize) -> io::Result<PathBuf> {
-    let mut manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
-    for _ in 0..depth {
-        manifest_dir.pop();
+/// Returns path to the closest workspace that contains `Cargo.lock` from `CARGO_MANIFEST_DIR`,
+/// returns `None` if not found.
+pub fn workspace() -> Option<PathBuf> {
+    let mut dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap())
+        .canonicalize()
+        .ok()?;
+    loop {
+        if dir.join("Cargo.lock").exists() {
+            return Some(dir);
+        }
+        if !dir.pop() {
+            return None;
+        }
     }
-    manifest_dir.join("Cargo.lock").canonicalize()
+}
+
+/// Returns path to the closest `Cargo.lock` from `CARGO_MANIFEST_DIR`, returns `None` if not found.
+pub fn cargo_lock_path() -> Option<PathBuf> {
+    workspace().map(|workspace| workspace.join("Cargo.lock"))
 }
 
 // Detect and generate a Rust source file that contains the name and version of the SDK.
 pub fn detect_and_generate_name_and_sdk_version(name: &str, sdk_dep_name: &str) {
     gen_name_and_sdk_version(name, &detect_sdk_version(sdk_dep_name));
+
+    if let Some(cargo_lock) = cargo_lock_path() {
+        println!("cargo:rerun-if-changed={}", cargo_lock.display());
+    }
 }
 
 // Detect version of the SDK.
@@ -47,31 +62,13 @@ pub fn gen_name_and_sdk_version(name: &str, version: &str) {
     .unwrap();
 }
 
-/// Generate tag for Docker image.
+/// Returns tag for Docker image.
 ///
 /// Returns:
-/// - Git tag in SemVer if current commit has a tag (e.g., `v0.1.0` -> `0.1.0`)
-/// - Short git revision (7 digits) if no tag found
+/// - Short git revision (7 digits)
 /// - Crate version from Cargo.toml as fallback if git is not available
 pub fn get_docker_image_tag() -> String {
-    // Try to get a tag pointing to the current commit
-    let tag_output = std::process::Command::new("git")
-        .args(["describe", "--tags", "--exact-match", "HEAD"])
-        .output();
-
-    match tag_output {
-        Ok(output) if output.status.success() => {
-            let tag = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            // Remove 'v' prefix if present
-            let semver_or_tag = tag.strip_prefix('v').unwrap_or(&tag);
-            if !semver_or_tag.is_empty() {
-                return semver_or_tag.to_string();
-            }
-        }
-        _ => {}
-    }
-
-    // No tag found, try to get short revision
+    // Get short git revision
     let rev_output = std::process::Command::new("git")
         .args(["rev-parse", "--short=7", "HEAD"])
         .output();
