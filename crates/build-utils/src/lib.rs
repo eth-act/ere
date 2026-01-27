@@ -1,7 +1,20 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 use cargo_metadata::MetadataCommand;
-use std::{env, fs, path::Path};
+use std::{
+    env, fs, io,
+    path::{Path, PathBuf},
+};
+
+/// Returns path of `Cargo.lock` from the `CARGO_MANIFEST_DIR` of caller, which
+/// is `depth` far from the workspace.
+pub fn cargo_lock_path(depth: usize) -> io::Result<PathBuf> {
+    let mut manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+    for _ in 0..depth {
+        manifest_dir.pop();
+    }
+    manifest_dir.join("Cargo.lock").canonicalize()
+}
 
 // Detect and generate a Rust source file that contains the name and version of the SDK.
 pub fn detect_and_generate_name_and_sdk_version(name: &str, sdk_dep_name: &str) {
@@ -32,23 +45,55 @@ pub fn gen_name_and_sdk_version(name: &str, version: &str) {
         format!("const NAME: &str = \"{name}\";\nconst SDK_VERSION: &str = \"{version}\";"),
     )
     .unwrap();
-    println!("cargo:rerun-if-changed=Cargo.lock");
 }
 
-/// Detects version of the crate of the `build.rs` that being ran.
-pub fn detect_self_crate_version() -> String {
+/// Generate tag for Docker image.
+///
+/// Returns:
+/// - Git tag in SemVer if current commit has a tag (e.g., `v0.1.0` -> `0.1.0`)
+/// - Short git revision (7 digits) if no tag found
+/// - Crate version from Cargo.toml as fallback if git is not available
+pub fn get_docker_image_tag() -> String {
+    // Try to get a tag pointing to the current commit
+    let tag_output = std::process::Command::new("git")
+        .args(["describe", "--tags", "--exact-match", "HEAD"])
+        .output();
+
+    match tag_output {
+        Ok(output) if output.status.success() => {
+            let tag = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            // Remove 'v' prefix if present
+            let semver_or_tag = tag.strip_prefix('v').unwrap_or(&tag);
+            if !semver_or_tag.is_empty() {
+                return semver_or_tag.to_string();
+            }
+        }
+        _ => {}
+    }
+
+    // No tag found, try to get short revision
+    let rev_output = std::process::Command::new("git")
+        .args(["rev-parse", "--short=7", "HEAD"])
+        .output();
+
+    match rev_output {
+        Ok(output) if output.status.success() => {
+            let rev = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if !rev.is_empty() {
+                return rev;
+            }
+        }
+        _ => {}
+    }
+
+    // Fallback to crate version
     let meta = MetadataCommand::new()
         .exec()
         .expect("Failed to get cargo metadata");
 
     // `root_package` returns the crate of the `build.rs` that being ran.
-    let version = meta.root_package().unwrap().version.to_string();
-
-    let output = std::process::Command::new("git")
-        .args(["rev-parse", "--short=7", "HEAD"])
-        .output()
-        .expect("Failed to get git revision");
-    let rev = String::from_utf8_lossy(&output.stdout).trim().to_string();
-
-    format!("{version}-{rev}")
+    meta.root_package()
+        .expect("crate to have version")
+        .version
+        .to_string()
 }

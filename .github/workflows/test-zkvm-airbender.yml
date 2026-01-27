@@ -1,9 +1,15 @@
 name: Test and clippy Airbender
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches:
       - master
+    tags:
+      - 'v*'
   pull_request:
 
 jobs:
@@ -14,5 +20,4 @@ jobs:
       packages: write
     with:
       zkvm: airbender
-      toolchain: nightly
       skip_prove_test: true

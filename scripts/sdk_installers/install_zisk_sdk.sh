@@ -31,9 +31,10 @@ ensure_tool_installed "rustup" "for managing Rust toolchains (ZisK installs its 
 ensure_tool_installed "cargo" "as cargo-zisk is a cargo subcommand"
 
 # Step 1: Download and run the script that installs the ziskup binary itself.
-# Export SETUP_KEY=proving to ensure no interactive options in `ziskup`.
+# Export SETUP_KEY=proving-no-consttree to download proving key but avoid doing
+# cargo-zisk check-setup.
 export ZISK_VERSION="0.15.0"
-export SETUP_KEY=${SETUP_KEY:=proving}
+export SETUP_KEY=${SETUP_KEY:=proving-no-consttree}
 curl "https://raw.githubusercontent.com/0xPolygonHermez/zisk/main/ziskup/install.sh" | bash
 unset SETUP_KEY
 

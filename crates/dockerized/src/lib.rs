@@ -78,4 +78,4 @@ pub use crate::{
     compiler::{DockerizedCompiler, SerializedProgram},
     zkvm::DockerizedzkVM,
 };
-pub use ere_common::{CRATE_VERSION, CompilerKind, zkVMKind};
+pub use ere_common::{CompilerKind, DOCKER_IMAGE_TAG, zkVMKind};

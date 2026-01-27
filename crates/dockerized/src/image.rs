@@ -1,4 +1,4 @@
-use crate::{CRATE_VERSION, util::env::image_registry, zkVMKind};
+use crate::{DOCKER_IMAGE_TAG, util::env::image_registry, zkVMKind};
 
 /// Returns tag of images in format of `{version}{suffix}`.
 pub fn image_tag(zkvm_kind: zkVMKind, gpu: bool) -> String {
@@ -10,7 +10,7 @@ pub fn image_tag(zkvm_kind: zkVMKind, gpu: bool) -> String {
         }
         _ => "",
     };
-    format!("{CRATE_VERSION}{suffix}")
+    format!("{DOCKER_IMAGE_TAG}{suffix}")
 }
 
 /// Returns `ere-base:{image_tag}`

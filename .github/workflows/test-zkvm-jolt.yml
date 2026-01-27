@@ -1,9 +1,15 @@
 name: Test and clippy Jolt
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches:
       - master
+    tags:
+      - 'v*'
   pull_request:
 
 jobs:
@@ -14,4 +20,3 @@ jobs:
       packages: write
     with:
       zkvm: jolt
-      toolchain: 1.88.0

@@ -28,9 +28,11 @@ ensure_tool_installed "cargo" "to build and install Rust packages"
 
 AIRBENDER_CLI_VERSION_TAG="v0.5.2"
 
+AIRBENDER_TOOLCHAIN="nightly-2025-07-25"
+
 # Install airbender-cli using the specified toolchain and version tag
 echo "Installing airbender-cli (version ${AIRBENDER_CLI_VERSION_TAG}) from GitHub repository (matter-labs/zksync-airbender)..."
-cargo +nightly install --locked --git https://github.com/matter-labs/zksync-airbender.git --tag "${AIRBENDER_CLI_VERSION_TAG}" ${CUDA:+-F gpu} cli
+cargo +${AIRBENDER_TOOLCHAIN} install --locked --git https://github.com/matter-labs/zksync-airbender.git --tag "${AIRBENDER_CLI_VERSION_TAG}" ${CUDA:+-F gpu} cli
 
 # Rename cli to airbender-cli
 CARGO_HOME=${CARGO_HOME:-$HOME/.cargo}
@@ -47,5 +49,5 @@ else
 fi
 
 # Install cargo-binutils to objcopy ELF to binary file
-rustup +nightly component add llvm-tools
+rustup +${AIRBENDER_TOOLCHAIN} component add llvm-tools
 cargo install cargo-binutils
