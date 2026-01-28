@@ -64,15 +64,14 @@ fn main() -> Result<(), Error> {
 
     if let Some(elf_name) = args.elf_name {
         let path = args.output_dir.join(elf_name);
-        std::fs::write(&path, &elf)
-            .with_context(|| format!("Failed to write ELF to {:?}", path))?;
+        std::fs::write(&path, &elf).with_context(|| format!("Failed to write ELF to {path:?}"))?;
     }
 
     if let Some(digest_name) = args.digest_name {
         if let Some(digest_bytes) = digest {
             let path = args.output_dir.join(digest_name);
             std::fs::write(&path, &digest_bytes)
-                .with_context(|| format!("Failed to write digest to {:?}", path))?;
+                .with_context(|| format!("Failed to write digest to {path:?}"))?;
         } else {
             tracing::warn!("Digest output requested but not available/supported for this zkVM.");
         }
