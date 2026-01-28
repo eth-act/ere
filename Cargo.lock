@@ -3858,7 +3858,6 @@ dependencies = [
  "ere-zisk",
  "ere-zkvm-interface",
  "serde",
- "tempfile",
  "tracing",
  "tracing-subscriber 0.3.20",
 ]
