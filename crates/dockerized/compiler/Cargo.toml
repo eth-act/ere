@@ -28,6 +28,7 @@ ere-zkvm-interface.workspace = true
 ere-common.workspace = true
 
 [dev-dependencies]
+tempfile.workspace = true
 
 [features]
 default = []
