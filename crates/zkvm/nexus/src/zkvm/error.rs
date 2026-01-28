@@ -1,6 +1,6 @@
 use ere_zkvm_interface::zkvm::CommonError;
-use nexus_sdk::stwo::seq::Error as StwoError;
 use nexus_vm::error::VMError;
+use nexus_vm_prover::{ProvingError, VerificationError};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -15,11 +15,14 @@ pub enum Error {
     #[error("Nexus execution failed: {0}")]
     Execute(#[source] VMError),
 
+    #[error("Guest panicked with exit code {0}")]
+    GuestPanic(u32),
+
     // Prove
     #[error("Nexus proving failed: {0}")]
-    Prove(#[source] StwoError),
+    Prove(#[source] ProvingError),
 
     // Verify
     #[error("Nexus verification failed: {0}")]
-    Verify(#[source] StwoError),
+    Verify(#[source] VerificationError),
 }

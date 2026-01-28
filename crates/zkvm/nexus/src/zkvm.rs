@@ -4,15 +4,18 @@ use ere_zkvm_interface::zkvm::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
     ProverResourceType, PublicValues, zkVM,
 };
-use nexus_core::nvm::{self, ElfFile};
-use nexus_sdk::{
-    KnownExitCodes, Prover, Verifiable, Viewable,
-    stwo::seq::{Proof as NexusProof, Stwo},
+use nexus_core::nvm::{self, ElfFile, internals::LinearMemoryLayout};
+use nexus_sdk::{CheckedView, KnownExitCodes, Viewable};
+use nexus_vm::{emulator::InternalView, trace::Trace};
+use nexus_vm_prover::{
+    Proof as RawProof,
+    machine::{BaseComponent, Machine},
 };
-use nexus_vm::trace::Trace;
 use serde::{Deserialize, Serialize};
 use std::time::Instant;
 use tracing::info;
+
+pub use nexus_vm_prover::extensions::ExtensionComponent as NexusExtension;
 
 mod error;
 
@@ -21,21 +24,42 @@ pub use error::Error;
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 #[derive(Serialize, Deserialize)]
-pub struct NexusProofBundle {
+struct NexusProof {
+    proof: RawProof,
+    memory_layout: LinearMemoryLayout,
+}
+
+#[derive(Serialize, Deserialize)]
+struct NexusProofBundle {
     proof: NexusProof,
     public_values: Vec<u8>,
+    raw_output: Vec<u8>,
+    exit_code: u32,
 }
 
 pub struct EreNexus {
     program: NexusProgram,
+    extensions: Vec<NexusExtension>,
 }
 
 impl EreNexus {
     pub fn new(program: NexusProgram, resource: ProverResourceType) -> Result<Self, Error> {
+        Self::with_extensions(program, resource, vec![])
+    }
+
+    pub fn with_extensions(
+        program: NexusProgram,
+        resource: ProverResourceType,
+        extensions: Vec<NexusExtension>,
+    ) -> Result<Self, Error> {
         if !matches!(resource, ProverResourceType::Cpu) {
             panic!("Network or GPU proving not yet implemented for Nexus. Use CPU resource type.");
         }
-        Ok(Self { program })
+
+        Ok(Self {
+            program,
+            extensions,
+        })
     }
 }
 
@@ -47,29 +71,24 @@ impl zkVM for EreNexus {
 
         let elf = ElfFile::from_bytes(self.program.elf()).map_err(Error::ParseElf)?;
 
-        // Nexus sdk does not provide a trace, so we need to use core `nvm`
-        // Encoding is copied directly from `prove_with_input`
-        let mut private_encoded = if input.stdin().is_empty() {
-            Vec::new()
-        } else {
-            postcard::to_stdvec_cobs(&input.stdin())
-                .map_err(|err| CommonError::serialize("input", "postcard", err))?
-        };
-
-        if !private_encoded.is_empty() {
-            let private_padded_len = (private_encoded.len() + 3) & !3;
-            assert!(private_padded_len >= private_encoded.len());
-            private_encoded.resize(private_padded_len, 0x00);
-        }
+        let private_encoded = encode_private_input(input.stdin())?;
 
         let start = Instant::now();
         let (view, trace) =
             nvm::k_trace(elf, &[], &[], private_encoded.as_slice(), 1).map_err(Error::Execute)?;
         let execution_duration = start.elapsed();
 
+        let exit_code = view
+            .exit_code()
+            .unwrap_or(KnownExitCodes::ExitSuccess as u32);
+        if exit_code != KnownExitCodes::ExitSuccess as u32 {
+            bail!(Error::GuestPanic(exit_code));
+        }
+
         let public_values = view
-            .public_output()
-            .map_err(|err| CommonError::deserialize("public_values", "postcard", err))?;
+            .view_public_output()
+            .and_then(|mut raw| postcard::from_bytes_cobs::<Vec<u8>>(&mut raw).ok())
+            .unwrap_or_default();
 
         Ok((
             public_values,
@@ -98,28 +117,46 @@ impl zkVM for EreNexus {
 
         let elf = ElfFile::from_bytes(self.program.elf()).map_err(Error::ParseElf)?;
 
-        let prover = Stwo::new(&elf).map_err(Error::Prove)?;
+        let private_encoded = encode_private_input(input.stdin())?;
 
         let start = Instant::now();
-        let (view, proof) = prover
-            .prove_with_input(&input.stdin(), &())
-            .map_err(Error::Prove)?;
+        let (view, trace) =
+            nvm::k_trace(elf, &[], &[], private_encoded.as_slice(), 1).map_err(Error::Execute)?;
+
+        let exit_code = view
+            .exit_code()
+            .unwrap_or(KnownExitCodes::ExitSuccess as u32);
+        if exit_code != KnownExitCodes::ExitSuccess as u32 {
+            bail!(Error::GuestPanic(exit_code));
+        }
+
+        let proof =
+            Machine::<BaseComponent>::prove_with_extensions(&self.extensions, &trace, &view)
+                .map_err(Error::Prove)?;
         let proving_time = start.elapsed();
 
-        let public_values = view
-            .public_output()
-            .map_err(|err| CommonError::deserialize("public_values", "postcard", err))?;
+        let raw_output = view.view_public_output().unwrap_or_default();
+        let public_values =
+            postcard::from_bytes_cobs::<Vec<u8>>(&mut raw_output.clone()).unwrap_or_default();
+        let exit_code = view
+            .exit_code()
+            .unwrap_or(KnownExitCodes::ExitSuccess as u32);
 
         let proof_bundle = NexusProofBundle {
-            proof,
+            proof: NexusProof {
+                proof,
+                memory_layout: trace.memory_layout,
+            },
             public_values,
+            raw_output,
+            exit_code,
         };
 
         let proof_bytes = bincode::serde::encode_to_vec(&proof_bundle, bincode::config::legacy())
             .map_err(|err| CommonError::serialize("proof", "bincode", err))?;
 
         Ok((
-            proof_bundle.public_values,
+            proof_bundle.public_values.clone(),
             Proof::Compressed(proof_bytes),
             ProgramProvingReport::new(proving_time),
         ))
@@ -139,16 +176,35 @@ impl zkVM for EreNexus {
             bincode::serde::decode_from_slice(proof, bincode::config::legacy())
                 .map_err(|err| CommonError::deserialize("proof", "bincode", err))?;
 
-        proof_bundle
-            .proof
-            .verify_expected_from_program_bytes::<(), Vec<u8>>(
-                &(),
-                KnownExitCodes::ExitSuccess as u32,
-                &proof_bundle.public_values,
-                self.program.elf(),
-                &[],
-            )
-            .map_err(Error::Verify)?;
+        let elf = ElfFile::from_bytes(self.program.elf()).map_err(Error::ParseElf)?;
+        let layout = proof_bundle.proof.memory_layout;
+
+        let view = nvm::View::new_from_expected(
+            &layout,
+            &[],
+            &proof_bundle.exit_code.to_le_bytes(),
+            &proof_bundle.raw_output,
+            &elf,
+            &[],
+        );
+
+        let init_memory: Vec<_> = [
+            view.get_ro_initial_memory(),
+            view.get_rw_initial_memory(),
+            view.get_public_input(),
+        ]
+        .concat();
+
+        Machine::<BaseComponent>::verify_with_extensions(
+            &self.extensions,
+            proof_bundle.proof.proof,
+            view.get_program_memory(),
+            view.view_associated_data().as_deref().unwrap_or_default(),
+            &init_memory,
+            view.get_exit_code(),
+            view.get_public_output(),
+        )
+        .map_err(Error::Verify)?;
 
         info!("Verify Succeeded!");
 
@@ -162,6 +218,20 @@ impl zkVM for EreNexus {
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
     }
+}
+
+fn encode_private_input(stdin: &[u8]) -> anyhow::Result<Vec<u8>> {
+    if stdin.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let mut encoded = postcard::to_stdvec_cobs(&stdin)
+        .map_err(|err| CommonError::serialize("input", "postcard", err))?;
+
+    let padded_len = (encoded.len() + 3) & !3;
+    encoded.resize(padded_len, 0x00);
+
+    Ok(encoded)
 }
 
 #[cfg(test)]

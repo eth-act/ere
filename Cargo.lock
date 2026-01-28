@@ -3939,6 +3939,7 @@ dependencies = [
  "nexus-core",
  "nexus-sdk",
  "nexus-vm",
+ "nexus-vm-prover",
  "postcard",
  "serde",
  "thiserror 2.0.12",
@@ -7289,8 +7290,8 @@ checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
 
 [[package]]
 name = "nexus-common"
-version = "0.3.5"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
+version = "0.3.6"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.6#f2ad12652c39dc516a116447a53f8557f64a7f7d"
 dependencies = [
  "rrs-lib 0.1.0 (git+https://github.com/GregAC/rrs/)",
  "serde",
@@ -7300,8 +7301,8 @@ dependencies = [
 
 [[package]]
 name = "nexus-core"
-version = "0.3.5"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
+version = "0.3.6"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.6#f2ad12652c39dc516a116447a53f8557f64a7f7d"
 dependencies = [
  "nexus-vm",
  "nexus-vm-prover",
@@ -7310,7 +7311,7 @@ dependencies = [
 [[package]]
 name = "nexus-precompile-macros"
 version = "0.1.0"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.6#f2ad12652c39dc516a116447a53f8557f64a7f7d"
 dependencies = [
  "nexus-common",
  "proc-macro-crate 3.3.0",
@@ -7323,8 +7324,8 @@ dependencies = [
 
 [[package]]
 name = "nexus-precompiles"
-version = "0.3.5"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
+version = "0.3.6"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.6#f2ad12652c39dc516a116447a53f8557f64a7f7d"
 dependencies = [
  "nexus-common",
  "nexus-precompile-macros",
@@ -7332,16 +7333,16 @@ dependencies = [
 
 [[package]]
 name = "nexus-profiler"
-version = "0.3.5"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
+version = "0.3.6"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.6#f2ad12652c39dc516a116447a53f8557f64a7f7d"
 dependencies = [
  "pprof",
 ]
 
 [[package]]
 name = "nexus-rt"
-version = "0.3.5"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
+version = "0.3.6"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.6#f2ad12652c39dc516a116447a53f8557f64a7f7d"
 dependencies = [
  "nexus-rt-macros",
  "postcard",
@@ -7352,7 +7353,7 @@ dependencies = [
 [[package]]
 name = "nexus-rt-macros"
 version = "0.1.0"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.6#f2ad12652c39dc516a116447a53f8557f64a7f7d"
 dependencies = [
  "proc-macro-crate 3.3.0",
  "proc-macro2",
@@ -7362,8 +7363,8 @@ dependencies = [
 
 [[package]]
 name = "nexus-sdk"
-version = "0.3.5"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
+version = "0.3.6"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.6#f2ad12652c39dc516a116447a53f8557f64a7f7d"
 dependencies = [
  "crypto",
  "crypto-common",
@@ -7378,8 +7379,8 @@ dependencies = [
 
 [[package]]
 name = "nexus-sdk-macros"
-version = "0.3.5"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
+version = "0.3.6"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.6#f2ad12652c39dc516a116447a53f8557f64a7f7d"
 dependencies = [
  "nexus-profiler",
  "proc-macro-crate 3.3.0",
@@ -7390,8 +7391,8 @@ dependencies = [
 
 [[package]]
 name = "nexus-vm"
-version = "0.3.5"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
+version = "0.3.6"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.6#f2ad12652c39dc516a116447a53f8557f64a7f7d"
 dependencies = [
  "elf",
  "itertools 0.14.0",
@@ -7416,8 +7417,8 @@ dependencies = [
 
 [[package]]
 name = "nexus-vm-prover"
-version = "0.3.5"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
+version = "0.3.6"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.6#f2ad12652c39dc516a116447a53f8557f64a7f7d"
 dependencies = [
  "impl-trait-for-tuples",
  "itertools 0.13.0",
@@ -7434,8 +7435,8 @@ dependencies = [
 
 [[package]]
 name = "nexus-vm-prover-macros"
-version = "0.3.5"
-source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.5#0c3b093963ff90187349e760b5f77717c8cfe351"
+version = "0.3.6"
+source = "git+https://github.com/nexus-xyz/nexus-zkvm.git?tag=v0.3.6#f2ad12652c39dc516a116447a53f8557f64a7f7d"
 dependencies = [
  "convert_case",
  "proc-macro2",

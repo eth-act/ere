@@ -101,10 +101,11 @@ miden-core-lib = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag =
 miden-verifier = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.1" }
 
 # Nexus dependencies
-nexus-core = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.5" }
-nexus-sdk = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.5" }
-nexus-vm = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.5" }
-nexus-rt = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.5", default-features = false }
+nexus-core = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.6" }
+nexus-sdk = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.6" }
+nexus-vm = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.6" }
+nexus-vm-prover = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.6" }
+nexus-rt = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.6", default-features = false }
 
 # OpenVM dependencies
 openvm-build = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.2" }
