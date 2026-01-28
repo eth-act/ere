@@ -63,8 +63,13 @@ fn main() -> Result<(), Error> {
     let (elf, digest, program) = compile(args.guest_dir, args.compiler_kind)?;
 
     if let Some(elf_name) = args.elf_name {
-        let path = args.output_dir.join(elf_name);
-        std::fs::write(&path, &elf).with_context(|| format!("Failed to write ELF to {path:?}"))?;
+        if let Some(elf_bytes) = elf {
+            let path = args.output_dir.join(elf_name);
+            std::fs::write(&path, &elf_bytes)
+                .with_context(|| format!("Failed to write ELF to {path:?}"))?;
+        } else {
+            tracing::warn!("ELF output requested but not available/supported for this zkVM.");
+        }
     }
 
     if let Some(digest_name) = args.digest_name {
@@ -88,19 +93,19 @@ fn main() -> Result<(), Error> {
     Ok(())
 }
 
-/// Compiles the guest and returns (ELF bytes, Optional Digest bytes, Serialized Program)
+/// Compiles the guest and returns (Optional ELF bytes, Optional Digest bytes, Serialized Program)
 fn compile(
     guest_dir: PathBuf,
     compiler_kind: CompilerKind,
-) -> Result<(Vec<u8>, Option<Vec<u8>>, impl Serialize), Error> {
+) -> Result<(Option<Vec<u8>>, Option<Vec<u8>>, impl Serialize), Error> {
     #[cfg(feature = "airbender")]
     let result = {
         use ere_airbender::compiler::*;
         match compiler_kind {
             CompilerKind::Rust | CompilerKind::RustCustomized => {
                 let program = RustRv32ima.compile(&guest_dir)?;
-                let elf = program.bin().to_vec();
-                (elf, None, program)
+                let elf = program.elf().to_vec();
+                (Some(elf), None, program)
             }
             _ => bail!(unsupported_compiler_kind_err(
                 compiler_kind,
@@ -115,11 +120,11 @@ fn compile(
         match compiler_kind {
             CompilerKind::Rust => {
                 let program = RustRv64imac.compile(&guest_dir)?;
-                (program.elf().to_vec(), None, program)
+                (Some(program.elf().to_vec()), None, program)
             }
             CompilerKind::RustCustomized => {
                 let program = RustRv64imacCustomized.compile(&guest_dir)?;
-                (program.elf().to_vec(), None, program)
+                (Some(program.elf().to_vec()), None, program)
             }
             _ => bail!(unsupported_compiler_kind_err(
                 compiler_kind,
@@ -134,7 +139,7 @@ fn compile(
         match compiler_kind {
             CompilerKind::MidenAsm => {
                 let program = MidenAsm.compile(&guest_dir)?;
-                (vec![], None, program)
+                (None, None, program)
             }
             _ => bail!(unsupported_compiler_kind_err(
                 compiler_kind,
@@ -149,7 +154,7 @@ fn compile(
         match compiler_kind {
             CompilerKind::Rust | CompilerKind::RustCustomized => {
                 let program = RustRv32i.compile(&guest_dir)?;
-                (program.elf().to_vec(), None, program)
+                (Some(program.elf().to_vec()), None, program)
             }
             _ => bail!(unsupported_compiler_kind_err(
                 compiler_kind,
@@ -164,11 +169,11 @@ fn compile(
         match compiler_kind {
             CompilerKind::Rust => {
                 let program = RustRv32ima.compile(&guest_dir)?;
-                (program.elf().to_vec(), None, program)
+                (Some(program.elf().to_vec()), None, program)
             }
             CompilerKind::RustCustomized => {
                 let program = RustRv32imaCustomized.compile(&guest_dir)?;
-                (program.elf().to_vec(), None, program)
+                (Some(program.elf().to_vec()), None, program)
             }
             _ => bail!(unsupported_compiler_kind_err(
                 compiler_kind,
@@ -183,11 +188,11 @@ fn compile(
         match compiler_kind {
             CompilerKind::Rust => {
                 let program = RustRv32ima.compile(&guest_dir)?;
-                (program.elf().to_vec(), None, program)
+                (Some(program.elf().to_vec()), None, program)
             }
             CompilerKind::RustCustomized => {
                 let program = RustRv32imaCustomized.compile(&guest_dir)?;
-                (program.elf().to_vec(), None, program)
+                (Some(program.elf().to_vec()), None, program)
             }
             _ => bail!(unsupported_compiler_kind_err(
                 compiler_kind,
@@ -204,13 +209,13 @@ fn compile(
                 let program = RustRv32ima.compile(&guest_dir)?;
                 let elf = program.elf().to_vec();
                 let digest = program.image_id().as_bytes().to_vec();
-                (elf, Some(digest), program)
+                (Some(elf), Some(digest), program)
             }
             CompilerKind::RustCustomized => {
                 let program = RustRv32imaCustomized.compile(&guest_dir)?;
                 let elf = program.elf().to_vec();
                 let digest = program.image_id().as_bytes().to_vec();
-                (elf, Some(digest), program)
+                (Some(elf), Some(digest), program)
             }
             _ => bail!(unsupported_compiler_kind_err(
                 compiler_kind,
@@ -225,11 +230,11 @@ fn compile(
         match compiler_kind {
             CompilerKind::Rust => {
                 let program = RustRv32ima.compile(&guest_dir)?;
-                (program.elf().to_vec(), None, program)
+                (Some(program.elf().to_vec()), None, program)
             }
             CompilerKind::RustCustomized => {
                 let program = RustRv32imaCustomized.compile(&guest_dir)?;
-                (program.elf().to_vec(), None, program)
+                (Some(program.elf().to_vec()), None, program)
             }
             _ => bail!(unsupported_compiler_kind_err(
                 compiler_kind,
@@ -244,7 +249,7 @@ fn compile(
         match compiler_kind {
             CompilerKind::RustCustomized => {
                 let program = RustMips32r2Customized.compile(&guest_dir)?;
-                (program.elf().to_vec(), None, program)
+                (Some(program.elf().to_vec()), None, program)
             }
             _ => bail!(unsupported_compiler_kind_err(
                 compiler_kind,
@@ -259,11 +264,11 @@ fn compile(
         match compiler_kind {
             CompilerKind::RustCustomized => {
                 let program = RustRv64imaCustomized.compile(&guest_dir)?;
-                (program.elf().to_vec(), None, program)
+                (Some(program.elf().to_vec()), None, program)
             }
             CompilerKind::GoCustomized => {
                 let program = GoCustomized.compile(&guest_dir)?;
-                (program.elf().to_vec(), None, program)
+                (Some(program.elf().to_vec()), None, program)
             }
             _ => bail!(unsupported_compiler_kind_err(
                 compiler_kind,

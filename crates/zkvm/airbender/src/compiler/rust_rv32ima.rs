@@ -48,7 +48,7 @@ impl Compiler for RustRv32ima {
             .rustflags(RUSTFLAGS)
             .exec(guest_directory, TARGET_TRIPLE)?;
         let bin = objcopy_binary(&toolchain, &elf)?;
-        Ok(AirbenderProgram { bin })
+        Ok(AirbenderProgram { bin, elf })
     }
 }
 

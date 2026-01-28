@@ -3,6 +3,3 @@ name = "addition_no_std"
 edition = "2021"
 
 [workspace]
-
-[features]
-guest = []
