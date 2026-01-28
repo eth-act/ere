@@ -93,11 +93,10 @@ fn main() -> Result<(), Error> {
     Ok(())
 }
 
+type CompilationResult<P> = Result<(Option<Vec<u8>>, Option<Vec<u8>>, P), Error>;
+
 /// Compiles the guest and returns (Optional ELF bytes, Optional Digest bytes, Serialized Program)
-fn compile(
-    guest_dir: PathBuf,
-    compiler_kind: CompilerKind,
-) -> Result<(Option<Vec<u8>>, Option<Vec<u8>>, impl Serialize), Error> {
+fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> CompilationResult<impl Serialize> {
     #[cfg(feature = "airbender")]
     let result = {
         use ere_airbender::compiler::*;
