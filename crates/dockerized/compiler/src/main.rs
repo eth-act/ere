@@ -30,12 +30,21 @@ struct Args {
     /// Compiler kind to use
     #[arg(long, value_parser = <CompilerKind as std::str::FromStr>::from_str)]
     compiler_kind: CompilerKind,
-    /// Path to the guest program
+    /// Directory of the guest program
     #[arg(long)]
-    guest_path: PathBuf,
-    /// Path where the compiled program will be written
+    guest_dir: PathBuf,
+    /// Directory where the compiled program/artifacts will be written
     #[arg(long)]
-    output_path: PathBuf,
+    output_dir: PathBuf,
+    /// Name of the output ELF file (optional)
+    #[arg(long)]
+    elf_name: Option<String>,
+    /// Name of the output digest file (optional, only for supported zkVMs)
+    #[arg(long)]
+    digest_name: Option<String>,
+    /// Name of the output serialized program file (optional)
+    #[arg(long)]
+    program_name: Option<String>,
 }
 
 fn main() -> Result<(), Error> {
@@ -45,21 +54,58 @@ fn main() -> Result<(), Error> {
 
     let args = Args::parse();
 
-    let program = compile(args.guest_path, args.compiler_kind)?;
+    // Create output directory if it doesn't exist
+    if !args.output_dir.exists() {
+        std::fs::create_dir_all(&args.output_dir)
+            .with_context(|| "Failed to create output directory")?;
+    }
 
-    let mut output = File::create(args.output_path).with_context(|| "Failed to create output")?;
-    bincode::serde::encode_into_std_write(&program, &mut output, bincode::config::legacy())
-        .with_context(|| "Failed to serialize program")?;
+    let (elf, digest, program) = compile(args.guest_dir, args.compiler_kind)?;
+
+    if let Some(elf_name) = args.elf_name {
+        if let Some(elf_bytes) = elf {
+            let path = args.output_dir.join(elf_name);
+            std::fs::write(&path, &elf_bytes)
+                .with_context(|| format!("Failed to write ELF to {path:?}"))?;
+        } else {
+            tracing::warn!("ELF output requested but not available/supported for this zkVM.");
+        }
+    }
+
+    if let Some(digest_name) = args.digest_name {
+        if let Some(digest_bytes) = digest {
+            let path = args.output_dir.join(digest_name);
+            std::fs::write(&path, &digest_bytes)
+                .with_context(|| format!("Failed to write digest to {path:?}"))?;
+        } else {
+            tracing::warn!("Digest output requested but not available/supported for this zkVM.");
+        }
+    }
+
+    if let Some(program_name) = args.program_name {
+        let path = args.output_dir.join(program_name);
+        let mut output =
+            File::create(&path).with_context(|| "Failed to create program output file")?;
+        bincode::serde::encode_into_std_write(&program, &mut output, bincode::config::legacy())
+            .with_context(|| "Failed to serialize program")?;
+    }
 
     Ok(())
 }
 
-fn compile(guest_path: PathBuf, compiler_kind: CompilerKind) -> Result<impl Serialize, Error> {
+type CompilationResult<P> = Result<(Option<Vec<u8>>, Option<Vec<u8>>, P), Error>;
+
+/// Compiles the guest and returns (Optional ELF bytes, Optional Digest bytes, Serialized Program)
+fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> CompilationResult<impl Serialize> {
     #[cfg(feature = "airbender")]
     let result = {
         use ere_airbender::compiler::*;
         match compiler_kind {
-            CompilerKind::Rust | CompilerKind::RustCustomized => RustRv32ima.compile(&guest_path),
+            CompilerKind::Rust | CompilerKind::RustCustomized => {
+                let program = RustRv32ima.compile(&guest_dir)?;
+                let elf = program.elf().to_vec();
+                (Some(elf), None, program)
+            }
             _ => bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
@@ -71,8 +117,14 @@ fn compile(guest_path: PathBuf, compiler_kind: CompilerKind) -> Result<impl Seri
     let result = {
         use ere_jolt::compiler::*;
         match compiler_kind {
-            CompilerKind::Rust => RustRv64imac.compile(&guest_path),
-            CompilerKind::RustCustomized => RustRv64imacCustomized.compile(&guest_path),
+            CompilerKind::Rust => {
+                let program = RustRv64imac.compile(&guest_dir)?;
+                (Some(program.elf().to_vec()), None, program)
+            }
+            CompilerKind::RustCustomized => {
+                let program = RustRv64imacCustomized.compile(&guest_dir)?;
+                (Some(program.elf().to_vec()), None, program)
+            }
             _ => bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
@@ -84,7 +136,10 @@ fn compile(guest_path: PathBuf, compiler_kind: CompilerKind) -> Result<impl Seri
     let result = {
         use ere_miden::compiler::*;
         match compiler_kind {
-            CompilerKind::MidenAsm => MidenAsm.compile(&guest_path),
+            CompilerKind::MidenAsm => {
+                let program = MidenAsm.compile(&guest_dir)?;
+                (None, None, program)
+            }
             _ => bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::MidenAsm]
@@ -96,7 +151,10 @@ fn compile(guest_path: PathBuf, compiler_kind: CompilerKind) -> Result<impl Seri
     let result = {
         use ere_nexus::compiler::*;
         match compiler_kind {
-            CompilerKind::Rust | CompilerKind::RustCustomized => RustRv32i.compile(&guest_path),
+            CompilerKind::Rust | CompilerKind::RustCustomized => {
+                let program = RustRv32i.compile(&guest_dir)?;
+                (Some(program.elf().to_vec()), None, program)
+            }
             _ => bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
@@ -108,8 +166,14 @@ fn compile(guest_path: PathBuf, compiler_kind: CompilerKind) -> Result<impl Seri
     let result = {
         use ere_openvm::compiler::*;
         match compiler_kind {
-            CompilerKind::Rust => RustRv32ima.compile(&guest_path),
-            CompilerKind::RustCustomized => RustRv32imaCustomized.compile(&guest_path),
+            CompilerKind::Rust => {
+                let program = RustRv32ima.compile(&guest_dir)?;
+                (Some(program.elf().to_vec()), None, program)
+            }
+            CompilerKind::RustCustomized => {
+                let program = RustRv32imaCustomized.compile(&guest_dir)?;
+                (Some(program.elf().to_vec()), None, program)
+            }
             _ => bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
@@ -121,8 +185,14 @@ fn compile(guest_path: PathBuf, compiler_kind: CompilerKind) -> Result<impl Seri
     let result = {
         use ere_pico::compiler::*;
         match compiler_kind {
-            CompilerKind::Rust => RustRv32ima.compile(&guest_path),
-            CompilerKind::RustCustomized => RustRv32imaCustomized.compile(&guest_path),
+            CompilerKind::Rust => {
+                let program = RustRv32ima.compile(&guest_dir)?;
+                (Some(program.elf().to_vec()), None, program)
+            }
+            CompilerKind::RustCustomized => {
+                let program = RustRv32imaCustomized.compile(&guest_dir)?;
+                (Some(program.elf().to_vec()), None, program)
+            }
             _ => bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
@@ -134,8 +204,18 @@ fn compile(guest_path: PathBuf, compiler_kind: CompilerKind) -> Result<impl Seri
     let result = {
         use ere_risc0::compiler::*;
         match compiler_kind {
-            CompilerKind::Rust => RustRv32ima.compile(&guest_path),
-            CompilerKind::RustCustomized => RustRv32imaCustomized.compile(&guest_path),
+            CompilerKind::Rust => {
+                let program = RustRv32ima.compile(&guest_dir)?;
+                let elf = program.elf().to_vec();
+                let digest = program.image_id().as_bytes().to_vec();
+                (Some(elf), Some(digest), program)
+            }
+            CompilerKind::RustCustomized => {
+                let program = RustRv32imaCustomized.compile(&guest_dir)?;
+                let elf = program.elf().to_vec();
+                let digest = program.image_id().as_bytes().to_vec();
+                (Some(elf), Some(digest), program)
+            }
             _ => bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
@@ -147,8 +227,14 @@ fn compile(guest_path: PathBuf, compiler_kind: CompilerKind) -> Result<impl Seri
     let result = {
         use ere_sp1::compiler::*;
         match compiler_kind {
-            CompilerKind::Rust => RustRv32ima.compile(&guest_path),
-            CompilerKind::RustCustomized => RustRv32imaCustomized.compile(&guest_path),
+            CompilerKind::Rust => {
+                let program = RustRv32ima.compile(&guest_dir)?;
+                (Some(program.elf().to_vec()), None, program)
+            }
+            CompilerKind::RustCustomized => {
+                let program = RustRv32imaCustomized.compile(&guest_dir)?;
+                (Some(program.elf().to_vec()), None, program)
+            }
             _ => bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
@@ -160,7 +246,10 @@ fn compile(guest_path: PathBuf, compiler_kind: CompilerKind) -> Result<impl Seri
     let result = {
         use ere_ziren::compiler::*;
         match compiler_kind {
-            CompilerKind::RustCustomized => RustMips32r2Customized.compile(&guest_path),
+            CompilerKind::RustCustomized => {
+                let program = RustMips32r2Customized.compile(&guest_dir)?;
+                (Some(program.elf().to_vec()), None, program)
+            }
             _ => bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::RustCustomized]
@@ -172,8 +261,14 @@ fn compile(guest_path: PathBuf, compiler_kind: CompilerKind) -> Result<impl Seri
     let result = {
         use ere_zisk::compiler::*;
         match compiler_kind {
-            CompilerKind::RustCustomized => RustRv64imaCustomized.compile(&guest_path),
-            CompilerKind::GoCustomized => GoCustomized.compile(&guest_path),
+            CompilerKind::RustCustomized => {
+                let program = RustRv64imaCustomized.compile(&guest_dir)?;
+                (Some(program.elf().to_vec()), None, program)
+            }
+            CompilerKind::GoCustomized => {
+                let program = GoCustomized.compile(&guest_dir)?;
+                (Some(program.elf().to_vec()), None, program)
+            }
             _ => bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::RustCustomized, CompilerKind::GoCustomized]
@@ -181,7 +276,7 @@ fn compile(guest_path: PathBuf, compiler_kind: CompilerKind) -> Result<impl Seri
         }
     };
 
-    result.with_context(|| "Failed to compile program")
+    Ok(result)
 }
 
 fn unsupported_compiler_kind_err(

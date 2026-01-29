@@ -154,10 +154,12 @@ impl Compiler for DockerizedCompiler {
         cmd.exec([
             "--compiler-kind",
             self.compiler_kind.as_str(),
-            "--guest-path",
+            "--guest-dir",
             guest_path_in_docker.to_string_lossy().as_ref(),
-            "--output-path",
-            "/output/program",
+            "--output-dir",
+            "/output",
+            "--program-name",
+            "program",
         ])?;
 
         let program_path = tempdir.path().join("program");
