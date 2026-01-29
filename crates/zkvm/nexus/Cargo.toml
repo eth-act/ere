@@ -17,6 +17,7 @@ tracing.workspace = true
 nexus-core = { workspace = true, optional = true }
 nexus-sdk = { workspace = true, optional = true }
 nexus-vm = { workspace = true, optional = true }
+nexus-vm-prover = { workspace = true, optional = true }
 
 # Local dependencies
 ere-compile-utils = { workspace = true, optional = true }
@@ -31,7 +32,7 @@ ere-build-utils.workspace = true
 [features]
 default = ["compiler", "zkvm"]
 compiler = ["dep:ere-compile-utils"]
-zkvm = ["dep:nexus-core", "dep:nexus-sdk", "dep:nexus-vm"]
+zkvm = ["dep:nexus-core", "dep:nexus-sdk", "dep:nexus-vm", "dep:nexus-vm-prover"]
 
 [lints]
 workspace = true

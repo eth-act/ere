@@ -5,7 +5,7 @@ use std::path::Path;
 
 const TARGET_TRIPLE: &str = "riscv32i-unknown-none-elf";
 // Linker script from nexus-sdk
-// https://github.com/nexus-xyz/nexus-zkvm/blob/v0.3.5/sdk/src/compile/linker-scripts/default.x
+// https://github.com/nexus-xyz/nexus-zkvm/blob/v0.3.6/sdk/src/compile/linker-scripts/default.x
 const LINKER_SCRIPT: &str = include_str!("rust_rv32i/linker.x");
 const RUSTFLAGS: &[&str] = &["-C", "relocation-model=pic", "-C", "panic=abort"];
 const CARGO_BUILD_OPTIONS: &[&str] = &[
@@ -26,7 +26,7 @@ impl Compiler for RustRv32i {
             .linker_script(Some(LINKER_SCRIPT))
             // The compiled ELF will be incompatible with Nexus VM if we don't pin this version
             // https://github.com/nexus-xyz/nexus-zkvm/blob/main/rust-toolchain.toml
-            .toolchain("nightly-2025-04-06")
+            .toolchain("nightly-2025-05-09")
             .build_options(CARGO_BUILD_OPTIONS)
             .rustflags(RUSTFLAGS)
             .exec(guest_directory, TARGET_TRIPLE)?;
