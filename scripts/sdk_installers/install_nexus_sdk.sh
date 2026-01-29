@@ -31,7 +31,7 @@ ensure_tool_installed "rustup" "for managing Rust toolchains"
 ensure_tool_installed "cargo" "as cargo-nexus is a cargo subcommand"
 
 NEXUS_TOOLCHAIN_VERSION="nightly-2025-04-06"
-NEXUS_CLI_VERSION_TAG="v0.3.5"
+NEXUS_CLI_VERSION_TAG="v0.3.6"
 
 # Install the Nexus CLI
 WORKSPACE=$(mktemp -d)
