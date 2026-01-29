@@ -32,7 +32,6 @@ struct NexusProof {
 #[derive(Serialize, Deserialize)]
 struct NexusProofBundle {
     proof: NexusProof,
-    public_values: Vec<u8>,
     raw_output: Vec<u8>,
     exit_code: u32,
 }
@@ -85,10 +84,7 @@ impl zkVM for EreNexus {
             bail!(Error::GuestPanic(exit_code));
         }
 
-        let public_values = view
-            .view_public_output()
-            .and_then(|mut raw| postcard::from_bytes_cobs::<Vec<u8>>(&mut raw).ok())
-            .unwrap_or_default();
+        let public_values = decode_public_output(view.view_public_output());
 
         Ok((
             public_values,
@@ -136,18 +132,13 @@ impl zkVM for EreNexus {
         let proving_time = start.elapsed();
 
         let raw_output = view.view_public_output().unwrap_or_default();
-        let public_values =
-            postcard::from_bytes_cobs::<Vec<u8>>(&mut raw_output.clone()).unwrap_or_default();
-        let exit_code = view
-            .exit_code()
-            .unwrap_or(KnownExitCodes::ExitSuccess as u32);
+        let public_values = decode_public_output(view.view_public_output());
 
         let proof_bundle = NexusProofBundle {
             proof: NexusProof {
                 proof,
                 memory_layout: trace.memory_layout,
             },
-            public_values,
             raw_output,
             exit_code,
         };
@@ -156,7 +147,7 @@ impl zkVM for EreNexus {
             .map_err(|err| CommonError::serialize("proof", "bincode", err))?;
 
         Ok((
-            proof_bundle.public_values.clone(),
+            public_values,
             Proof::Compressed(proof_bytes),
             ProgramProvingReport::new(proving_time),
         ))
@@ -208,7 +199,9 @@ impl zkVM for EreNexus {
 
         info!("Verify Succeeded!");
 
-        Ok(proof_bundle.public_values)
+        let public_values = decode_public_output(view.view_public_output());
+
+        Ok(public_values)
     }
 
     fn name(&self) -> &'static str {
@@ -220,7 +213,7 @@ impl zkVM for EreNexus {
     }
 }
 
-fn encode_private_input(stdin: &[u8]) -> anyhow::Result<Vec<u8>> {
+fn encode_private_input(stdin: &[u8]) -> Result<Vec<u8>, CommonError> {
     if stdin.is_empty() {
         return Ok(Vec::new());
     }
@@ -232,6 +225,12 @@ fn encode_private_input(stdin: &[u8]) -> anyhow::Result<Vec<u8>> {
     encoded.resize(padded_len, 0x00);
 
     Ok(encoded)
+}
+
+fn decode_public_output(public_outputs: Option<Vec<u8>>) -> PublicValues {
+    public_outputs
+        .and_then(|mut raw| postcard::from_bytes_cobs::<Vec<u8>>(&mut raw).ok())
+        .unwrap_or_default()
 }
 
 #[cfg(test)]
