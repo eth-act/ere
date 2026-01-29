@@ -26,7 +26,7 @@ impl Compiler for RustRv32i {
             .linker_script(Some(LINKER_SCRIPT))
             // The compiled ELF will be incompatible with Nexus VM if we don't pin this version
             // https://github.com/nexus-xyz/nexus-zkvm/blob/main/rust-toolchain.toml
-            .toolchain("nightly-2025-04-06")
+            .toolchain("nightly-2025-05-09")
             .build_options(CARGO_BUILD_OPTIONS)
             .rustflags(RUSTFLAGS)
             .exec(guest_directory, TARGET_TRIPLE)?;
