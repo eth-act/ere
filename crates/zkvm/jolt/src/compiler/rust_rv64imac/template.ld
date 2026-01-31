@@ -1,4 +1,4 @@
-/* Copied from https://github.com/a16z/jolt/blob/v0.3.0-alpha/jolt-core/src/host/mod.rs#L28 */
+/* Copied from https://github.com/a16z/jolt/blob/6dcd401/jolt-core/src/host/mod.rs#L30 */
 
 MEMORY {
   program (rwx) : ORIGIN = 0x80000000, LENGTH = {EMULATOR_MEMORY}
