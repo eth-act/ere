@@ -15,6 +15,9 @@ pub enum Error {
     ExecutionPanic,
 
     // Verify
-    #[error("Failed to verify proof: {0}")]
+    #[error("Failed to construct verifier: {0}")]
     VerifyProofFailed(#[from] ProofVerifyError),
+
+    #[error("Verification failed: {0}")]
+    VerifyFailed(String),
 }

@@ -3,22 +3,19 @@ use core::{array::from_fn, cmp::min};
 use ere_zkvm_interface::zkvm::PublicValues;
 use jolt_ark_serialize::{self as ark_serialize, CanonicalDeserialize, CanonicalSerialize};
 use jolt_common::constants::{
-    DEFAULT_MAX_INPUT_SIZE, DEFAULT_MAX_OUTPUT_SIZE, DEFAULT_MAX_TRACE_LENGTH, DEFAULT_MEMORY_SIZE,
+    DEFAULT_MAX_INPUT_SIZE, DEFAULT_MAX_OUTPUT_SIZE, DEFAULT_MAX_TRACE_LENGTH,
+    DEFAULT_MAX_TRUSTED_ADVICE_SIZE, DEFAULT_MAX_UNTRUSTED_ADVICE_SIZE, DEFAULT_MEMORY_SIZE,
     DEFAULT_STACK_SIZE,
 };
-use jolt_core::{
-    poly::commitment::commitment_scheme::CommitmentScheme, transcripts::Blake2bTranscript as FS,
-    utils::math::Math, zkvm::witness::DTH_ROOT_OF_K,
-};
 use jolt_sdk::{
-    F, Jolt, JoltDevice, JoltProverPreprocessing, JoltRV64IMAC, JoltVerifierPreprocessing,
-    MemoryConfig, MemoryLayout, PCS,
+    F, JoltDevice, JoltProverPreprocessing, JoltSharedPreprocessing, JoltVerifierPreprocessing,
+    MemoryConfig, MemoryLayout, PCS, RV64IMACProof, RV64IMACProver, RV64IMACVerifier,
     guest::program::{decode, trace},
 };
 
 #[derive(CanonicalSerialize, CanonicalDeserialize)]
 pub struct JoltProof {
-    proof: jolt_sdk::JoltProof<F, PCS, FS>,
+    proof: RV64IMACProof,
     // FIXME: Remove `inputs` when Jolt supports proving with private input.
     //        Issue for tracking: https://github.com/eth-act/ere/issues/4.
     inputs: Vec<u8>,
@@ -37,6 +34,8 @@ impl JoltSdk {
         let (bytecode, memory_init, program_size) = decode(elf);
         let memory_config = MemoryConfig {
             max_input_size: DEFAULT_MAX_INPUT_SIZE,
+            max_trusted_advice_size: DEFAULT_MAX_TRUSTED_ADVICE_SIZE,
+            max_untrusted_advice_size: DEFAULT_MAX_UNTRUSTED_ADVICE_SIZE,
             max_output_size: DEFAULT_MAX_OUTPUT_SIZE,
             stack_size: DEFAULT_STACK_SIZE,
             memory_size: DEFAULT_MEMORY_SIZE,
@@ -44,16 +43,13 @@ impl JoltSdk {
         };
         let memory_layout = MemoryLayout::new(&memory_config);
         let max_trace_length = DEFAULT_MAX_TRACE_LENGTH as usize;
-        let pk = {
-            // FIXME: Use public trusted setup or switch to other transparent PCS.
-            let max_trace_length = max_trace_length.next_power_of_two();
-            let generators = PCS::setup_prover(DTH_ROOT_OF_K.log_2() + max_trace_length.log_2());
 
-            let shared = JoltRV64IMAC::shared_preprocess(bytecode, memory_layout, memory_init);
-
-            JoltProverPreprocessing { generators, shared }
-        };
+        // FIXME: Use public trusted setup or switch to other transparent PCS.
+        let shared =
+            JoltSharedPreprocessing::new(bytecode, memory_layout, memory_init, max_trace_length);
+        let pk = JoltProverPreprocessing::new(shared);
         let vk = JoltVerifierPreprocessing::from(&pk);
+
         Self {
             elf: elf.to_vec(),
             memory_config,
@@ -63,19 +59,25 @@ impl JoltSdk {
     }
 
     pub fn execute(&self, input: &[u8]) -> Result<(PublicValues, u64), Error> {
-        let (cycles, _, io) = trace(&self.elf, None, input, &self.memory_config);
+        let (trace_iter, materialized_trace, _memory, io) =
+            trace(&self.elf, None, input, &[], &[], &self.memory_config);
         if io.panic {
             return Err(Error::ExecutionPanic);
         }
+        let num_cycles = materialized_trace.len() + trace_iter.count();
         let public_values = extract_public_values(&io.outputs)?;
-        Ok((public_values, cycles.len() as _))
+        Ok((public_values, num_cycles as _))
     }
 
     pub fn prove(&self, input: &[u8]) -> Result<(PublicValues, JoltProof), Error> {
-        let (proof, io, _) = JoltRV64IMAC::prove(&self.pk, &self.elf, input);
+        let prover: RV64IMACProver =
+            RV64IMACProver::gen_from_elf(&self.pk, &self.elf, input, &[], &[], None, None);
+        let io = prover.program_io.clone();
         if io.panic {
             return Err(Error::ExecutionPanic);
         }
+        let (proof, _debug_info) = prover.prove();
+
         let public_values = extract_public_values(&io.outputs)?;
         let proof = JoltProof {
             proof,
@@ -86,17 +88,22 @@ impl JoltSdk {
     }
 
     pub fn verify(&self, proof: JoltProof) -> Result<PublicValues, Error> {
-        JoltRV64IMAC::verify(
-            &self.vk,
-            proof.proof,
-            JoltDevice {
-                inputs: proof.inputs.clone(),
-                outputs: proof.outputs.clone(),
-                panic: false,
-                memory_layout: MemoryLayout::new(&self.memory_config),
-            },
-            None,
-        )?;
+        let io_device = JoltDevice {
+            inputs: proof.inputs.clone(),
+            trusted_advice: Vec::new(),
+            untrusted_advice: Vec::new(),
+            outputs: proof.outputs.clone(),
+            panic: false,
+            memory_layout: MemoryLayout::new(&self.memory_config),
+        };
+
+        let verifier: RV64IMACVerifier =
+            RV64IMACVerifier::new(&self.vk, proof.proof, io_device, None, None)
+                .map_err(Error::VerifyProofFailed)?;
+        verifier
+            .verify()
+            .map_err(|e| Error::VerifyFailed(e.to_string()))?;
+
         let public_values = extract_public_values(&proof.outputs)?;
         Ok(public_values)
     }
