@@ -3,11 +3,11 @@ use core::{
     panic::PanicInfo,
 };
 
-// According to https://github.com/a16z/jolt/blob/6dcd401/common/src/jolt_device.rs
+// According to https://github.com/a16z/jolt/blob/6dcd401/common/src/jolt_device.rs#L189
 const DEFAULT_TERMINATION_ADDR: usize = 0x7FFFC008;
 const DEFAULT_PANIC_ADDR: usize = 0x7FFFC000;
 
-// According to https://github.com/a16z/jolt/blob/6dcd401/jolt-sdk/macros/src/lib.rs
+// According to https://github.com/a16z/jolt/blob/6dcd401/jolt-sdk/macros/src/lib.rs#L808
 core::arch::global_asm!(
     r#"
 .global _start

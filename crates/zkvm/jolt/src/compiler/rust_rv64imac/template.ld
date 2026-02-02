@@ -18,13 +18,23 @@ SECTIONS {
   } > program
 
   .bss (NOLOAD) : {
-    *(.bss)
+    __bss_start = .;
+    *(.bss .bss.*)
+    *(COMMON)
+    . = ALIGN(8);
+    __bss_end = .;
   } > program
+
+  /DISCARD/ : {
+    *(.eh_frame*)
+    *(.eh_frame_hdr*)
+  }
 
   . = ALIGN(8);
   _STACK_END = .;
   . = . + {STACK_CANARY};
   . = . + {STACK_SIZE};
+  . = ALIGN(8);
   _STACK_PTR = .;
 
   . = ALIGN(8);

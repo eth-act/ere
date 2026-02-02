@@ -7,7 +7,7 @@ use jolt_common::constants::{
 use std::{env, path::Path};
 
 const TARGET_TRIPLE: &str = "riscv64imac-unknown-none-elf";
-// According to https://github.com/a16z/jolt/blob/6dcd401/jolt-core/src/host/program.rs#L95
+// According to https://github.com/a16z/jolt/blob/6dcd401/jolt-core/src/host/program.rs#L96
 const RUSTFLAGS: &[&str] = &[
     "-C",
     "passes=lower-atomic",
