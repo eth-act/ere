@@ -162,10 +162,10 @@ mod tests {
 
     #[test]
     fn test_prove() {
+        let _guard = PROVE_LOCK.lock().unwrap();
+
         let program = basic_program();
         let zkvm = EreJolt::new(program, ProverResourceType::Cpu).unwrap();
-
-        let _guard = PROVE_LOCK.lock().unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
@@ -173,10 +173,10 @@ mod tests {
 
     #[test]
     fn test_prove_invalid_test_case() {
+        let _guard = PROVE_LOCK.lock().unwrap();
+
         let program = basic_program();
         let zkvm = EreJolt::new(program, ProverResourceType::Cpu).unwrap();
-
-        let _guard = PROVE_LOCK.lock().unwrap();
 
         for input in [
             Input::new(),

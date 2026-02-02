@@ -24,16 +24,17 @@ ensure_tool_installed() {
 
 echo "Installing Jolt CLI..."
 
-ensure_tool_installed "rustup" "to manage Rust toolchains"
+ensure_tool_installed "rustup" "to manage Rust toolchains (though Jolt uses default nightly)"
 ensure_tool_installed "git" "to install Jolt from a git repository"
 ensure_tool_installed "cargo" "to build and install Rust packages"
 
 JOLT_VERSION_TAG="6dcd401"
 
-# Install Jolt CLI using cargo install
+# Install Jolt CLI using cargo install with +nightly
 # This installs the 'jolt' binary directly to $HOME/.cargo/bin
+# The ere-base image should have a compatible default nightly toolchain.
 echo "Installing Jolt CLI from GitHub repository (a16z/jolt)..."
-cargo install --git https://github.com/a16z/jolt --force --bins jolt --rev "$JOLT_VERSION_TAG"
+cargo +nightly install --git https://github.com/a16z/jolt --force --bins jolt --rev "$JOLT_VERSION_TAG"
 
 # Install Jolt's toolchain
 jolt install-toolchain
