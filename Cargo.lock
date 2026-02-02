@@ -4016,6 +4016,7 @@ dependencies = [
 name = "ere-platform-jolt"
 version = "0.1.0"
 dependencies = [
+ "common",
  "ere-platform-trait",
  "jolt-sdk",
  "postcard",

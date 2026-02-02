@@ -1,6 +1,6 @@
 use crate::{
     program::JoltProgram,
-    zkvm::sdk::{JoltProof, JoltSdk},
+    zkvm::sdk::{JoltConfig, JoltProof, JoltSdk},
 };
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
@@ -26,7 +26,7 @@ impl EreJolt {
         if !matches!(resource, ProverResourceType::Cpu) {
             panic!("Network or GPU proving not yet implemented for Miden. Use CPU resource type.");
         }
-        let sdk = JoltSdk::new(program.elf());
+        let sdk = JoltSdk::new(program.elf(), JoltConfig::from_env());
         Ok(EreJolt { sdk })
     }
 }

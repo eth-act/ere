@@ -9,6 +9,7 @@ license.workspace = true
 postcard = { workspace = true, features = ["alloc"] }
 
 # Jolt dependencies
+jolt-common.workspace = true
 jolt-sdk.workspace = true
 
 # Local dependencies

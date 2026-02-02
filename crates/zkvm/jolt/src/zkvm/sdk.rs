@@ -12,14 +12,61 @@ use jolt_sdk::{
     MemoryConfig, MemoryLayout, PCS, RV64IMACProof, RV64IMACProver, RV64IMACVerifier,
     guest::program::{decode, trace},
 };
+use std::env;
 
 #[derive(CanonicalSerialize, CanonicalDeserialize)]
 pub struct JoltProof {
     proof: RV64IMACProof,
-    // FIXME: Remove `inputs` when Jolt supports proving with private input.
-    //        Issue for tracking: https://github.com/eth-act/ere/issues/4.
-    inputs: Vec<u8>,
     outputs: Vec<u8>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct JoltConfig {
+    max_input_size: u64,
+    max_trusted_advice_size: u64,
+    max_untrusted_advice_size: u64,
+    max_output_size: u64,
+    stack_size: u64,
+    memory_size: u64,
+    max_trace_length: u64,
+}
+
+impl JoltConfig {
+    pub fn from_env() -> Self {
+        #[rustfmt::skip]
+        let envs = [
+            ("JOLT_MAX_INPUT_SIZE",            DEFAULT_MAX_INPUT_SIZE),
+            ("JOLT_MAX_TRUSTED_ADVICE_SIZE",   DEFAULT_MAX_TRUSTED_ADVICE_SIZE),
+            ("JOLT_MAX_UNTRUSTED_ADVICE_SIZE", DEFAULT_MAX_UNTRUSTED_ADVICE_SIZE),
+            ("JOLT_MAX_OUTPUT_SIZE",           DEFAULT_MAX_OUTPUT_SIZE),
+            ("JOLT_STACK_SIZE",                DEFAULT_STACK_SIZE),
+            ("JOLT_MEMORY_SIZE",               DEFAULT_MEMORY_SIZE),
+            ("JOLT_MAX_TRACE_LENGTH",          DEFAULT_MAX_TRACE_LENGTH),
+        ];
+        let [
+            max_input_size,
+            max_trusted_advice_size,
+            max_untrusted_advice_size,
+            max_output_size,
+            stack_size,
+            memory_size,
+            max_trace_length,
+        ] = envs.map(|(key, default)| {
+            env::var(key)
+                .ok()
+                .and_then(|val| val.parse().ok())
+                .unwrap_or(default)
+        });
+        Self {
+            max_input_size,
+            max_trusted_advice_size,
+            max_untrusted_advice_size,
+            max_output_size,
+            stack_size,
+            memory_size,
+            max_trace_length,
+        }
+    }
 }
 
 pub struct JoltSdk {
@@ -30,23 +77,26 @@ pub struct JoltSdk {
 }
 
 impl JoltSdk {
-    pub fn new(elf: &[u8]) -> Self {
+    pub fn new(elf: &[u8], config: JoltConfig) -> Self {
         let (bytecode, memory_init, program_size) = decode(elf);
         let memory_config = MemoryConfig {
-            max_input_size: DEFAULT_MAX_INPUT_SIZE,
-            max_trusted_advice_size: DEFAULT_MAX_TRUSTED_ADVICE_SIZE,
-            max_untrusted_advice_size: DEFAULT_MAX_UNTRUSTED_ADVICE_SIZE,
-            max_output_size: DEFAULT_MAX_OUTPUT_SIZE,
-            stack_size: DEFAULT_STACK_SIZE,
-            memory_size: DEFAULT_MEMORY_SIZE,
+            max_input_size: config.max_input_size,
+            max_trusted_advice_size: config.max_trusted_advice_size,
+            max_untrusted_advice_size: config.max_untrusted_advice_size,
+            max_output_size: config.max_output_size,
+            stack_size: config.stack_size,
+            memory_size: config.memory_size,
             program_size: Some(program_size),
         };
         let memory_layout = MemoryLayout::new(&memory_config);
-        let max_trace_length = DEFAULT_MAX_TRACE_LENGTH as usize;
 
         // FIXME: Use public trusted setup or switch to other transparent PCS.
-        let shared =
-            JoltSharedPreprocessing::new(bytecode, memory_layout, memory_init, max_trace_length);
+        let shared = JoltSharedPreprocessing::new(
+            bytecode,
+            memory_layout,
+            memory_init,
+            config.max_trace_length as usize,
+        );
         let pk = JoltProverPreprocessing::new(shared);
         let vk = JoltVerifierPreprocessing::from(&pk);
 
@@ -59,8 +109,17 @@ impl JoltSdk {
     }
 
     pub fn execute(&self, input: &[u8]) -> Result<(PublicValues, u64), Error> {
-        let (trace_iter, materialized_trace, _memory, io) =
-            trace(&self.elf, None, input, &[], &[], &self.memory_config);
+        // Use untrusted advice (aka private input) instead of input of Jolt device,
+        // which is public to verifier.
+        let untrusted_advice = input;
+        let (trace_iter, materialized_trace, _memory, io) = trace(
+            &self.elf,
+            None,
+            &[],
+            untrusted_advice,
+            &[],
+            &self.memory_config,
+        );
         if io.panic {
             return Err(Error::ExecutionPanic);
         }
@@ -70,8 +129,18 @@ impl JoltSdk {
     }
 
     pub fn prove(&self, input: &[u8]) -> Result<(PublicValues, JoltProof), Error> {
-        let prover: RV64IMACProver =
-            RV64IMACProver::gen_from_elf(&self.pk, &self.elf, input, &[], &[], None, None);
+        // Use untrusted advice (aka private input) instead of input of Jolt device,
+        // which is public to verifier.
+        let untrusted_advice = input;
+        let prover = RV64IMACProver::gen_from_elf(
+            &self.pk,
+            &self.elf,
+            &[],
+            untrusted_advice,
+            &[],
+            None,
+            None,
+        );
         let io = prover.program_io.clone();
         if io.panic {
             return Err(Error::ExecutionPanic);
@@ -81,7 +150,6 @@ impl JoltSdk {
         let public_values = extract_public_values(&io.outputs)?;
         let proof = JoltProof {
             proof,
-            inputs: io.inputs,
             outputs: io.outputs,
         };
         Ok((public_values, proof))
@@ -89,20 +157,15 @@ impl JoltSdk {
 
     pub fn verify(&self, proof: JoltProof) -> Result<PublicValues, Error> {
         let io_device = JoltDevice {
-            inputs: proof.inputs.clone(),
-            trusted_advice: Vec::new(),
-            untrusted_advice: Vec::new(),
             outputs: proof.outputs.clone(),
             panic: false,
             memory_layout: MemoryLayout::new(&self.memory_config),
+            ..Default::default()
         };
 
-        let verifier: RV64IMACVerifier =
-            RV64IMACVerifier::new(&self.vk, proof.proof, io_device, None, None)
-                .map_err(Error::VerifyProofFailed)?;
-        verifier
-            .verify()
-            .map_err(|e| Error::VerifyFailed(e.to_string()))?;
+        let verifier = RV64IMACVerifier::new(&self.vk, proof.proof, io_device, None, None)
+            .map_err(Error::VerifierInitFailed)?;
+        verifier.verify().map_err(Error::VerifyFailed)?;
 
         let public_values = extract_public_values(&proof.outputs)?;
         Ok(public_values)
