@@ -93,12 +93,12 @@ jolt-core = { git = "https://github.com/a16z/jolt.git", rev = "6dcd401" }
 jolt-sdk = { git = "https://github.com/a16z/jolt.git", rev = "6dcd401", default-features = false }
 
 # Miden dependencies
-miden-assembly = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.3" }
-miden-core = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.3" }
-miden-processor = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.3" }
-miden-prover = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.3" }
-miden-core-lib = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.3" }
-miden-verifier = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.3" }
+miden-assembly = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.4" }
+miden-core = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.4" }
+miden-processor = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.4" }
+miden-prover = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.4" }
+miden-core-lib = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.4" }
+miden-verifier = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.4" }
 
 # Nexus dependencies
 nexus-core = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.6" }
