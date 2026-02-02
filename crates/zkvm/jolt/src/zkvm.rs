@@ -1,6 +1,6 @@
 use crate::{
     program::JoltProgram,
-    zkvm::sdk::{JoltProof, JoltSdk},
+    zkvm::sdk::{JoltConfig, JoltProof, JoltSdk},
 };
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
@@ -26,7 +26,7 @@ impl EreJolt {
         if !matches!(resource, ProverResourceType::Cpu) {
             panic!("Network or GPU proving not yet implemented for Miden. Use CPU resource type.");
         }
-        let sdk = JoltSdk::new(program.elf());
+        let sdk = JoltSdk::new(program.elf(), JoltConfig::from_env());
         Ok(EreJolt { sdk })
     }
 }
@@ -162,10 +162,10 @@ mod tests {
 
     #[test]
     fn test_prove() {
+        let _guard = PROVE_LOCK.lock().unwrap();
+
         let program = basic_program();
         let zkvm = EreJolt::new(program, ProverResourceType::Cpu).unwrap();
-
-        let _guard = PROVE_LOCK.lock().unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
@@ -173,10 +173,10 @@ mod tests {
 
     #[test]
     fn test_prove_invalid_test_case() {
+        let _guard = PROVE_LOCK.lock().unwrap();
+
         let program = basic_program();
         let zkvm = EreJolt::new(program, ProverResourceType::Cpu).unwrap();
-
-        let _guard = PROVE_LOCK.lock().unwrap();
 
         for input in [
             Input::new(),

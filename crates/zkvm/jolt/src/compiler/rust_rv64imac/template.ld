@@ -1,4 +1,4 @@
-/* Copied from https://github.com/a16z/jolt/blob/v0.3.0-alpha/jolt-core/src/host/mod.rs#L28 */
+/* Copied from https://github.com/a16z/jolt/blob/6dcd401/jolt-core/src/host/mod.rs#L30 */
 
 MEMORY {
   program (rwx) : ORIGIN = 0x80000000, LENGTH = {EMULATOR_MEMORY}
@@ -18,13 +18,23 @@ SECTIONS {
   } > program
 
   .bss (NOLOAD) : {
-    *(.bss)
+    __bss_start = .;
+    *(.bss .bss.*)
+    *(COMMON)
+    . = ALIGN(8);
+    __bss_end = .;
   } > program
+
+  /DISCARD/ : {
+    *(.eh_frame*)
+    *(.eh_frame_hdr*)
+  }
 
   . = ALIGN(8);
   _STACK_END = .;
   . = . + {STACK_CANARY};
   . = . + {STACK_SIZE};
+  . = ALIGN(8);
   _STACK_PTR = .;
 
   . = ALIGN(8);
