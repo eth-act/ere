@@ -1,11 +1,11 @@
-use serde::{Deserialize, Deserializer, Serialize, de::Unexpected};
-use serde_untagged::UntaggedEnumVisitor;
+use serde::{Deserialize, Serialize};
+use strum::{Display, EnumDiscriminants, EnumIter, EnumString};
 
-/// Configuration for network-based proving
+/// Configuration for remote proving
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "clap", derive(clap::Args))]
-pub struct NetworkProverConfig {
-    /// The endpoint URL of the prover network service
+pub struct RemoteProverConfig {
+    /// The endpoint URL of the remote prover
     #[cfg_attr(feature = "clap", arg(long))]
     pub endpoint: String,
     /// Optional API key for authentication
@@ -14,7 +14,7 @@ pub struct NetworkProverConfig {
 }
 
 #[cfg(feature = "clap")]
-impl NetworkProverConfig {
+impl RemoteProverConfig {
     pub fn to_args(&self) -> Vec<&str> {
         core::iter::once(["--endpoint", self.endpoint.as_str()])
             .chain(self.api_key.as_deref().map(|val| ["--api-key", val]))
@@ -24,18 +24,33 @@ impl NetworkProverConfig {
 }
 
 /// ResourceType specifies what resource will be used to create the proofs.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, EnumDiscriminants)]
+#[strum_discriminants(
+    name(ProverResourceKind),
+    derive(Display, EnumString, EnumIter, Hash),
+    strum(serialize_all = "lowercase")
+)]
 #[cfg_attr(feature = "clap", derive(clap::Subcommand))]
-pub enum ProverResourceType {
+#[serde(tag = "kind", rename_all = "lowercase")]
+pub enum ProverResource {
     #[default]
     Cpu,
     Gpu,
-    /// Use a remote prover network
-    Network(NetworkProverConfig),
+    /// Official proving network
+    Network(RemoteProverConfig),
+    /// Self-hosted proving cluster
+    Cluster(RemoteProverConfig),
+}
+
+impl ProverResource {
+    /// Returns [`ProverResourceKind`].
+    pub fn kind(&self) -> ProverResourceKind {
+        self.into()
+    }
 }
 
 #[cfg(feature = "clap")]
-impl ProverResourceType {
+impl ProverResource {
     pub fn to_args(&self) -> Vec<&str> {
         match self {
             Self::Cpu => vec!["cpu"],
@@ -43,51 +58,22 @@ impl ProverResourceType {
             Self::Network(config) => core::iter::once("network")
                 .chain(config.to_args())
                 .collect(),
+            Self::Cluster(config) => core::iter::once("cluster")
+                .chain(config.to_args())
+                .collect(),
         }
-    }
-}
-
-impl Serialize for ProverResourceType {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        match self {
-            Self::Cpu => "cpu".serialize(serializer),
-            Self::Gpu => "gpu".serialize(serializer),
-            Self::Network(config) => config.serialize(serializer),
-        }
-    }
-}
-
-impl<'de> Deserialize<'de> for ProverResourceType {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        UntaggedEnumVisitor::new()
-            .string(|resource| match resource {
-                "cpu" => Ok(Self::Cpu),
-                "gpu" => Ok(Self::Gpu),
-                _ => Err(serde::de::Error::invalid_value(
-                    Unexpected::Str(resource),
-                    &r#""cpu" or "gpu""#,
-                )),
-            })
-            .map(|map| map.deserialize().map(Self::Network))
-            .deserialize(deserializer)
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::zkvm::resource::ProverResourceType;
+    use crate::zkvm::resource::ProverResource;
     use core::fmt::Debug;
     use serde::{Deserialize, Serialize};
 
     #[derive(Serialize, Deserialize)]
     struct Config {
-        resources: Vec<ProverResourceType>,
+        resources: Vec<ProverResource>,
     }
 
     fn test_round_trip<'de, SE: Debug, DE: Debug>(
@@ -101,7 +87,20 @@ mod test {
     #[test]
     fn test_round_trip_toml() {
         const TOML: &str = r#"
-resources = ["cpu", "gpu", { endpoint = "http://localhost:3000" }]
+[[resources]]
+kind = "cpu"
+
+[[resources]]
+kind = "gpu"
+
+[[resources]]
+kind = "network"
+endpoint = "http://localhost:3000"
+api_key = "my_api_key"
+
+[[resources]]
+kind = "cluster"
+endpoint = "http://localhost:3000"
     "#;
         test_round_trip(TOML, toml::to_string, toml::from_str);
     }
@@ -110,9 +109,13 @@ resources = ["cpu", "gpu", { endpoint = "http://localhost:3000" }]
     fn test_round_trip_yaml() {
         const YAML: &str = r#"
 resources:
-- cpu
-- gpu
-- endpoint: http://localhost:3000
+- kind: cpu
+- kind: gpu
+- kind: network
+  endpoint: http://localhost:3000
+  api_key: my_api_key
+- kind: cluster
+  endpoint: http://localhost:3000
   api_key: null
 "#;
         test_round_trip(YAML, serde_yaml::to_string, serde_yaml::from_str);
@@ -123,10 +126,20 @@ resources:
         const JSON: &str = r#"
 {
   "resources": [
-    "cpu",
-    "gpu",
     {
-      "endpoint": "",
+      "kind": "cpu"
+    },
+    {
+      "kind": "gpu"
+    },
+    {
+      "kind": "network",
+      "endpoint": "http://localhost:3000",
+      "api_key": "my_api_key"
+    },
+    {
+      "kind": "cluster",
+      "endpoint": "http://localhost:3000",
       "api_key": null
     }
   ]
