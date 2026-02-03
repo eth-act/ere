@@ -1,5 +1,5 @@
 use crate::zkvm::Error;
-use ere_zkvm_interface::zkvm::{CommonError, ProverResourceType, PublicValues};
+use ere_zkvm_interface::zkvm::{CommonError, ProverResource, ProverResourceKind, PublicValues};
 use std::{
     collections::BTreeMap,
     env, fs,
@@ -151,11 +151,14 @@ impl ZiskSdk {
     /// Returns SDK for the ELF.
     pub fn new(
         elf: Vec<u8>,
-        resource: ProverResourceType,
+        resource: ProverResource,
         options: ZiskOptions,
     ) -> Result<Self, Error> {
-        if matches!(resource, ProverResourceType::Network(_)) {
-            panic!("Network proving not yet implemented for ZisK. Use CPU or GPU resource type.");
+        if !matches!(resource, ProverResource::Cpu | ProverResource::Gpu) {
+            Err(CommonError::unsupported_prover_resource_kind(
+                resource.kind(),
+                [ProverResourceKind::Cpu, ProverResourceKind::Gpu],
+            ))?;
         }
         // Save ELF to `~/.zisk/cache` along with the ROM binaries, to avoid it
         // been cleaned up during a long run process.
@@ -172,7 +175,7 @@ impl ZiskSdk {
 
         Ok(Self {
             elf_path,
-            cuda: matches!(resource, ProverResourceType::Gpu),
+            cuda: matches!(resource, ProverResource::Gpu),
             options,
             rom_digest: OnceLock::new(),
         })

@@ -5,7 +5,7 @@ use crate::{
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
+    ProverResource, PublicValues, zkVM, zkVMProgramDigest,
 };
 use std::{
     sync::{Mutex, MutexGuard},
@@ -30,10 +30,7 @@ pub struct EreZisk {
 }
 
 impl EreZisk {
-    pub fn new(program: ZiskProgram, resource: ProverResourceType) -> Result<Self, Error> {
-        if matches!(resource, ProverResourceType::Network(_)) {
-            panic!("Network proving not yet implemented for ZisK. Use CPU or GPU resource type.");
-        }
+    pub fn new(program: ZiskProgram, resource: ProverResource) -> Result<Self, Error> {
         let sdk = ZiskSdk::new(program.elf, resource, ZiskOptions::from_env())?;
         Ok(Self {
             sdk,
@@ -72,7 +69,9 @@ impl EreZisk {
 impl zkVM for EreZisk {
     fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         if input.proofs.is_some() {
-            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+            bail!(Error::from(CommonError::unsupported_input(
+                "no dedicated proofs stream"
+            )))
         }
 
         let start = Instant::now();
@@ -95,13 +94,15 @@ impl zkVM for EreZisk {
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         if input.proofs.is_some() {
-            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+            bail!(Error::from(CommonError::unsupported_input(
+                "no dedicated proofs stream"
+            )))
         }
         if proof_kind != ProofKind::Compressed {
-            bail!(CommonError::unsupported_proof_kind(
+            bail!(Error::from(CommonError::unsupported_proof_kind(
                 proof_kind,
                 [ProofKind::Compressed]
-            ))
+            )))
         }
 
         let mut server = self.server()?;
@@ -120,10 +121,10 @@ impl zkVM for EreZisk {
 
     fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
         let Proof::Compressed(proof) = proof else {
-            bail!(CommonError::unsupported_proof_kind(
+            bail!(Error::from(CommonError::unsupported_proof_kind(
                 proof.kind(),
                 [ProofKind::Compressed]
-            ))
+            )))
         };
 
         Ok(self.sdk.verify(proof)?)
@@ -156,7 +157,7 @@ mod tests {
     };
     use ere_zkvm_interface::{
         compiler::Compiler,
-        zkvm::{Input, ProofKind, ProverResourceType, zkVM},
+        zkvm::{Input, ProofKind, ProverResource, zkVM},
     };
     use std::sync::{Mutex, OnceLock};
 
@@ -178,7 +179,7 @@ mod tests {
     #[test]
     fn test_execute() {
         let program = basic_program();
-        let zkvm = EreZisk::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreZisk::new(program, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_execute(&zkvm, &test_case);
@@ -187,7 +188,7 @@ mod tests {
     #[test]
     fn test_execute_invalid_test_case() {
         let program = basic_program();
-        let zkvm = EreZisk::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreZisk::new(program, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -200,7 +201,7 @@ mod tests {
     #[test]
     fn test_prove() {
         let program = basic_program();
-        let zkvm = EreZisk::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreZisk::new(program, ProverResource::Cpu).unwrap();
 
         let _guard = PROVE_LOCK.lock().unwrap();
 
@@ -211,7 +212,7 @@ mod tests {
     #[test]
     fn test_prove_invalid_test_case() {
         let program = basic_program();
-        let zkvm = EreZisk::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreZisk::new(program, ProverResource::Cpu).unwrap();
 
         let _guard = PROVE_LOCK.lock().unwrap();
 

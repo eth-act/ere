@@ -2,7 +2,7 @@ use crate::program::OpenVMProgram;
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
+    ProverResource, ProverResourceKind, PublicValues, zkVM, zkVMProgramDigest,
 };
 use openvm_circuit::arch::instructions::exe::VmExe;
 use openvm_continuations::verifier::internal::types::VmStarkProof;
@@ -31,22 +31,21 @@ pub struct EreOpenVM {
     agg_pk: AggProvingKey,
     agg_vk: AggVerifyingKey,
     app_commit: AppExecutionCommit,
-    resource: ProverResourceType,
+    resource: ProverResource,
 }
 
 impl EreOpenVM {
-    pub fn new(program: OpenVMProgram, resource: ProverResourceType) -> Result<Self, Error> {
-        match resource {
-            #[cfg(not(feature = "cuda"))]
-            ProverResourceType::Gpu => {
-                panic!("Feature `cuda` is disabled. Enable `cuda` to use GPU resource type")
-            }
-            ProverResourceType::Network(_) => {
-                panic!(
-                    "Network proving not yet implemented for OpenVM. Use CPU or GPU resource type."
-                );
-            }
-            _ => {}
+    pub fn new(program: OpenVMProgram, resource: ProverResource) -> Result<Self, Error> {
+        #[cfg(feature = "cuda")]
+        let supported = [ProverResourceKind::Cpu, ProverResourceKind::Gpu];
+        #[cfg(not(feature = "cuda"))]
+        let supported = [ProverResourceKind::Cpu];
+
+        if !supported.contains(&resource.kind()) {
+            Err(CommonError::unsupported_prover_resource_kind(
+                resource.kind(),
+                supported,
+            ))?;
         }
 
         let app_config = if let Some(value) = program.app_config() {
@@ -124,7 +123,9 @@ impl EreOpenVM {
 impl zkVM for EreOpenVM {
     fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         if input.proofs.is_some() {
-            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+            bail!(Error::from(CommonError::unsupported_input(
+                "no dedicated proofs stream"
+            )))
         }
 
         let mut stdin = StdIn::default();
@@ -151,13 +152,15 @@ impl zkVM for EreOpenVM {
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         if input.proofs.is_some() {
-            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+            bail!(Error::from(CommonError::unsupported_input(
+                "no dedicated proofs stream"
+            )))
         }
         if proof_kind != ProofKind::Compressed {
-            bail!(CommonError::unsupported_proof_kind(
+            bail!(Error::from(CommonError::unsupported_proof_kind(
                 proof_kind,
                 [ProofKind::Compressed]
-            ))
+            )))
         }
 
         let mut stdin = StdIn::default();
@@ -165,17 +168,17 @@ impl zkVM for EreOpenVM {
 
         let now = std::time::Instant::now();
         let (proof, app_commit) = match self.resource {
-            ProverResourceType::Cpu => self.cpu_sdk()?.prove(self.app_exe.clone(), stdin),
+            ProverResource::Cpu => self.cpu_sdk()?.prove(self.app_exe.clone(), stdin),
             #[cfg(feature = "cuda")]
-            ProverResourceType::Gpu => self.gpu_sdk()?.prove(self.app_exe.clone(), stdin),
-            #[cfg(not(feature = "cuda"))]
-            ProverResourceType::Gpu => {
-                panic!("Feature `cuda` is disabled. Enable `cuda` to use GPU resource type")
-            }
-            ProverResourceType::Network(_) => {
-                panic!(
-                    "Network proving not yet implemented for OpenVM. Use CPU or GPU resource type."
-                );
+            ProverResource::Gpu => self.gpu_sdk()?.prove(self.app_exe.clone(), stdin),
+            _ => {
+                bail!(Error::from(CommonError::unsupported_prover_resource_kind(
+                    self.resource.kind(),
+                    #[cfg(feature = "cuda")]
+                    [ProverResourceKind::Cpu, ProverResourceKind::Gpu],
+                    #[cfg(not(feature = "cuda"))]
+                    [ProverResourceKind::Cpu],
+                )))
             }
         }
         .map_err(Error::Prove)?;
@@ -205,10 +208,10 @@ impl zkVM for EreOpenVM {
 
     fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
         let Proof::Compressed(proof) = proof else {
-            bail!(CommonError::unsupported_proof_kind(
+            bail!(Error::from(CommonError::unsupported_proof_kind(
                 proof.kind(),
                 [ProofKind::Compressed]
-            ))
+            )))
         };
 
         let proof = VmStarkProof::<SC>::decode(&mut proof.as_slice())
@@ -265,7 +268,7 @@ mod tests {
     };
     use ere_zkvm_interface::{
         compiler::Compiler,
-        zkvm::{Input, ProofKind, ProverResourceType, zkVM},
+        zkvm::{Input, ProofKind, ProverResource, zkVM},
     };
     use std::sync::OnceLock;
 
@@ -283,7 +286,7 @@ mod tests {
     #[test]
     fn test_execute() {
         let program = basic_program();
-        let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreOpenVM::new(program, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
         run_zkvm_execute(&zkvm, &test_case);
@@ -292,7 +295,7 @@ mod tests {
     #[test]
     fn test_execute_invalid_test_case() {
         let program = basic_program();
-        let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreOpenVM::new(program, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -305,7 +308,7 @@ mod tests {
     #[test]
     fn test_prove() {
         let program = basic_program();
-        let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreOpenVM::new(program, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
         run_zkvm_prove(&zkvm, &test_case);
@@ -314,7 +317,7 @@ mod tests {
     #[test]
     fn test_prove_invalid_test_case() {
         let program = basic_program();
-        let zkvm = EreOpenVM::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreOpenVM::new(program, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),

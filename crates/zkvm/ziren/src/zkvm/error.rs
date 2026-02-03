@@ -1,9 +1,12 @@
-use ere_zkvm_interface::zkvm::ProofKind;
+use ere_zkvm_interface::zkvm::{CommonError, ProofKind};
 use thiserror::Error;
 use zkm_sdk::{ZKMProofKind, ZKMVerificationError};
 
 #[derive(Debug, Error)]
 pub enum Error {
+    #[error(transparent)]
+    CommonError(#[from] CommonError),
+
     // Execute
     #[error("Ziren execution failed: {0}")]
     Execute(#[source] anyhow::Error),

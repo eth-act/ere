@@ -2,7 +2,7 @@ use crate::program::ZirenProgram;
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
+    ProverResource, ProverResourceKind, PublicValues, zkVM, zkVMProgramDigest,
 };
 use std::{panic, time::Instant};
 use tracing::info;
@@ -24,12 +24,12 @@ pub struct EreZiren {
 }
 
 impl EreZiren {
-    pub fn new(program: ZirenProgram, resource: ProverResourceType) -> Result<Self, Error> {
-        if matches!(
-            resource,
-            ProverResourceType::Gpu | ProverResourceType::Network(_)
-        ) {
-            panic!("Network or Gpu proving not yet implemented for ZKM. Use CPU resource type.");
+    pub fn new(program: ZirenProgram, resource: ProverResource) -> Result<Self, Error> {
+        if !matches!(resource, ProverResource::Cpu) {
+            Err(CommonError::unsupported_prover_resource_kind(
+                resource.kind(),
+                [ProverResourceKind::Cpu],
+            ))?;
         }
         let (pk, vk) = CpuProver::new().setup(program.elf());
         Ok(Self { program, pk, vk })
@@ -160,7 +160,7 @@ mod tests {
     };
     use ere_zkvm_interface::{
         compiler::Compiler,
-        zkvm::{Input, ProofKind, ProverResourceType, zkVM},
+        zkvm::{Input, ProofKind, ProverResource, zkVM},
     };
     use std::sync::OnceLock;
 
@@ -178,7 +178,7 @@ mod tests {
     #[test]
     fn test_execute() {
         let program = basic_program();
-        let zkvm = EreZiren::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreZiren::new(program, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_execute(&zkvm, &test_case);
@@ -187,7 +187,7 @@ mod tests {
     #[test]
     fn test_execute_invalid_test_case() {
         let program = basic_program();
-        let zkvm = EreZiren::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreZiren::new(program, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -200,7 +200,7 @@ mod tests {
     #[test]
     fn test_prove() {
         let program = basic_program();
-        let zkvm = EreZiren::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreZiren::new(program, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
@@ -209,7 +209,7 @@ mod tests {
     #[test]
     fn test_prove_invalid_test_case() {
         let program = basic_program();
-        let zkvm = EreZiren::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreZiren::new(program, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),

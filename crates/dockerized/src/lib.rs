@@ -16,7 +16,7 @@
 //! 4. `ere-server-{zkvm}:{version}` - Server image with the `ere-server` binary
 //!    built with the selected zkVM feature
 //!
-//! When [`ProverResourceType::Gpu`] is selected, the image with GPU support
+//! When [`ProverResource::Gpu`] is selected, the image with GPU support
 //! will be built and tagged with specific suffix.
 //!
 //! To force rebuild all images, set the environment variable
@@ -29,7 +29,7 @@
 //! use ere_dockerized::{CompilerKind, DockerizedCompiler, DockerizedzkVM, zkVMKind};
 //! use ere_zkvm_interface::{
 //!     compiler::Compiler,
-//!     zkvm::{Input, ProofKind, ProverResourceType, zkVM},
+//!     zkvm::{Input, ProofKind, ProverResource, zkVM},
 //! };
 //! use std::path::Path;
 //!
@@ -45,7 +45,7 @@
 //! let program = compiler.compile(&guest_path)?;
 //!
 //! // Create zkVM instance
-//! let resource = ProverResourceType::Cpu;
+//! let resource = ProverResource::Cpu;
 //! let zkvm = DockerizedzkVM::new(zkvm_kind, program, resource)?;
 //!
 //! // Serialize input

@@ -1,7 +1,7 @@
 use crate::zkvm::{Error, panic_msg};
 use ere_zkvm_interface::{
-    CommonError,
-    zkvm::{NetworkProverConfig, ProverResourceType},
+    CommonError, RemoteProverConfig,
+    zkvm::{ProverResource, ProverResourceKind},
 };
 use sp1_sdk::{
     CpuProver, NetworkProver, Prover as _, ProverClient, SP1ProofMode, SP1ProofWithPublicValues,
@@ -27,16 +27,24 @@ pub enum Prover {
 
 impl Default for Prover {
     fn default() -> Self {
-        Self::new(&ProverResourceType::Cpu).unwrap()
+        Self::new(&ProverResource::Cpu).unwrap()
     }
 }
 
 impl Prover {
-    pub fn new(resource: &ProverResourceType) -> Result<Self, Error> {
+    pub fn new(resource: &ProverResource) -> Result<Self, Error> {
         Ok(match resource {
-            ProverResourceType::Cpu => Self::Cpu(ProverClient::builder().cpu().build()),
-            ProverResourceType::Gpu => Self::Gpu(CudaProver::new()?),
-            ProverResourceType::Network(config) => Self::Network(build_network_prover(config)),
+            ProverResource::Cpu => Self::Cpu(ProverClient::builder().cpu().build()),
+            ProverResource::Gpu => Self::Gpu(CudaProver::new()?),
+            ProverResource::Network(config) => Self::Network(build_network_prover(config)?),
+            ProverResource::Cluster(_) => Err(CommonError::unsupported_prover_resource_kind(
+                ProverResourceKind::Cluster,
+                [
+                    ProverResourceKind::Cpu,
+                    ProverResourceKind::Gpu,
+                    ProverResourceKind::Network,
+                ],
+            ))?,
         })
     }
 
@@ -168,7 +176,7 @@ impl CudaProver {
     }
 }
 
-fn build_network_prover(config: &NetworkProverConfig) -> NetworkProver {
+fn build_network_prover(config: &RemoteProverConfig) -> Result<NetworkProver, Error> {
     let mut builder = ProverClient::builder().network();
     // Check if we have a private key in the config or environment
     if let Some(api_key) = &config.api_key {
@@ -176,9 +184,7 @@ fn build_network_prover(config: &NetworkProverConfig) -> NetworkProver {
     } else if let Ok(private_key) = env::var("NETWORK_PRIVATE_KEY") {
         builder = builder.private_key(&private_key);
     } else {
-        panic!(
-            "Network proving requires a private key. Set NETWORK_PRIVATE_KEY environment variable or provide api_key in NetworkProverConfig"
-        );
+        return Err(Error::MissingApiKey);
     }
     // Set the RPC URL if provided
     if !config.endpoint.is_empty() {
@@ -187,5 +193,5 @@ fn build_network_prover(config: &NetworkProverConfig) -> NetworkProver {
         builder = builder.rpc_url(&rpc_url);
     }
     // Otherwise SP1 SDK will use its default RPC URL
-    builder.build()
+    Ok(builder.build())
 }

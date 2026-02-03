@@ -68,7 +68,7 @@ mod tests {
         io::serde::cbor::Cbor,
         program::basic::BasicProgram,
     };
-    use ere_zkvm_interface::{ProverResourceType, compiler::Compiler};
+    use ere_zkvm_interface::{ProverResource, compiler::Compiler};
 
     #[test]
     fn test_compile() {
@@ -81,7 +81,7 @@ mod tests {
     fn test_execute() {
         let guest_directory = testing_guest_directory("zisk", "basic_go");
         let program = GoCustomized.compile(&guest_directory).unwrap();
-        let zkvm = EreZisk::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreZisk::new(program, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<Cbor>::valid_test_case();
         run_zkvm_execute(&zkvm, &test_case);

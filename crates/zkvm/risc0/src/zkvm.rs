@@ -2,7 +2,7 @@ use crate::program::Risc0Program;
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
+    ProverResource, ProverResourceKind, PublicValues, zkVM, zkVMProgramDigest,
 };
 use risc0_zkvm::{
     AssumptionReceipt, DEFAULT_MAX_PO2, DefaultProver, Digest, ExecutorEnv, ExternalProver,
@@ -44,33 +44,37 @@ const KECCAK_PO2_RANGE: RangeInclusive<usize> = 14..=18;
 
 pub struct EreRisc0 {
     program: Risc0Program,
-    resource: ProverResourceType,
+    resource: ProverResource,
     segment_po2: usize,
     keccak_po2: usize,
 }
 
 impl EreRisc0 {
-    pub fn new(program: Risc0Program, resource: ProverResourceType) -> Result<Self, Error> {
-        if matches!(resource, ProverResourceType::Network(_)) {
-            panic!(
-                "Network proving not yet implemented for RISC Zero. Use CPU or GPU resource type."
-            );
+    pub fn new(program: Risc0Program, resource: ProverResource) -> Result<Self, Error> {
+        if !matches!(resource, ProverResource::Cpu | ProverResource::Gpu) {
+            Err(CommonError::unsupported_prover_resource_kind(
+                resource.kind(),
+                [ProverResourceKind::Cpu, ProverResourceKind::Gpu],
+            ))?;
         }
 
-        let [segment_po2, keccak_po2] = [
-            ("RISC0_SEGMENT_PO2", DEFAULT_SEGMENT_PO2, SEGMENT_PO2_RANGE),
-            ("RISC0_KECCAK_PO2", DEFAULT_KECCAK_PO2, KECCAK_PO2_RANGE),
-        ]
-        .map(|(key, default, range)| {
-            let val = env::var(key)
-                .ok()
-                .and_then(|po2| po2.parse::<usize>().ok())
-                .unwrap_or(default);
-            if !range.contains(&val) {
-                panic!("Unsupported po2 value {val} of {key}, expected in range {range:?}")
+        let parse_env = |key: &str, default: usize, range: RangeInclusive<usize>| {
+            let Ok(val) = env::var(key) else {
+                return Ok(default);
+            };
+
+            match val.parse() {
+                Ok(val) if range.contains(&val) => Ok(val),
+                _ => Err(Error::UnsupportedPo2Value {
+                    key: key.to_string(),
+                    val,
+                    range,
+                }),
             }
-            val
-        });
+        };
+
+        let segment_po2 = parse_env("RISC0_SEGMENT_PO2", DEFAULT_SEGMENT_PO2, SEGMENT_PO2_RANGE)?;
+        let keccak_po2 = parse_env("RISC0_KECCAK_PO2", DEFAULT_KECCAK_PO2, KECCAK_PO2_RANGE)?;
 
         Ok(Self {
             program,
@@ -112,8 +116,8 @@ impl zkVM for EreRisc0 {
         let env = self.input_to_env(input)?;
 
         let prover = match self.resource {
-            ProverResourceType::Cpu => Rc::new(ExternalProver::new("ipc", "r0vm")),
-            ProverResourceType::Gpu => {
+            ProverResource::Cpu => Rc::new(ExternalProver::new("ipc", "r0vm")),
+            ProverResource::Gpu => {
                 if cfg!(feature = "metal") {
                     // When `metal` is enabled, we use the `LocalProver` to do
                     // proving. but it's not public so we use `default_prover`
@@ -127,11 +131,10 @@ impl zkVM for EreRisc0 {
                     Rc::new(DefaultProver::new("r0vm-cuda").map_err(Error::InitializeCudaProver)?)
                 }
             }
-            ProverResourceType::Network(_) => {
-                panic!(
-                    "Network proving not yet implemented for RISC Zero. Use CPU or GPU resource type."
-                );
-            }
+            _ => bail!(Error::from(CommonError::unsupported_prover_resource_kind(
+                self.resource.kind(),
+                [ProverResourceKind::Cpu, ProverResourceKind::Gpu],
+            ))),
         };
 
         let opts = match proof_kind {
@@ -234,7 +237,7 @@ mod tests {
     use ere_zkvm_interface::{
         Input,
         compiler::Compiler,
-        zkvm::{ProofKind, ProverResourceType, zkVM},
+        zkvm::{ProofKind, ProverResource, zkVM},
     };
     use std::sync::OnceLock;
 
@@ -252,7 +255,7 @@ mod tests {
     #[test]
     fn test_execute() {
         let program = basic_program();
-        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreRisc0::new(program, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_execute(&zkvm, &test_case);
@@ -261,7 +264,7 @@ mod tests {
     #[test]
     fn test_execute_invalid_test_case() {
         let program = basic_program();
-        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreRisc0::new(program, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -274,7 +277,7 @@ mod tests {
     #[test]
     fn test_prove() {
         let program = basic_program();
-        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreRisc0::new(program, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
@@ -283,7 +286,7 @@ mod tests {
     #[test]
     fn test_prove_invalid_test_case() {
         let program = basic_program();
-        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreRisc0::new(program, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -300,7 +303,7 @@ mod tests {
             .unwrap();
 
         for i in 1..=16_u32 {
-            let zkvm = EreRisc0::new(program.clone(), ProverResourceType::Cpu).unwrap();
+            let zkvm = EreRisc0::new(program.clone(), ProverResource::Cpu).unwrap();
 
             let input = Input::new().with_stdin(i.to_le_bytes().to_vec());
 

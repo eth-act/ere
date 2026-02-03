@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use strum::{Display, EnumDiscriminants, EnumIter, EnumString};
+use strum::{Display, EnumDiscriminants, EnumIs, EnumIter, EnumString};
 
 /// Configuration for remote proving
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -24,7 +24,9 @@ impl RemoteProverConfig {
 }
 
 /// ResourceType specifies what resource will be used to create the proofs.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, EnumDiscriminants)]
+#[derive(
+    Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, EnumDiscriminants, EnumIs,
+)]
 #[strum_discriminants(
     name(ProverResourceKind),
     derive(Display, EnumString, EnumIter, Hash),

@@ -20,13 +20,14 @@
 //!
 //! # `zkVM` implementation
 //!
-//! ## Supported `ProverResourceType`
+//! ## Supported `ProverResource`
 //!
 //! | Resource  | Supported |
 //! | --------- | :-------: |
 //! | `Cpu`     |    Yes    |
 //! | `Gpu`     |    No     |
 //! | `Network` |    No     |
+//! | `Cluster` |    No     |
 //!
 //! [`install_pico_sdk.sh`]: https://github.com/eth-act/ere/blob/master/scripts/sdk_installers/install_pico_sdk.sh
 

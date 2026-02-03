@@ -22,7 +22,7 @@ use ere_server::{
 use ere_zkvm_interface::{
     CommonError,
     zkvm::{
-        Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResourceType,
+        Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResource,
         PublicValues, zkVM,
     },
 };
@@ -47,7 +47,7 @@ pub use error::Error;
 /// 3. `ere-server-{zkvm}:{version}` - Server image with the `ere-server` binary
 ///    built with the selected zkVM feature
 ///
-/// When [`ProverResourceType::Gpu`] is selected, the image with GPU support
+/// When [`ProverResource::Gpu`] is selected, the image with GPU support
 /// will be built and tagged with specific suffix.
 ///
 /// Images are cached and only rebuilt if they don't exist or if the
@@ -158,12 +158,12 @@ impl ServerContainer {
     fn new(
         zkvm_kind: zkVMKind,
         program: &SerializedProgram,
-        resource: &ProverResourceType,
+        resource: &ProverResource,
     ) -> Result<Self, Error> {
         let port = Self::PORT_OFFSET + zkvm_kind as u16;
 
         let name = format!("ere-server-{zkvm_kind}");
-        let gpu = matches!(resource, ProverResourceType::Gpu);
+        let gpu = resource.is_gpu();
         let mut cmd = DockerRunCmd::new(server_zkvm_image(zkvm_kind, gpu))
             .rm()
             .inherit_env("RUST_LOG")
@@ -272,7 +272,7 @@ impl ServerContainer {
 pub struct DockerizedzkVM {
     zkvm_kind: zkVMKind,
     program: SerializedProgram,
-    resource: ProverResourceType,
+    resource: ProverResource,
     container: RwLock<Option<ServerContainer>>,
 }
 
@@ -280,9 +280,9 @@ impl DockerizedzkVM {
     pub fn new(
         zkvm_kind: zkVMKind,
         program: SerializedProgram,
-        resource: ProverResourceType,
+        resource: ProverResource,
     ) -> Result<Self, Error> {
-        build_server_image(zkvm_kind, matches!(resource, ProverResourceType::Gpu))?;
+        build_server_image(zkvm_kind, resource.is_gpu())?;
 
         let container = ServerContainer::new(zkvm_kind, &program, &resource)?;
 
@@ -302,7 +302,7 @@ impl DockerizedzkVM {
         &self.program
     }
 
-    pub fn resource(&self) -> &ProverResourceType {
+    pub fn resource(&self) -> &ProverResource {
         &self.resource
     }
 
@@ -445,7 +445,7 @@ mod test {
     use ere_test_utils::{
         host::*, io::serde::bincode::BincodeLegacy, program::basic::BasicProgram,
     };
-    use ere_zkvm_interface::zkvm::{Input, ProofKind, ProverResourceType, zkVM};
+    use ere_zkvm_interface::zkvm::{Input, ProofKind, ProverResource, zkVM};
 
     fn zkvm(
         zkvm_kind: zkVMKind,
@@ -453,7 +453,7 @@ mod test {
         program: &'static str,
     ) -> DockerizedzkVM {
         let program = compile(zkvm_kind, compiler_kind, program).clone();
-        DockerizedzkVM::new(zkvm_kind, program, ProverResourceType::Cpu).unwrap()
+        DockerizedzkVM::new(zkvm_kind, program, ProverResource::Cpu).unwrap()
     }
 
     macro_rules! test {

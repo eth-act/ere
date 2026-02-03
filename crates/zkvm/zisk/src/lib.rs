@@ -16,7 +16,7 @@
 //! ## `zkVM` requirements
 //!
 //! - Installation via [`ziskup`]
-//! - `cargo-zisk-cuda` - Used by `zkVM::prove` if `ProverResourceType::Gpu` is
+//! - `cargo-zisk-cuda` - Used by `zkVM::prove` if `ProverResource::Gpu` is
 //!   selected
 //!
 //! # `Compiler` implementation
@@ -30,13 +30,14 @@
 //!
 //! # `zkVM` implementation
 //!
-//! ## Supported `ProverResourceType`
+//! ## Supported `ProverResource`
 //!
 //! | Resource  | Supported |
 //! | --------- | :-------: |
 //! | `Cpu`     |    Yes    |
 //! | `Gpu`     |    Yes    |
 //! | `Network` |    No     |
+//! | `Cluster` |    No     |
 //!
 //! [`install_zisk_sdk.sh`]: https://github.com/eth-act/ere/blob/master/scripts/sdk_installers/install_zisk_sdk.sh
 //! [`install_tamago.sh`]: https://github.com/eth-act/ere/blob/master/scripts/install_tamago.sh

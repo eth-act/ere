@@ -2,7 +2,7 @@ use crate::program::NexusProgram;
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM,
+    ProverResource, ProverResourceKind, PublicValues, zkVM,
 };
 use nexus_core::nvm::{self, ElfFile, internals::LinearMemoryLayout};
 use nexus_sdk::{CheckedView, KnownExitCodes, Viewable};
@@ -42,17 +42,20 @@ pub struct EreNexus {
 }
 
 impl EreNexus {
-    pub fn new(program: NexusProgram, resource: ProverResourceType) -> Result<Self, Error> {
+    pub fn new(program: NexusProgram, resource: ProverResource) -> Result<Self, Error> {
         Self::with_extensions(program, resource, vec![])
     }
 
     pub fn with_extensions(
         program: NexusProgram,
-        resource: ProverResourceType,
+        resource: ProverResource,
         extensions: Vec<NexusExtension>,
     ) -> Result<Self, Error> {
-        if !matches!(resource, ProverResourceType::Cpu) {
-            panic!("Network or GPU proving not yet implemented for Nexus. Use CPU resource type.");
+        if !matches!(resource, ProverResource::Cpu) {
+            Err(CommonError::unsupported_prover_resource_kind(
+                resource.kind(),
+                [ProverResourceKind::Cpu],
+            ))?;
         }
 
         Ok(Self {
@@ -65,7 +68,9 @@ impl EreNexus {
 impl zkVM for EreNexus {
     fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         if input.proofs.is_some() {
-            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+            bail!(Error::from(CommonError::unsupported_input(
+                "no dedicated proofs stream"
+            )))
         }
 
         let elf = ElfFile::from_bytes(self.program.elf()).map_err(Error::ParseElf)?;
@@ -102,13 +107,15 @@ impl zkVM for EreNexus {
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         if input.proofs.is_some() {
-            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+            bail!(Error::from(CommonError::unsupported_input(
+                "no dedicated proofs stream"
+            )))
         }
         if proof_kind != ProofKind::Compressed {
-            bail!(CommonError::unsupported_proof_kind(
+            bail!(Error::from(CommonError::unsupported_proof_kind(
                 proof_kind,
                 [ProofKind::Compressed]
-            ))
+            )))
         }
 
         let elf = ElfFile::from_bytes(self.program.elf()).map_err(Error::ParseElf)?;
@@ -155,10 +162,10 @@ impl zkVM for EreNexus {
 
     fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
         let Proof::Compressed(proof) = proof else {
-            bail!(CommonError::unsupported_proof_kind(
+            bail!(Error::from(CommonError::unsupported_proof_kind(
                 proof.kind(),
                 [ProofKind::Compressed]
-            ))
+            )))
         };
 
         info!("Verifying proof...");
@@ -244,7 +251,7 @@ mod tests {
     use ere_zkvm_interface::{
         Input,
         compiler::Compiler,
-        zkvm::{ProofKind, ProverResourceType, zkVM},
+        zkvm::{ProofKind, ProverResource, zkVM},
     };
     use std::sync::OnceLock;
 
@@ -262,7 +269,7 @@ mod tests {
     #[test]
     fn test_execute() {
         let program = basic_program();
-        let zkvm = EreNexus::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreNexus::new(program, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_execute(&zkvm, &test_case);
@@ -271,7 +278,7 @@ mod tests {
     #[test]
     fn test_execute_invalid_test_case() {
         let program = basic_program();
-        let zkvm = EreNexus::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreNexus::new(program, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -284,7 +291,7 @@ mod tests {
     #[test]
     fn test_prove() {
         let program = basic_program();
-        let zkvm = EreNexus::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreNexus::new(program, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
@@ -293,7 +300,7 @@ mod tests {
     #[test]
     fn test_prove_invalid_test_case() {
         let program = basic_program();
-        let zkvm = EreNexus::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreNexus::new(program, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),

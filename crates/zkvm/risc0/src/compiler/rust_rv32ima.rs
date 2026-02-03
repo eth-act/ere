@@ -66,7 +66,7 @@ mod tests {
     use ere_zkvm_interface::{
         Input,
         compiler::Compiler,
-        zkvm::{ProverResourceType, zkVM},
+        zkvm::{ProverResource, zkVM},
     };
 
     #[test]
@@ -80,7 +80,7 @@ mod tests {
     fn test_execute() {
         let guest_directory = testing_guest_directory("risc0", "stock_nightly_no_std");
         let program = RustRv32ima.compile(&guest_directory).unwrap();
-        let zkvm = EreRisc0::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreRisc0::new(program, ProverResource::Cpu).unwrap();
 
         zkvm.execute(&Input::new()).unwrap();
     }

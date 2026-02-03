@@ -1,7 +1,7 @@
 use anyhow::{Context, Error};
 use clap::Parser;
 use ere_server::server::{router, zkVMServer};
-use ere_zkvm_interface::zkvm::{ProverResourceType, zkVM};
+use ere_zkvm_interface::zkvm::{ProverResource, zkVM};
 use std::{
     io::{self, Read},
     net::{Ipv4Addr, SocketAddr},
@@ -48,7 +48,7 @@ struct Args {
     program_path: Option<String>,
     /// Prover resource type.
     #[command(subcommand)]
-    resource: ProverResourceType,
+    resource: ProverResource,
 }
 
 #[tokio::main]
@@ -120,7 +120,7 @@ async fn shutdown_signal() {
     }
 }
 
-fn construct_zkvm(program: Vec<u8>, resource: ProverResourceType) -> Result<impl zkVM, Error> {
+fn construct_zkvm(program: Vec<u8>, resource: ProverResource) -> Result<impl zkVM, Error> {
     let (program, _) = bincode::serde::decode_from_slice(&program, bincode::config::legacy())
         .with_context(|| "Failed to deserialize program")?;
 

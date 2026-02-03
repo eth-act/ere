@@ -5,7 +5,7 @@ use crate::{
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM,
+    ProverResource, ProverResourceKind, PublicValues, zkVM,
 };
 use jolt_ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use std::{env, io::Cursor, time::Instant};
@@ -22,9 +22,12 @@ pub struct EreJolt {
 }
 
 impl EreJolt {
-    pub fn new(program: JoltProgram, resource: ProverResourceType) -> Result<Self, Error> {
-        if !matches!(resource, ProverResourceType::Cpu) {
-            panic!("Network or GPU proving not yet implemented for Miden. Use CPU resource type.");
+    pub fn new(program: JoltProgram, resource: ProverResource) -> Result<Self, Error> {
+        if !matches!(resource, ProverResource::Cpu) {
+            Err(CommonError::unsupported_prover_resource_kind(
+                resource.kind(),
+                [ProverResourceKind::Cpu],
+            ))?;
         }
         let sdk = JoltSdk::new(program.elf(), JoltConfig::from_env());
         Ok(EreJolt { sdk })
@@ -34,7 +37,9 @@ impl EreJolt {
 impl zkVM for EreJolt {
     fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         if input.proofs.is_some() {
-            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+            bail!(Error::from(CommonError::unsupported_input(
+                "no dedicated proofs stream"
+            )))
         }
 
         let start = Instant::now();
@@ -57,13 +62,15 @@ impl zkVM for EreJolt {
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         if input.proofs.is_some() {
-            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+            bail!(Error::from(CommonError::unsupported_input(
+                "no dedicated proofs stream"
+            )))
         }
         if proof_kind != ProofKind::Compressed {
-            bail!(CommonError::unsupported_proof_kind(
+            bail!(Error::from(CommonError::unsupported_proof_kind(
                 proof_kind,
                 [ProofKind::Compressed]
-            ))
+            )))
         }
 
         let start = Instant::now();
@@ -84,10 +91,10 @@ impl zkVM for EreJolt {
 
     fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
         let Proof::Compressed(proof) = proof else {
-            bail!(CommonError::unsupported_proof_kind(
+            bail!(Error::from(CommonError::unsupported_proof_kind(
                 proof.kind(),
                 [ProofKind::Compressed]
-            ))
+            )))
         };
 
         let proof = JoltProof::deserialize_compressed(&mut Cursor::new(proof))
@@ -118,7 +125,7 @@ mod tests {
     use ere_zkvm_interface::{
         Input,
         compiler::Compiler,
-        zkvm::{ProofKind, ProverResourceType, zkVM},
+        zkvm::{ProofKind, ProverResource, zkVM},
     };
     use std::sync::{Mutex, OnceLock};
 
@@ -141,7 +148,7 @@ mod tests {
     #[test]
     fn test_execute() {
         let program = basic_program();
-        let zkvm = EreJolt::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreJolt::new(program, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_execute(&zkvm, &test_case);
@@ -150,7 +157,7 @@ mod tests {
     #[test]
     fn test_execute_invalid_test_case() {
         let program = basic_program();
-        let zkvm = EreJolt::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreJolt::new(program, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -165,7 +172,7 @@ mod tests {
         let _guard = PROVE_LOCK.lock().unwrap();
 
         let program = basic_program();
-        let zkvm = EreJolt::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreJolt::new(program, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
@@ -176,7 +183,7 @@ mod tests {
         let _guard = PROVE_LOCK.lock().unwrap();
 
         let program = basic_program();
-        let zkvm = EreJolt::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreJolt::new(program, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),

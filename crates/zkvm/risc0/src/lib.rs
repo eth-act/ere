@@ -17,7 +17,7 @@
 //!
 //! - [`rzup`]
 //! - Installation via `rzup install`
-//! - `r0vm-cuda` - Used by `zkVM::prove` if `ProverResourceType::Gpu` is
+//! - `r0vm-cuda` - Used by `zkVM::prove` if `ProverResource::Gpu` is
 //!   selected
 //! - `docker` - Used by `zkVM::prove` if `ProofKind::Groth16` is selected
 //!
@@ -32,13 +32,14 @@
 //!
 //! # `zkVM` implementation
 //!
-//! ## Supported `ProverResourceType`
+//! ## Supported `ProverResource`
 //!
 //! | Resource  | Supported |
 //! | --------- | :-------: |
 //! | `Cpu`     |    Yes    |
 //! | `Gpu`     |    Yes    |
 //! | `Network` |    No     |
+//! | `Cluster` |    No     |
 //!
 //! [`install_risc0_sdk.sh`]: https://github.com/eth-act/ere/blob/master/scripts/sdk_installers/install_risc0_sdk.sh
 //! [`rzup`]: https://risczero.com/install
