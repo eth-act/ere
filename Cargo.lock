@@ -3815,7 +3815,7 @@ dependencies = [
 
 [[package]]
 name = "ere-airbender"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -3832,14 +3832,14 @@ dependencies = [
 
 [[package]]
 name = "ere-build-utils"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "cargo_metadata 0.19.2",
 ]
 
 [[package]]
 name = "ere-common"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "ere-build-utils",
  "serde",
@@ -3848,7 +3848,7 @@ dependencies = [
 
 [[package]]
 name = "ere-compile-utils"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "cargo_metadata 0.19.2",
@@ -3858,7 +3858,7 @@ dependencies = [
 
 [[package]]
 name = "ere-compiler"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -3882,7 +3882,7 @@ dependencies = [
 
 [[package]]
 name = "ere-dockerized"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "ere-common",
@@ -3899,7 +3899,7 @@ dependencies = [
 
 [[package]]
 name = "ere-io"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "bincode 2.0.1",
  "ciborium",
@@ -3910,7 +3910,7 @@ dependencies = [
 
 [[package]]
 name = "ere-jolt"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "ark-serialize 0.5.0",
@@ -3928,7 +3928,7 @@ dependencies = [
 
 [[package]]
 name = "ere-miden"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "ere-build-utils",
@@ -3946,7 +3946,7 @@ dependencies = [
 
 [[package]]
 name = "ere-nexus"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -3966,7 +3966,7 @@ dependencies = [
 
 [[package]]
 name = "ere-openvm"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "ere-build-utils",
@@ -3987,7 +3987,7 @@ dependencies = [
 
 [[package]]
 name = "ere-pico"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -4006,7 +4006,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-airbender"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "ere-platform-trait",
  "riscv_common",
@@ -4014,7 +4014,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-jolt"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "common",
  "ere-platform-trait",
@@ -4024,7 +4024,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-nexus"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "ere-platform-trait",
  "nexus-rt",
@@ -4032,7 +4032,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-openvm"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "ere-platform-trait",
  "openvm",
@@ -4040,7 +4040,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-pico"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "ere-platform-trait",
  "pico-sdk",
@@ -4048,7 +4048,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-risc0"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "ere-platform-trait",
  "risc0-zkvm",
@@ -4057,7 +4057,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-sp1"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "ere-platform-trait",
  "sp1-zkvm",
@@ -4065,14 +4065,14 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-trait"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "digest 0.10.7",
 ]
 
 [[package]]
 name = "ere-platform-ziren"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "ere-platform-trait",
  "zkm-zkvm",
@@ -4080,7 +4080,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-zisk"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "ere-platform-trait",
  "ziskos",
@@ -4088,7 +4088,7 @@ dependencies = [
 
 [[package]]
 name = "ere-risc0"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -4108,7 +4108,7 @@ dependencies = [
 
 [[package]]
 name = "ere-server"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -4139,7 +4139,7 @@ dependencies = [
 
 [[package]]
 name = "ere-sp1"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -4156,7 +4156,7 @@ dependencies = [
 
 [[package]]
 name = "ere-test-utils"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "ere-io",
  "ere-platform-trait",
@@ -4169,7 +4169,7 @@ dependencies = [
 
 [[package]]
 name = "ere-ziren"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -4185,7 +4185,7 @@ dependencies = [
 
 [[package]]
 name = "ere-zisk"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "blake3",
@@ -4204,7 +4204,7 @@ dependencies = [
 
 [[package]]
 name = "ere-zkvm-interface"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "auto_impl",
