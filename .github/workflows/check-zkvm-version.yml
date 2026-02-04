@@ -19,8 +19,9 @@ jobs:
         include:
           - zkvm: airbender
             crate: execution_utils
-          - zkvm: jolt
-            crate: jolt-sdk
+          # Skip jolt because we are using a specific revision instead of released tag
+          # - zkvm: jolt
+          #   crate: jolt-sdk
           - zkvm: miden
             crate: miden-core
           - zkvm: nexus
