@@ -1,9 +1,12 @@
 use crate::{program::AirbenderProgram, zkvm::sdk::AirbenderSdk};
 use airbender_execution_utils::ProgramProof;
 use anyhow::bail;
-use ere_zkvm_interface::zkvm::{
-    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResource, PublicValues, zkVM, zkVMProgramDigest,
+use ere_zkvm_interface::{
+    ProverResourceKind,
+    zkvm::{
+        CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+        ProverResource, PublicValues, zkVM, zkVMProgramDigest,
+    },
 };
 use std::time::Instant;
 
