@@ -1,0 +1,108 @@
+ARG BASE_IMAGE=ubuntu:24.04
+ARG BASE_CUDA_IMAGE=nvidia/cuda:12.9.1-devel-ubuntu24.04
+ARG RUNTIME_IMAGE=ubuntu:24.04
+ARG RUNTIME_CUDA_IMAGE=nvidia/cuda:12.9.1-runtime-ubuntu24.04
+
+# Whether to enable CUDA feature or not.
+ARG CUDA
+
+FROM $BASE_IMAGE AS base
+FROM $BASE_CUDA_IMAGE AS base_cuda
+FROM base${CUDA:+_cuda} AS build_stage
+
+# Taken from https://0xpolygonhermez.github.io/zisk/getting_started/installation.html
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    xz-utils \
+    jq \
+    curl \
+    build-essential \
+    qemu-system \
+    libomp-dev \
+    libgmp-dev \
+    nlohmann-json3-dev \
+    protobuf-compiler \
+    uuid-dev \
+    libgrpc++-dev \
+    libsecp256k1-dev \
+    libsodium-dev \
+    libpqxx-dev \
+    nasm \
+    libopenmpi-dev \
+    openmpi-bin \
+    openmpi-common \
+    libclang-dev \
+    clang \
+    gcc-riscv64-unknown-elf \
+    libprotobuf-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install rustup
+ARG RUST_VERSION=1.88.0
+
+ENV RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo \
+    PATH=/usr/local/cargo/bin:$PATH
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain ${RUST_VERSION} --no-modify-path
+
+# Clone repo
+WORKDIR /app
+
+RUN git clone https://github.com/han0110/zisk.git --depth 1 --branch patch/v0.15.0-cluster /app
+
+# Whether to enable CUDA feature or not.
+ARG CUDA
+
+# Default to build for RTX 50 series
+ARG CUDA_ARCH=sm_120
+
+# Build binaries
+RUN cargo build --release ${CUDA:+--features gpu}
+
+FROM $RUNTIME_IMAGE AS runtime
+FROM $RUNTIME_CUDA_IMAGE AS runtime_cuda
+FROM runtime${CUDA:+_cuda} AS runtime_stage
+
+# Taken from https://0xpolygonhermez.github.io/zisk/getting_started/installation.html
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    xz-utils \
+    jq \
+    curl \
+    build-essential \
+    qemu-system \
+    libomp-dev \
+    libgmp-dev \
+    nlohmann-json3-dev \
+    protobuf-compiler \
+    uuid-dev \
+    libgrpc++-dev \
+    libsecp256k1-dev \
+    libsodium-dev \
+    libpqxx-dev \
+    nasm \
+    libopenmpi-dev \
+    openmpi-bin \
+    openmpi-common \
+    libclang-dev \
+    clang \
+    gcc-riscv64-unknown-elf \
+    libprotobuf-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy script
+COPY --from=build_stage /app/ziskup/ziskup /app/ziskup/ziskup
+
+# Copy binaries (to /usr/local/bin instead of ~/.zisk/bin because we want to mount ~/.zisk later)
+COPY --from=build_stage /app/target/release/cargo-zisk /usr/local/bin/cargo-zisk
+COPY --from=build_stage /app/target/release/libzisk_witness.so /usr/local/bin/libzisk_witness.so
+COPY --from=build_stage /app/target/release/zisk-coordinator /usr/local/bin/zisk-coordinator
+COPY --from=build_stage /app/target/release/zisk-worker /usr/local/bin/zisk-worker
+
+# Copy configs
+COPY --from=build_stage /app/distributed/crates/coordinator/config/ /app/config/coordinator/
+COPY --from=build_stage /app/distributed/crates/worker/config/ /app/config/worker/
+
+CMD ["/bin/bash"]
