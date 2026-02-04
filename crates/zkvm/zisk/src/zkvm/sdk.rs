@@ -41,8 +41,8 @@ pub enum ZiskProver {
 pub struct ZiskSdk {
     elf_path: PathBuf,
     resource: ProverResource,
-    /// ROM digest will be setup only when `ZiskSdk::prove` or `ZiskSdk::verify`
-    /// is called.
+    /// ROM digest will be setup when `ZiskSdk::prove` or `ZiskSdk::verify`
+    /// is called, or if env variable `ZISK_SETUP_ON_INIT` is set.
     ///
     /// Use `Option` inside because ROM setup might fail, we can get rid of
     /// it if `OnceLock::get_or_try_init` is stabilized.
@@ -179,8 +179,10 @@ impl ZiskSdk {
             }
         };
 
-        // The proved ROM digest should be equal to preprocessed one.
+        // Deserialize public values.
         let (proved_rom_digest, public_values) = deserialize_public_values(&proof)?;
+
+        // The proved ROM digest should be equal to preprocessed one.
         let rom_digest = self.rom_digest()?;
         if proved_rom_digest != rom_digest {
             return Err(Error::UnexpectedRomDigest {
@@ -203,9 +205,8 @@ impl ZiskSdk {
         // Deserialize public values.
         let (proved_rom_digest, public_values) = deserialize_public_values(&proof)?;
 
-        let rom_digest = self.rom_digest()?;
-
         // The proved ROM digest should be equal to preprocessed one.
+        let rom_digest = self.rom_digest()?;
         if proved_rom_digest != rom_digest {
             return Err(Error::UnexpectedRomDigest {
                 preprocessed: rom_digest,

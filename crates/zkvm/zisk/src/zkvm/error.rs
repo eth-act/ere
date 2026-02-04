@@ -33,13 +33,13 @@ pub enum Error {
 
     // Cluster
     #[error("Invalid cluster endpoint: {0}")]
-    InvalidClusterEndpoint(String),
+    InvalidClusterEndpoint(#[from] http::uri::InvalidUri),
 
     #[error("Cluster gRPC error: {0}")]
     ClusterGrpcError(#[from] tonic::Status),
 
     #[error("Failed to connect to cluster: {0}")]
-    ClusterConnectionFailed(String),
+    ClusterConnectionFailed(#[from] tonic::transport::Error),
 
     #[error("Cluster error: {0}")]
     ClusterError(String),

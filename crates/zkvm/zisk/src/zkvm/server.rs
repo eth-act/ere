@@ -163,7 +163,7 @@ impl Drop for ZiskServer {
 impl ZiskServer {
     /// Create a new ZisK server for the given ELF.
     ///
-    /// The server process is lazily started on the first call to [`prove`](Self::prove).
+    /// The server process is lazily started on the first call to [`prove`](ZiskServer::prove).
     pub fn new(elf_path: &Path, cuda: bool, options: ZiskServerOptions) -> Self {
         Self {
             elf_path: elf_path.to_path_buf(),
@@ -175,7 +175,7 @@ impl ZiskServer {
 
     /// Send prove request to server and wait for proof to be created.
     ///
-    /// Returns the proof. Note that rom_digest validation should be performed by the caller.
+    /// Returns the proof.
     pub fn prove(&self, input: &[u8]) -> Result<Vec<u8>, Error> {
         self.ensure_ready()?;
 

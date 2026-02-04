@@ -4250,6 +4250,7 @@ dependencies = [
  "ere-test-utils",
  "ere-zkvm-interface",
  "futures-util",
+ "http 1.3.1",
  "parking_lot",
  "proofman-verifier",
  "serde",

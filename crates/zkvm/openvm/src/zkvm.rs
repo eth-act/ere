@@ -36,15 +36,15 @@ pub struct EreOpenVM {
 
 impl EreOpenVM {
     pub fn new(program: OpenVMProgram, resource: ProverResource) -> Result<Self, Error> {
-        #[cfg(feature = "cuda")]
-        let supported = [ProverResourceKind::Cpu, ProverResourceKind::Gpu];
         #[cfg(not(feature = "cuda"))]
-        let supported = [ProverResourceKind::Cpu];
+        if resource.is_gpu() {
+            return Err(Error::CudaFeatureDisabled);
+        }
 
-        if !supported.contains(&resource.kind()) {
+        if !matches!(resource, ProverResource::Cpu | ProverResource::Gpu) {
             Err(CommonError::unsupported_prover_resource_kind(
                 resource.kind(),
-                supported,
+                [ProverResourceKind::Cpu, ProverResourceKind::Gpu],
             ))?;
         }
 
@@ -171,15 +171,12 @@ impl zkVM for EreOpenVM {
             ProverResource::Cpu => self.cpu_sdk()?.prove(self.app_exe.clone(), stdin),
             #[cfg(feature = "cuda")]
             ProverResource::Gpu => self.gpu_sdk()?.prove(self.app_exe.clone(), stdin),
-            _ => {
-                bail!(Error::from(CommonError::unsupported_prover_resource_kind(
-                    self.resource.kind(),
-                    #[cfg(feature = "cuda")]
-                    [ProverResourceKind::Cpu, ProverResourceKind::Gpu],
-                    #[cfg(not(feature = "cuda"))]
-                    [ProverResourceKind::Cpu],
-                )))
-            }
+            #[cfg(not(feature = "cuda"))]
+            ProverResource::Gpu => bail!(Error::CudaFeatureDisabled),
+            _ => bail!(Error::from(CommonError::unsupported_prover_resource_kind(
+                self.resource.kind(),
+                [ProverResourceKind::Cpu, ProverResourceKind::Gpu],
+            ))),
         }
         .map_err(Error::Prove)?;
         let elapsed = now.elapsed();

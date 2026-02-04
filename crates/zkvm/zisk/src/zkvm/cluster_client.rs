@@ -27,18 +27,17 @@ impl ClusterClient {
         Ok(Self { client })
     }
 
+    /// Sync wrapper for [`Self::prove_async`].
+    pub fn prove(&self, input: &[u8]) -> Result<(Vec<u8>, Duration), Error> {
+        block_on(self.prove_async(input))
+    }
+
     /// Send proof request to cluster and wait for completion.
     ///
     /// Returns the proof and proving time reported by the cluster.
-    pub fn prove(&self, input: &[u8]) -> Result<(Vec<u8>, Duration), Error> {
+    async fn prove_async(&self, input: &[u8]) -> Result<(Vec<u8>, Duration), Error> {
         let mut client = self.client.clone();
-        block_on(Self::prove_async(&mut client, input))
-    }
 
-    async fn prove_async(
-        client: &mut ZiskDistributedApiClient<Channel>,
-        input: &[u8],
-    ) -> Result<(Vec<u8>, Duration), Error> {
         // Check system status to get available compute capacity
 
         debug!("Checking system status...");
@@ -146,11 +145,9 @@ impl ClusterClient {
 
 /// Connect to the ZisK cluster at the given gRPC endpoint.
 async fn connect(endpoint: &str) -> Result<ZiskDistributedApiClient<Channel>, Error> {
-    let channel = Channel::from_shared(endpoint.to_string())
-        .map_err(|err| Error::InvalidClusterEndpoint(err.to_string()))?
+    let channel = Channel::from_shared(endpoint.to_string())?
         .connect()
-        .await
-        .map_err(|err| Error::ClusterConnectionFailed(err.to_string()))?;
+        .await?;
     Ok(ZiskDistributedApiClient::new(channel))
 }
 
@@ -167,10 +164,12 @@ fn block_on<T>(future: impl Future<Output = T>) -> T {
     }
 }
 
+/// Returns `Error::ClusterError`.
 fn cluster_error(s: impl ToString) -> Error {
     Error::ClusterError(s.to_string())
 }
 
+/// Returns `Error::ClusterError` formatted with error code and message.
 fn cluster_error_from_response(s: impl ToString, res: ErrorResponse) -> Error {
     Error::ClusterError(format!(
         "{}, code: {}, message: {}",

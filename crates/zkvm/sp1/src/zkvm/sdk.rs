@@ -37,8 +37,8 @@ impl Prover {
             ProverResource::Cpu => Self::Cpu(ProverClient::builder().cpu().build()),
             ProverResource::Gpu => Self::Gpu(CudaProver::new()?),
             ProverResource::Network(config) => Self::Network(build_network_prover(config)?),
-            ProverResource::Cluster(_) => Err(CommonError::unsupported_prover_resource_kind(
-                ProverResourceKind::Cluster,
+            _ => Err(CommonError::unsupported_prover_resource_kind(
+                resource.kind(),
                 [
                     ProverResourceKind::Cpu,
                     ProverResourceKind::Gpu,
