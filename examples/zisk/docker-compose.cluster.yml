@@ -12,7 +12,7 @@ services:
           source "$$HOME/.cargo/env"
 
           echo "Download proving key..."
-          SETUP_KEY=proving /app/ziskup/ziskup
+          SETUP_KEY=proving-no-consttree /app/ziskup/ziskup
 
           echo "Cleaning up rustup, cargo, toolchains and binaries..."
           rustup self uninstall -y
@@ -59,7 +59,13 @@ services:
       # - ./coordinator-config:/app/config/coordinator/prod.toml:ro
     environment:
       - RUST_LOG=info
-    restart: unless-stopped
+    restart: unless-stopped                                                                                                                                
+    healthcheck:
+      test: ["CMD", "grpcurl", "-plaintext", "-import-path", "/app/proto", "-proto", "zisk_distributed_api.proto", "localhost:50051", "zisk.distributed.api.v1.ZiskDistributedApi/HealthCheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   zisk-worker-0:
     image: ere-cluster-zisk:local-cuda
@@ -87,7 +93,7 @@ services:
       zisk-setup:
         condition: service_completed_successfully
       zisk-coordinator:
-        condition: service_started
+        condition: service_healthy
     shm_size: 32G
     ulimits:
       memlock:
@@ -117,7 +123,6 @@ services:
   #           - driver: nvidia
   #             device_ids: ['x']
   #             capabilities: [gpu]
-
 
 volumes:
   zisk_setup:

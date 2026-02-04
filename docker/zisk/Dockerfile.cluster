@@ -90,6 +90,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libprotobuf-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+RUN curl -sSL https://github.com/fullstorydev/grpcurl/releases/download/v1.9.3/grpcurl_1.9.3_linux_x86_64.tar.gz \
+    | tar -xz -C /usr/local/bin grpcurl
+
 WORKDIR /app
 
 # Copy script
@@ -100,6 +103,9 @@ COPY --from=build_stage /app/target/release/cargo-zisk /usr/local/bin/cargo-zisk
 COPY --from=build_stage /app/target/release/libzisk_witness.so /usr/local/bin/libzisk_witness.so
 COPY --from=build_stage /app/target/release/zisk-coordinator /usr/local/bin/zisk-coordinator
 COPY --from=build_stage /app/target/release/zisk-worker /usr/local/bin/zisk-worker
+
+# Copy proto for health check
+COPY --from=build_stage /app/distributed/crates/grpc-api/proto/zisk_distributed_api.proto /app/proto/zisk_distributed_api.proto
 
 # Copy configs
 COPY --from=build_stage /app/distributed/crates/coordinator/config/ /app/config/coordinator/
