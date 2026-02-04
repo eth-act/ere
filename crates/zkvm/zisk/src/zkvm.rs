@@ -1,20 +1,18 @@
 use crate::{
     program::ZiskProgram,
-    zkvm::sdk::{RomDigest, START_SERVER_TIMEOUT, ZiskOptions, ZiskSdk, ZiskServer},
+    zkvm::sdk::{RomDigest, ZiskSdk},
 };
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
     ProverResource, PublicValues, zkVM, zkVMProgramDigest,
 };
-use std::{
-    sync::{Mutex, MutexGuard},
-    time::Instant,
-};
-use tracing::error;
+use std::time::Instant;
 
+mod cluster_client;
 mod error;
 mod sdk;
+mod server;
 
 pub use error::Error;
 
@@ -22,47 +20,12 @@ include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 pub struct EreZisk {
     sdk: ZiskSdk,
-    /// Use `Mutex` because the server can only handle signle proving task at a
-    /// time.
-    ///
-    /// Use `Option` inside to lazily initialize only when `prove` is called.
-    server: Mutex<Option<ZiskServer>>,
 }
 
 impl EreZisk {
     pub fn new(program: ZiskProgram, resource: ProverResource) -> Result<Self, Error> {
-        let sdk = ZiskSdk::new(program.elf, resource, ZiskOptions::from_env())?;
-        Ok(Self {
-            sdk,
-            server: Mutex::new(None),
-        })
-    }
-
-    fn server(&'_ self) -> Result<MutexGuard<'_, Option<ZiskServer>>, Error> {
-        let mut server = self.server.lock().map_err(|_| Error::MutexPoisoned)?;
-
-        if server
-            .as_ref()
-            .is_none_or(|server| server.status(START_SERVER_TIMEOUT).is_err())
-        {
-            const MAX_RETRY: usize = 3;
-            let mut retry = 0;
-            *server = loop {
-                drop(server.take());
-                match self.sdk.server() {
-                    Ok(server) => break Some(server),
-                    Err(Error::TimeoutWaitingServerReady) if retry < MAX_RETRY => {
-                        error!("Timeout waiting server ready, restarting...");
-                        retry += 1;
-                        continue;
-                    }
-                    Err(err) => return Err(err),
-                }
-            }
-        }
-
-        // FIXME: Use `MutexGuard::map` to unwrap the inner `Option` when it's stabilized.
-        Ok(server)
+        let sdk = ZiskSdk::new(program.elf, resource)?;
+        Ok(Self { sdk })
     }
 }
 
@@ -105,12 +68,7 @@ impl zkVM for EreZisk {
             )))
         }
 
-        let mut server = self.server()?;
-        let server = server.as_mut().expect("server initialized");
-
-        let start = Instant::now();
-        let (public_values, proof) = server.prove(input.stdin())?;
-        let proving_time = start.elapsed();
+        let (public_values, proof, proving_time) = self.sdk.prove(input.stdin())?;
 
         Ok((
             public_values,
@@ -156,6 +114,7 @@ mod tests {
         program::basic::BasicProgram,
     };
     use ere_zkvm_interface::{
+        RemoteProverConfig,
         compiler::Compiler,
         zkvm::{Input, ProofKind, ProverResource, zkVM},
     };
@@ -222,5 +181,24 @@ mod tests {
         ] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }
+    }
+
+    #[test]
+    #[ignore = "Requires ZisK cluster running"]
+    fn test_cluster_prove() {
+        let program = basic_program();
+        let zkvm = EreZisk::new(
+            program,
+            ProverResource::Cluster(RemoteProverConfig {
+                endpoint: "http://127.0.0.1:50051".to_string(),
+                ..Default::default()
+            }),
+        )
+        .unwrap();
+
+        let _guard = PROVE_LOCK.lock().unwrap();
+
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+        run_zkvm_prove(&zkvm, &test_case);
     }
 }

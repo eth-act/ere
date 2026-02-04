@@ -1,5 +1,4 @@
 use crate::zkvm::sdk::RomDigest;
-use bytemuck::PodCastError;
 use ere_zkvm_interface::zkvm::CommonError;
 use thiserror::Error;
 
@@ -20,9 +19,6 @@ pub enum Error {
     RomSetupFailedBefore,
 
     // Prove
-    #[error("Mutex of ZiskServer is poisoned")]
-    MutexPoisoned,
-
     #[error("Server crashed")]
     ServerCrashed,
 
@@ -32,15 +28,28 @@ pub enum Error {
     #[error("Timeout waiting for server ready")]
     TimeoutWaitingServerReady,
 
-    #[error("Uknown server status, stdout: {stdout}")]
+    #[error("Unknown server status, stdout: {stdout}")]
     UnknownServerStatus { stdout: String },
 
-    // Verify
-    #[error("Invalid proof: {0}")]
-    InvalidProof(String),
+    // Cluster
+    #[error("Invalid cluster endpoint: {0}")]
+    InvalidClusterEndpoint(String),
 
-    #[error("Cast proof to `u64` slice failed: {0}")]
-    CastProofBytesToU64s(PodCastError),
+    #[error("Cluster gRPC error: {0}")]
+    ClusterGrpcError(#[from] tonic::Status),
+
+    #[error("Failed to connect to cluster: {0}")]
+    ClusterConnectionFailed(String),
+
+    #[error("Cluster error: {0}")]
+    ClusterError(String),
+
+    // Verify
+    #[error("Invalid proof")]
+    InvalidProof,
+
+    #[error("Invalid proof size {0}, expected a multiple of 8")]
+    InvalidProofSize(usize),
 
     #[error("Invalid public value format")]
     InvalidPublicValue,
