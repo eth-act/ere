@@ -424,14 +424,15 @@ async fn wait_until_healthy(endpoint: &Url, http_client: Client) -> Result<(), E
 }
 
 fn block_on<T>(future: impl Future<Output = T>) -> T {
-    static FALLBACK_RT: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
-    let handle = tokio::runtime::Handle::try_current().unwrap_or_else(|_| {
-        FALLBACK_RT
-            .get_or_init(|| tokio::runtime::Runtime::new().expect("Failed to create runtime"))
-            .handle()
-            .clone()
-    });
-    tokio::task::block_in_place(|| handle.block_on(future))
+    match tokio::runtime::Handle::try_current() {
+        Ok(handle) => tokio::task::block_in_place(|| handle.block_on(future)),
+        Err(_) => {
+            static FALLBACK_RT: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
+            FALLBACK_RT
+                .get_or_init(|| tokio::runtime::Runtime::new().expect("Failed to create runtime"))
+                .block_on(future)
+        }
+    }
 }
 
 #[cfg(test)]
