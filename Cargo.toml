@@ -57,6 +57,7 @@ clap = "4.5.42"
 dashmap = "6.1.0"
 digest = { version = "0.10.7", default-features = false }
 eyre = "0.6.12"
+fnv = { version = "1.0.7", default-features = false }
 indexmap = "2.10.0"
 paste = "1.0.15"
 postcard = { version = "1.0.8", default-features = false }

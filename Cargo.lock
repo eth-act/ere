@@ -4083,6 +4083,7 @@ name = "ere-platform-zisk"
 version = "0.2.0"
 dependencies = [
  "ere-platform-trait",
+ "fnv",
  "ziskos",
 ]
 

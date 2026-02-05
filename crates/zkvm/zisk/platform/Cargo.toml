@@ -9,6 +9,9 @@ license.workspace = true
 # ZisK dependencies
 ziskos.workspace = true
 
+# Hashing
+fnv.workspace = true
+
 # Local dependencies
 ere-platform-trait.workspace = true
 
