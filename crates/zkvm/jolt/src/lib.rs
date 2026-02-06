@@ -47,5 +47,5 @@ pub mod zkvm;
 #[cfg(feature = "zkvm")]
 pub use zkvm::*;
 
-#[cfg(feature = "secp256k1-inlines")]
+#[cfg(feature = "zkvm")]
 use jolt_inlines_secp256k1 as _;
