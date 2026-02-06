@@ -181,25 +181,25 @@ impl ServerContainer {
         // zkVM specific options
         cmd = match zkvm_kind {
             zkVMKind::Risc0 => cmd
-                .inherit_env("RISC0_SEGMENT_PO2")
-                .inherit_env("RISC0_KECCAK_PO2"),
+                .inherit_env("ERE_RISC0_SEGMENT_PO2")
+                .inherit_env("ERE_RISC0_KECCAK_PO2"),
             // ZisK uses shared memory to exchange data between processes, it
             // requires at least 16G shared memory, here we set 32G for safety.
             zkVMKind::Zisk => cmd
                 .option("shm-size", "32G")
                 .option("ulimit", "memlock=-1:-1")
-                .inherit_env("ZISK_SETUP_ON_INIT")
-                .inherit_env("ZISK_PORT")
-                .inherit_env("ZISK_UNLOCK_MAPPED_MEMORY")
-                .inherit_env("ZISK_MINIMAL_MEMORY")
-                .inherit_env("ZISK_PREALLOCATE")
-                .inherit_env("ZISK_SHARED_TABLES")
-                .inherit_env("ZISK_MAX_STREAMS")
-                .inherit_env("ZISK_NUMBER_THREADS_WITNESS")
-                .inherit_env("ZISK_MAX_WITNESS_STORED")
-                .inherit_env("ZISK_START_SERVER_TIMEOUT_SEC")
-                .inherit_env("ZISK_SHUTDOWN_SERVER_TIMEOUT_SEC")
-                .inherit_env("ZISK_PROVE_TIMEOUT_SEC"),
+                .inherit_env("ERE_ZISK_SETUP_ON_INIT")
+                .inherit_env("ERE_ZISK_PORT")
+                .inherit_env("ERE_ZISK_UNLOCK_MAPPED_MEMORY")
+                .inherit_env("ERE_ZISK_MINIMAL_MEMORY")
+                .inherit_env("ERE_ZISK_PREALLOCATE")
+                .inherit_env("ERE_ZISK_SHARED_TABLES")
+                .inherit_env("ERE_ZISK_MAX_STREAMS")
+                .inherit_env("ERE_ZISK_NUMBER_THREADS_WITNESS")
+                .inherit_env("ERE_ZISK_MAX_WITNESS_STORED")
+                .inherit_env("ERE_ZISK_START_SERVER_TIMEOUT_SEC")
+                .inherit_env("ERE_ZISK_SHUTDOWN_SERVER_TIMEOUT_SEC")
+                .inherit_env("ERE_ZISK_PROVE_TIMEOUT_SEC"),
             _ => cmd,
         };
 

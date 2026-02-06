@@ -48,14 +48,14 @@ impl ZiskServerOption {
     /// The key of the env variable to read from.
     fn env_var_key(&self) -> &'static str {
         match self {
-            Self::Port => "ZISK_PORT",
-            Self::UnlockMappedMemory => "ZISK_UNLOCK_MAPPED_MEMORY",
-            Self::MinimalMemory => "ZISK_MINIMAL_MEMORY",
-            Self::Preallocate => "ZISK_PREALLOCATE",
-            Self::SharedTables => "ZISK_SHARED_TABLES",
-            Self::MaxStreams => "ZISK_MAX_STREAMS",
-            Self::NumberThreadsWitness => "ZISK_NUMBER_THREADS_WITNESS",
-            Self::MaxWitnessStored => "ZISK_MAX_WITNESS_STORED",
+            Self::Port => "ERE_ZISK_PORT",
+            Self::UnlockMappedMemory => "ERE_ZISK_UNLOCK_MAPPED_MEMORY",
+            Self::MinimalMemory => "ERE_ZISK_MINIMAL_MEMORY",
+            Self::Preallocate => "ERE_ZISK_PREALLOCATE",
+            Self::SharedTables => "ERE_ZISK_SHARED_TABLES",
+            Self::MaxStreams => "ERE_ZISK_MAX_STREAMS",
+            Self::NumberThreadsWitness => "ERE_ZISK_NUMBER_THREADS_WITNESS",
+            Self::MaxWitnessStored => "ERE_ZISK_MAX_WITNESS_STORED",
         }
     }
 
@@ -430,25 +430,25 @@ fn remove_shm_files() {
     }
 }
 
-/// Returns the server start timeout, configurable via `ZISK_START_SERVER_TIMEOUT_SEC`.
+/// Returns the server start timeout, configurable via `ERE_ZISK_START_SERVER_TIMEOUT_SEC`.
 fn start_server_timeout() -> Duration {
     timeout(
-        "ZISK_START_SERVER_TIMEOUT_SEC",
+        "ERE_ZISK_START_SERVER_TIMEOUT_SEC",
         DEFAULT_START_SERVER_TIMEOUT_SEC,
     )
 }
 
-/// Returns the server shutdown timeout, configurable via `ZISK_SHUTDOWN_SERVER_TIMEOUT_SEC`.
+/// Returns the server shutdown timeout, configurable via `ERE_ZISK_SHUTDOWN_SERVER_TIMEOUT_SEC`.
 fn shutdown_server_timeout() -> Duration {
     timeout(
-        "ZISK_SHUTDOWN_SERVER_TIMEOUT_SEC",
+        "ERE_ZISK_SHUTDOWN_SERVER_TIMEOUT_SEC",
         DEFAULT_SHUTDOWN_SERVER_TIMEOUT_SEC,
     )
 }
 
-/// Returns the prove timeout, configurable via `ZISK_PROVE_TIMEOUT_SEC`.
+/// Returns the prove timeout, configurable via `ERE_ZISK_PROVE_TIMEOUT_SEC`.
 fn prove_timeout() -> Duration {
-    timeout("ZISK_PROVE_TIMEOUT_SEC", DEFAULT_PROVE_TIMEOUT_SEC)
+    timeout("ERE_ZISK_PROVE_TIMEOUT_SEC", DEFAULT_PROVE_TIMEOUT_SEC)
 }
 
 /// Read a timeout from the given env variable key, falling back to `default`.

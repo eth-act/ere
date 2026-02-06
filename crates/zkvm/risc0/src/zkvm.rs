@@ -73,8 +73,12 @@ impl EreRisc0 {
             }
         };
 
-        let segment_po2 = parse_env("RISC0_SEGMENT_PO2", DEFAULT_SEGMENT_PO2, SEGMENT_PO2_RANGE)?;
-        let keccak_po2 = parse_env("RISC0_KECCAK_PO2", DEFAULT_KECCAK_PO2, KECCAK_PO2_RANGE)?;
+        let segment_po2 = parse_env(
+            "ERE_RISC0_SEGMENT_PO2",
+            DEFAULT_SEGMENT_PO2,
+            SEGMENT_PO2_RANGE,
+        )?;
+        let keccak_po2 = parse_env("ERE_RISC0_KECCAK_PO2", DEFAULT_KECCAK_PO2, KECCAK_PO2_RANGE)?;
 
         Ok(Self {
             program,

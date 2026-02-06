@@ -42,7 +42,7 @@ pub struct ZiskSdk {
     elf_path: PathBuf,
     resource: ProverResource,
     /// ROM digest will be setup when `ZiskSdk::prove` or `ZiskSdk::verify`
-    /// is called, or if env variable `ZISK_SETUP_ON_INIT` is set.
+    /// is called, or if env variable `ERE_ZISK_SETUP_ON_INIT` is set.
     ///
     /// Use `Option` inside because ROM setup might fail, we can get rid of
     /// it if `OnceLock::get_or_try_init` is stabilized.
@@ -91,7 +91,7 @@ impl ZiskSdk {
             prover,
         };
 
-        if env::var_os("ZISK_SETUP_ON_INIT").is_some() {
+        if env::var_os("ERE_ZISK_SETUP_ON_INIT").is_some() {
             sdk.rom_digest()?;
 
             if let ZiskProver::Server(server) = &sdk.prover {
