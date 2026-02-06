@@ -57,6 +57,7 @@ clap = "4.5.42"
 dashmap = "6.1.0"
 digest = { version = "0.10.7", default-features = false }
 eyre = "0.6.12"
+fnv = { version = "1.0.7", default-features = false }
 futures-util = "0.3"
 http = "1"
 indexmap = "2.10.0"
@@ -95,6 +96,7 @@ jolt-ark-serialize = { git = "https://github.com/a16z/arkworks-algebra", package
 jolt-common = { git = "https://github.com/a16z/jolt.git", package = "common", rev = "6dcd401", default-features = false }
 jolt-core = { git = "https://github.com/a16z/jolt.git", rev = "6dcd401" }
 jolt-sdk = { git = "https://github.com/a16z/jolt.git", rev = "6dcd401", default-features = false }
+jolt-inlines-secp256k1 = { git = "https://github.com/a16z/jolt.git", rev = "6dcd401", features = ["host"] }
 
 # Miden dependencies
 miden-assembly = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.4" }
