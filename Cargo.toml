@@ -91,6 +91,7 @@ jolt-ark-serialize = { git = "https://github.com/a16z/arkworks-algebra", package
 jolt-common = { git = "https://github.com/a16z/jolt.git", package = "common", rev = "6dcd401", default-features = false }
 jolt-core = { git = "https://github.com/a16z/jolt.git", rev = "6dcd401" }
 jolt-sdk = { git = "https://github.com/a16z/jolt.git", rev = "6dcd401", default-features = false }
+jolt-inlines-secp256k1 = { git = "https://github.com/a16z/jolt.git", rev = "6dcd401", features = ["host"] }
 
 # Miden dependencies
 miden-assembly = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.20.4" }

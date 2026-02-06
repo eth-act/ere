@@ -16,6 +16,7 @@ jolt-ark-serialize = { workspace = true, features = ["derive"] }
 jolt-common.workspace = true
 jolt-core.workspace = true
 jolt-sdk = { workspace = true, features = ["host"], optional = true }
+jolt-inlines-secp256k1 = { workspace = true, optional = true }
 
 # Local dependencies
 ere-compile-utils = { workspace = true, optional = true }
@@ -30,7 +31,7 @@ ere-build-utils.workspace = true
 [features]
 default = ["compiler", "zkvm"]
 compiler = ["dep:ere-compile-utils"]
-zkvm = ["dep:jolt-sdk"]
+zkvm = ["dep:jolt-sdk", "dep:jolt-inlines-secp256k1"]
 
 [lints]
 workspace = true

@@ -941,6 +941,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ark-secp256k1"
+version = "0.5.0"
+source = "git+https://github.com/a16z/arkworks-algebra?branch=dev%2Ftwist-shout#76bb3a4518928f1ff7f15875f940d614bb9845e6"
+dependencies = [
+ "ark-ec",
+ "ark-ff 0.5.0",
+ "ark-std 0.5.0",
+]
+
+[[package]]
 name = "ark-serialize"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1841,7 +1851,7 @@ dependencies = [
  "bitflags 2.9.0",
  "cexpr",
  "clang-sys",
- "itertools 0.12.1",
+ "itertools 0.11.0",
  "lazy_static",
  "lazycell",
  "log",
@@ -1864,7 +1874,7 @@ dependencies = [
  "bitflags 2.9.0",
  "cexpr",
  "clang-sys",
- "itertools 0.13.0",
+ "itertools 0.11.0",
  "log",
  "prettyplease 0.2.32",
  "proc-macro2",
@@ -3920,6 +3930,7 @@ dependencies = [
  "ere-test-utils",
  "ere-zkvm-interface",
  "jolt-core",
+ "jolt-inlines-secp256k1",
  "jolt-sdk",
  "serde",
  "tempfile",
@@ -6229,6 +6240,23 @@ version = "0.1.0"
 source = "git+https://github.com/a16z/jolt.git?rev=6dcd401#6dcd401375efbf1a0e70079088745bacd55d4e88"
 dependencies = [
  "ctor 0.2.9",
+ "tracer",
+ "tracing",
+]
+
+[[package]]
+name = "jolt-inlines-secp256k1"
+version = "0.1.0"
+source = "git+https://github.com/a16z/jolt.git?rev=6dcd401#6dcd401375efbf1a0e70079088745bacd55d4e88"
+dependencies = [
+ "ark-ec",
+ "ark-ff 0.5.0",
+ "ark-secp256k1",
+ "ark-serialize 0.5.0",
+ "ctor 0.2.9",
+ "num-bigint 0.4.6",
+ "num-integer",
+ "serde",
  "tracer",
  "tracing",
 ]
@@ -10923,8 +10951,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "22505a5c94da8e3b7c2996394d1c933236c4d743e81a410bcca4e6989fc066a4"
 dependencies = [
  "bytes",
- "heck 0.5.0",
- "itertools 0.12.1",
+ "heck 0.4.1",
+ "itertools 0.11.0",
  "log",
  "multimap 0.10.1",
  "once_cell",
@@ -10943,7 +10971,7 @@ version = "0.13.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be769465445e8c1474e9c5dac2018218498557af32d9ed057325ec9a41ae81bf"
 dependencies = [
- "heck 0.5.0",
+ "heck 0.4.1",
  "itertools 0.14.0",
  "log",
  "multimap 0.10.1",
@@ -10977,7 +11005,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "81bddcdb20abf9501610992b6759a4c888aef7d1a7247ef75e2404275ac24af1"
 dependencies = [
  "anyhow",
- "itertools 0.12.1",
+ "itertools 0.11.0",
  "proc-macro2",
  "quote",
  "syn 2.0.101",
