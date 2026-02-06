@@ -29,10 +29,9 @@ ere-test-utils = { workspace = true, features = ["host"] }
 ere-build-utils.workspace = true
 
 [features]
-default = ["compiler", "zkvm", "secp256k1-inlines"]
+default = ["compiler", "zkvm"]
 compiler = ["dep:ere-compile-utils"]
-zkvm = ["dep:jolt-sdk"]
-secp256k1-inlines = ["dep:jolt-inlines-secp256k1"]
+zkvm = ["dep:jolt-sdk", "dep:jolt-inlines-secp256k1"]
 
 [lints]
 workspace = true
