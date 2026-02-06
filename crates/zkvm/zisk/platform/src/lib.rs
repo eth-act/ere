@@ -23,9 +23,8 @@ fn hash_name(name: &str) -> u64 {
 /// Each unique scope name gets a unique tag ID (0, 1, 2, ...) on first use.
 /// Panics if more than 256 distinct scope names are registered.
 struct ScopeRegistry {
-    entries: UnsafeCell<[(u64, u8); 256]>, // (name_hash, tag_id)
+    entries: UnsafeCell<[u64; 256]>, // name hashes; tag = index
     count: UnsafeCell<u8>,
-    next_tag: UnsafeCell<u8>,
 }
 
 // SAFETY: ZiskPlatform runs in a single-threaded zkVM environment.
@@ -34,9 +33,8 @@ unsafe impl Sync for ScopeRegistry {}
 impl ScopeRegistry {
     const fn new() -> Self {
         Self {
-            entries: UnsafeCell::new([(0, 0); 256]),
+            entries: UnsafeCell::new([0; 256]),
             count: UnsafeCell::new(0),
-            next_tag: UnsafeCell::new(0),
         }
     }
 
@@ -47,22 +45,20 @@ impl ScopeRegistry {
         unsafe {
             let entries = &mut *self.entries.get();
             let count = &mut *self.count.get();
-            let next_tag = &mut *self.next_tag.get();
 
             for i in 0..*count as usize {
-                if entries[i].0 == name_hash {
-                    return entries[i].1;
+                if entries[i] == name_hash {
+                    return i as u8;
                 }
             }
 
             assert!(
-                (*next_tag as u16) < 256,
+                (*count as u16) < 256,
                 "Too many profiling scopes (max 256), cannot assign tag for scope"
             );
-            let tag = *next_tag;
-            entries[*count as usize] = (name_hash, tag);
+            entries[*count as usize] = name_hash;
+            let tag = *count;
             *count += 1;
-            *next_tag += 1;
             tag
         }
     }
