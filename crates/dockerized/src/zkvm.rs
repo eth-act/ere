@@ -188,8 +188,8 @@ impl ServerContainer {
             zkVMKind::Zisk => cmd
                 .option("shm-size", "32G")
                 .option("ulimit", "memlock=-1:-1")
+                .inherit_env("ZISK_SETUP_ON_INIT")
                 .inherit_env("ZISK_PORT")
-                .inherit_env("ZISK_CHUNK_SIZE_BITS")
                 .inherit_env("ZISK_UNLOCK_MAPPED_MEMORY")
                 .inherit_env("ZISK_MINIMAL_MEMORY")
                 .inherit_env("ZISK_PREALLOCATE")
@@ -197,6 +197,8 @@ impl ServerContainer {
                 .inherit_env("ZISK_MAX_STREAMS")
                 .inherit_env("ZISK_NUMBER_THREADS_WITNESS")
                 .inherit_env("ZISK_MAX_WITNESS_STORED")
+                .inherit_env("ZISK_START_SERVER_TIMEOUT_SEC")
+                .inherit_env("ZISK_SHUTDOWN_SERVER_TIMEOUT_SEC")
                 .inherit_env("ZISK_PROVE_TIMEOUT_SEC"),
             _ => cmd,
         };

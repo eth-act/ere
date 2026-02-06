@@ -55,8 +55,11 @@ impl ClusterClient {
                     "System status",
                 );
 
-                if status.compute_capacity == 0 {
-                    return Err(cluster_error("No compute capacity available in the system"));
+                if status.total_workers == 0 || status.compute_capacity == 0 {
+                    return Err(cluster_error("No worker available in the cluster"));
+                }
+                if status.active_jobs != 0 {
+                    return Err(cluster_error("Cluster is busy with another proof job"));
                 }
 
                 status.compute_capacity
