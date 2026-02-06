@@ -93,6 +93,10 @@ impl ZiskSdk {
 
         if env::var_os("ZISK_SETUP_ON_INIT").is_some() {
             sdk.rom_digest()?;
+
+            if let ZiskProver::Server(server) = &sdk.prover {
+                server.ensure_ready()?;
+            }
         }
 
         Ok(sdk)

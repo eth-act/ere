@@ -235,7 +235,7 @@ impl ZiskServer {
     }
 
     /// Ensure the server is running and responsive, restarting it if needed.
-    fn ensure_ready(&self) -> Result<(), Error> {
+    pub fn ensure_ready(&self) -> Result<(), Error> {
         if self.child.lock().is_some() && self.status(start_server_timeout()).is_ok() {
             return Ok(());
         }
