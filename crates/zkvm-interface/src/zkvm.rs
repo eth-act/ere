@@ -11,7 +11,7 @@ mod resource;
 pub use error::CommonError;
 pub use proof::{Proof, ProofKind};
 pub use report::{ProgramExecutionReport, ProgramProvingReport};
-pub use resource::{NetworkProverConfig, ProverResourceType};
+pub use resource::{ProverResource, ProverResourceKind, RemoteProverConfig};
 
 /// Input for the prover to execute/prove a guest program.
 #[derive(Clone, Debug, Default)]

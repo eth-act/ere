@@ -5,7 +5,7 @@ use crate::{
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
+    ProverResource, ProverResourceKind, PublicValues, zkVM, zkVMProgramDigest,
 };
 use pico_p3_field::PrimeField32;
 use pico_vm::emulator::stdin::EmulatorStdinBuilder;
@@ -31,9 +31,12 @@ pub struct ErePico {
 }
 
 impl ErePico {
-    pub fn new(program: PicoProgram, resource: ProverResourceType) -> Result<Self, Error> {
-        if !matches!(resource, ProverResourceType::Cpu) {
-            panic!("Network or GPU proving not yet implemented for Pico. Use CPU resource type.");
+    pub fn new(program: PicoProgram, resource: ProverResource) -> Result<Self, Error> {
+        if !matches!(resource, ProverResource::Cpu) {
+            Err(CommonError::unsupported_prover_resource_kind(
+                resource.kind(),
+                [ProverResourceKind::Cpu],
+            ))?;
         }
         Ok(ErePico { program })
     }
@@ -46,7 +49,9 @@ impl ErePico {
 impl zkVM for ErePico {
     fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         if input.proofs.is_some() {
-            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+            bail!(Error::from(CommonError::unsupported_input(
+                "no dedicated proofs stream"
+            )))
         }
 
         let mut stdin = EmulatorStdinBuilder::default();
@@ -77,13 +82,15 @@ impl zkVM for ErePico {
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         if input.proofs.is_some() {
-            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+            bail!(Error::from(CommonError::unsupported_input(
+                "no dedicated proofs stream"
+            )))
         }
         if proof_kind != ProofKind::Compressed {
-            bail!(CommonError::unsupported_proof_kind(
+            bail!(Error::from(CommonError::unsupported_proof_kind(
                 proof_kind,
                 [ProofKind::Compressed]
-            ))
+            )))
         }
 
         let mut stdin = EmulatorStdinBuilder::default();
@@ -116,10 +123,10 @@ impl zkVM for ErePico {
 
     fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
         let Proof::Compressed(proof) = proof else {
-            bail!(CommonError::unsupported_proof_kind(
+            bail!(Error::from(CommonError::unsupported_proof_kind(
                 proof.kind(),
                 [ProofKind::Compressed]
-            ))
+            )))
         };
 
         let client = self.client();
@@ -195,7 +202,7 @@ mod tests {
     };
     use ere_zkvm_interface::{
         compiler::Compiler,
-        zkvm::{Input, ProofKind, ProverResourceType, zkVM},
+        zkvm::{Input, ProofKind, ProverResource, zkVM},
     };
     use std::sync::OnceLock;
 
@@ -213,7 +220,7 @@ mod tests {
     #[test]
     fn test_execute() {
         let program = basic_program();
-        let zkvm = ErePico::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = ErePico::new(program, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_execute(&zkvm, &test_case);
@@ -222,7 +229,7 @@ mod tests {
     #[test]
     fn test_execute_invalid_test_case() {
         let program = basic_program();
-        let zkvm = ErePico::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = ErePico::new(program, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -235,7 +242,7 @@ mod tests {
     #[test]
     fn test_prove() {
         let program = basic_program();
-        let zkvm = ErePico::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = ErePico::new(program, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
@@ -244,7 +251,7 @@ mod tests {
     #[test]
     fn test_prove_invalid_test_case() {
         let program = basic_program();
-        let zkvm = ErePico::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = ErePico::new(program, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),

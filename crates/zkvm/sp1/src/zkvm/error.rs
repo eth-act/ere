@@ -19,6 +19,9 @@ pub enum Error {
     #[error("Deserialize proofs in Input failed: {0:?}")]
     DeserializeInputProofs(bincode::error::DecodeError),
 
+    #[error("Missing `api_key` in `RemoteProverConfig`")]
+    MissingApiKey,
+
     // Execute
     #[error("SP1 execution failed: {0}")]
     Execute(#[source] anyhow::Error),

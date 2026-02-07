@@ -184,7 +184,7 @@ OutputHashedPlatform::<OpenVMPlatform, Sha256>::write_whole_output(&large_output
 | Risc0     | [`3.0.4`](https://github.com/risc0/risc0/tree/v3.0.4)                  | Yes |
 | SP1       | [`5.2.4`](https://github.com/succinctlabs/sp1/tree/v5.2.4)             | Yes |
 | Ziren     | [`1.2.3`](https://github.com/ProjectZKM/Ziren/tree/v1.2.3)             | No  |
-| Zisk      | [`0.13.0`](https://github.com/0xPolygonHermez/zisk/tree/v0.13.0)       | Yes |
+| Zisk      | [`0.15.0`](https://github.com/0xPolygonHermez/zisk/tree/v0.15.0)       | Yes |
 
 ## Examples
 
@@ -273,7 +273,7 @@ ere-sp1 = { git = "https://github.com/eth-act/ere.git" }
 use ere_sp1::{compiler::RustRv32imaCustomized, zkvm::EreSP1};
 use ere_zkvm_interface::{
     compiler::Compiler,
-    zkvm::{Input, ProofKind, ProverResourceType, zkVM},
+    zkvm::{Input, ProofKind, ProverResource, zkVM},
 };
 use std::path::Path;
 
@@ -285,7 +285,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let program = compiler.compile(guest_directory)?;
 
     // Create zkVM instance (setup/preprocessing happens here)
-    let zkvm = EreSP1::new(program, ProverResourceType::Cpu)?;
+    let zkvm = EreSP1::new(program, ProverResource::Cpu)?;
 
     // Prepare input
     // Use `with_prefixed_stdin` when guest uses `Platform::read_whole_input()`
@@ -341,7 +341,7 @@ ere-dockerized = { git = "https://github.com/eth-act/ere.git" }
 use ere_dockerized::{CompilerKind, DockerizedCompiler, DockerizedzkVM, zkVMKind};
 use ere_zkvm_interface::{
     compiler::Compiler,
-    zkvm::{Input, ProofKind, ProverResourceType, zkVM},
+    zkvm::{Input, ProofKind, ProverResource, zkVM},
 };
 use std::path::Path;
 
@@ -355,7 +355,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create zkVM instance (builds Docker images if needed)
     // It spawns a container that runs a gRPC server handling zkVM operations
-    let zkvm = DockerizedzkVM::new(zkVMKind::SP1, program, ProverResourceType::Cpu)?;
+    let zkvm = DockerizedzkVM::new(zkVMKind::SP1, program, ProverResource::Cpu)?;
 
     // Prepare input
     // Use `with_prefixed_stdin` when guest uses `Platform::read_whole_input()`

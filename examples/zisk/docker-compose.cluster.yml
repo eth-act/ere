@@ -1,0 +1,131 @@
+services:
+  zisk-setup:
+    image: ere-cluster-zisk:local-cuda
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+
+        if [ ! -d "/root/.zisk/provingKey" ]; then
+          echo "Install rustup temporarily for ziskup..."
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none
+          source "$$HOME/.cargo/env"
+
+          echo "Download proving key..."
+          SETUP_KEY=proving-no-consttree /app/ziskup/ziskup
+
+          echo "Cleaning up rustup, cargo, toolchains and binaries..."
+          rustup self uninstall -y
+          rm -rf /root/.zisk/toolchains
+          rm /root/.zisk/bin/cargo-zisk
+          rm /root/.zisk/bin/libzisk_witness.so
+          rm /root/.zisk/bin/riscv2zisk
+          rm /root/.zisk/bin/zisk-coordinator
+          rm /root/.zisk/bin/ziskemu
+          rm /root/.zisk/bin/ziskup
+          rm /root/.zisk/bin/zisk-worker
+
+          echo "Generating constant tree files (GPU). This may take a while..."
+          cargo-zisk check-setup -a
+        else
+          echo "Proving key already exists, skipping"
+        fi
+
+        echo "Running rom-setup..."
+        cargo-zisk rom-setup -e /app/elf
+
+        echo "Setup complete"
+    volumes:
+      - zisk_setup:/root/.zisk
+      - ${ELF_PATH}:/app/elf:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['0']
+              capabilities: [gpu]
+
+  zisk-coordinator:
+    image: ere-cluster-zisk:local-cuda
+    command:
+      - "zisk-coordinator"
+      - "--config"
+      - "/app/config/coordinator/prod.toml"
+    ports:
+      - "50051:50051"
+    # volumes:
+      # Uncomment to override config
+      # - ./coordinator-config:/app/config/coordinator/prod.toml:ro
+    environment:
+      - RUST_LOG=info
+    restart: unless-stopped                                                                                                                                
+    healthcheck:
+      test: ["CMD", "grpcurl", "-plaintext", "-import-path", "/app/proto", "-proto", "zisk_distributed_api.proto", "localhost:50051", "zisk.distributed.api.v1.ZiskDistributedApi/HealthCheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  zisk-worker-0:
+    image: ere-cluster-zisk:local-cuda
+    command:
+      - "zisk-worker"
+      - "--config"
+      - "/app/config/worker/prod.toml"
+      - "--coordinator-url"
+      - "http://zisk-coordinator:50051"
+      - "--elf"
+      - "/app/elf"
+      - "--witness-lib"
+      - "/usr/local/bin/libzisk_witness.so"
+    volumes:
+      # Mount proving key
+      - zisk_setup:/root/.zisk:ro
+      # Mount ELF
+      - ${ELF_PATH}:/app/elf:ro
+      # Uncomment to override config
+      # - ./worker-config:/app/config/worker/prod.toml:ro
+    environment:
+      - RUST_LOG=info
+    restart: unless-stopped
+    depends_on:
+      zisk-setup:
+        condition: service_completed_successfully
+      zisk-coordinator:
+        condition: service_healthy
+    shm_size: 32G
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "zisk-worker"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['0']
+              capabilities: [gpu]
+
+  # Uncomment to add more workers if more GPUs are available.
+  # zisk-worker-x:
+  #   extends: zisk-worker-0
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             device_ids: ['x']
+  #             capabilities: [gpu]
+
+volumes:
+  zisk_setup:
+
+networks:
+  default:

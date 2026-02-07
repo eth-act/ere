@@ -1,20 +1,18 @@
 use crate::{
     program::ZiskProgram,
-    zkvm::sdk::{RomDigest, START_SERVER_TIMEOUT, ZiskOptions, ZiskSdk, ZiskServer},
+    zkvm::sdk::{RomDigest, ZiskSdk},
 };
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
+    ProverResource, PublicValues, zkVM, zkVMProgramDigest,
 };
-use std::{
-    sync::{Mutex, MutexGuard},
-    time::Instant,
-};
-use tracing::error;
+use std::time::Instant;
 
+mod cluster_client;
 mod error;
 mod sdk;
+mod server;
 
 pub use error::Error;
 
@@ -22,57 +20,21 @@ include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 pub struct EreZisk {
     sdk: ZiskSdk,
-    /// Use `Mutex` because the server can only handle signle proving task at a
-    /// time.
-    ///
-    /// Use `Option` inside to lazily initialize only when `prove` is called.
-    server: Mutex<Option<ZiskServer>>,
 }
 
 impl EreZisk {
-    pub fn new(program: ZiskProgram, resource: ProverResourceType) -> Result<Self, Error> {
-        if matches!(resource, ProverResourceType::Network(_)) {
-            panic!("Network proving not yet implemented for ZisK. Use CPU or GPU resource type.");
-        }
-        let sdk = ZiskSdk::new(program.elf, resource, ZiskOptions::from_env())?;
-        Ok(Self {
-            sdk,
-            server: Mutex::new(None),
-        })
-    }
-
-    fn server(&'_ self) -> Result<MutexGuard<'_, Option<ZiskServer>>, Error> {
-        let mut server = self.server.lock().map_err(|_| Error::MutexPoisoned)?;
-
-        if server
-            .as_ref()
-            .is_none_or(|server| server.status(START_SERVER_TIMEOUT).is_err())
-        {
-            const MAX_RETRY: usize = 3;
-            let mut retry = 0;
-            *server = loop {
-                drop(server.take());
-                match self.sdk.server() {
-                    Ok(server) => break Some(server),
-                    Err(Error::TimeoutWaitingServerReady) if retry < MAX_RETRY => {
-                        error!("Timeout waiting server ready, restarting...");
-                        retry += 1;
-                        continue;
-                    }
-                    Err(err) => return Err(err),
-                }
-            }
-        }
-
-        // FIXME: Use `MutexGuard::map` to unwrap the inner `Option` when it's stabilized.
-        Ok(server)
+    pub fn new(program: ZiskProgram, resource: ProverResource) -> Result<Self, Error> {
+        let sdk = ZiskSdk::new(program.elf, resource)?;
+        Ok(Self { sdk })
     }
 }
 
 impl zkVM for EreZisk {
     fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         if input.proofs.is_some() {
-            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+            bail!(Error::from(CommonError::unsupported_input(
+                "no dedicated proofs stream"
+            )))
         }
 
         let start = Instant::now();
@@ -95,21 +57,18 @@ impl zkVM for EreZisk {
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         if input.proofs.is_some() {
-            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+            bail!(Error::from(CommonError::unsupported_input(
+                "no dedicated proofs stream"
+            )))
         }
         if proof_kind != ProofKind::Compressed {
-            bail!(CommonError::unsupported_proof_kind(
+            bail!(Error::from(CommonError::unsupported_proof_kind(
                 proof_kind,
                 [ProofKind::Compressed]
-            ))
+            )))
         }
 
-        let mut server = self.server()?;
-        let server = server.as_mut().expect("server initialized");
-
-        let start = Instant::now();
-        let (public_values, proof) = server.prove(input.stdin())?;
-        let proving_time = start.elapsed();
+        let (public_values, proof, proving_time) = self.sdk.prove(input.stdin())?;
 
         Ok((
             public_values,
@@ -120,10 +79,10 @@ impl zkVM for EreZisk {
 
     fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
         let Proof::Compressed(proof) = proof else {
-            bail!(CommonError::unsupported_proof_kind(
+            bail!(Error::from(CommonError::unsupported_proof_kind(
                 proof.kind(),
                 [ProofKind::Compressed]
-            ))
+            )))
         };
 
         Ok(self.sdk.verify(proof)?)
@@ -155,8 +114,9 @@ mod tests {
         program::basic::BasicProgram,
     };
     use ere_zkvm_interface::{
+        RemoteProverConfig,
         compiler::Compiler,
-        zkvm::{Input, ProofKind, ProverResourceType, zkVM},
+        zkvm::{Input, ProofKind, ProverResource, zkVM},
     };
     use std::sync::{Mutex, OnceLock};
 
@@ -178,7 +138,7 @@ mod tests {
     #[test]
     fn test_execute() {
         let program = basic_program();
-        let zkvm = EreZisk::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreZisk::new(program, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_execute(&zkvm, &test_case);
@@ -187,7 +147,7 @@ mod tests {
     #[test]
     fn test_execute_invalid_test_case() {
         let program = basic_program();
-        let zkvm = EreZisk::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreZisk::new(program, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -200,7 +160,7 @@ mod tests {
     #[test]
     fn test_prove() {
         let program = basic_program();
-        let zkvm = EreZisk::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreZisk::new(program, ProverResource::Cpu).unwrap();
 
         let _guard = PROVE_LOCK.lock().unwrap();
 
@@ -211,7 +171,7 @@ mod tests {
     #[test]
     fn test_prove_invalid_test_case() {
         let program = basic_program();
-        let zkvm = EreZisk::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreZisk::new(program, ProverResource::Cpu).unwrap();
 
         let _guard = PROVE_LOCK.lock().unwrap();
 
@@ -221,5 +181,24 @@ mod tests {
         ] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }
+    }
+
+    #[test]
+    #[ignore = "Requires ZisK cluster running"]
+    fn test_cluster_prove() {
+        let program = basic_program();
+        let zkvm = EreZisk::new(
+            program,
+            ProverResource::Cluster(RemoteProverConfig {
+                endpoint: "http://127.0.0.1:50051".to_string(),
+                ..Default::default()
+            }),
+        )
+        .unwrap();
+
+        let _guard = PROVE_LOCK.lock().unwrap();
+
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+        run_zkvm_prove(&zkvm, &test_case);
     }
 }

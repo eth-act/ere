@@ -2,7 +2,7 @@ use crate::{program::SP1Program, zkvm::sdk::Prover};
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
+    ProverResource, PublicValues, zkVM, zkVMProgramDigest,
 };
 use sp1_sdk::{SP1ProofMode, SP1ProofWithPublicValues, SP1ProvingKey, SP1Stdin, SP1VerifyingKey};
 use std::{
@@ -23,7 +23,7 @@ include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 pub struct EreSP1 {
     program: SP1Program,
     /// Prover resource configuration for creating clients
-    resource: ProverResourceType,
+    resource: ProverResource,
     /// Proving key
     pk: SP1ProvingKey,
     /// Verification key
@@ -39,7 +39,7 @@ pub struct EreSP1 {
 }
 
 impl EreSP1 {
-    pub fn new(program: SP1Program, resource: ProverResourceType) -> Result<Self, Error> {
+    pub fn new(program: SP1Program, resource: ProverResource) -> Result<Self, Error> {
         let prover = Prover::new(&resource)?;
         let (pk, vk) = prover.setup(&program.elf)?;
         Ok(Self {
@@ -97,7 +97,7 @@ impl zkVM for EreSP1 {
         let mut prover = self.prover_mut()?;
 
         // Restart GPU prover if the prover is dropped before.
-        if matches!(self.resource, ProverResourceType::Gpu) && matches!(&*prover, Prover::Cpu(_)) {
+        if matches!(self.resource, ProverResource::Gpu) && matches!(&*prover, Prover::Cpu(_)) {
             *prover = Prover::new(&self.resource).and_then(|prover| {
                 prover.setup(&self.program.elf)?;
                 Ok(prover)
@@ -107,7 +107,7 @@ impl zkVM for EreSP1 {
         let start = Instant::now();
         let proof =
             panic::catch_unwind(|| prover.prove(&self.pk, &stdin, mode)).map_err(|err| {
-                if matches!(self.resource, ProverResourceType::Gpu) {
+                if matches!(self.resource, ProverResource::Gpu) {
                     // Drop the panicked GPU prover and replace it with CPU one,
                     // next prove call will try to restart it.
                     take(&mut *prover);
@@ -201,7 +201,7 @@ mod tests {
     use ere_zkvm_interface::{
         Input,
         compiler::Compiler,
-        zkvm::{NetworkProverConfig, ProofKind, ProverResourceType, zkVM},
+        zkvm::{ProofKind, ProverResource, RemoteProverConfig, zkVM},
     };
     use std::sync::OnceLock;
 
@@ -219,7 +219,7 @@ mod tests {
     #[test]
     fn test_execute() {
         let program = basic_program();
-        let zkvm = EreSP1::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreSP1::new(program, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_execute(&zkvm, &test_case);
@@ -228,7 +228,7 @@ mod tests {
     #[test]
     fn test_execute_invalid_test_case() {
         let program = basic_program();
-        let zkvm = EreSP1::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreSP1::new(program, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -241,7 +241,7 @@ mod tests {
     #[test]
     fn test_prove() {
         let program = basic_program();
-        let zkvm = EreSP1::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreSP1::new(program, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
@@ -250,7 +250,7 @@ mod tests {
     #[test]
     fn test_prove_invalid_test_case() {
         let program = basic_program();
-        let zkvm = EreSP1::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreSP1::new(program, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -269,13 +269,13 @@ mod tests {
             return;
         }
 
-        // Create a network prover configuration
-        let network_config = NetworkProverConfig {
+        // Create a remote prover configuration
+        let config = RemoteProverConfig {
             endpoint: std::env::var("NETWORK_RPC_URL").unwrap_or_default(),
             api_key: std::env::var("NETWORK_PRIVATE_KEY").ok(),
         };
         let program = basic_program();
-        let zkvm = EreSP1::new(program, ProverResourceType::Network(network_config)).unwrap();
+        let zkvm = EreSP1::new(program, ProverResource::Network(config)).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);

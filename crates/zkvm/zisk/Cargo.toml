@@ -8,17 +8,27 @@ license.workspace = true
 [dependencies]
 anyhow.workspace = true
 blake3.workspace = true
-bytemuck.workspace = true
+bytemuck = { workspace = true, features = ["extern_crate_alloc"] }
+futures-util.workspace = true
+http.workspace = true
+parking_lot.workspace = true
 serde.workspace = true
 strum = { workspace = true, features = ["derive"] }
 tempfile.workspace = true
 thiserror.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread"] }
+tonic.workspace = true
 tracing.workspace = true
+uuid = { workspace = true, features = ["v4"] }
 wait-timeout.workspace = true
 
 # Local dependencies
 ere-compile-utils = { workspace = true, optional = true }
 ere-zkvm-interface.workspace = true
+
+# Zisk dependencies
+zisk-distributed-grpc-api.workspace = true
+zisk-proofman-verifier.workspace = true
 
 [dev-dependencies]
 ere-test-utils = { workspace = true, features = ["host"] }

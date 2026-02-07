@@ -1,4 +1,4 @@
-use crate::zkvm::ProofKind;
+use crate::zkvm::{ProofKind, resource::ProverResourceKind};
 use std::{
     io,
     path::Path,
@@ -50,6 +50,12 @@ pub enum CommonError {
 
     #[error("Unsupported input: {0}")]
     UnsupportedInput(String),
+
+    #[error("Unsupported prover resource kind {unsupported:?}, expect one of {supported:?}")]
+    UnsupportedProverResourceKind {
+        unsupported: ProverResourceKind,
+        supported: Vec<ProverResourceKind>,
+    },
 
     #[error("Unsupported proof kind {unsupported:?}, expect one of {supported:?}")]
     UnsupportedProofKind {
@@ -139,6 +145,16 @@ impl CommonError {
 
     pub fn unsupported_input(reason: impl AsRef<str>) -> Self {
         Self::UnsupportedInput(reason.as_ref().to_string())
+    }
+
+    pub fn unsupported_prover_resource_kind(
+        unsupported: ProverResourceKind,
+        supported: impl IntoIterator<Item = ProverResourceKind>,
+    ) -> Self {
+        Self::UnsupportedProverResourceKind {
+            unsupported,
+            supported: supported.into_iter().collect(),
+        }
     }
 
     pub fn unsupported_proof_kind(

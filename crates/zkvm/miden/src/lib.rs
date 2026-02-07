@@ -10,13 +10,14 @@
 //!
 //! # `zkVM` implementation
 //!
-//! ## Supported `ProverResourceType`
+//! ## Supported `ProverResource`
 //!
 //! | Resource  | Supported |
 //! | --------- | :-------: |
 //! | `Cpu`     |    Yes    |
 //! | `Gpu`     |    No     |
 //! | `Network` |    No     |
+//! | `Cluster` |    No     |
 
 #![cfg_attr(
     all(not(test), feature = "compiler", feature = "zkvm"),

@@ -1,9 +1,12 @@
 use crate::{program::AirbenderProgram, zkvm::sdk::AirbenderSdk};
 use airbender_execution_utils::ProgramProof;
 use anyhow::bail;
-use ere_zkvm_interface::zkvm::{
-    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
+use ere_zkvm_interface::{
+    ProverResourceKind,
+    zkvm::{
+        CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+        ProverResource, PublicValues, zkVM, zkVMProgramDigest,
+    },
 };
 use std::time::Instant;
 
@@ -20,9 +23,14 @@ pub struct EreAirbender {
 }
 
 impl EreAirbender {
-    pub fn new(program: AirbenderProgram, resource: ProverResourceType) -> Result<Self, Error> {
-        let gpu = matches!(resource, ProverResourceType::Gpu);
-        let sdk = AirbenderSdk::new(program.bin(), gpu);
+    pub fn new(program: AirbenderProgram, resource: ProverResource) -> Result<Self, Error> {
+        if !matches!(resource, ProverResource::Cpu | ProverResource::Gpu) {
+            Err(CommonError::unsupported_prover_resource_kind(
+                resource.kind(),
+                [ProverResourceKind::Cpu, ProverResourceKind::Gpu],
+            ))?;
+        }
+        let sdk = AirbenderSdk::new(program.bin(), resource.is_gpu());
         Ok(Self { sdk })
     }
 }
@@ -30,7 +38,9 @@ impl EreAirbender {
 impl zkVM for EreAirbender {
     fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         if input.proofs.is_some() {
-            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+            bail!(Error::from(CommonError::unsupported_input(
+                "no dedicated proofs stream"
+            )))
         }
 
         let start = Instant::now();
@@ -53,13 +63,15 @@ impl zkVM for EreAirbender {
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         if input.proofs.is_some() {
-            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+            bail!(Error::from(CommonError::unsupported_input(
+                "no dedicated proofs stream"
+            )))
         }
         if proof_kind != ProofKind::Compressed {
-            bail!(CommonError::unsupported_proof_kind(
+            bail!(Error::from(CommonError::unsupported_proof_kind(
                 proof_kind,
                 [ProofKind::Compressed]
-            ))
+            )))
         }
         let start = Instant::now();
         let (public_values, proof) = self.sdk.prove(input.stdin())?;
@@ -77,10 +89,10 @@ impl zkVM for EreAirbender {
 
     fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
         let Proof::Compressed(proof) = proof else {
-            bail!(CommonError::unsupported_proof_kind(
+            bail!(Error::from(CommonError::unsupported_proof_kind(
                 proof.kind(),
                 [ProofKind::Compressed]
-            ))
+            )))
         };
 
         let (proof, _): (ProgramProof, _) =
@@ -119,7 +131,7 @@ mod tests {
     };
     use ere_zkvm_interface::{
         compiler::Compiler,
-        zkvm::{Input, ProofKind, ProverResourceType, zkVM},
+        zkvm::{Input, ProofKind, ProverResource, zkVM},
     };
     use std::sync::OnceLock;
 
@@ -137,7 +149,7 @@ mod tests {
     #[test]
     fn test_execute() {
         let program = basic_program();
-        let zkvm = EreAirbender::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreAirbender::new(program, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
         run_zkvm_execute(&zkvm, &test_case);
@@ -146,7 +158,7 @@ mod tests {
     #[test]
     fn test_execute_invalid_test_case() {
         let program = basic_program();
-        let zkvm = EreAirbender::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreAirbender::new(program, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -159,7 +171,7 @@ mod tests {
     #[test]
     fn test_prove() {
         let program = basic_program();
-        let zkvm = EreAirbender::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreAirbender::new(program, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
         run_zkvm_prove(&zkvm, &test_case);
@@ -168,7 +180,7 @@ mod tests {
     #[test]
     fn test_prove_invalid_test_case() {
         let program = basic_program();
-        let zkvm = EreAirbender::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreAirbender::new(program, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),

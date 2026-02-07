@@ -8,6 +8,9 @@ pub enum Error {
     CommonError(#[from] CommonError),
 
     // Common
+    #[error("Enable `cuda` feature to enable `ProverResource::Gpu`")]
+    CudaFeatureDisabled,
+
     #[error("Invalid AppConfig: {0}")]
     InvalidAppConfig(toml::de::Error),
 

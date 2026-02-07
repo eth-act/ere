@@ -2,7 +2,7 @@ use crate::program::{MidenProgram, MidenProgramInfo, MidenSerdeWrapper};
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResourceType, PublicValues, zkVM, zkVMProgramDigest,
+    ProverResource, ProverResourceKind, PublicValues, zkVM, zkVMProgramDigest,
 };
 use miden_core::{
     Program,
@@ -38,9 +38,12 @@ pub struct EreMiden {
 }
 
 impl EreMiden {
-    pub fn new(program: MidenProgram, resource: ProverResourceType) -> Result<Self, Error> {
-        if !matches!(resource, ProverResourceType::Cpu) {
-            panic!("Network or GPU proving not yet implemented for Miden. Use CPU resource type.");
+    pub fn new(program: MidenProgram, resource: ProverResource) -> Result<Self, Error> {
+        if !matches!(resource, ProverResource::Cpu) {
+            Err(CommonError::unsupported_prover_resource_kind(
+                resource.kind(),
+                [ProverResourceKind::Cpu],
+            ))?;
         }
         Ok(Self { program: program.0 })
     }
@@ -58,7 +61,9 @@ impl EreMiden {
 impl zkVM for EreMiden {
     fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         if input.proofs.is_some() {
-            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+            bail!(Error::from(CommonError::unsupported_input(
+                "no dedicated proofs stream"
+            )))
         }
 
         let stack_inputs = StackInputs::default();
@@ -92,13 +97,15 @@ impl zkVM for EreMiden {
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
         if input.proofs.is_some() {
-            bail!(CommonError::unsupported_input("no dedicated proofs stream"))
+            bail!(Error::from(CommonError::unsupported_input(
+                "no dedicated proofs stream"
+            )))
         }
         if proof_kind != ProofKind::Compressed {
-            bail!(CommonError::unsupported_proof_kind(
+            bail!(Error::from(CommonError::unsupported_proof_kind(
                 proof_kind,
                 [ProofKind::Compressed]
-            ))
+            )))
         }
 
         let stack_inputs = StackInputs::default();
@@ -129,10 +136,10 @@ impl zkVM for EreMiden {
 
     fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
         let Proof::Compressed(proof) = proof else {
-            bail!(CommonError::unsupported_proof_kind(
+            bail!(Error::from(CommonError::unsupported_proof_kind(
                 proof.kind(),
                 [ProofKind::Compressed]
-            ))
+            )))
         };
 
         let program_info: ProgramInfo = self.program.clone().into();
@@ -200,7 +207,7 @@ mod tests {
     use ere_zkvm_interface::{
         Input,
         compiler::Compiler,
-        zkvm::{ProofKind, ProverResourceType, zkVM},
+        zkvm::{ProofKind, ProverResource, zkVM},
     };
 
     fn load_miden_program(guest_name: &str) -> MidenProgram {
@@ -212,7 +219,7 @@ mod tests {
     #[test]
     fn test_prove_and_verify_add() {
         let program = load_miden_program("add");
-        let zkvm = EreMiden::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreMiden::new(program, ProverResource::Cpu).unwrap();
 
         let const_a = -Felt::ONE;
         let const_b = Felt::ONE / Felt::ONE.double();
@@ -237,7 +244,7 @@ mod tests {
     #[test]
     fn test_prove_and_verify_fib() {
         let program = load_miden_program("fib");
-        let zkvm = EreMiden::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreMiden::new(program, ProverResource::Cpu).unwrap();
 
         let n_iterations = 50u32;
         let expected_fib = Felt::try_from(12_586_269_025u64).unwrap();
@@ -261,7 +268,7 @@ mod tests {
     #[test]
     fn test_invalid_test_case() {
         let program = load_miden_program("add");
-        let zkvm = EreMiden::new(program, ProverResourceType::Cpu).unwrap();
+        let zkvm = EreMiden::new(program, ProverResource::Cpu).unwrap();
 
         let empty_inputs = Input::new();
         assert!(zkvm.execute(&empty_inputs).is_err());

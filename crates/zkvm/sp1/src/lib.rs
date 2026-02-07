@@ -12,7 +12,7 @@
 //!
 //! ## `zkVM` requirements
 //!
-//! - `docker` - Used by `zkVM::prove` if `ProverResourceType::Gpu` is selected
+//! - `docker` - Used by `zkVM::prove` if `ProverResource::Gpu` is selected
 //!
 //! # `Compiler` implementation
 //!
@@ -25,13 +25,14 @@
 //!
 //! # `zkVM` implementation
 //!
-//! ## Supported `ProverResourceType`
+//! ## Supported `ProverResource`
 //!
 //! | Resource  | Supported |
 //! | --------- | :-------: |
 //! | `Cpu`     |    Yes    |
 //! | `Gpu`     |    Yes    |
 //! | `Network` |    Yes    |
+//! | `Cluster` |    No     |
 //!
 //! [`install_sp1_sdk.sh`]: https://github.com/eth-act/ere/blob/master/scripts/sdk_installers/install_sp1_sdk.sh
 //! [`sp1up`]: https://sp1up.succinct.xyz
