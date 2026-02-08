@@ -199,11 +199,13 @@ pub fn check_cycle_scope_names(_names: &[&str]) {
 
 /// Exports cycle scope names as symbols for `ziskemu` to display human-readable names.
 ///
-/// Names must be listed in the same order as they were first used via
-/// [`Platform::cycle_scope_start`].
+/// The declared scope names must be declared in the order they are _executed_
+/// in your code. Not doing so can dangerously name a scope incorrectly. Be
+/// careful if you have lambda functions or conditionals since it is easy to
+/// confuse the right order.
 ///
 /// Enable feature `check-cycle-scope` to verify correctness at runtime
-/// (panics on mismatch with expected output to copy-paste).
+/// automatically (panics on mismatch with expected output to copy-paste).
 #[macro_export]
 macro_rules! export_cycle_scope_names {
     ($($name:ident),* $(,)?) => {{
