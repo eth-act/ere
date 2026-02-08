@@ -7,6 +7,9 @@ use ere_platform_trait::LengthPrefixedStdin;
 use fnv::FnvHasher;
 use ziskos::ziskos_definitions::ziskos_config::UART_ADDR;
 
+#[cfg(feature = "check-cycle-scope")]
+use alloc::string::String;
+
 pub use ere_platform_trait::{Digest, OutputHashedPlatform, Platform};
 pub use ziskos;
 
@@ -25,6 +28,8 @@ fn hash_name(name: &str) -> u64 {
 struct ScopeRegistry {
     entries: UnsafeCell<[u64; 256]>, // name hashes; tag = index
     count: UnsafeCell<u8>,
+    #[cfg(feature = "check-cycle-scope")]
+    names: UnsafeCell<[String; 256]>,
 }
 
 // SAFETY: ZiskPlatform runs in a single-threaded zkVM environment.
@@ -35,6 +40,8 @@ impl ScopeRegistry {
         Self {
             entries: UnsafeCell::new([0; 256]),
             count: UnsafeCell::new(0),
+            #[cfg(feature = "check-cycle-scope")]
+            names: UnsafeCell::new([const { String::new() }; 256]),
         }
     }
 
@@ -45,6 +52,8 @@ impl ScopeRegistry {
         unsafe {
             let entries = &mut *self.entries.get();
             let count = &mut *self.count.get();
+            #[cfg(feature = "check-cycle-scope")]
+            let names = &mut *self.names.get();
 
             for i in 0..*count as usize {
                 if entries[i] == name_hash {
@@ -57,9 +66,23 @@ impl ScopeRegistry {
                 "Too many profiling scopes (max 256), cannot assign tag for scope"
             );
             entries[*count as usize] = name_hash;
+            #[cfg(feature = "check-cycle-scope")]
+            {
+                names[*count as usize] = name.into();
+            }
             let tag = *count;
             *count += 1;
             tag
+        }
+    }
+
+    #[cfg(feature = "check-cycle-scope")]
+    fn names(&self) -> &[String] {
+        // SAFETY: Single-threaded zkVM — no concurrent access.
+        unsafe {
+            let names = &*self.names.get();
+            let count = *self.count.get();
+            &names[..count as usize]
         }
     }
 }
@@ -160,4 +183,76 @@ impl Platform for ZiskPlatform {
         let tag = SCOPE_REGISTRY.get_or_assign_tag(name);
         dispatch_profile!(end, tag);
     }
+}
+
+/// Check explicitly exported names match cycle scope entries, panics with expected output on mismatch.
+#[doc(hidden)]
+pub fn check_cycle_scope_names(_names: &[&str]) {
+    #[cfg(feature = "check-cycle-scope")]
+    if SCOPE_REGISTRY.names() != _names {
+        panic!(
+            "Cycle scope names mismatch with the registered entries, expect:\n\nexport_cycle_scope_names!(\n    {},\n);",
+            SCOPE_REGISTRY.names().join(",\n    ")
+        );
+    }
+}
+
+/// Exports cycle scope names as symbols for `ziskemu` to display human-readable names.
+///
+/// The declared scope names must be declared in the order they are _executed_
+/// in your code. Not doing so can dangerously name a scope incorrectly. Be
+/// careful if you have lambda functions or conditionals since it is easy to
+/// confuse the right order.
+///
+/// Enable feature `check-cycle-scope` to verify correctness at runtime
+/// automatically (panics on mismatch with expected output to copy-paste).
+#[macro_export]
+macro_rules! export_cycle_scope_names {
+    ($($name:ident),* $(,)?) => {{
+        $crate::__export_cycle_scope_names!(
+            [  0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15
+              16  17  18  19  20  21  22  23  24  25  26  27  28  29  30  31
+              32  33  34  35  36  37  38  39  40  41  42  43  44  45  46  47
+              48  49  50  51  52  53  54  55  56  57  58  59  60  61  62  63
+              64  65  66  67  68  69  70  71  72  73  74  75  76  77  78  79
+              80  81  82  83  84  85  86  87  88  89  90  91  92  93  94  95
+              96  97  98  99 100 101 102 103 104 105 106 107 108 109 110 111
+             112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127
+             128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143
+             144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159
+             160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175
+             176 177 178 179 180 181 182 183 184 185 186 187 188 189 190 191
+             192 193 194 195 196 197 198 199 200 201 202 203 204 205 206 207
+             208 209 210 211 212 213 214 215 216 217 218 219 220 221 222 223
+             224 225 226 227 228 229 230 231 232 233 234 235 236 237 238 239
+             240 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255]
+            [] [$($name)*]
+        );
+    }};
+}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __export_cycle_scope_names {
+    // Take one tag from the pool for each name
+    ([$tag:tt $($tags:tt)*] [$($acc:tt)*] [$name:ident $($rest:ident)*]) => {
+        $crate::__export_cycle_scope_names!([$($tags)*] [$($acc)* [$name $tag]] [$($rest)*]);
+    };
+
+    // All names have tags, emit the static variable.
+    ([$($tags:tt)*] [$([$name:ident $idx:tt])*] []) => {{
+        $(
+            #[unsafe(export_name = ziskos::__ziskos_profile_export_name!($idx, $name))]
+            #[used]
+            #[allow(non_upper_case_globals)]
+            static $name: u16 = $idx;
+        )*
+
+        $crate::check_cycle_scope_names(&[$(stringify!($name),)*]);
+    }};
+
+    // Empty
+    ([$($tags:tt)*] [] []) => {{
+        $crate::check_cycle_scope_names(&[]);
+    }};
 }

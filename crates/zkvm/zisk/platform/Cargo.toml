@@ -17,6 +17,7 @@ ere-platform-trait.workspace = true
 
 [features]
 default = []
+check-cycle-scope = []
 
 [lints]
 workspace = true
