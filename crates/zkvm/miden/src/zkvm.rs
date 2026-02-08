@@ -15,7 +15,7 @@ use miden_processor::{
 use miden_prover::{
     AdviceInputs, ExecutionProof, HashFunction, ProvingOptions, prove as miden_prove,
 };
-use miden_verifier::verify as miden_verify;
+use miden_verifier::verify_with_precompiles as miden_verify;
 use std::{env, time::Instant};
 
 mod error;
@@ -149,8 +149,15 @@ impl zkVM for EreMiden {
             Deserializable::read_from_bytes(proof)
                 .map_err(|err| CommonError::deserialize("proof", "miden", err))?;
 
-        miden_verify(program_info, stack_inputs, stack_outputs.clone(), proof)
-            .map_err(Error::Verify)?;
+        let registry = CoreLibrary::default().verifier_registry();
+        miden_verify(
+            program_info,
+            stack_inputs,
+            stack_outputs.clone(),
+            proof,
+            &registry,
+        )
+        .map_err(Error::Verify)?;
 
         Ok(felts_to_bytes(stack_outputs.as_slice()))
     }
