@@ -49,4 +49,8 @@ pub mod zkvm;
 pub use zkvm::*;
 
 #[cfg(feature = "zkvm")]
+use jolt_inlines_keccak256 as _;
+#[cfg(feature = "zkvm")]
 use jolt_inlines_secp256k1 as _;
+#[cfg(feature = "zkvm")]
+use jolt_inlines_sha2 as _;
