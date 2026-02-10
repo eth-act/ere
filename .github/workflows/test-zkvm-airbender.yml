@@ -21,3 +21,4 @@ jobs:
     with:
       zkvm: airbender
       skip_prove_test: true
+      cuda: true

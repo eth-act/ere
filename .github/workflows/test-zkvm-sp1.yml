@@ -20,3 +20,4 @@ jobs:
       packages: write
     with:
       zkvm: sp1
+      cuda: true

@@ -20,4 +20,5 @@ jobs:
       packages: write
     with:
       zkvm: zisk
+      cuda: true
       skip_prove_test: true

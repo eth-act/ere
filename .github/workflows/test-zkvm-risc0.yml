@@ -20,3 +20,4 @@ jobs:
       packages: write
     with:
       zkvm: risc0
+      cuda: true

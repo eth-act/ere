@@ -20,3 +20,4 @@ jobs:
       packages: write
     with:
       zkvm: openvm
+      cuda: true
