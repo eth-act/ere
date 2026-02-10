@@ -25,28 +25,41 @@ pub fn cuda_compute_cap() -> Option<String> {
     )
 }
 
-/// Returns the GPU code in format `sm_{numeric_compute_cap}` (e.g. `sm_120`).
+/// Returns CUDA architecture(s) as comma-separated numeric strings
+/// (e.g. "120", "89,120").
 ///
 /// It does the following checks and returns the first valid value:
-/// 1. Read env variable `CUDA_ARCH` and check if it is in valid format.
-/// 2. Detect compute capability of the first visible GPU and format to GPU code.
+/// 1. Read env variable `CUDA_ARCHS` and validate format (comma-separated numbers).
+/// 2. Detect compute capability of the first visible GPU and convert to numeric format.
 ///
 /// Otherwise it returns `None`.
-pub fn cuda_arch() -> Option<String> {
-    if let Ok(cuda_arch) = env::var("CUDA_ARCH") {
-        if cuda_arch.starts_with("sm_") && cuda_arch[3..].parse::<usize>().is_ok() {
-            info!("Using CUDA_ARCH {cuda_arch} from env variable");
-            Some(cuda_arch)
-        } else {
-            warn!(
-                "Skipping CUDA_ARCH {cuda_arch} from env variable (expected to be in format `sm_XX`)"
-            );
-            None
+pub fn cuda_archs() -> Option<String> {
+    if let Ok(val) = env::var("CUDA_ARCHS") {
+        let valid = !val.is_empty()
+            && val
+                .split(',')
+                .all(|s| !s.is_empty() && s.parse::<u32>().is_ok());
+        if valid {
+            info!("Using CUDA_ARCHS {val} from env variable");
+            return Some(val);
         }
-    } else if let Some(cap) = cuda_compute_cap() {
-        info!("Using CUDA compute capability {} detected", cap);
-        Some(format!("sm_{}", cap.replace(".", "")))
-    } else {
-        None
+        warn!(
+            "Skipping CUDA_ARCHS {val} from env variable \
+             (expected comma-separated numbers, e.g. \"89,120\")"
+        );
     }
+
+    if let Some(cap) = cuda_compute_cap() {
+        let numeric = cap.replace('.', "");
+        if numeric.parse::<u32>().is_ok() {
+            info!("Using CUDA compute capability {cap} detected (CUDA_ARCHS={numeric})");
+            return Some(numeric);
+        }
+        warn!(
+            "Skipping CUDA compute capability {cap} detected \
+            (expected a version number, e.g. 12.0)"
+        );
+    }
+
+    None
 }

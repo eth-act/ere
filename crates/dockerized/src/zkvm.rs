@@ -2,7 +2,7 @@ use crate::{
     compiler::SerializedProgram,
     image::{base_image, base_zkvm_image, server_zkvm_image},
     util::{
-        cuda::cuda_arch,
+        cuda::cuda_archs,
         docker::{
             DockerBuildCmd, DockerRunCmd, docker_container_exists, docker_image_exists,
             docker_pull_image, stop_docker_container,
@@ -41,6 +41,40 @@ mod error;
 
 pub use error::Error;
 
+/// Applies per-zkVM CUDA architecture build args to a Docker build command.
+///
+/// Each zkVM expects a different format for specifying CUDA architectures:
+/// - Airbender: `CUDAARCHS` (semicolon-separated, e.g. "89;120")
+/// - OpenVM: `CUDA_ARCH` (comma-separated, e.g. "89,120")
+/// - Risc0: `NVCC_APPEND_FLAGS` (nvcc --generate-code flags)
+/// - Zisk: `CUDA_ARCH` (single largest arch, e.g. "sm_120")
+fn apply_cuda_build_args(
+    cmd: DockerBuildCmd,
+    zkvm_kind: zkVMKind,
+    cuda_archs: &str,
+) -> DockerBuildCmd {
+    match zkvm_kind {
+        zkVMKind::Airbender => cmd.build_arg("CUDAARCHS", cuda_archs.replace(',', ";")),
+        zkVMKind::OpenVM => cmd.build_arg("CUDA_ARCH", cuda_archs),
+        zkVMKind::Risc0 => {
+            let flags = cuda_archs
+                .split(',')
+                .map(|arch| format!("--generate-code arch=compute_{arch},code=sm_{arch} "))
+                .collect::<String>();
+            cmd.build_arg("NVCC_APPEND_FLAGS", flags.trim_end())
+        }
+        zkVMKind::Zisk => {
+            let max_cuda_arch = cuda_archs
+                .split(',')
+                .filter_map(|s| s.parse::<u32>().ok())
+                .max()
+                .unwrap_or(120);
+            cmd.build_arg("CUDA_ARCH", format!("sm_{max_cuda_arch}"))
+        }
+        _ => cmd,
+    }
+}
+
 /// This method builds 3 Docker images in sequence:
 /// 1. `ere-base:{version}` - Base image with common dependencies
 /// 2. `ere-base-{zkvm}:{version}` - zkVM-specific base image with the zkVM SDK
@@ -77,6 +111,9 @@ fn build_server_image(zkvm_kind: zkVMKind, gpu: bool) -> Result<(), Error> {
     let docker_dir = workspace_dir.join("docker");
     let docker_zkvm_dir = docker_dir.join(zkvm_kind.as_str());
 
+    // Resolve CUDA architectures once for both base-zkvm and server builds.
+    let cuda_archs = if gpu { cuda_archs() } else { None };
+
     // Build `ere-base`
     if force_rebuild || !docker_image_exists(&base_image)? {
         info!("Building image {base_image}...");
@@ -105,13 +142,8 @@ fn build_server_image(zkvm_kind: zkVMKind, gpu: bool) -> Result<(), Error> {
         if gpu {
             cmd = cmd.build_arg("CUDA", "1");
 
-            match zkvm_kind {
-                zkVMKind::Airbender | zkVMKind::OpenVM | zkVMKind::Risc0 | zkVMKind::Zisk => {
-                    if let Some(cuda_arch) = cuda_arch() {
-                        cmd = cmd.build_arg("CUDA_ARCH", cuda_arch)
-                    }
-                }
-                _ => {}
+            if let Some(ref cuda_archs) = cuda_archs {
+                cmd = apply_cuda_build_args(cmd, zkvm_kind, cuda_archs);
             }
         }
 
@@ -129,6 +161,10 @@ fn build_server_image(zkvm_kind: zkVMKind, gpu: bool) -> Result<(), Error> {
 
     if gpu {
         cmd = cmd.build_arg("CUDA", "1");
+
+        if let Some(ref cuda_archs) = cuda_archs {
+            cmd = apply_cuda_build_args(cmd, zkvm_kind, cuda_archs);
+        }
     }
 
     cmd.exec(&workspace_dir)?;
