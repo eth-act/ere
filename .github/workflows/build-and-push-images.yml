@@ -8,9 +8,27 @@ on:
       - 'v*'
 
 jobs:
+  image_meta:
+    name: Get image metadata
+    runs-on: ubuntu-latest
+    outputs:
+      sha_tag: ${{ steps.meta.outputs.sha_tag }}
+      semver_tag: ${{ steps.meta.outputs.semver_tag }}
+      registry: ${{ steps.meta.outputs.registry }}
+    steps:
+      - name: Get image metadata
+        id: meta
+        run: |
+          GIT_SHA="${{ github.sha }}"
+          GIT_TAG="${{ github.ref_name }}"
+          echo "sha_tag=${GIT_SHA:0:7}" >> $GITHUB_OUTPUT
+          echo "semver_tag=${GIT_TAG#v}" >> $GITHUB_OUTPUT
+          echo "registry=ghcr.io/${{ github.repository }}" >> $GITHUB_OUTPUT
+
   build_and_push:
     name: Build and push docker image (${{ matrix.zkvm }})
     if: github.ref == 'refs/heads/master'
+    needs: image_meta
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -18,17 +36,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - { zkvm: airbender, cuda: true  }
-          - { zkvm: jolt,      cuda: false }
-          - { zkvm: miden,     cuda: false }
-          - { zkvm: nexus,     cuda: false }
-          - { zkvm: openvm,    cuda: true  }
-          - { zkvm: pico,      cuda: false }
-          - { zkvm: risc0,     cuda: true  }
-          - { zkvm: sp1,       cuda: true  }
-          - { zkvm: ziren,     cuda: false }
-          - { zkvm: zisk,      cuda: true  }
+        zkvm:
+          - airbender
+          - jolt
+          - miden
+          - nexus
+          - openvm
+          - pico
+          - risc0
+          - sp1
+          - ziren
+          - zisk
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -43,74 +61,133 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Compute image tag and registry
-        id: meta
-        run: |
-          GIT_SHA="${{ github.sha }}"
-          echo "tag=${GIT_SHA:0:7}" >> $GITHUB_OUTPUT
-          echo "registry=ghcr.io/${{ github.repository }}" >> $GITHUB_OUTPUT
-
       - name: Build ere-base and ere-base-${{ matrix.zkvm }} images
         run: |
           bash .github/scripts/build-image.sh \
             --zkvm ${{ matrix.zkvm }} \
-            --registry ${{ steps.meta.outputs.registry }} \
-            --tag ${{ steps.meta.outputs.tag }} \
+            --registry ${{ needs.image_meta.outputs.registry }} \
+            --tag ${{ needs.image_meta.outputs.sha_tag }} \
             --base
 
       - name: Push ere-base and ere-base-${{ matrix.zkvm }} images
         run: |
-          docker push ${{ steps.meta.outputs.registry }}/ere-base:${{ steps.meta.outputs.tag }}
-          docker push ${{ steps.meta.outputs.registry }}/ere-base-${{ matrix.zkvm }}:${{ steps.meta.outputs.tag }}
+          docker push ${{ needs.image_meta.outputs.registry }}/ere-base-${{ matrix.zkvm }}:${{ needs.image_meta.outputs.sha_tag }}
 
       - name: Build ere-compiler-${{ matrix.zkvm }} and ere-server-${{ matrix.zkvm }} images
         run: |
           bash .github/scripts/build-image.sh \
             --zkvm ${{ matrix.zkvm }} \
-            --registry ${{ steps.meta.outputs.registry }} \
-            --tag ${{ steps.meta.outputs.tag }} \
+            --registry ${{ needs.image_meta.outputs.registry }} \
+            --tag ${{ needs.image_meta.outputs.sha_tag }} \
             --compiler \
             --server
 
       - name: Push ere-compiler-${{ matrix.zkvm }} and ere-server-${{ matrix.zkvm }} images
         run: |
-          docker push ${{ steps.meta.outputs.registry }}/ere-compiler-${{ matrix.zkvm }}:${{ steps.meta.outputs.tag }}
-          docker push ${{ steps.meta.outputs.registry }}/ere-server-${{ matrix.zkvm }}:${{ steps.meta.outputs.tag }}
+          docker push ${{ needs.image_meta.outputs.registry }}/ere-compiler-${{ matrix.zkvm }}:${{ needs.image_meta.outputs.sha_tag }}
+          docker push ${{ needs.image_meta.outputs.registry }}/ere-server-${{ matrix.zkvm }}:${{ needs.image_meta.outputs.sha_tag }}
+
+  build_and_push_cuda:
+    name: Build and push CUDA docker image (${{ matrix.zkvm }})
+    if: github.ref == 'refs/heads/master'
+    needs: image_meta
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        zkvm:
+          - airbender
+          - openvm
+          - risc0
+          - sp1
+          - zisk
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free up disk space
+        run: bash .github/scripts/free-up-disk-space.sh
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build ere-base and ere-base-${{ matrix.zkvm }} images with CUDA enabled
-        if: matrix.cuda
         run: |
           bash .github/scripts/build-image.sh \
             --zkvm ${{ matrix.zkvm }} \
-            --registry ${{ steps.meta.outputs.registry }} \
-            --tag ${{ steps.meta.outputs.tag }}-cuda \
+            --registry ${{ needs.image_meta.outputs.registry }} \
+            --tag ${{ needs.image_meta.outputs.sha_tag }}-cuda \
             --base \
             --cuda-archs '89,120'
 
       - name: Push ere-base and ere-base-${{ matrix.zkvm }} images with CUDA enabled
-        if: matrix.cuda
         run: |
-          docker push ${{ steps.meta.outputs.registry }}/ere-base:${{ steps.meta.outputs.tag }}-cuda
-          docker push ${{ steps.meta.outputs.registry }}/ere-base-${{ matrix.zkvm }}:${{ steps.meta.outputs.tag }}-cuda
+          docker push ${{ needs.image_meta.outputs.registry }}/ere-base-${{ matrix.zkvm }}:${{ needs.image_meta.outputs.sha_tag }}-cuda
 
       - name: Build ere-server-${{ matrix.zkvm }} image with CUDA enabled
-        if: matrix.cuda
         run: |
           bash .github/scripts/build-image.sh \
             --zkvm ${{ matrix.zkvm }} \
-            --registry ${{ steps.meta.outputs.registry }} \
-            --tag ${{ steps.meta.outputs.tag }}-cuda \
+            --registry ${{ needs.image_meta.outputs.registry }} \
+            --tag ${{ needs.image_meta.outputs.sha_tag }}-cuda \
             --server \
             --cuda-archs '89,120'
 
       - name: Push ere-server-${{ matrix.zkvm }} image with CUDA enabled
-        if: matrix.cuda
         run: |
-          docker push ${{ steps.meta.outputs.registry }}/ere-server-${{ matrix.zkvm }}:${{ steps.meta.outputs.tag }}-cuda
+          docker push ${{ needs.image_meta.outputs.registry }}/ere-server-${{ matrix.zkvm }}:${{ needs.image_meta.outputs.sha_tag }}-cuda
+
+  build_and_push_cluster:
+    name: Build and push cluster docker image (${{ matrix.zkvm }})
+    if: github.ref == 'refs/heads/master'
+    needs: image_meta
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        zkvm:
+          - zisk
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free up disk space
+        run: bash .github/scripts/free-up-disk-space.sh
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build ere-cluster-${{ matrix.zkvm }} image with CUDA enabled
+        run: |
+          bash .github/scripts/build-image.sh \
+            --zkvm ${{ matrix.zkvm }} \
+            --registry ${{ needs.image_meta.outputs.registry }} \
+            --tag ${{ needs.image_meta.outputs.sha_tag }}-cuda \
+            --cluster \
+            --cuda-archs '89,120'
+
+      - name: Push ere-cluster-${{ matrix.zkvm }} image with CUDA enabled
+        run: |
+          docker push ${{ needs.image_meta.outputs.registry }}/ere-cluster-${{ matrix.zkvm }}:${{ needs.image_meta.outputs.sha_tag }}-cuda
 
   create_semver_tag:
     name: Tag images with SemVer (${{ matrix.zkvm }})
     if: startsWith(github.ref, 'refs/tags/')
+    needs: image_meta
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -119,16 +196,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { zkvm: airbender, cuda: true  }
-          - { zkvm: jolt,      cuda: false }
-          - { zkvm: miden,     cuda: false }
-          - { zkvm: nexus,     cuda: false }
-          - { zkvm: openvm,    cuda: true  }
-          - { zkvm: pico,      cuda: false }
-          - { zkvm: risc0,     cuda: true  }
-          - { zkvm: sp1,       cuda: true  }
-          - { zkvm: ziren,     cuda: false }
-          - { zkvm: zisk,      cuda: true  }
+          - { zkvm: airbender, cuda: true , cluster: false }
+          - { zkvm: jolt,      cuda: false, cluster: false }
+          - { zkvm: miden,     cuda: false, cluster: false }
+          - { zkvm: nexus,     cuda: false, cluster: false }
+          - { zkvm: openvm,    cuda: true , cluster: false }
+          - { zkvm: pico,      cuda: false, cluster: false }
+          - { zkvm: risc0,     cuda: true , cluster: false }
+          - { zkvm: sp1,       cuda: true , cluster: false }
+          - { zkvm: ziren,     cuda: false, cluster: false }
+          - { zkvm: zisk,      cuda: true , cluster: true  }
     steps:
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -139,44 +216,33 @@ jobs:
 
       - name: Add SemVer tag to images
         run: |
-          GIT_SHA="${{ github.sha }}"
-          GIT_SHA_TAG="${GIT_SHA:0:7}"
+          SHA_TAG="${{ needs.image_meta.outputs.sha_tag }}"
+          SEMVER_TAG="${{ needs.image_meta.outputs.semver_tag }}"
 
-          GIT_TAG="${{ github.ref_name }}"
-          SEMVER_TAG="${GIT_TAG#v}"
-
-          IMAGE_REGISTRY="ghcr.io/${{ github.repository }}"
-
-          for IMAGE in \
-            "ere-base" \
-            "ere-base-${{ matrix.zkvm }}" \
-            "ere-compiler-${{ matrix.zkvm }}" \
-            "ere-server-${{ matrix.zkvm }}"
-          do
-            echo "Tagging $IMAGE_REGISTRY/$IMAGE:$GIT_SHA_TAG as $SEMVER_TAG"
-            docker buildx imagetools create \
-              "$IMAGE_REGISTRY/$IMAGE:$GIT_SHA_TAG" \
-              --tag "$IMAGE_REGISTRY/$IMAGE:$SEMVER_TAG"
+          for IMAGE_KIND in base compiler server; do
+            IMAGE="${{ needs.image_meta.outputs.registry }}/ere-$IMAGE_KIND-${{ matrix.zkvm }}"
+            echo "Tagging $IMAGE:$SHA_TAG as $IMAGE:$SEMVER_TAG"
+            docker buildx imagetools create "$IMAGE:$SHA_TAG" --tag "$IMAGE:$SEMVER_TAG"
           done
 
       - name: Add SemVer tag to images with CUDA enabled
         if: matrix.cuda
         run: |
-          GIT_SHA="${{ github.sha }}"
-          GIT_SHA_TAG="${GIT_SHA:0:7}"
+          SHA_TAG="${{ needs.image_meta.outputs.sha_tag }}-cuda"
+          SEMVER_TAG="${{ needs.image_meta.outputs.semver_tag }}-cuda"
 
-          GIT_TAG="${{ github.ref_name }}"
-          SEMVER_TAG="${GIT_TAG#v}"
-
-          IMAGE_REGISTRY="ghcr.io/${{ github.repository }}"
-
-          for IMAGE in \
-            "ere-base" \
-            "ere-base-${{ matrix.zkvm }}" \
-            "ere-server-${{ matrix.zkvm }}"
-          do
-            echo "Tagging $IMAGE_REGISTRY/$IMAGE:${GIT_SHA_TAG}-cuda as ${SEMVER_TAG}-cuda"
-            docker buildx imagetools create \
-              "$IMAGE_REGISTRY/$IMAGE:${GIT_SHA_TAG}-cuda" \
-              --tag "$IMAGE_REGISTRY/$IMAGE:${SEMVER_TAG}-cuda"
+          for IMAGE_KIND in base server; do
+            IMAGE="${{ needs.image_meta.outputs.registry }}/ere-$IMAGE_KIND-${{ matrix.zkvm }}"
+            echo "Tagging $IMAGE:$SHA_TAG as $IMAGE:$SEMVER_TAG"
+            docker buildx imagetools create "$IMAGE:$SHA_TAG" --tag "$IMAGE:$SEMVER_TAG"
           done
+
+      - name: Add SemVer tag to cluster image with CUDA enabled
+        if: matrix.cluster
+        run: |
+          SHA_TAG="${{ needs.image_meta.outputs.sha_tag }}-cuda"
+          SEMVER_TAG="${{ needs.image_meta.outputs.semver_tag }}-cuda"
+
+          IMAGE="${{ needs.image_meta.outputs.registry }}/ere-cluster-${{ matrix.zkvm }}"
+          echo "Tagging $IMAGE:$SHA_TAG as $IMAGE:$SEMVER_TAG"
+          docker buildx imagetools create "$IMAGE:$SHA_TAG" --tag "$IMAGE:$SEMVER_TAG"

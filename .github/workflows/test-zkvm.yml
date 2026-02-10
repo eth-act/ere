@@ -12,6 +12,11 @@ on:
         required: false
         type: boolean
         default: false
+      cluster:
+        description: 'Whether to build cluster image'
+        required: false
+        type: boolean
+        default: false
       # Remove when we use larger runners, currently only needed to skip for zisk
       skip_prove_test:
         description: 'Whether to skip prove test and ere-dockerized test or not'
@@ -23,10 +28,11 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  get_image_metadata:
+  image_meta:
     name: Get image metadata
     runs-on: ubuntu-latest
     outputs:
+      dockerfile_changed: ${{ steps.changed_files.outputs.any_changed }}
       image_registry: ${{ steps.image_meta.outputs.image_registry }}
       image_tag: ${{ steps.image_meta.outputs.image_tag }}
       cached_image_tag: ${{ steps.image_meta.outputs.cached_image_tag }}
@@ -66,7 +72,7 @@ jobs:
   build_image_cuda_check:
     name: Build image with CUDA enabled
     if: inputs.cuda
-    needs: get_image_metadata
+    needs: image_meta
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -77,29 +83,39 @@ jobs:
 
       - name: Pull or build ere-base and ere-base-${{ inputs.zkvm }} images with CUDA enabled
         run: |
-          CACHED_TAG="${{ needs.get_image_metadata.outputs.cached_image_tag }}"
+          CACHED_TAG="${{ needs.image_meta.outputs.cached_image_tag }}"
           if [ -n "$CACHED_TAG" ]; then
             CACHED_TAG="${CACHED_TAG}-cuda"
           fi
           bash .github/scripts/pull-or-build-base-zkvm-image.sh \
             --zkvm ${{ inputs.zkvm }} \
-            --registry ${{ needs.get_image_metadata.outputs.image_registry }} \
-            --tag ${{ needs.get_image_metadata.outputs.image_tag }}-cuda \
+            --registry ${{ needs.image_meta.outputs.image_registry }} \
+            --tag ${{ needs.image_meta.outputs.image_tag }}-cuda \
             --cached-tag "$CACHED_TAG" \
             --cuda-archs '89,120'
 
-      - name: Build ere-server-${{ inputs.zkvm }} CUDA image
+      - name: Build ere-server-${{ inputs.zkvm }} image with CUDA enabled
         run: |
           bash .github/scripts/build-image.sh \
             --zkvm ${{ inputs.zkvm }} \
-            --registry ${{ needs.get_image_metadata.outputs.image_registry }} \
-            --tag ${{ needs.get_image_metadata.outputs.image_tag }}-cuda \
+            --registry ${{ needs.image_meta.outputs.image_registry }} \
+            --tag ${{ needs.image_meta.outputs.image_tag }}-cuda \
             --server \
+            --cuda-archs '89,120'
+
+      - name: Build ere-cluster-${{ inputs.zkvm }} image with CUDA enabled
+        if: ${{ inputs.cluster && needs.image_meta.outputs.dockerfile_changed == 'true' }}
+        run: |
+          bash .github/scripts/build-image.sh \
+            --zkvm ${{ inputs.zkvm }} \
+            --registry ${{ needs.image_meta.outputs.image_registry }} \
+            --tag ${{ needs.image_meta.outputs.image_tag }}-cuda \
+            --cluster \
             --cuda-archs '89,120'
 
   clippy_via_docker:
     name: Clippy via Docker
-    needs: get_image_metadata
+    needs: image_meta
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -117,9 +133,9 @@ jobs:
         run: |
           bash .github/scripts/pull-or-build-base-zkvm-image.sh \
             --zkvm ${{ inputs.zkvm }} \
-            --registry ${{ needs.get_image_metadata.outputs.image_registry }} \
-            --tag ${{ needs.get_image_metadata.outputs.image_tag }} \
-            --cached-tag "${{ needs.get_image_metadata.outputs.cached_image_tag }}"
+            --registry ${{ needs.image_meta.outputs.image_registry }} \
+            --tag ${{ needs.image_meta.outputs.image_tag }} \
+            --cached-tag "${{ needs.image_meta.outputs.cached_image_tag }}"
 
       - name: Run cargo clippy for ere-${{ inputs.zkvm }} via Docker
         run: |
@@ -130,7 +146,7 @@ jobs:
             --volume $HOME/.cargo/registry:/usr/local/cargo/registry \
             --volume $HOME/.cargo/git:/usr/local/cargo/git \
             --workdir /ere \
-            ${{ needs.get_image_metadata.outputs.base_zkvm_image }} \
+            ${{ needs.image_meta.outputs.base_zkvm_image }} \
             /bin/bash"
 
           cat <<EOF | $DOCKER_CMD
@@ -148,7 +164,7 @@ jobs:
 
   test_via_docker:
     name: Test via Docker
-    needs: get_image_metadata
+    needs: image_meta
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -166,9 +182,9 @@ jobs:
         run: |
           bash .github/scripts/pull-or-build-base-zkvm-image.sh \
             --zkvm ${{ inputs.zkvm }} \
-            --registry ${{ needs.get_image_metadata.outputs.image_registry }} \
-            --tag ${{ needs.get_image_metadata.outputs.image_tag }} \
-            --cached-tag "${{ needs.get_image_metadata.outputs.cached_image_tag }}"
+            --registry ${{ needs.image_meta.outputs.image_registry }} \
+            --tag ${{ needs.image_meta.outputs.image_tag }} \
+            --cached-tag "${{ needs.image_meta.outputs.cached_image_tag }}"
 
       - name: Run cargo test for ere-${{ inputs.zkvm }} via Docker
         run: |
@@ -179,7 +195,7 @@ jobs:
             --volume $HOME/.cargo/registry:/usr/local/cargo/registry \
             --volume $HOME/.cargo/git:/usr/local/cargo/git \
             --workdir /ere \
-            ${{ needs.get_image_metadata.outputs.base_zkvm_image }} \
+            ${{ needs.image_meta.outputs.base_zkvm_image }} \
             /bin/bash"
 
           cat <<EOF | $DOCKER_CMD
@@ -195,7 +211,7 @@ jobs:
 
   test_ere_dockerized:
     name: Test ere-dockerized with the selected zkVM
-    needs: get_image_metadata
+    needs: image_meta
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -218,21 +234,21 @@ jobs:
         run: |
           bash .github/scripts/pull-or-build-base-zkvm-image.sh \
             --zkvm ${{ inputs.zkvm }} \
-            --registry ${{ needs.get_image_metadata.outputs.image_registry }} \
-            --tag ${{ needs.get_image_metadata.outputs.image_tag }} \
-            --cached-tag "${{ needs.get_image_metadata.outputs.cached_image_tag }}"
+            --registry ${{ needs.image_meta.outputs.image_registry }} \
+            --tag ${{ needs.image_meta.outputs.image_tag }} \
+            --cached-tag "${{ needs.image_meta.outputs.cached_image_tag }}"
 
           # Build ere-compiler-${{ inputs.zkvm }} and ere-server-${{ inputs.zkvm }}
           bash .github/scripts/build-image.sh \
             --zkvm ${{ inputs.zkvm }} \
-            --registry ${{ needs.get_image_metadata.outputs.image_registry }} \
-            --tag ${{ needs.get_image_metadata.outputs.image_tag }} \
+            --registry ${{ needs.image_meta.outputs.image_registry }} \
+            --tag ${{ needs.image_meta.outputs.image_tag }} \
             --compiler \
             --server
 
       - name: Run cargo test for ere-${{ inputs.zkvm }} via ere-dockerized
         env:
-          ERE_IMAGE_REGISTRY: ${{ needs.get_image_metadata.outputs.image_registry }}
+          ERE_IMAGE_REGISTRY: ${{ needs.image_meta.outputs.image_registry }}
         run: |
           cargo test --release --package ere-dockerized \
             -- ${{ inputs.zkvm }} ${{ inputs.skip_prove_test && '--skip prove' || ''  }} --test-threads=1

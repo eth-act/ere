@@ -80,18 +80,13 @@ fi
 
 # Format image
 
-BASE_IMAGE="${IMAGE_PREFIX}ere-base:${IMAGE_TAG}"
 BASE_ZKVM_IMAGE="${IMAGE_PREFIX}ere-base-${ZKVM}:${IMAGE_TAG}"
-CACHED_BASE_IMAGE="${IMAGE_PREFIX}ere-base:${CACHED_IMAGE_TAG}"
 CACHED_BASE_ZKVM_IMAGE="${IMAGE_PREFIX}ere-base-${ZKVM}:${CACHED_IMAGE_TAG}"
 
 # Pull or build ere-base and ere-base-$ZKVM locally
 if [ -n "$CACHED_IMAGE_TAG" ] \
-    && docker image pull "$CACHED_BASE_IMAGE" \
     && docker image pull "$CACHED_BASE_ZKVM_IMAGE";
 then
-    echo "Tagging ere-base from cache"
-    docker tag "$CACHED_BASE_IMAGE" "$BASE_IMAGE"
     echo "Tagging ere-base-$ZKVM from cache"
     docker tag "$CACHED_BASE_ZKVM_IMAGE" "$BASE_ZKVM_IMAGE"
 else

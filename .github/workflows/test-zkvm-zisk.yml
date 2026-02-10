@@ -16,4 +16,5 @@ jobs:
     with:
       zkvm: zisk
       cuda: true
+      cluster: true
       skip_prove_test: true
