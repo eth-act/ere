@@ -18,20 +18,20 @@ usage() {
     echo "Usage: $0 --zkvm <zkvm> --tag <tag> [--base] [--compiler] [--server] [--cluster] [--registry <registry>] [--cuda] [--cuda-archs <archs>] [--rustflags <flags>]"
     echo ""
     echo "Required:"
-    echo "  --zkvm <zkvm>       zkVM to build for (e.g., zisk, sp1, risc0)"
-    echo "  --tag <tag>         Image tag (e.g., 0.1.3, a8d7bc0, local)"
+    echo "  --zkvm <zkvm>            zkVM to build for (e.g., zisk, sp1, risc0)"
+    echo "  --tag <tag>              Image tag (e.g., 0.1.3, a8d7bc0, local, local-cuda)"
     echo ""
     echo "Image types (at least one required):"
-    echo "  --base              Build the base images"
-    echo "  --compiler          Build the compiler image"
-    echo "  --server            Build the server image"
-    echo "  --cluster           Build the cluster image"
+    echo "  --base                   Build the base images"
+    echo "  --compiler               Build the compiler image"
+    echo "  --server                 Build the server image"
+    echo "  --cluster                Build the cluster image"
     echo ""
     echo "Optional:"
-    echo "  --registry <reg>    Registry prefix (e.g., ghcr.io/eth-act/ere)"
-    echo "  --cuda              Enable CUDA support (appends -cuda to tag)"
-    echo "  --cuda-archs <archs> Set CUDA architectures (comma-separated, e.g., 89,120). Implies --cuda."
-    echo "  --rustflags <flags> Pass RUSTFLAGS to build"
+    echo "  --registry <registry>    Registry prefix (e.g., ghcr.io/eth-act/ere)"
+    echo "  --cuda                   Enable CUDA support"
+    echo "  --cuda-archs <archs>     Set CUDA architectures (comma-separated, e.g., 89,120). Implies --cuda."
+    echo "  --rustflags <flags>      Pass RUSTFLAGS to build"
     exit 1
 }
 
@@ -103,11 +103,6 @@ fi
 if [ "$BUILD_BASE" = false ] && [ "$BUILD_COMPILER" = false ] && [ "$BUILD_SERVER" = false ] && [ "$BUILD_CLUSTER" = false ]; then
     echo "Error: At least one of --base, --compiler, --server, --cluster is required"
     usage
-fi
-
-# Format tag with optional -cuda suffix
-if [ "$CUDA" = true ]; then
-    IMAGE_TAG="${IMAGE_TAG}-cuda"
 fi
 
 # Format image prefix
