@@ -8,11 +8,8 @@ RUN rustup default nightly-2025-07-25
 # Whether to enable CUDA feature or not.
 ARG CUDA
 
-# Default to build for RTX 50 series
-ARG CUDA_ARCH=sm_120
-
-# Env read by Airbender crate `gpu_prover`, only taking the numeric part
-ARG CUDAARCHS=${CUDA_ARCH#sm_}
+# Env read by Airbender crate `gpu_prover`, numeric cuda arch IDs (e.g. "120" or "89;120")
+ARG CUDAARCHS=120
 
 # Copy the Airbender SDK installer script from the workspace context
 COPY --chmod=755 scripts/sdk_installers/install_airbender_sdk.sh /tmp/install_airbender_sdk.sh

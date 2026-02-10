@@ -13,10 +13,8 @@ RUN [ -n "$CUDA" ] && \
     (curl -o protoc.zip -L https://github.com/protocolbuffers/protobuf/releases/download/v31.1/protoc-31.1-linux-x86_64.zip \
     && unzip protoc.zip -d /usr/local) || true
 
-# Default to build for RTX 50 series
-ARG CUDA_ARCH=sm_120
-ARG NVCC_APPEND_FLAGS="--generate-code arch=compute_${CUDA_ARCH#sm_},code=sm_${CUDA_ARCH#sm_}"
-ENV NVCC_APPEND_FLAGS=${NVCC_APPEND_FLAGS}
+# Fully formed NVCC flags for CUDA arch targeting (e.g. "--generate-code arch=compute_120,code=sm_120")
+ARG NVCC_APPEND_FLAGS="--generate-code arch=compute_120,code=sm_120"
 
 # Copy and run the Risc0 SDK installer script
 COPY --chmod=755 scripts/sdk_installers/install_risc0_sdk.sh /tmp/install_risc0_sdk.sh

@@ -8,15 +8,6 @@ FROM $BASE_IMAGE
 # Set default toolchain to nightly
 RUN rustup default nightly
 
-# Whether to enable CUDA feature or not.
-ARG CUDA
-
-# Default to build for RTX 50 series
-ARG CUDA_ARCH=sm_120
-
-# Env variable read by OpenVM crate `cuda-builder`, need to persist it for building `ere-openvm`.
-ENV CUDA_ARCH=${CUDA_ARCH#sm_}
-
 # Copy the OpenVM SDK installer script from the workspace context
 COPY --chmod=755 scripts/sdk_installers/install_openvm_sdk.sh /tmp/install_openvm_sdk.sh
 
