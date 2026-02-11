@@ -5,6 +5,9 @@ on:
     branches:
       - master
 
+env:
+  CUDA_ARCHS: '89,120'
+
 jobs:
   image_meta:
     name: Get image metadata
@@ -118,7 +121,7 @@ jobs:
             --registry ${{ needs.image_meta.outputs.registry }} \
             --tag ${{ needs.image_meta.outputs.sha_tag }}-cuda \
             --base \
-            --cuda-archs '89,120'
+            --cuda-archs '${{ env.CUDA_ARCHS }}'
 
       - name: Push ere-base and ere-base-${{ matrix.zkvm }} images with CUDA enabled
         run: |
@@ -131,7 +134,7 @@ jobs:
             --registry ${{ needs.image_meta.outputs.registry }} \
             --tag ${{ needs.image_meta.outputs.sha_tag }}-cuda \
             --server \
-            --cuda-archs '89,120'
+            --cuda-archs '${{ env.CUDA_ARCHS }}'
 
       - name: Push ere-server-${{ matrix.zkvm }} image with CUDA enabled
         run: |
@@ -170,7 +173,7 @@ jobs:
             --registry ${{ needs.image_meta.outputs.registry }} \
             --tag ${{ needs.image_meta.outputs.sha_tag }}-cuda \
             --cluster \
-            --cuda-archs '89,120'
+            --cuda-archs '${{ env.CUDA_ARCHS }}'
 
       - name: Push ere-cluster-${{ matrix.zkvm }} image with CUDA enabled
         run: |
