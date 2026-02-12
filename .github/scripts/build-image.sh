@@ -139,7 +139,10 @@ fi
 
 # Default CUDA_ARCHS when --cuda is set but --cuda-archs not specified
 if [ "$CUDA" = true ] && [ -z "$CUDA_ARCHS" ]; then
-    CUDA_ARCHS="89,120"
+    case "$ZKVM" in
+        zisk) CUDA_ARCHS="120" ;;    # Default to RTX 50 series (ZisK only support setting single CUDA arch)
+        *)    CUDA_ARCHS="89,120" ;; # Default to RTX 40 and 50 series
+    esac
 fi
 
 # Per-zkVM CUDA architecture translation
@@ -165,10 +168,14 @@ if [ "$CUDA" = true ] && [ -n "$CUDA_ARCHS" ]; then
             SERVER_ZKVM_BUILD_ARGS+=(--build-arg "NVCC_APPEND_FLAGS=$NVCC_APPEND_FLAGS")
             ;;
         zisk)
-            MAX_CUDA_ARCH=$(echo "$CUDA_ARCHS" | tr ',' '\n' | sort -n | tail -1)
-            BASE_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCH=sm_${MAX_CUDA_ARCH}")
-            SERVER_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCH=sm_${MAX_CUDA_ARCH}")
-            CLUSTER_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCH=sm_${MAX_CUDA_ARCH}")
+            IFS=',' read -ra ARCH_ARRAY <<< "$CUDA_ARCHS"
+            if [ "${#ARCH_ARRAY[@]}" -ne 1 ]; then
+                echo "Error: Multiple CUDA architectures are not supported for zisk: $CUDA_ARCHS"
+                exit 1
+            fi
+            BASE_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCH=sm_${ARCH_ARRAY[0]}")
+            SERVER_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCH=sm_${ARCH_ARRAY[0]}")
+            CLUSTER_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCH=sm_${ARCH_ARRAY[0]}")
             ;;
         *)
             ;;
