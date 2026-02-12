@@ -1,0 +1,186 @@
+name: Build and push images
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  CUDA_ARCHS: '89,120'
+
+jobs:
+  image_meta:
+    name: Get image metadata
+    runs-on: ubuntu-latest
+    outputs:
+      sha_tag: ${{ steps.meta.outputs.sha_tag }}
+      registry: ${{ steps.meta.outputs.registry }}
+    steps:
+      - name: Get image metadata
+        id: meta
+        run: |
+          GIT_SHA="${{ github.sha }}"
+          echo "sha_tag=${GIT_SHA:0:7}" >> $GITHUB_OUTPUT
+          echo "registry=ghcr.io/${{ github.repository }}" >> $GITHUB_OUTPUT
+
+  build_and_push:
+    name: Build and push docker image (${{ matrix.zkvm }})
+    needs: image_meta
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        zkvm:
+          - airbender
+          - jolt
+          - miden
+          - nexus
+          - openvm
+          - pico
+          - risc0
+          - sp1
+          - ziren
+          - zisk
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free up disk space
+        run: bash .github/scripts/free-up-disk-space.sh
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build ere-base and ere-base-${{ matrix.zkvm }} images
+        run: |
+          bash .github/scripts/build-image.sh \
+            --zkvm ${{ matrix.zkvm }} \
+            --registry ${{ needs.image_meta.outputs.registry }} \
+            --tag ${{ needs.image_meta.outputs.sha_tag }} \
+            --base
+
+      - name: Push ere-base and ere-base-${{ matrix.zkvm }} images
+        run: |
+          docker push ${{ needs.image_meta.outputs.registry }}/ere-base-${{ matrix.zkvm }}:${{ needs.image_meta.outputs.sha_tag }}
+
+      - name: Build ere-compiler-${{ matrix.zkvm }} and ere-server-${{ matrix.zkvm }} images
+        run: |
+          bash .github/scripts/build-image.sh \
+            --zkvm ${{ matrix.zkvm }} \
+            --registry ${{ needs.image_meta.outputs.registry }} \
+            --tag ${{ needs.image_meta.outputs.sha_tag }} \
+            --compiler \
+            --server
+
+      - name: Push ere-compiler-${{ matrix.zkvm }} and ere-server-${{ matrix.zkvm }} images
+        run: |
+          docker push ${{ needs.image_meta.outputs.registry }}/ere-compiler-${{ matrix.zkvm }}:${{ needs.image_meta.outputs.sha_tag }}
+          docker push ${{ needs.image_meta.outputs.registry }}/ere-server-${{ matrix.zkvm }}:${{ needs.image_meta.outputs.sha_tag }}
+
+  build_and_push_cuda:
+    name: Build and push CUDA docker image (${{ matrix.zkvm }})
+    needs: image_meta
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        zkvm:
+          - airbender
+          - openvm
+          - risc0
+          - sp1
+          - zisk
+        include:
+          - zkvm: zisk
+            cuda_archs: '120'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free up disk space
+        run: bash .github/scripts/free-up-disk-space.sh
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build ere-base and ere-base-${{ matrix.zkvm }} images with CUDA enabled
+        run: |
+          bash .github/scripts/build-image.sh \
+            --zkvm ${{ matrix.zkvm }} \
+            --registry ${{ needs.image_meta.outputs.registry }} \
+            --tag ${{ needs.image_meta.outputs.sha_tag }}-cuda \
+            --base \
+            --cuda-archs '${{ matrix.cuda_archs || env.CUDA_ARCHS }}'
+
+      - name: Push ere-base and ere-base-${{ matrix.zkvm }} images with CUDA enabled
+        run: |
+          docker push ${{ needs.image_meta.outputs.registry }}/ere-base-${{ matrix.zkvm }}:${{ needs.image_meta.outputs.sha_tag }}-cuda
+
+      - name: Build ere-server-${{ matrix.zkvm }} image with CUDA enabled
+        run: |
+          bash .github/scripts/build-image.sh \
+            --zkvm ${{ matrix.zkvm }} \
+            --registry ${{ needs.image_meta.outputs.registry }} \
+            --tag ${{ needs.image_meta.outputs.sha_tag }}-cuda \
+            --server \
+            --cuda-archs '${{ matrix.cuda_archs || env.CUDA_ARCHS }}'
+
+      - name: Push ere-server-${{ matrix.zkvm }} image with CUDA enabled
+        run: |
+          docker push ${{ needs.image_meta.outputs.registry }}/ere-server-${{ matrix.zkvm }}:${{ needs.image_meta.outputs.sha_tag }}-cuda
+
+  build_and_push_cluster:
+    name: Build and push cluster docker image (${{ matrix.zkvm }})
+    needs: image_meta
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        zkvm:
+          - zisk
+        include:
+          - zkvm: zisk
+            cuda_archs: '120'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free up disk space
+        run: bash .github/scripts/free-up-disk-space.sh
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build ere-cluster-${{ matrix.zkvm }} image with CUDA enabled
+        run: |
+          bash .github/scripts/build-image.sh \
+            --zkvm ${{ matrix.zkvm }} \
+            --registry ${{ needs.image_meta.outputs.registry }} \
+            --tag ${{ needs.image_meta.outputs.sha_tag }}-cuda \
+            --cluster \
+            --cuda-archs '${{ matrix.cuda_archs || env.CUDA_ARCHS }}'
+
+      - name: Push ere-cluster-${{ matrix.zkvm }} image with CUDA enabled
+        run: |
+          docker push ${{ needs.image_meta.outputs.registry }}/ere-cluster-${{ matrix.zkvm }}:${{ needs.image_meta.outputs.sha_tag }}-cuda

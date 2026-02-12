@@ -1,52 +1,60 @@
 use std::{env, process::Command};
 use tracing::{info, warn};
 
-/// Returns Cuda GPU compute capability, for example
-/// - RTX 50 series - returns `12.0`
-/// - RTX 40 series - returns `8.9`
+/// Detects CUDA compute capabilities of all visible GPUs.
 ///
-/// If there are multiple GPUs available, the first result will be returned.
-pub fn cuda_compute_cap() -> Option<String> {
-    let output = Command::new("nvidia-smi")
+/// Returns a sorted, deduplicated list of numeric compute capabilities
+/// (e.g. `[89, 120]` for a mix of RTX 40 and RTX 50 series GPUs).
+///
+/// Returns an empty vec if `nvidia-smi` is not available or fails.
+pub fn detect_compute_caps() -> Vec<u32> {
+    let Ok(output) = Command::new("nvidia-smi")
         .args(["--query-gpu=compute_cap", "--format=csv,noheader"])
         .output()
-        .ok()?;
+    else {
+        return vec![];
+    };
 
     if !output.status.success() {
-        return None;
+        return vec![];
     }
 
-    Some(
-        String::from_utf8_lossy(&output.stdout)
-            .lines()
-            .next()?
-            .trim()
-            .to_string(),
-    )
+    let mut caps: Vec<u32> = String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter_map(|line| line.trim().replace('.', "").parse::<u32>().ok())
+        .collect();
+    caps.sort_unstable();
+    caps.dedup();
+    caps
 }
 
-/// Returns the GPU code in format `sm_{numeric_compute_cap}` (e.g. `sm_120`).
+/// Returns CUDA architectures as a list of numeric values (e.g. `[89, 120]`).
 ///
 /// It does the following checks and returns the first valid value:
-/// 1. Read env variable `CUDA_ARCH` and check if it is in valid format.
-/// 2. Detect compute capability of the first visible GPU and format to GPU code.
+/// 1. Read env variable `CUDA_ARCHS` and validate format (comma-separated numbers).
+/// 2. Detect compute capabilities of all visible GPUs.
 ///
-/// Otherwise it returns `None`.
-pub fn cuda_arch() -> Option<String> {
-    if let Ok(cuda_arch) = env::var("CUDA_ARCH") {
-        if cuda_arch.starts_with("sm_") && cuda_arch[3..].parse::<usize>().is_ok() {
-            info!("Using CUDA_ARCH {cuda_arch} from env variable");
-            Some(cuda_arch)
-        } else {
-            warn!(
-                "Skipping CUDA_ARCH {cuda_arch} from env variable (expected to be in format `sm_XX`)"
-            );
-            None
+/// Returns an empty vec if neither source provides valid architectures.
+pub fn cuda_archs() -> Vec<u32> {
+    if let Ok(val) = env::var("CUDA_ARCHS") {
+        let archs: Option<Vec<u32>> = val.split(',').map(|s| s.parse::<u32>().ok()).collect();
+        match archs {
+            Some(archs) if !archs.is_empty() => {
+                info!("Using CUDA_ARCHS {val} from env variable");
+                return archs;
+            }
+            _ => warn!(
+                "Skipping CUDA_ARCHS {val} from env variable \
+                 (expected comma-separated numbers, e.g. \"89,120\")"
+            ),
         }
-    } else if let Some(cap) = cuda_compute_cap() {
-        info!("Using CUDA compute capability {} detected", cap);
-        Some(format!("sm_{}", cap.replace(".", "")))
-    } else {
-        None
     }
+
+    let caps = detect_compute_caps();
+    if !caps.is_empty() {
+        info!("Detected CUDA compute capabilities (CUDA_ARCHS={caps:?})");
+        return caps;
+    }
+
+    vec![]
 }

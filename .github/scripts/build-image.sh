@@ -11,27 +11,27 @@ BUILD_COMPILER=false
 BUILD_SERVER=false
 BUILD_CLUSTER=false
 CUDA=false
-CUDA_ARCH=""
+CUDA_ARCHS=""
 RUSTFLAGS=""
 
 usage() {
-    echo "Usage: $0 --zkvm <zkvm> --tag <tag> [--base] [--compiler] [--server] [--cluster] [--registry <registry>] [--cuda] [--cuda-arch <arch>] [--rustflags <flags>]"
+    echo "Usage: $0 --zkvm <zkvm> --tag <tag> [--base] [--compiler] [--server] [--cluster] [--registry <registry>] [--cuda] [--cuda-archs <archs>] [--rustflags <flags>]"
     echo ""
     echo "Required:"
-    echo "  --zkvm <zkvm>       zkVM to build for (e.g., zisk, sp1, risc0)"
-    echo "  --tag <tag>         Image tag (e.g., 0.1.3, a8d7bc0, local)"
+    echo "  --zkvm <zkvm>            zkVM to build for (e.g., zisk, sp1, risc0)"
+    echo "  --tag <tag>              Image tag (e.g., 0.1.3, a8d7bc0, local, local-cuda)"
     echo ""
     echo "Image types (at least one required):"
-    echo "  --base              Build the base images"
-    echo "  --compiler          Build the compiler image"
-    echo "  --server            Build the server image"
-    echo "  --cluster           Build the cluster image"
+    echo "  --base                   Build the base images"
+    echo "  --compiler               Build the compiler image"
+    echo "  --server                 Build the server image"
+    echo "  --cluster                Build the cluster image"
     echo ""
     echo "Optional:"
-    echo "  --registry <reg>    Registry prefix (e.g., ghcr.io/eth-act/ere)"
-    echo "  --cuda              Enable CUDA support (appends -cuda to tag)"
-    echo "  --cuda-arch <arch>  Set CUDA architecture (e.g., sm_120)"
-    echo "  --rustflags <flags> Pass RUSTFLAGS to build"
+    echo "  --registry <registry>    Registry prefix (e.g., ghcr.io/eth-act/ere)"
+    echo "  --cuda                   Enable CUDA support"
+    echo "  --cuda-archs <archs>     Set CUDA architectures (comma-separated, e.g., 89,120). Implies --cuda."
+    echo "  --rustflags <flags>      Pass RUSTFLAGS to build"
     exit 1
 }
 
@@ -70,8 +70,9 @@ while [[ $# -gt 0 ]]; do
             CUDA=true
             shift
             ;;
-        --cuda-arch)
-            CUDA_ARCH="$2"
+        --cuda-archs)
+            CUDA_ARCHS="$2"
+            CUDA=true
             shift 2
             ;;
         --rustflags)
@@ -102,11 +103,6 @@ fi
 if [ "$BUILD_BASE" = false ] && [ "$BUILD_COMPILER" = false ] && [ "$BUILD_SERVER" = false ] && [ "$BUILD_CLUSTER" = false ]; then
     echo "Error: At least one of --base, --compiler, --server, --cluster is required"
     usage
-fi
-
-# Format tag with optional -cuda suffix
-if [ "$CUDA" = true ]; then
-    IMAGE_TAG="${IMAGE_TAG}-cuda"
 fi
 
 # Format image prefix
@@ -141,10 +137,49 @@ if [ "$CUDA" = true ]; then
     CLUSTER_ZKVM_BUILD_ARGS+=(--build-arg "CUDA=1")
 fi
 
-if [ -n "$CUDA_ARCH" ]; then
-    BASE_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCH=$CUDA_ARCH")
-    SERVER_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCH=$CUDA_ARCH")
-    CLUSTER_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCH=$CUDA_ARCH")
+# Default CUDA_ARCHS when --cuda is set but --cuda-archs not specified
+if [ "$CUDA" = true ] && [ -z "$CUDA_ARCHS" ]; then
+    case "$ZKVM" in
+        zisk) CUDA_ARCHS="120" ;;    # Default to RTX 50 series (ZisK only support setting single CUDA arch)
+        *)    CUDA_ARCHS="89,120" ;; # Default to RTX 40 and 50 series
+    esac
+fi
+
+# Per-zkVM CUDA architecture translation
+if [ "$CUDA" = true ] && [ -n "$CUDA_ARCHS" ]; then
+    case "$ZKVM" in
+        airbender)
+            CUDAARCHS=$(echo "$CUDA_ARCHS" | tr ',' ';')
+            BASE_ZKVM_BUILD_ARGS+=(--build-arg "CUDAARCHS=$CUDAARCHS")
+            SERVER_ZKVM_BUILD_ARGS+=(--build-arg "CUDAARCHS=$CUDAARCHS")
+            ;;
+        openvm)
+            BASE_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCH=$CUDA_ARCHS")
+            SERVER_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCH=$CUDA_ARCHS")
+            ;;
+        risc0)
+            NVCC_APPEND_FLAGS=""
+            IFS=',' read -ra ARCH_ARRAY <<< "$CUDA_ARCHS"
+            for arch in "${ARCH_ARRAY[@]}"; do
+                NVCC_APPEND_FLAGS+=" --generate-code arch=compute_${arch},code=sm_${arch}"
+            done
+            NVCC_APPEND_FLAGS="${NVCC_APPEND_FLAGS# }"
+            BASE_ZKVM_BUILD_ARGS+=(--build-arg "NVCC_APPEND_FLAGS=$NVCC_APPEND_FLAGS")
+            SERVER_ZKVM_BUILD_ARGS+=(--build-arg "NVCC_APPEND_FLAGS=$NVCC_APPEND_FLAGS")
+            ;;
+        zisk)
+            IFS=',' read -ra ARCH_ARRAY <<< "$CUDA_ARCHS"
+            if [ "${#ARCH_ARRAY[@]}" -ne 1 ]; then
+                echo "Error: Multiple CUDA architectures are not supported for zisk: $CUDA_ARCHS"
+                exit 1
+            fi
+            BASE_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCH=sm_${ARCH_ARRAY[0]}")
+            SERVER_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCH=sm_${ARCH_ARRAY[0]}")
+            CLUSTER_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCH=sm_${ARCH_ARRAY[0]}")
+            ;;
+        *)
+            ;;
+    esac
 fi
 
 if [ -n "$RUSTFLAGS" ]; then

@@ -1,0 +1,90 @@
+name: Push SemVer tag
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  image_meta:
+    name: Get image metadata
+    runs-on: ubuntu-latest
+    outputs:
+      sha_tag: ${{ steps.meta.outputs.sha_tag }}
+      semver_tag: ${{ steps.meta.outputs.semver_tag }}
+      registry: ${{ steps.meta.outputs.registry }}
+    steps:
+      - name: Get image metadata
+        id: meta
+        run: |
+          GIT_SHA="${{ github.sha }}"
+          GIT_TAG="${{ github.ref_name }}"
+          echo "sha_tag=${GIT_SHA:0:7}" >> $GITHUB_OUTPUT
+          echo "semver_tag=${GIT_TAG#v}" >> $GITHUB_OUTPUT
+          echo "registry=ghcr.io/${{ github.repository }}" >> $GITHUB_OUTPUT
+
+  create_semver_tag:
+    name: Tag images with SemVer (${{ matrix.zkvm }})
+    needs: image_meta
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { zkvm: airbender, cuda: true , cluster: false }
+          - { zkvm: jolt,      cuda: false, cluster: false }
+          - { zkvm: miden,     cuda: false, cluster: false }
+          - { zkvm: nexus,     cuda: false, cluster: false }
+          - { zkvm: openvm,    cuda: true , cluster: false }
+          - { zkvm: pico,      cuda: false, cluster: false }
+          - { zkvm: risc0,     cuda: true , cluster: false }
+          - { zkvm: sp1,       cuda: true , cluster: false }
+          - { zkvm: ziren,     cuda: false, cluster: false }
+          - { zkvm: zisk,      cuda: true , cluster: true  }
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add SemVer tag to images
+        run: |
+          SHA_TAG="${{ needs.image_meta.outputs.sha_tag }}"
+          SEMVER_TAG="${{ needs.image_meta.outputs.semver_tag }}"
+
+          for IMAGE_KIND in base compiler server; do
+            IMAGE="${{ needs.image_meta.outputs.registry }}/ere-$IMAGE_KIND-${{ matrix.zkvm }}"
+            echo "Tagging $IMAGE:$SHA_TAG as $IMAGE:$SEMVER_TAG"
+            docker buildx imagetools create "$IMAGE:$SHA_TAG" --tag "$IMAGE:$SEMVER_TAG"
+          done
+
+      - name: Add SemVer tag to images with CUDA enabled
+        if: matrix.cuda
+        run: |
+          SHA_TAG="${{ needs.image_meta.outputs.sha_tag }}-cuda"
+          SEMVER_TAG="${{ needs.image_meta.outputs.semver_tag }}-cuda"
+
+          for IMAGE_KIND in base server; do
+            IMAGE="${{ needs.image_meta.outputs.registry }}/ere-$IMAGE_KIND-${{ matrix.zkvm }}"
+            echo "Tagging $IMAGE:$SHA_TAG as $IMAGE:$SEMVER_TAG"
+            docker buildx imagetools create "$IMAGE:$SHA_TAG" --tag "$IMAGE:$SEMVER_TAG"
+          done
+
+      - name: Add SemVer tag to cluster image with CUDA enabled
+        if: matrix.cluster
+        run: |
+          SHA_TAG="${{ needs.image_meta.outputs.sha_tag }}-cuda"
+          SEMVER_TAG="${{ needs.image_meta.outputs.semver_tag }}-cuda"
+
+          IMAGE="${{ needs.image_meta.outputs.registry }}/ere-cluster-${{ matrix.zkvm }}"
+          echo "Tagging $IMAGE:$SHA_TAG as $IMAGE:$SEMVER_TAG"
+          docker buildx imagetools create "$IMAGE:$SHA_TAG" --tag "$IMAGE:$SEMVER_TAG"

@@ -2,21 +2,17 @@ name: Test and clippy Pico
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 on:
-  push:
-    branches:
-      - master
-    tags:
-      - 'v*'
+  workflow_run:
+    workflows: ['Build and push images']
+    types: [completed]
   pull_request:
 
 jobs:
   test:
+    if: github.event_name == 'pull_request' || github.event.workflow_run.conclusion == 'success'
     uses: ./.github/workflows/test-zkvm.yml
-    permissions:
-      contents: read
-      packages: write
     with:
       zkvm: pico

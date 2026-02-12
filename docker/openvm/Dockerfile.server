@@ -14,6 +14,9 @@ WORKDIR /ere
 ARG CUDA
 ARG RUSTFLAGS
 
+# Env variable read by OpenVM crate `openvm-cuda-builder`, comma-separated numeric arch IDs (e.g. "120" or "89,120")
+ARG CUDA_ARCH=120
+
 RUN cargo build --release --package ere-server --bin ere-server --features openvm${CUDA:+,cuda} \
     && mkdir bin && mv target/release/ere-server bin/ere-server \
     && cargo clean && rm -rf $CARGO_HOME/registry/

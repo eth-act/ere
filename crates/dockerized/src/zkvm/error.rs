@@ -1,3 +1,4 @@
+use ere_common::zkVMKind;
 use ere_server::client::{self, ParseError, TwirpErrorResponse};
 use ere_zkvm_interface::CommonError;
 use thiserror::Error;
@@ -19,6 +20,10 @@ pub enum Error {
     CommonError(#[from] CommonError),
     #[error(transparent)]
     ParseUrl(#[from] ParseError),
+    #[error(
+        "Multiple CUDA architectures are not supported for {0:?}, CUDA_ARCHS set or detected: {1:?}"
+    )]
+    UnsupportedMultiCudaArchs(zkVMKind, Vec<u32>),
     #[error("zkVM method error: {0}")]
     zkVM(String),
     #[error("Connection to zkVM server timeout after 5 minutes")]
