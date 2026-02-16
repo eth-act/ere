@@ -4,15 +4,13 @@ use ere_zkvm_interface::compiler::Compiler;
 use std::{env, path::Path};
 
 const TARGET_TRIPLE: &str = "riscv32ima-unknown-none-elf";
+/// According to https://github.com/succinctlabs/sp1/blob/v6.0.0/crates/build/src/command/utils.rs#L49.
 const RUSTFLAGS: &[&str] = &[
     "-C",
     "passes=lower-atomic", // Only for rustc > 1.81
-    "-C",
-    // Start of the code section
-    "link-arg=-Ttext=0x00201000",
-    "-C",
     // The lowest memory location that will be used when your program is loaded
-    "link-arg=--image-base=0x00200800",
+    "-C",
+    "link-arg=--image-base=0x78000000",
     "-C",
     "panic=abort",
     "--cfg",

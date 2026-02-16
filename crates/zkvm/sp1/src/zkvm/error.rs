@@ -7,14 +7,8 @@ pub enum Error {
     #[error(transparent)]
     CommonError(#[from] CommonError),
 
-    #[error("Prover RwLock posioned, panic not catched properly")]
-    RwLockPosioned,
-
     #[error("Failed to setup ELF: {0}")]
-    SetupElfFailed(String),
-
-    #[error("Failed to initialize cuda prover: {0}")]
-    InitCudaProverFailed(String),
+    Setup(#[source] anyhow::Error),
 
     #[error("Deserialize proofs in Input failed: {0:?}")]
     DeserializeInputProofs(bincode::error::DecodeError),
@@ -26,12 +20,15 @@ pub enum Error {
     #[error("SP1 execution failed: {0}")]
     Execute(#[source] anyhow::Error),
 
+    #[error("SP1 execution completed with non-success exit code: {0}")]
+    ExecutionFailed(u32),
+
     // Prove
     #[error("SP1 SDK proving failed: {0}")]
     Prove(#[source] anyhow::Error),
 
-    #[error("SP1 proving panicked: {0}")]
-    Panic(String),
+    #[error("Failed to extract exit code from proof")]
+    ExitCodeExtractionFailed,
 
     // Verify
     #[error("Invalid proof kind, expected: {0:?}, got: {1:?}")]
@@ -39,4 +36,14 @@ pub enum Error {
 
     #[error("SP1 SDK verification failed: {0}")]
     Verify(#[source] SP1VerificationError),
+}
+
+impl Error {
+    pub fn setup(err: impl Into<anyhow::Error>) -> Self {
+        Self::Setup(err.into())
+    }
+
+    pub fn prove(err: impl Into<anyhow::Error>) -> Self {
+        Self::Prove(err.into())
+    }
 }
