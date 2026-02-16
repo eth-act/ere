@@ -114,7 +114,7 @@ impl zkVMProgramDigest for EreSP1 {
     type ProgramDigest = SP1VerifyingKey;
 
     fn program_digest(&self) -> anyhow::Result<Self::ProgramDigest> {
-        Ok(self.sdk.verifying_key().clone())
+        Ok(self.sdk.vk().clone())
     }
 }
 

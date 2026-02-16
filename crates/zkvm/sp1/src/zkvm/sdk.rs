@@ -63,7 +63,7 @@ impl SP1Sdk {
         })
     }
 
-    pub fn verifying_key(&self) -> &SP1VerifyingKey {
+    pub fn vk(&self) -> &SP1VerifyingKey {
         match self {
             Self::Cpu { pk, .. } => pk.verifying_key(),
             Self::Gpu { pk, .. } => pk.verifying_key(),
@@ -119,7 +119,7 @@ impl SP1Sdk {
     }
 
     pub fn verify(&self, proof: &SP1ProofWithPublicValues) -> Result<(), Error> {
-        let vk = self.verifying_key();
+        let vk = self.vk();
         match self {
             Self::Cpu { prover, .. } => prover.verify(proof, vk, Some(StatusCode::SUCCESS)),
             Self::Gpu { prover, .. } => prover.verify(proof, vk, Some(StatusCode::SUCCESS)),
