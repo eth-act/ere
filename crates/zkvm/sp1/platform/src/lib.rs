@@ -22,8 +22,7 @@ impl Platform for SP1Platform {
     }
 
     fn print(message: &str) {
-        let bytes = message.as_bytes();
-        sp1_zkvm::syscalls::sys_write(1, bytes.as_ptr(), bytes.len());
+        sp1_zkvm::io::write(1, message.as_bytes());
     }
 
     fn cycle_scope_start(name: &str) {
