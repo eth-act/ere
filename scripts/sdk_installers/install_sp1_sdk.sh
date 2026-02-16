@@ -27,7 +27,7 @@ curl -L https://sp1up.succinct.xyz | bash
 # and for subsequent commands if this script is sourced.
 export PATH="${SP1_DIR}/bin:$PATH"
 
-export SP1_VERSION="${SP1_VERSION:-latest}"
+export SP1_VERSION="${SP1_VERSION:-v6.0.0}"
 
 # Run sp1up to install/update the toolchain
 if ! command -v sp1up &> /dev/null; then
@@ -50,3 +50,8 @@ echo "If running locally (not in Docker), to make SP1 commands available in your
 echo "  export SP1_DIR=\"${SP1_DIR}\""
 echo "  export PATH=\"${SP1_DIR}/bin:\$PATH\""
 echo "Then source your profile or open a new terminal."
+
+# Download CUDA prover (supports CUDA compute capabilities 80, 86, 89, 90, 100, 120)
+mkdir -p $HOME/.sp1/bin && \
+    curl -L "https://github.com/succinctlabs/sp1/releases/download/${SP1_VERSION}/sp1_gpu_server_${SP1_VERSION}_x86_64.tar.gz" | \
+    tar -xzf - -C $HOME/.sp1/bin
