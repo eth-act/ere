@@ -16,6 +16,7 @@ thiserror.workspace = true
 
 # Optional dependencies
 clap = { workspace = true, features = ["derive"], optional = true }
+tokio = { workspace = true, features = ["rt-multi-thread"], optional = true }
 
 [dev-dependencies]
 bincode = { workspace = true, features = ["alloc", "serde"] }
@@ -29,3 +30,4 @@ workspace = true
 [features]
 default = []
 clap = ["dep:clap"]
+tokio = ["dep:tokio"]

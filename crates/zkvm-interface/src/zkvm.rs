@@ -8,10 +8,16 @@ mod proof;
 mod report;
 mod resource;
 
+#[cfg(feature = "tokio")]
+mod tokio;
+
 pub use error::CommonError;
 pub use proof::{Proof, ProofKind};
 pub use report::{ProgramExecutionReport, ProgramProvingReport};
 pub use resource::{ProverResource, ProverResourceKind, RemoteProverConfig};
+
+#[cfg(feature = "tokio")]
+pub use tokio::block_on;
 
 /// Input for the prover to execute/prove a guest program.
 #[derive(Clone, Debug, Default)]

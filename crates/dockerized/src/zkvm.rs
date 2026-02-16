@@ -16,18 +16,14 @@ use ere_server::{
     api::twirp::reqwest::Client,
     client::{self, Url, zkVMClient},
 };
-use ere_zkvm_interface::{
-    CommonError,
-    zkvm::{
-        Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResource,
-        PublicValues, zkVM,
-    },
+use ere_zkvm_interface::zkvm::{
+    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResource, PublicValues, block_on, zkVM,
 };
 use std::{
     future::Future,
     iter,
     pin::Pin,
-    sync::OnceLock,
     time::{Duration, Instant},
 };
 use tempfile::TempDir;
@@ -460,18 +456,6 @@ async fn wait_until_healthy(endpoint: &Url, http_client: Client) -> Result<(), E
         match http_client.get(endpoint.join("health")?).send().await {
             Ok(response) if response.status().is_success() => break Ok(()),
             _ => sleep(INTERVAL).await,
-        }
-    }
-}
-
-fn block_on<T>(future: impl Future<Output = T>) -> T {
-    match tokio::runtime::Handle::try_current() {
-        Ok(handle) => tokio::task::block_in_place(|| handle.block_on(future)),
-        Err(_) => {
-            static FALLBACK_RT: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
-            FALLBACK_RT
-                .get_or_init(|| tokio::runtime::Runtime::new().expect("Failed to create runtime"))
-                .block_on(future)
         }
     }
 }

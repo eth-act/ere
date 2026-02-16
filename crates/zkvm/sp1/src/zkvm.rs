@@ -2,10 +2,10 @@ use crate::{program::SP1Program, zkvm::sdk::SP1Sdk};
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResource, PublicValues, zkVM, zkVMProgramDigest,
+    ProverResource, PublicValues, block_on, zkVM, zkVMProgramDigest,
 };
 use sp1_sdk::{SP1ProofMode, SP1ProofWithPublicValues, SP1Stdin, SP1VerifyingKey};
-use std::{future::Future, sync::OnceLock, time::Instant};
+use std::time::Instant;
 use tracing::info;
 
 mod error;
@@ -127,18 +127,6 @@ fn input_to_stdin(input: &Input) -> Result<SP1Stdin, Error> {
         }
     }
     Ok(stdin)
-}
-
-fn block_on<T>(future: impl Future<Output = T>) -> T {
-    match tokio::runtime::Handle::try_current() {
-        Ok(handle) => tokio::task::block_in_place(|| handle.block_on(future)),
-        Err(_) => {
-            static FALLBACK_RT: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
-            FALLBACK_RT
-                .get_or_init(|| tokio::runtime::Runtime::new().expect("Failed to create runtime"))
-                .block_on(future)
-        }
-    }
 }
 
 #[cfg(test)]

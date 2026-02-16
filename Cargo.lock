@@ -4303,7 +4303,6 @@ dependencies = [
  "sp1-sdk",
  "tempfile",
  "thiserror 2.0.12",
- "tokio",
  "tracing",
 ]
 
@@ -4355,7 +4354,6 @@ dependencies = [
  "strum 0.27.2",
  "tempfile",
  "thiserror 2.0.12",
- "tokio",
  "tonic 0.14.3",
  "tracing",
  "uuid 1.17.0",
@@ -4377,6 +4375,7 @@ dependencies = [
  "serde_yaml",
  "strum 0.27.2",
  "thiserror 2.0.12",
+ "tokio",
  "toml 0.8.23",
 ]
 
