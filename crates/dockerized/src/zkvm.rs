@@ -496,7 +496,10 @@ mod test {
                 // Invalid test cases
                 for input in $invalid_test_cases {
                     let err = zkvm.execute(&input).unwrap_err();
-                    assert!(matches!(err.downcast::<Error>().unwrap(), Error::zkVM(_)));
+                    assert!(
+                        matches!(err.downcast_ref::<Error>().unwrap(), Error::zkVM(_)),
+                        "Expect error variant `Error::zkVM`, got {err:?}",
+                    );
                 }
             }
 
@@ -512,7 +515,10 @@ mod test {
                 // Invalid test cases
                 for input in $invalid_test_cases {
                     let err = zkvm.prove(&input, ProofKind::default()).unwrap_err();
-                    assert!(matches!(err.downcast::<Error>().unwrap(), Error::zkVM(_)));
+                    assert!(
+                        matches!(err.downcast_ref::<Error>().unwrap(), Error::zkVM(_)),
+                        "Expect error variant `Error::zkVM`, got {err:?}",
+                    );
                 }
             }
         };
