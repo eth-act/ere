@@ -228,11 +228,11 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> CompilationResult
         use ere_sp1::compiler::*;
         match compiler_kind {
             CompilerKind::Rust => {
-                let program = RustRv32ima.compile(&guest_dir)?;
+                let program = RustRv64ima.compile(&guest_dir)?;
                 (Some(program.elf().to_vec()), None, program)
             }
             CompilerKind::RustCustomized => {
-                let program = RustRv32imaCustomized.compile(&guest_dir)?;
+                let program = RustRv64imaCustomized.compile(&guest_dir)?;
                 (Some(program.elf().to_vec()), None, program)
             }
             _ => bail!(unsupported_compiler_kind_err(

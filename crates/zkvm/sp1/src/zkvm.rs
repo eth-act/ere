@@ -131,7 +131,7 @@ fn input_to_stdin(input: &Input) -> Result<SP1Stdin, Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{compiler::RustRv32imaCustomized, program::SP1Program, zkvm::EreSP1};
+    use crate::{compiler::RustRv64imaCustomized, program::SP1Program, zkvm::EreSP1};
     use ere_test_utils::{
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
         io::serde::bincode::BincodeLegacy,
@@ -148,7 +148,7 @@ mod tests {
         static PROGRAM: OnceLock<SP1Program> = OnceLock::new();
         PROGRAM
             .get_or_init(|| {
-                RustRv32imaCustomized
+                RustRv64imaCustomized
                     .compile(&testing_guest_directory("sp1", "basic"))
                     .unwrap()
             })
