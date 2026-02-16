@@ -7,10 +7,7 @@ use crate::{
             DockerBuildCmd, DockerRunCmd, docker_container_exists, docker_image_exists,
             docker_pull_image, stop_docker_container,
         },
-        env::{
-            ERE_DOCKER_NETWORK, ERE_GPU_DEVICES, docker_network, force_rebuild_docker_image,
-            image_registry,
-        },
+        env::{docker_network, force_rebuild_docker_image, image_registry},
         home_dir, workspace_dir,
     },
     zkVMKind,
@@ -260,17 +257,7 @@ impl ServerContainer {
             cmd = match zkvm_kind {
                 zkVMKind::Airbender => cmd.gpus(),
                 zkVMKind::OpenVM => cmd.gpus(),
-                // SP1 runs docker command to spin up the server to do GPU
-                // proving, to give the client access to the prover service, we
-                // need to use the host networking driver if env variable
-                // `ERE_DOCKER_NETWORK` is not set.
-                zkVMKind::SP1 => match docker_network() {
-                    Some(_) => cmd.inherit_env(ERE_DOCKER_NETWORK),
-                    None => cmd.network("host"),
-                }
-                .mount_docker_socket()
-                .inherit_env("SP1_GPU_IMAGE")
-                .inherit_env(ERE_GPU_DEVICES),
+                zkVMKind::SP1 => cmd.gpus(),
                 zkVMKind::Risc0 => cmd.gpus().inherit_env("RISC0_DEFAULT_PROVER_NUM_GPUS"),
                 zkVMKind::Zisk => cmd.gpus(),
                 _ => cmd,
