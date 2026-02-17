@@ -22,6 +22,10 @@ on:
         required: false
         type: boolean
         default: false
+      test_threads:
+        description: 'Number of threads when testing via docker'
+        required: false
+        type: number
       # Remove when we use larger runners, currently only needed to skip for zisk
       skip_prove_test:
         description: 'Whether to skip prove test and ere-dockerized test or not'
@@ -213,6 +217,18 @@ jobs:
             --tag ${{ needs.image_meta.outputs.image_tag }} \
             --cached-tag "${{ needs.image_meta.outputs.cached_image_tag }}"
 
+      - name: Increase swap to 10GB
+        run: |
+          free -h && swapon --show
+
+          sudo swapoff -a
+          sudo fallocate -l 10G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+
+          free -h && swapon --show
+
       - name: Run cargo test for ere-${{ inputs.zkvm }} via Docker
         run: |
           DOCKER_CMD="docker run \
@@ -229,7 +245,7 @@ jobs:
           set -e -o pipefail
 
           cargo test --release --package ere-${{ inputs.zkvm }} \
-            -- ${{ inputs.skip_prove_test && '--skip prove' || ''  }}
+            -- ${{ inputs.skip_prove_test && '--skip prove' || '' }} ${{ inputs.test_threads && format('--test-threads={0}', inputs.test_threads) || '' }}
 
           time chown -R $(id -u):$(id -g) /usr/local/cargo/registry
           time chown -R $(id -u):$(id -g) /usr/local/cargo/git
@@ -282,8 +298,21 @@ jobs:
             --compiler \
             --server
 
+      - name: Increase swap to 10GB
+        run: |
+          free -h && swapon --show
+
+          sudo swapoff -a
+          sudo fallocate -l 10G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+
+          free -h && swapon --show
+
       - name: Run cargo test for ere-${{ inputs.zkvm }} via ere-dockerized
         env:
+          RUST_LOG: info
           ERE_IMAGE_REGISTRY: ${{ needs.image_meta.outputs.image_registry }}
         run: |
           cargo test --release --package ere-dockerized \

@@ -20,6 +20,7 @@ ere-server.workspace = true
 
 [dev-dependencies]
 paste.workspace = true
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 # Local dependencies
 ere-test-utils = { workspace = true, features = ["host"] }
