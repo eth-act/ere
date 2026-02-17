@@ -4,9 +4,9 @@ use ere_zkvm_interface::{
     zkvm::{ProverResource, ProverResourceKind},
 };
 use sp1_cuda::CudaProvingKey;
-use sp1_hypercube::air::PublicValues;
+use sp1_hypercube::air::{PublicValues, SP1_PROOF_NUM_PV_ELTS};
 use sp1_p3_field::PrimeField32;
-use sp1_recursion_executor::RecursionPublicValues;
+use sp1_recursion_executor::{RECURSIVE_PROOF_NUM_PV_ELTS, RecursionPublicValues};
 use sp1_sdk::{
     CpuProver, CudaProver, Elf, ExecutionReport, NetworkProver, ProveRequest, Prover as SP1Prover,
     ProverClient, ProvingKey as SP1ProvingKeyTrait, SP1Proof, SP1ProofMode,
@@ -155,14 +155,18 @@ async fn build_network_prover(config: &RemoteProverConfig) -> Result<NetworkProv
 /// mirroring the approach used in `verify_proof` of `sp1_sdk`.
 fn extract_exit_code(proof: &SP1ProofWithPublicValues) -> Result<u32, Error> {
     match &proof.proof {
-        SP1Proof::Core(shard_proofs) => shard_proofs.last().map(|proof| {
-            let pv: &PublicValues<[_; 4], [_; 3], [_; 4], _> =
-                proof.public_values.as_slice().borrow();
-            pv.exit_code.as_canonical_u32()
+        SP1Proof::Core(shard_proofs) => shard_proofs.last().and_then(|proof| {
+            (proof.public_values.len() == SP1_PROOF_NUM_PV_ELTS).then(|| {
+                let pv: &PublicValues<[_; 4], [_; 3], [_; 4], _> =
+                    proof.public_values.as_slice().borrow();
+                pv.exit_code.as_canonical_u32()
+            })
         }),
         SP1Proof::Compressed(proof) => {
-            let pv: &RecursionPublicValues<_> = proof.proof.public_values.as_slice().borrow();
-            Some(pv.exit_code.as_canonical_u32())
+            (proof.proof.public_values.len() == RECURSIVE_PROOF_NUM_PV_ELTS).then(|| {
+                let pv: &RecursionPublicValues<_> = proof.proof.public_values.as_slice().borrow();
+                pv.exit_code.as_canonical_u32()
+            })
         }
         SP1Proof::Plonk(proof) => proof
             .public_inputs
