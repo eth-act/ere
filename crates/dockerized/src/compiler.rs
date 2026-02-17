@@ -179,12 +179,17 @@ pub(crate) mod test {
     };
     use ere_test_utils::host::testing_guest_directory;
     use ere_zkvm_interface::compiler::Compiler;
+    use tracing_subscriber::EnvFilter;
 
     pub fn compile(
         zkvm_kind: zkVMKind,
         compiler_kind: CompilerKind,
         program: &'static str,
     ) -> SerializedProgram {
+        let _ = tracing_subscriber::fmt()
+            .with_env_filter(EnvFilter::from_default_env())
+            .try_init();
+
         DockerizedCompiler::new(zkvm_kind, compiler_kind, workspace_dir().unwrap())
             .unwrap()
             .compile(&testing_guest_directory(zkvm_kind.as_str(), program))

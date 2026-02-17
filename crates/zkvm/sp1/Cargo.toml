@@ -14,7 +14,11 @@ thiserror.workspace = true
 tracing.workspace = true
 
 # SP1 dependencies
-sp1-sdk = { workspace = true, optional = true }
+sp1-cuda = { workspace = true, optional = true }
+sp1-hypercube = { workspace = true, optional = true }
+sp1-p3-field = { workspace = true, optional = true }
+sp1-recursion-executor = { workspace = true, optional = true }
+sp1-sdk = { workspace = true, features = ["network"], optional = true }
 
 # Local dependencies
 ere-compile-utils = { workspace = true, optional = true }
@@ -29,7 +33,14 @@ ere-build-utils.workspace = true
 [features]
 default = ["compiler", "zkvm"]
 compiler = ["dep:ere-compile-utils"]
-zkvm = ["dep:sp1-sdk"]
+zkvm = [
+    "dep:sp1-cuda",
+    "dep:sp1-hypercube",
+    "dep:sp1-p3-field",
+    "dep:sp1-recursion-executor",
+    "dep:sp1-sdk",
+    "ere-zkvm-interface/tokio",
+]
 
 [lints]
 workspace = true

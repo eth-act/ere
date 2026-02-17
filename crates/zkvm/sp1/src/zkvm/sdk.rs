@@ -1,42 +1,57 @@
-use crate::zkvm::{Error, panic_msg};
+use crate::zkvm::Error;
 use ere_zkvm_interface::{
     CommonError, RemoteProverConfig,
     zkvm::{ProverResource, ProverResourceKind},
 };
+use sp1_cuda::CudaProvingKey;
+use sp1_hypercube::air::{PublicValues, SP1_PROOF_NUM_PV_ELTS};
+use sp1_p3_field::PrimeField32;
+use sp1_recursion_executor::{RECURSIVE_PROOF_NUM_PV_ELTS, RecursionPublicValues};
 use sp1_sdk::{
-    CpuProver, NetworkProver, Prover as _, ProverClient, SP1ProofMode, SP1ProofWithPublicValues,
-    SP1ProvingKey, SP1Stdin, SP1VerifyingKey,
+    CpuProver, CudaProver, Elf, ExecutionReport, NetworkProver, ProveRequest, Prover as SP1Prover,
+    ProverClient, ProvingKey as SP1ProvingKeyTrait, SP1Proof, SP1ProofMode,
+    SP1ProofWithPublicValues, SP1ProvingKey as CpuProvingKey, SP1PublicValues, SP1Stdin,
+    SP1VerifyingKey, StatusCode,
 };
-use std::{
-    env,
-    ops::Deref,
-    panic::{self, AssertUnwindSafe},
-    process::Command,
-};
-use tracing::error;
+use std::{borrow::Borrow, env, sync::Arc};
 
-// https://github.com/succinctlabs/sp1/blob/v5.2.4/crates/cuda/src/lib.rs#L207C34-L207C78.
-const SP1_CUDA_IMAGE: &str = "public.ecr.aws/succinct-labs/sp1-gpu:8fd1ef7";
-
-#[allow(clippy::large_enum_variant)]
-pub enum Prover {
-    Cpu(CpuProver),
-    Gpu(CudaProver),
-    Network(NetworkProver),
+pub enum SP1Sdk {
+    Cpu {
+        prover: CpuProver,
+        pk: CpuProvingKey,
+    },
+    Gpu {
+        prover: CudaProver,
+        pk: CudaProvingKey,
+    },
+    Network {
+        prover: Box<NetworkProver>,
+        pk: CpuProvingKey,
+    },
 }
 
-impl Default for Prover {
-    fn default() -> Self {
-        Self::new(&ProverResource::Cpu).unwrap()
-    }
-}
-
-impl Prover {
-    pub fn new(resource: &ProverResource) -> Result<Self, Error> {
+impl SP1Sdk {
+    pub async fn new(elf: Vec<u8>, resource: &ProverResource) -> Result<Self, Error> {
+        let elf = Elf::Dynamic(Arc::from(elf));
         Ok(match resource {
-            ProverResource::Cpu => Self::Cpu(ProverClient::builder().cpu().build()),
-            ProverResource::Gpu => Self::Gpu(CudaProver::new()?),
-            ProverResource::Network(config) => Self::Network(build_network_prover(config)?),
+            ProverResource::Cpu => {
+                let prover = ProverClient::builder().cpu().build().await;
+                let pk = prover.setup(elf).await.map_err(Error::setup)?;
+                Self::Cpu { prover, pk }
+            }
+            ProverResource::Gpu => {
+                let prover = ProverClient::builder().cuda().build().await;
+                let pk = prover.setup(elf).await.map_err(Error::setup)?;
+                Self::Gpu { prover, pk }
+            }
+            ProverResource::Network(config) => {
+                let prover = build_network_prover(config).await?;
+                let pk = prover.setup(elf).await.map_err(Error::setup)?;
+                Self::Network {
+                    prover: Box::new(prover),
+                    pk,
+                }
+            }
             _ => Err(CommonError::unsupported_prover_resource_kind(
                 resource.kind(),
                 [
@@ -48,135 +63,73 @@ impl Prover {
         })
     }
 
-    pub fn setup(&self, elf: &[u8]) -> Result<(SP1ProvingKey, SP1VerifyingKey), Error> {
-        panic::catch_unwind(AssertUnwindSafe(|| match self {
-            Self::Cpu(cpu_prover) => cpu_prover.setup(elf),
-            Self::Gpu(cuda_prover) => cuda_prover.setup(elf),
-            Self::Network(network_prover) => network_prover.setup(elf),
-        }))
-        .map_err(|err| Error::SetupElfFailed(panic_msg(err)))
-    }
-
-    pub fn execute(
-        &self,
-        elf: &[u8],
-        input: &SP1Stdin,
-    ) -> Result<(sp1_sdk::SP1PublicValues, sp1_sdk::ExecutionReport), Error> {
+    pub fn vk(&self) -> &SP1VerifyingKey {
         match self {
-            Self::Cpu(cpu_prover) => cpu_prover.execute(elf, input).run(),
-            Self::Gpu(cuda_prover) => cuda_prover.execute(elf, input).run(),
-            Self::Network(network_prover) => network_prover.execute(elf, input).run(),
+            Self::Cpu { pk, .. } => pk.verifying_key(),
+            Self::Gpu { pk, .. } => pk.verifying_key(),
+            Self::Network { pk, .. } => pk.verifying_key(),
         }
-        .map_err(Error::Execute)
     }
 
-    pub fn prove(
+    pub async fn execute(
         &self,
-        pk: &SP1ProvingKey,
-        input: &SP1Stdin,
+        input: SP1Stdin,
+    ) -> Result<(SP1PublicValues, ExecutionReport), Error> {
+        let (public_values, exec_report) = match self {
+            Self::Cpu { prover, pk } => prover.execute(pk.elf().clone(), input).await,
+            Self::Gpu { prover, pk } => prover.execute(pk.elf().clone(), input).await,
+            Self::Network { prover, pk } => prover.execute(pk.elf().clone(), input).await,
+        }
+        .map_err(|e| Error::Execute(e.into()))?;
+
+        let exit_code = exec_report.exit_code as u32;
+        if exit_code != StatusCode::SUCCESS.as_u32() {
+            return Err(Error::ExecutionFailed(exit_code));
+        }
+
+        Ok((public_values, exec_report))
+    }
+
+    pub async fn prove(
+        &self,
+        input: SP1Stdin,
         mode: SP1ProofMode,
     ) -> Result<SP1ProofWithPublicValues, Error> {
-        match self {
-            Self::Cpu(cpu_prover) => cpu_prover.prove(pk, input).mode(mode).run(),
-            Self::Gpu(cuda_prover) => cuda_prover.prove(pk, input).mode(mode).run(),
-            Self::Network(network_prover) => network_prover.prove(pk, input).mode(mode).run(),
+        let proof = match self {
+            Self::Cpu { prover, pk } => {
+                let req = prover.prove(pk, input).mode(mode);
+                req.await.map_err(Error::prove)
+            }
+            Self::Gpu { prover, pk } => {
+                let req = prover.prove(pk, input).mode(mode);
+                req.await.map_err(Error::prove)
+            }
+            Self::Network { prover, pk } => {
+                let req = prover.prove(pk, input).mode(mode);
+                req.await.map_err(Error::prove)
+            }
+        }?;
+
+        let exit_code = extract_exit_code(&proof)?;
+        if exit_code != StatusCode::SUCCESS.as_u32() {
+            return Err(Error::ExecutionFailed(exit_code));
         }
-        .map_err(Error::Prove)
+
+        Ok(proof)
     }
 
-    pub fn verify(
-        &self,
-        proof: &SP1ProofWithPublicValues,
-        vk: &SP1VerifyingKey,
-    ) -> Result<(), Error> {
+    pub fn verify(&self, proof: &SP1ProofWithPublicValues) -> Result<(), Error> {
+        let vk = self.vk();
         match self {
-            Self::Cpu(cpu_prover) => cpu_prover.verify(proof, vk),
-            Self::Gpu(cuda_prover) => cuda_prover.verify(proof, vk),
-            Self::Network(network_prover) => network_prover.verify(proof, vk),
+            Self::Cpu { prover, .. } => prover.verify(proof, vk, Some(StatusCode::SUCCESS)),
+            Self::Gpu { prover, .. } => prover.verify(proof, vk, Some(StatusCode::SUCCESS)),
+            Self::Network { prover, .. } => prover.verify(proof, vk, Some(StatusCode::SUCCESS)),
         }
         .map_err(Error::Verify)
     }
 }
 
-pub struct CudaProver {
-    container_name: String,
-    prover: sp1_sdk::CudaProver,
-}
-
-impl Deref for CudaProver {
-    type Target = sp1_sdk::CudaProver;
-
-    fn deref(&self) -> &Self::Target {
-        &self.prover
-    }
-}
-
-impl Drop for CudaProver {
-    fn drop(&mut self) {
-        let mut cmd = Command::new("docker");
-        cmd.args(["container", "rm", "--force", self.container_name.as_ref()]);
-        if let Err(err) = cmd
-            .output()
-            .map_err(|err| CommonError::command(&cmd, err))
-            .and_then(|output| {
-                (!output.status.success()).then_some(()).ok_or_else(|| {
-                    CommonError::command_exit_non_zero(&cmd, output.status, Some(&output))
-                })
-            })
-        {
-            error!(
-                "Failed to remove docker container {}: {err}",
-                self.container_name
-            );
-        }
-    }
-}
-
-impl CudaProver {
-    fn new() -> Result<Self, Error> {
-        // Ported from https://github.com/succinctlabs/sp1/blob/v5.2.4/crates/cuda/src/lib.rs#L199.
-
-        let container_name = "sp1-gpu".to_string();
-        let image_name = env::var("SP1_GPU_IMAGE").unwrap_or_else(|_| SP1_CUDA_IMAGE.to_string());
-        let rust_log = env::var("RUST_LOG").unwrap_or_else(|_| "none".to_string());
-        let gpus = env::var("ERE_GPU_DEVICES").unwrap_or_else(|_| "all".to_string());
-
-        let mut cmd = Command::new("docker");
-        cmd.args([
-            "run",
-            "--rm",
-            "--env",
-            &format!("RUST_LOG={rust_log}"),
-            "--publish",
-            "3000:3000",
-            "--gpus",
-            &gpus,
-            "--name",
-            &container_name,
-            &image_name,
-        ]);
-
-        let host = if let Ok(network) = env::var("ERE_DOCKER_NETWORK") {
-            cmd.args(["--network", network.as_str()]);
-            container_name.as_str()
-        } else {
-            "127.0.0.1"
-        };
-        let endpoint = format!("http://{host}:3000/twirp/");
-        cmd.spawn().map_err(|err| CommonError::command(&cmd, err))?;
-
-        let prover =
-            panic::catch_unwind(|| ProverClient::builder().cuda().server(&endpoint).build())
-                .map_err(|err| Error::InitCudaProverFailed(panic_msg(err)))?;
-
-        Ok(Self {
-            container_name,
-            prover,
-        })
-    }
-}
-
-fn build_network_prover(config: &RemoteProverConfig) -> Result<NetworkProver, Error> {
+async fn build_network_prover(config: &RemoteProverConfig) -> Result<NetworkProver, Error> {
     let mut builder = ProverClient::builder().network();
     // Check if we have a private key in the config or environment
     if let Some(api_key) = &config.api_key {
@@ -193,5 +146,36 @@ fn build_network_prover(config: &RemoteProverConfig) -> Result<NetworkProver, Er
         builder = builder.rpc_url(&rpc_url);
     }
     // Otherwise SP1 SDK will use its default RPC URL
-    Ok(builder.build())
+    Ok(builder.build().await)
+}
+
+/// Extracts the exit code from an public values of proof.
+///
+/// The `exit_code` field is extracted from the public values struct of proof,
+/// mirroring the approach used in `verify_proof` of `sp1_sdk`.
+fn extract_exit_code(proof: &SP1ProofWithPublicValues) -> Result<u32, Error> {
+    match &proof.proof {
+        SP1Proof::Core(shard_proofs) => shard_proofs.last().and_then(|proof| {
+            (proof.public_values.len() == SP1_PROOF_NUM_PV_ELTS).then(|| {
+                let pv: &PublicValues<[_; 4], [_; 3], [_; 4], _> =
+                    proof.public_values.as_slice().borrow();
+                pv.exit_code.as_canonical_u32()
+            })
+        }),
+        SP1Proof::Compressed(proof) => {
+            (proof.proof.public_values.len() == RECURSIVE_PROOF_NUM_PV_ELTS).then(|| {
+                let pv: &RecursionPublicValues<_> = proof.proof.public_values.as_slice().borrow();
+                pv.exit_code.as_canonical_u32()
+            })
+        }
+        SP1Proof::Plonk(proof) => proof
+            .public_inputs
+            .get(2)
+            .and_then(|value| value.parse::<u32>().ok()),
+        SP1Proof::Groth16(proof) => proof
+            .public_inputs
+            .get(2)
+            .and_then(|value| value.parse::<u32>().ok()),
+    }
+    .ok_or(Error::ExitCodeExtractionFailed)
 }

@@ -10,6 +10,36 @@ use tempfile::tempdir;
 
 const CARGO_ENCODED_RUSTFLAGS_SEPARATOR: &str = "\x1f";
 
+/// Target specification for cargo build.
+#[derive(Debug, Clone, Copy)]
+pub enum RustTarget {
+    /// Built-in target name (e.g., "riscv64im-unknown-none-elf").
+    Name(&'static str),
+    /// Custom target specification JSON content.
+    SpecJson {
+        /// Target name (e.g., "riscv64ima-unknown-none-elf").
+        name: &'static str,
+        /// Raw JSON content of the target specification.
+        json: &'static str,
+    },
+}
+
+impl RustTarget {
+    /// Returns the target name.
+    pub const fn name(&self) -> &'static str {
+        match self {
+            Self::Name(name) => name,
+            Self::SpecJson { name, .. } => name,
+        }
+    }
+}
+
+impl From<&'static str> for RustTarget {
+    fn from(name: &'static str) -> Self {
+        Self::Name(name)
+    }
+}
+
 /// A builder for configuring `cargo build` invocation.
 #[derive(Clone)]
 pub struct CargoBuildCmd {
@@ -73,12 +103,12 @@ impl CargoBuildCmd {
         self
     }
 
-    /// Takes the path to the manifest directory and the target triple, then
+    /// Takes the path to the manifest directory and the target, then
     /// runs configured `cargo build` and returns built ELF.
     pub fn exec(
         &self,
         manifest_dir: impl AsRef<Path>,
-        target: impl AsRef<str>,
+        target: impl Into<RustTarget>,
     ) -> Result<Vec<u8>, CommonError> {
         let metadata = cargo_metadata(manifest_dir.as_ref())?;
         let package = metadata.root_package().unwrap();
@@ -103,6 +133,18 @@ impl CargoBuildCmd {
             })?;
         }
 
+        let target = target.into();
+        let target_arg = match target {
+            RustTarget::Name(name) => name.to_string(),
+            RustTarget::SpecJson { name, json } => {
+                let json_name = format!("{name}.json");
+                let json_path = tempdir.path().join(&json_name);
+                fs::write(&json_path, json.as_bytes())
+                    .map_err(|err| CommonError::write_file(json_name, &json_path, err))?;
+                json_path.to_string_lossy().to_string()
+            }
+        };
+
         let encoded_rustflags = iter::empty()
             .chain(self.rustflags.iter().cloned())
             .chain(
@@ -120,7 +162,7 @@ impl CargoBuildCmd {
             .chain(["build".into()])
             .chain(self.build_options.iter().cloned())
             .chain(["--profile".into(), self.profile.clone()])
-            .chain(["--target".into(), target.as_ref().into()])
+            .chain(["--target".into(), target_arg])
             .chain(["--manifest-path".into(), package.manifest_path.to_string()]);
 
         let mut cmd = Command::new("cargo");
@@ -136,7 +178,7 @@ impl CargoBuildCmd {
 
         let elf_path = metadata
             .target_directory
-            .join(target.as_ref())
+            .join(target.name())
             .join(&self.profile)
             .join(&package.name);
         let elf =

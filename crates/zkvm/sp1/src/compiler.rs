@@ -1,7 +1,7 @@
 mod error;
-mod rust_rv32ima;
-mod rust_rv32ima_customized;
+mod rust_rv64ima;
+mod rust_rv64ima_customized;
 
 pub use error::Error;
-pub use rust_rv32ima::RustRv32ima;
-pub use rust_rv32ima_customized::RustRv32imaCustomized;
+pub use rust_rv64ima::RustRv64ima;
+pub use rust_rv64ima_customized::RustRv64imaCustomized;

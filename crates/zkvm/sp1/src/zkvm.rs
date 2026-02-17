@@ -1,16 +1,11 @@
-use crate::{program::SP1Program, zkvm::sdk::Prover};
+use crate::{program::SP1Program, zkvm::sdk::SP1Sdk};
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResource, PublicValues, zkVM, zkVMProgramDigest,
+    ProverResource, PublicValues, block_on, zkVM, zkVMProgramDigest,
 };
-use sp1_sdk::{SP1ProofMode, SP1ProofWithPublicValues, SP1ProvingKey, SP1Stdin, SP1VerifyingKey};
-use std::{
-    mem::take,
-    panic,
-    sync::{RwLock, RwLockReadGuard, RwLockWriteGuard},
-    time::Instant,
-};
+use sp1_sdk::{SP1ProofMode, SP1ProofWithPublicValues, SP1Stdin, SP1VerifyingKey};
+use std::time::Instant;
 use tracing::info;
 
 mod error;
@@ -21,42 +16,13 @@ pub use error::Error;
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 pub struct EreSP1 {
-    program: SP1Program,
-    /// Prover resource configuration for creating clients
-    resource: ProverResource,
-    /// Proving key
-    pk: SP1ProvingKey,
-    /// Verification key
-    vk: SP1VerifyingKey,
-    // The current version of SP1 (v5.2.4) has a problem where if GPU proving
-    // the program crashes in the Moongate container, it leaves an internal
-    // mutex poisoned, which prevents further proving attempts.
-    // This is a workaround to avoid the poisoned mutex issue by creating a new
-    // prover if the proving panics.
-    // Eventually, this should be fixed in the SP1 SDK.
-    // For more context see: https://github.com/eth-act/zkevm-benchmark-workload/issues/54
-    prover: RwLock<Prover>,
+    sdk: SP1Sdk,
 }
 
 impl EreSP1 {
     pub fn new(program: SP1Program, resource: ProverResource) -> Result<Self, Error> {
-        let prover = Prover::new(&resource)?;
-        let (pk, vk) = prover.setup(&program.elf)?;
-        Ok(Self {
-            program,
-            resource,
-            pk,
-            vk,
-            prover: RwLock::new(prover),
-        })
-    }
-
-    fn prover(&'_ self) -> Result<RwLockReadGuard<'_, Prover>, Error> {
-        self.prover.read().map_err(|_| Error::RwLockPosioned)
-    }
-
-    fn prover_mut(&'_ self) -> Result<RwLockWriteGuard<'_, Prover>, Error> {
-        self.prover.write().map_err(|_| Error::RwLockPosioned)
+        let sdk = block_on(SP1Sdk::new(program.elf, &resource))?;
+        Ok(Self { sdk })
     }
 }
 
@@ -64,10 +30,8 @@ impl zkVM for EreSP1 {
     fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         let stdin = input_to_stdin(input)?;
 
-        let prover = self.prover()?;
-
         let start = Instant::now();
-        let (public_values, exec_report) = prover.execute(self.program.elf(), &stdin)?;
+        let (public_values, exec_report) = block_on(self.sdk.execute(stdin))?;
         let execution_duration = start.elapsed();
 
         Ok((
@@ -85,7 +49,7 @@ impl zkVM for EreSP1 {
         input: &Input,
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
-        info!("Generating proof…");
+        info!("Generating proof...");
 
         let stdin = input_to_stdin(input)?;
 
@@ -94,27 +58,8 @@ impl zkVM for EreSP1 {
             ProofKind::Groth16 => SP1ProofMode::Groth16,
         };
 
-        let mut prover = self.prover_mut()?;
-
-        // Restart GPU prover if the prover is dropped before.
-        if matches!(self.resource, ProverResource::Gpu) && matches!(&*prover, Prover::Cpu(_)) {
-            *prover = Prover::new(&self.resource).and_then(|prover| {
-                prover.setup(&self.program.elf)?;
-                Ok(prover)
-            })?;
-        }
-
         let start = Instant::now();
-        let proof =
-            panic::catch_unwind(|| prover.prove(&self.pk, &stdin, mode)).map_err(|err| {
-                if matches!(self.resource, ProverResource::Gpu) {
-                    // Drop the panicked GPU prover and replace it with CPU one,
-                    // next prove call will try to restart it.
-                    take(&mut *prover);
-                }
-
-                Error::Panic(panic_msg(err))
-            })??;
+        let proof = block_on(self.sdk.prove(stdin, mode))?;
         let proving_time = start.elapsed();
 
         let public_values = proof.public_values.to_vec();
@@ -132,7 +77,7 @@ impl zkVM for EreSP1 {
     }
 
     fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
-        info!("Verifying proof…");
+        info!("Verifying proof...");
 
         let proof_kind = proof.kind();
 
@@ -149,7 +94,7 @@ impl zkVM for EreSP1 {
             bail!(Error::InvalidProofKind(proof_kind, inner_proof_kind));
         }
 
-        self.prover()?.verify(&proof, &self.vk)?;
+        self.sdk.verify(&proof)?;
 
         let public_values_bytes = proof.public_values.as_slice().to_vec();
 
@@ -169,7 +114,7 @@ impl zkVMProgramDigest for EreSP1 {
     type ProgramDigest = SP1VerifyingKey;
 
     fn program_digest(&self) -> anyhow::Result<Self::ProgramDigest> {
-        Ok(self.vk.clone())
+        Ok(self.sdk.vk().clone())
     }
 }
 
@@ -184,15 +129,9 @@ fn input_to_stdin(input: &Input) -> Result<SP1Stdin, Error> {
     Ok(stdin)
 }
 
-fn panic_msg(err: Box<dyn std::any::Any + Send + 'static>) -> String {
-    None.or_else(|| err.downcast_ref::<String>().cloned())
-        .or_else(|| err.downcast_ref::<&'static str>().map(ToString::to_string))
-        .unwrap_or_else(|| "unknown panic msg".to_string())
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::{compiler::RustRv32imaCustomized, program::SP1Program, zkvm::EreSP1};
+    use crate::{compiler::RustRv64imaCustomized, program::SP1Program, zkvm::EreSP1};
     use ere_test_utils::{
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
         io::serde::bincode::BincodeLegacy,
@@ -209,7 +148,7 @@ mod tests {
         static PROGRAM: OnceLock<SP1Program> = OnceLock::new();
         PROGRAM
             .get_or_init(|| {
-                RustRv32imaCustomized
+                RustRv64imaCustomized
                     .compile(&testing_guest_directory("sp1", "basic"))
                     .unwrap()
             })

@@ -1,9 +1,8 @@
 //! Remote ZisK cluster proving.
 
 use crate::zkvm::Error;
-use ere_zkvm_interface::zkvm::RemoteProverConfig;
+use ere_zkvm_interface::zkvm::{RemoteProverConfig, block_on};
 use futures_util::StreamExt;
-use std::sync::OnceLock;
 use std::time::Duration;
 use tonic::transport::Channel;
 use tracing::debug;
@@ -152,19 +151,6 @@ async fn connect(endpoint: &str) -> Result<ZiskDistributedApiClient<Channel>, Er
         .connect()
         .await?;
     Ok(ZiskDistributedApiClient::new(channel))
-}
-
-/// Run a future to completion, reusing the current tokio runtime or creating one.
-fn block_on<T>(future: impl Future<Output = T>) -> T {
-    match tokio::runtime::Handle::try_current() {
-        Ok(handle) => tokio::task::block_in_place(|| handle.block_on(future)),
-        Err(_) => {
-            static FALLBACK_RT: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
-            FALLBACK_RT
-                .get_or_init(|| tokio::runtime::Runtime::new().expect("Failed to create runtime"))
-                .block_on(future)
-        }
-    }
 }
 
 /// Returns `Error::ClusterError`.

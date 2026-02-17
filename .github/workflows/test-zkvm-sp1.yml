@@ -17,3 +17,4 @@ jobs:
     with:
       zkvm: sp1
       cuda: true
+      test_threads: 1

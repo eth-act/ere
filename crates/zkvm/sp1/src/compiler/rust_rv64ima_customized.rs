@@ -5,11 +5,11 @@ use std::{fs, path::Path, process::Command};
 use tempfile::tempdir;
 use tracing::info;
 
-/// Compiler for Rust guest program to RV32IMA architecture, using customized
+/// Compiler for Rust guest program to RV64IMA architecture, using customized
 /// Rust toolchain of Succinct.
-pub struct RustRv32imaCustomized;
+pub struct RustRv64imaCustomized;
 
-impl Compiler for RustRv32imaCustomized {
+impl Compiler for RustRv64imaCustomized {
     type Error = Error;
 
     type Program = SP1Program;
@@ -56,14 +56,14 @@ impl Compiler for RustRv32imaCustomized {
 
 #[cfg(test)]
 mod tests {
-    use crate::compiler::RustRv32imaCustomized;
+    use crate::compiler::RustRv64imaCustomized;
     use ere_test_utils::host::testing_guest_directory;
     use ere_zkvm_interface::compiler::Compiler;
 
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("sp1", "basic");
-        let program = RustRv32imaCustomized.compile(&guest_directory).unwrap();
+        let program = RustRv64imaCustomized.compile(&guest_directory).unwrap();
         assert!(!program.elf().is_empty(), "ELF bytes should not be empty.");
     }
 }

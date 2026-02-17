@@ -7,10 +7,7 @@ use crate::{
             DockerBuildCmd, DockerRunCmd, docker_container_exists, docker_image_exists,
             docker_pull_image, stop_docker_container,
         },
-        env::{
-            ERE_DOCKER_NETWORK, ERE_GPU_DEVICES, docker_network, force_rebuild_docker_image,
-            image_registry,
-        },
+        env::{docker_network, force_rebuild_docker_image, image_registry},
         home_dir, workspace_dir,
     },
     zkVMKind,
@@ -19,18 +16,14 @@ use ere_server::{
     api::twirp::reqwest::Client,
     client::{self, Url, zkVMClient},
 };
-use ere_zkvm_interface::{
-    CommonError,
-    zkvm::{
-        Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, ProverResource,
-        PublicValues, zkVM,
-    },
+use ere_zkvm_interface::zkvm::{
+    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+    ProverResource, PublicValues, block_on, zkVM,
 };
 use std::{
     future::Future,
     iter,
     pin::Pin,
-    sync::OnceLock,
     time::{Duration, Instant},
 };
 use tempfile::TempDir;
@@ -260,17 +253,7 @@ impl ServerContainer {
             cmd = match zkvm_kind {
                 zkVMKind::Airbender => cmd.gpus(),
                 zkVMKind::OpenVM => cmd.gpus(),
-                // SP1 runs docker command to spin up the server to do GPU
-                // proving, to give the client access to the prover service, we
-                // need to use the host networking driver if env variable
-                // `ERE_DOCKER_NETWORK` is not set.
-                zkVMKind::SP1 => match docker_network() {
-                    Some(_) => cmd.inherit_env(ERE_DOCKER_NETWORK),
-                    None => cmd.network("host"),
-                }
-                .mount_docker_socket()
-                .inherit_env("SP1_GPU_IMAGE")
-                .inherit_env(ERE_GPU_DEVICES),
+                zkVMKind::SP1 => cmd.gpus(),
                 zkVMKind::Risc0 => cmd.gpus().inherit_env("RISC0_DEFAULT_PROVER_NUM_GPUS"),
                 zkVMKind::Zisk => cmd.gpus(),
                 _ => cmd,
@@ -477,18 +460,6 @@ async fn wait_until_healthy(endpoint: &Url, http_client: Client) -> Result<(), E
     }
 }
 
-fn block_on<T>(future: impl Future<Output = T>) -> T {
-    match tokio::runtime::Handle::try_current() {
-        Ok(handle) => tokio::task::block_in_place(|| handle.block_on(future)),
-        Err(_) => {
-            static FALLBACK_RT: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
-            FALLBACK_RT
-                .get_or_init(|| tokio::runtime::Runtime::new().expect("Failed to create runtime"))
-                .block_on(future)
-        }
-    }
-}
-
 #[cfg(test)]
 mod test {
     use crate::{
@@ -525,7 +496,10 @@ mod test {
                 // Invalid test cases
                 for input in $invalid_test_cases {
                     let err = zkvm.execute(&input).unwrap_err();
-                    assert!(matches!(err.downcast::<Error>().unwrap(), Error::zkVM(_)));
+                    assert!(
+                        matches!(err.downcast_ref::<Error>().unwrap(), Error::zkVM(_)),
+                        "Expect error variant `Error::zkVM`, got {err:?}",
+                    );
                 }
             }
 
@@ -541,7 +515,10 @@ mod test {
                 // Invalid test cases
                 for input in $invalid_test_cases {
                     let err = zkvm.prove(&input, ProofKind::default()).unwrap_err();
-                    assert!(matches!(err.downcast::<Error>().unwrap(), Error::zkVM(_)));
+                    assert!(
+                        matches!(err.downcast_ref::<Error>().unwrap(), Error::zkVM(_)),
+                        "Expect error variant `Error::zkVM`, got {err:?}",
+                    );
                 }
             }
         };
