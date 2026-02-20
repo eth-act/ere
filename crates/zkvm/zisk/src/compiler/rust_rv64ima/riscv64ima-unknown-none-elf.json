@@ -1,30 +1,25 @@
 {
   "arch": "riscv64",
+  "atomic-cas": true,
   "code-model": "medium",
   "cpu": "generic-rv64",
   "crt-objects-fallback": "false",
   "data-layout": "e-m:e-p:64:64-i64:64-i128:128-n32:64-S128",
   "eh-frame-header": false,
   "emit-debug-gdb-scripts": false,
-  "features": "+m,+a",
-  "link-script": "OUTPUT_FORMAT(\"elf64-littleriscv\")\nOUTPUT_ARCH(\"riscv\")\nENTRY(_start)\n\nMEMORY {\n  rom   (xa) : ORIGIN = 0x80000000, LENGTH = 0x10000000\n  ram   (wxa) : ORIGIN = 0xa0020000, LENGTH = 0x1FFE0000\n}\n\nPHDRS {\n  text PT_LOAD FLAGS(5);\n  rodata PT_LOAD FLAGS(4);\n  data PT_LOAD FLAGS(6);\n  bss PT_LOAD FLAGS(6);\n}\n\nSECTIONS\n{\n  .text : { *(.text.init) *(.text .text.*)} >rom AT>rom :text\n\n  . = ALIGN(8);\n  PROVIDE(_global_pointer = .);\n  .rodata : { *(.rodata .rodata.*)} >rom AT>rom :rodata\n\n  .data : { *(.data .data.* .sdata .sdata.*) } >ram AT>ram :data\n\n  .bss : {\n    PROVIDE(_bss_start = .);\n    *(.bss .bss.*);\n    PROVIDE(_bss_end = .); # ... and one at the end\n  } >ram AT>ram :bss\n\n  . = ALIGN(8);\n  PROVIDE(_init_stack_top = . + 0x100000); # reserve 1M bytes for the initialisation stack\n\n  PROVIDE(_kernel_heap_bottom = _init_stack_top);\n  PROVIDE(_kernel_heap_top = ORIGIN(ram) + LENGTH(ram));\n  PROVIDE(_kernel_heap_size = _kernel_heap_top - _kernel_heap_bottom);\n\n  _end = .;\n}",
+  "features": "+m,+forced-atomics",
   "linker": "rust-lld",
   "linker-flavor": "gnu-lld",
   "llvm-abiname": "lp64",
   "llvm-target": "riscv64",
   "max-atomic-width": 64,
   "metadata": {
-    "description": null,
-    "host_tools": null,
-    "std": null,
-    "tier": null
+    "description": "Bare RISC-V (RV64IM ISA)",
+    "host_tools": false,
+    "std": false,
+    "tier": 3
   },
-  "os": "zkvm",
   "panic-strategy": "abort",
   "relocation-model": "static",
-  "supported-sanitizers": [
-    "kernel-address"
-  ],
-  "target-pointer-width": 64,
-  "vendor": "zisk"
+  "target-pointer-width": 64
 }

@@ -212,6 +212,7 @@ impl ServerContainer {
         let mut cmd = DockerRunCmd::new(server_zkvm_image(zkvm_kind, gpu))
             .rm()
             .inherit_env("RUST_LOG")
+            .inherit_env("RUST_BACKTRACE")
             .inherit_env("NO_COLOR")
             .publish(port.to_string(), port.to_string())
             .name(&name);
