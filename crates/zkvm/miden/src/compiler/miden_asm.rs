@@ -34,9 +34,8 @@ impl Compiler for MidenAsm {
         })?;
 
         // Compile using Miden assembler
-        let mut assembler = Assembler::default();
-        assembler
-            .link_dynamic_library(CoreLibrary::default())
+        let assembler = Assembler::default()
+            .with_dynamic_library(CoreLibrary::default())
             .map_err(Error::LoadCoreLibrary)?;
 
         let program = assembler
