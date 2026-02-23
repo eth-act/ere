@@ -284,8 +284,10 @@ pub(crate) mod test {
 
     mod zisk {
         test_compile!(Zisk, RustCustomized, "basic_rust");
+        test_compile!(Zisk, Rust, "stock_nightly_no_std");
         test_compile!(Zisk, GoCustomized, "basic_go");
         test_reproducible_elf!(Zisk, RustCustomized, "basic_rust");
+        test_reproducible_elf!(Zisk, Rust, "stock_nightly_no_std");
         test_reproducible_elf!(Zisk, GoCustomized, "basic_go");
     }
 }
