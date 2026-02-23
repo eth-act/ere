@@ -7,8 +7,8 @@
 //!
 //! ## `Compiler` requirements
 //!
-//! - Installation via [`sp1up`] - Custom Rust toolchain used by `RustRv32imaCustomized`
-//! - `cargo-prove` - Used by `RustRv32imaCustomized`
+//! - Installation via [`sp1up`] - Custom Rust toolchain used by `RustRv64imaCustomized`
+//! - `cargo-prove` - Used by `RustRv64imaCustomized`
 //!
 //! ## `zkVM` requirements
 //!
@@ -20,8 +20,8 @@
 //!
 //! | Compiler                | Language | Target                        | Note               |
 //! | ----------------------- | :------: | ----------------------------- | ------------------ |
-//! | `RustRv32imaCustomized` |   Rust   | `riscv32im-succinct-zkvm-elf` | With `std` support |
-//! | `RustRv32ima`           |   Rust   | `riscv32ima-unknown-none-elf` |                    |
+//! | `RustRv64imaCustomized` |   Rust   | `riscv64im-succinct-zkvm-elf` | With `std` support |
+//! | `RustRv64ima`           |   Rust   | `riscv64ima-unknown-none-elf` |                    |
 //!
 //! # `zkVM` implementation
 //!
