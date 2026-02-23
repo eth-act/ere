@@ -32,13 +32,13 @@ _start:
     sym STACK_TOP
 );
 
-/// According to https://github.com/succinctlabs/sp1/blob/v6.0.0/crates/zkvm/entrypoint/src/syscalls/sys.rs#L40.
+/// According to https://github.com/succinctlabs/sp1/blob/v6.0.1/crates/zkvm/entrypoint/src/syscalls/sys.rs#L40.
 #[panic_handler]
 fn panic_impl(_panic_info: &core::panic::PanicInfo) -> ! {
     halt(1);
 }
 
-/// According to https://github.com/succinctlabs/sp1/blob/v6.0.0/crates/zkvm/entrypoint/src/syscalls/halt.rs#L58-L63.
+/// According to https://github.com/succinctlabs/sp1/blob/v6.0.1/crates/zkvm/entrypoint/src/syscalls/halt.rs#L58-L63.
 fn halt(exit_code: u32) -> ! {
     unsafe {
         core::arch::asm!(
@@ -66,7 +66,7 @@ unsafe impl GlobalAlloc for SimpleAlloc {
 #[global_allocator]
 static HEAP: SimpleAlloc = SimpleAlloc;
 
-// According to https://github.com/succinctlabs/sp1/blob/v6.0.0/crates/primitives/src/consts.rs#L4.
+// According to https://github.com/succinctlabs/sp1/blob/v6.0.1/crates/primitives/src/consts.rs#L4.
 pub const MAXIMUM_MEMORY_SIZE: u64 = (1u64 << 48) - 1;
 
 #[allow(clippy::missing_safety_doc)]
