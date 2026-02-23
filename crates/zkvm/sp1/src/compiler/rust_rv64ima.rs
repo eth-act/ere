@@ -17,7 +17,7 @@ const TARGET: RustTarget = RustTarget::SpecJson {
     json: include_str!("./rust_rv64ima/riscv64ima-unknown-none-elf.json"),
 };
 
-/// According to https://github.com/succinctlabs/sp1/blob/v6.0.0/crates/build/src/command/utils.rs#L49.
+/// According to https://github.com/succinctlabs/sp1/blob/v6.0.1/crates/build/src/command/utils.rs#L49.
 const RUSTFLAGS: &[&str] = &[
     "-C",
     "passes=lower-atomic", // Only for rustc > 1.81

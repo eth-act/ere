@@ -182,7 +182,7 @@ OutputHashedPlatform::<OpenVMPlatform, Sha256>::write_whole_output(&large_output
 | OpenVM    | [`1.4.3`](https://github.com/openvm-org/openvm/tree/v1.4.3)            | Yes |
 | Pico      | [`1.2.2`](https://github.com/brevis-network/pico/tree/v1.2.2)          | No  |
 | Risc0     | [`3.0.4`](https://github.com/risc0/risc0/tree/v3.0.4)                  | Yes |
-| SP1       | [`6.0.0`](https://github.com/succinctlabs/sp1/tree/v6.0.0)             | Yes |
+| SP1       | [`6.0.1`](https://github.com/succinctlabs/sp1/tree/v6.0.1)             | Yes |
 | Ziren     | [`1.2.3`](https://github.com/ProjectZKM/Ziren/tree/v1.2.3)             | No  |
 | Zisk      | [`0.15.0`](https://github.com/0xPolygonHermez/zisk/tree/v0.15.0)       | Yes |
 

@@ -27,7 +27,7 @@ curl -L https://sp1up.succinct.xyz | bash
 # and for subsequent commands if this script is sourced.
 export PATH="${SP1_DIR}/bin:$PATH"
 
-export SP1_VERSION="${SP1_VERSION:-v6.0.0}"
+export SP1_VERSION="${SP1_VERSION:-v6.0.1}"
 
 # Run sp1up to install/update the toolchain
 if ! command -v sp1up &> /dev/null; then

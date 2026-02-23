@@ -137,12 +137,12 @@ risc0-zkvm = { version = "3.0.4", default-features = false }
 risc0-zkvm-platform = { version = "2.2.1", default-features = false }
 
 # SP1 dependencies
-sp1-cuda = "6.0.0"
-sp1-hypercube = "6.0.0"
-sp1-recursion-executor = "6.0.0"
-sp1-sdk = "6.0.0"
-sp1-p3-field = { version = "0.3.1-succinct", package = "p3-field" }
-sp1-zkvm = { version = "6.0.0", default-features = false }
+sp1-cuda = "6.0.1"
+sp1-hypercube = "6.0.1"
+sp1-recursion-executor = "6.0.1"
+sp1-sdk = "6.0.1"
+sp1-p3-field = { version = "0.3.2-succinct", package = "p3-field" }
+sp1-zkvm = { version = "6.0.1", default-features = false }
 
 # Ziren dependencies
 zkm-sdk = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.2.3" }
