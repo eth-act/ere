@@ -151,6 +151,7 @@ impl zkVM for EreMiden {
             Deserializable::read_from_bytes(proof)
                 .map_err(|err| CommonError::deserialize("proof", "miden", err))?;
 
+        // According to https://github.com/0xMiden/miden-vm/blob/v0.21.0/core/src/proof.rs#L73,
         // Security level is hardcoded as 96, so we skip the check.
 
         let registry = CoreLibrary::default().verifier_registry();
