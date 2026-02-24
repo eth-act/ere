@@ -1,6 +1,6 @@
 use miden_core::{
-    Program, ProgramInfo,
-    utils::{Deserializable, Serializable},
+    program::{Program, ProgramInfo},
+    serde::{Deserializable, Serializable},
 };
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de::Error};
 use std::ops::Deref;

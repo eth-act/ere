@@ -5,15 +5,17 @@ use ere_zkvm_interface::zkvm::{
     ProverResource, ProverResourceKind, PublicValues, zkVM, zkVMProgramDigest,
 };
 use miden_core::{
-    Program,
-    utils::{Deserializable, Serializable},
+    field::{PrimeField64, QuotientMap},
+    program::Program,
+    serde::{Deserializable, Serializable},
 };
 use miden_core_lib::CoreLibrary;
 use miden_processor::{
-    DefaultHost, ExecutionOptions, ProgramInfo, StackInputs, StackOutputs, execute as miden_execute,
+    DefaultHost, ExecutionOptions, ProgramInfo, StackInputs, StackOutputs,
+    execute_sync as miden_execute,
 };
 use miden_prover::{
-    AdviceInputs, ExecutionProof, HashFunction, ProvingOptions, prove as miden_prove,
+    AdviceInputs, ExecutionProof, HashFunction, ProvingOptions, prove_sync as miden_prove,
 };
 use miden_verifier::verify_with_precompiles as miden_verify;
 use std::{env, time::Instant};
@@ -21,7 +23,7 @@ use std::{env, time::Instant};
 mod error;
 
 pub use error::Error;
-pub use miden_core::{Felt, FieldElement};
+pub use miden_core::{Felt, field};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
@@ -111,12 +113,12 @@ impl zkVM for EreMiden {
         let stack_inputs = StackInputs::default();
         let advice_inputs = AdviceInputs::default().with_stack(bytes_to_felts(input.stdin())?);
         let mut host = Self::setup_host()?;
-        let proving_options = ProvingOptions::with_128_bit_security(HashFunction::Blake3_256);
+        let proving_options = ProvingOptions::new(HashFunction::Blake3_256);
 
         let start = Instant::now();
         let (stack_outputs, proof) = miden_prove(
             &self.program,
-            stack_inputs.clone(),
+            stack_inputs,
             advice_inputs,
             &mut host,
             proving_options,
@@ -149,15 +151,13 @@ impl zkVM for EreMiden {
             Deserializable::read_from_bytes(proof)
                 .map_err(|err| CommonError::deserialize("proof", "miden", err))?;
 
+        // According to https://github.com/0xMiden/miden-vm/blob/v0.21.0/core/src/proof.rs#L73,
+        // Security level is hardcoded as 96, so we skip the check.
+
         let registry = CoreLibrary::default().verifier_registry();
-        miden_verify(
-            program_info,
-            stack_inputs,
-            stack_outputs.clone(),
-            proof,
-            &registry,
-        )
-        .map_err(Error::Verify)?;
+        let (_security_level, _) =
+            miden_verify(program_info, stack_inputs, stack_outputs, proof, &registry)
+                .map_err(Error::Verify)?;
 
         Ok(felts_to_bytes(stack_outputs.as_slice()))
     }
@@ -183,7 +183,7 @@ impl zkVMProgramDigest for EreMiden {
 pub fn felts_to_bytes(felts: &[Felt]) -> Vec<u8> {
     felts
         .iter()
-        .flat_map(|felt| felt.as_int().to_le_bytes())
+        .flat_map(|felt| felt.as_canonical_u64().to_le_bytes())
         .collect()
 }
 
@@ -198,9 +198,15 @@ pub fn bytes_to_felts(bytes: &[u8]) -> Result<Vec<Felt>, Error> {
     }
     Ok(bytes
         .chunks(8)
-        .map(|bytes| Felt::try_from(u64::from_le_bytes(bytes.try_into().unwrap())))
-        .collect::<Result<Vec<Felt>, _>>()
-        .map_err(|err| CommonError::serialize("input", "miden", anyhow::anyhow!(err)))?)
+        .map(|bytes| Felt::from_canonical_checked(u64::from_le_bytes(bytes.try_into().unwrap())))
+        .collect::<Option<Vec<Felt>>>()
+        .ok_or_else(|| {
+            let err = anyhow::anyhow!(
+                "Invalid input bytes. Use ere_miden::zkvm::felts_to_bytes \
+                 to convert the field elements into bytes"
+            );
+            CommonError::serialize("input", "miden", err)
+        })?)
 }
 
 #[cfg(test)]
@@ -208,7 +214,7 @@ mod tests {
     use crate::{
         compiler::MidenAsm,
         program::MidenProgram,
-        zkvm::{EreMiden, Felt, FieldElement, bytes_to_felts, felts_to_bytes},
+        zkvm::{EreMiden, Felt, bytes_to_felts, felts_to_bytes, field::PrimeCharacteristicRing},
     };
     use ere_test_utils::host::testing_guest_directory;
     use ere_zkvm_interface::{
@@ -254,9 +260,9 @@ mod tests {
         let zkvm = EreMiden::new(program, ProverResource::Cpu).unwrap();
 
         let n_iterations = 50u32;
-        let expected_fib = Felt::try_from(12_586_269_025u64).unwrap();
+        let expected_fib = Felt::new(12_586_269_025u64);
 
-        let stdin = felts_to_bytes(&[Felt::from(0u32), Felt::from(1u32), Felt::from(n_iterations)]);
+        let stdin = felts_to_bytes(&[Felt::new(0), Felt::new(1), Felt::new(n_iterations as u64)]);
 
         // Prove
         let (prover_public_values, proof, _) = zkvm
@@ -280,7 +286,7 @@ mod tests {
         let empty_inputs = Input::new();
         assert!(zkvm.execute(&empty_inputs).is_err());
 
-        let insufficient_inputs = Input::new().with_stdin(felts_to_bytes(&[Felt::from(5u32)]));
+        let insufficient_inputs = Input::new().with_stdin(felts_to_bytes(&[Felt::new(5)]));
         assert!(zkvm.execute(&insufficient_inputs).is_err());
     }
 }
