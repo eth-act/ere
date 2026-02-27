@@ -160,15 +160,15 @@ OutputHashedPlatform::<OpenVMPlatform, Sha256>::write_whole_output(&large_output
 
 ## Supported zkVMs
 
-| zkVM      | Version                                                                | GPU |
-| --------- | ---------------------------------------------------------------------- | --- |
-| Airbender | [`0.5.2`](https://github.com/matter-labs/zksync-airbender/tree/v0.5.2) | Yes |
-| Jolt      | [`2e05fe88`](https://github.com/a16z/jolt/tree/2e05fe88)               | No  |
-| OpenVM    | [`1.4.3`](https://github.com/openvm-org/openvm/tree/v1.4.3)            | Yes |
-| Pico      | [`1.3.0`](https://github.com/brevis-network/pico/tree/v1.3.0)          | No  |
-| Risc0     | [`3.0.4`](https://github.com/risc0/risc0/tree/v3.0.4)                  | Yes |
-| SP1       | [`6.0.1`](https://github.com/succinctlabs/sp1/tree/v6.0.1)             | Yes |
-| Zisk      | [`0.16.0`](https://github.com/0xPolygonHermez/zisk/tree/v0.16.0)       | Yes |
+| zkVM      | Version                                                                | ISA        |  GPU  | Multi GPU | Cluster |
+| --------- | ---------------------------------------------------------------------- | ---------- | :---: | :-------: | :-----: |
+| Airbender | [`0.5.2`](https://github.com/matter-labs/zksync-airbender/tree/v0.5.2) | `RV32IMA`  |   V   |     V     |         |
+| Jolt      | [`2e05fe88`](https://github.com/a16z/jolt/tree/2e05fe88)               | `RV64IMAC` |       |           |         |
+| OpenVM    | [`1.4.3`](https://github.com/openvm-org/openvm/tree/v1.4.3)            | `RV32IMA`  |   V   |           |         |
+| Pico      | [`1.3.0`](https://github.com/brevis-network/pico/tree/v1.3.0)          | `RV32IMA`  |       |           |         |
+| Risc0     | [`3.0.4`](https://github.com/risc0/risc0/tree/v3.0.4)                  | `RV32IMA`  |   V   |     V     |         |
+| SP1       | [`6.0.1`](https://github.com/succinctlabs/sp1/tree/v6.0.1)             | `RV64IMA`  |   V   |           |         |
+| Zisk      | [`0.16.0`](https://github.com/0xPolygonHermez/zisk/tree/v0.16.0)       | `RV64IMA`  |   V   |     V     |    V    |
 
 ## Examples
 
