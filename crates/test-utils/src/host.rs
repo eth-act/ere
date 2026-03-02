@@ -122,6 +122,7 @@ where
     fn assert_output(&self, public_values: &[u8]) {
         let output = P::compute(self.test_case.clone());
         let digest = D::digest(P::Io::serialize_output(&output).unwrap());
-        assert_eq!(&*digest, public_values)
+        assert_eq!(&*digest, &public_values[..digest.len()]);
+        assert!(public_values[digest.len()..].iter().all(|byte| *byte == 0));
     }
 }

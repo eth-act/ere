@@ -23,10 +23,11 @@
 //!
 //! ## Available compilers
 //!
-//! | Compiler                | Language | Target                     | Note               |
-//! | ----------------------- | :------: | -------------------------- | ------------------ |
-//! | `RustRv64imaCustomized` |   Rust   | `riscv64ima-zisk-zkvm-elf` | With `std` support |
-//! | `GoCustomized`          |    Go    | `riscv64`                  |                    |
+//! | Compiler                | Language | Target                        | Note               |
+//! | ----------------------- | :------: | ----------------------------- | ------------------ |
+//! | `RustRv64imaCustomized` |   Rust   | `riscv64ima-zisk-zkvm-elf`    | With `std` support |
+//! | `RustRv64ima`           |   Rust   | `riscv64ima-unknown-none-elf` |                    |
+//! | `GoCustomized`          |    Go    | `riscv64`                     |                    |
 //!
 //! # `zkVM` implementation
 //!

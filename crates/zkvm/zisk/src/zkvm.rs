@@ -1,18 +1,17 @@
 use crate::{
     program::ZiskProgram,
-    zkvm::sdk::{RomDigest, ZiskSdk},
+    zkvm::sdk::{ProgramVk, ZiskSdk},
 };
 use anyhow::bail;
 use ere_zkvm_interface::zkvm::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
     ProverResource, PublicValues, zkVM, zkVMProgramDigest,
 };
+use mpi as _;
 use std::time::Instant;
 
-mod cluster_client;
 mod error;
 mod sdk;
-mod server;
 
 pub use error::Error;
 
@@ -98,10 +97,10 @@ impl zkVM for EreZisk {
 }
 
 impl zkVMProgramDigest for EreZisk {
-    type ProgramDigest = RomDigest;
+    type ProgramDigest = ProgramVk;
 
     fn program_digest(&self) -> anyhow::Result<Self::ProgramDigest> {
-        Ok(self.sdk.rom_digest()?)
+        Ok(self.sdk.program_vk())
     }
 }
 
@@ -159,10 +158,10 @@ mod tests {
 
     #[test]
     fn test_prove() {
+        let _guard = PROVE_LOCK.lock().unwrap();
+
         let program = basic_program();
         let zkvm = EreZisk::new(program, ProverResource::Cpu).unwrap();
-
-        let _guard = PROVE_LOCK.lock().unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
@@ -170,10 +169,10 @@ mod tests {
 
     #[test]
     fn test_prove_invalid_test_case() {
+        let _guard = PROVE_LOCK.lock().unwrap();
+
         let program = basic_program();
         let zkvm = EreZisk::new(program, ProverResource::Cpu).unwrap();
-
-        let _guard = PROVE_LOCK.lock().unwrap();
 
         for input in [
             Input::new(),

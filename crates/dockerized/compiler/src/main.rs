@@ -261,6 +261,10 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> CompilationResult
     let result = {
         use ere_zisk::compiler::*;
         match compiler_kind {
+            CompilerKind::Rust => {
+                let program = RustRv64ima.compile(&guest_dir)?;
+                (Some(program.elf().to_vec()), None, program)
+            }
             CompilerKind::RustCustomized => {
                 let program = RustRv64imaCustomized.compile(&guest_dir)?;
                 (Some(program.elf().to_vec()), None, program)

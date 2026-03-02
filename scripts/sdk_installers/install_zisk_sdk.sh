@@ -28,69 +28,49 @@ echo "Installing ZisK Toolchain and SDK using ziskup (prebuilt binaries)..."
 ensure_tool_installed "curl" "to download the ziskup installer"
 ensure_tool_installed "bash" "to run the ziskup installer"
 ensure_tool_installed "rustup" "for managing Rust toolchains (ZisK installs its own)"
-ensure_tool_installed "cargo" "as cargo-zisk is a cargo subcommand"
+ensure_tool_installed "cargo" "to pre-build lib-c"
 
 # Step 1: Download and run the script that installs the ziskup binary itself.
-# Export SETUP_KEY=proving-no-consttree to download proving key but avoid doing
-# cargo-zisk check-setup.
-export ZISK_VERSION="0.15.0"
-export SETUP_KEY=${SETUP_KEY:=proving-no-consttree}
-curl "https://raw.githubusercontent.com/0xPolygonHermez/zisk/main/ziskup/install.sh" | bash
-unset SETUP_KEY
+# Export SETUP_KEY=proving-no-consttree to download proving key without doing setup.
+export ZISK_VERSION="0.16.0"
+# export SETUP_KEY=${SETUP_KEY:=proving-no-consttree}
+# curl "https://raw.githubusercontent.com/0xPolygonHermez/zisk/main/ziskup/install.sh" | bash
+# unset SETUP_KEY
 
-# Step 2: Ensure the installed cargo-zisk binary is in PATH for this script session.
-export PATH="$PATH:$HOME/.zisk/bin"
-
-# FIXME: Issue for tracking: https://github.com/eth-act/ere/issues/200.
+# FIXME: Remove and download from prebuilt when released
 if true; then
+    ZISK_DIR="$HOME/.zisk"
+    BUCKET_URL="https://storage.googleapis.com/zisk-setup"
+    KEY_FILE="zisk-provingkey-pre-$ZISK_VERSION.tar.gz"
+
+    mkdir -p "$ZISK_DIR/bin" "$ZISK_DIR/zisk/emulator-asm"
+
+    # Download and install proving key
+    rm -rf "$ZISK_DIR/provingKey" "$ZISK_DIR/verifyKey" "$ZISK_DIR/cache"
+    curl -L -#o "/tmp/$KEY_FILE" "$BUCKET_URL/$KEY_FILE"
+    tar -xf "/tmp/$KEY_FILE" -C "$ZISK_DIR"
+    rm -f "/tmp/$KEY_FILE"
+
+    # Build libziskclib.a
     WORKSPACE=$(mktemp -d)
-    git clone https://github.com/han0110/zisk.git --depth 1 --branch patch/v0.15.0 "$WORKSPACE"
-    cargo build --manifest-path "$WORKSPACE/Cargo.toml" --release
-    cp "$WORKSPACE/target/release/cargo-zisk" "$HOME/.zisk/bin/cargo-zisk"
-    cp "$WORKSPACE/target/release/libzisk_witness.so" "$HOME/.zisk/bin/libzisk_witness.so"
-    rm -rf "$WORKSPACE"
+    git clone --depth 1 --branch "pre-develop-$ZISK_VERSION" https://github.com/0xPolygonHermez/zisk.git "$WORKSPACE"
+    cargo build --manifest-path "$WORKSPACE/Cargo.toml" --release --package ziskclib --package cargo-zisk
+
+    # Install toolchain
+    "$WORKSPACE/target/release/cargo-zisk" sdk install-toolchain
+
+    # Copy files
+    cp    "$WORKSPACE/target/release/cargo-zisk"    "$ZISK_DIR/bin/"
+    cp    "$WORKSPACE/target/release/libziskclib.a" "$ZISK_DIR/bin/"
+    cp -r "$WORKSPACE/emulator-asm/src"             "$ZISK_DIR/zisk/emulator-asm/"
+    cp    "$WORKSPACE/emulator-asm/Makefile"        "$ZISK_DIR/zisk/emulator-asm/"
+    cp -r "$WORKSPACE/lib-c"                        "$ZISK_DIR/zisk/"
+
+    # Cleanup
+    rm -rf "${WORKSPACE}"
 fi
 
-# Verify ZisK installation
-echo "Verifying ZisK installation..."
-
-echo "Checking for 'zisk' toolchain..."
-if rustup toolchain list | grep -q "^zisk"; then
-    echo "ZisK Rust toolchain found."
-else
-    echo "Error: ZisK Rust toolchain ('zisk') not found after installation!" >&2
-    exit 1
-fi
-
-echo "Checking for cargo-zisk CLI tool..."
-if cargo-zisk --version; then
-    echo "cargo-zisk CLI tool verified successfully."
-else
-    echo "Error: 'cargo-zisk --version' failed." >&2
-    exit 1
-fi
-
-# Step 3: Build cargo-zisk-cuda from source with `gpu` feature enabled
-if [ -n "$CUDA" ]; then
-    WORKSPACE=$(mktemp -d)
-    # FIXME: Issue for tracking: https://github.com/eth-act/ere/issues/200.
-    # git clone https://github.com/0xPolygonHermez/zisk.git --depth 1 --tag "v$ZISK_VERSION" "$WORKSPACE"
-    git clone https://github.com/han0110/zisk.git --depth 1 --branch patch/v0.15.0 "$WORKSPACE"
-    cargo build --manifest-path "$WORKSPACE/Cargo.toml" --release --features gpu
-    cp "$WORKSPACE/target/release/cargo-zisk" "$HOME/.zisk/bin/cargo-zisk-cuda"
-    cp "$WORKSPACE/target/release/libzisk_witness.so" "$HOME/.zisk/bin/libzisk_witness_cuda.so"
-    rm -rf "$WORKSPACE"
-
-    echo "Checking for cargo-zisk-cuda CLI tool..."
-    if cargo-zisk-cuda --version; then
-        echo "cargo-zisk-cuda CLI tool verified successfully."
-    else
-        echo "Error: 'cargo-zisk-cuda --version' failed." >&2
-        exit 1
-    fi
-fi
-
-# Step 4: Make sure `lib-c`'s build script is ran.
+# Step 2: Make sure `lib-c`'s build script is ran.
 #
 # `ziskos` provides guest program runtime, and `lib-c` is a dependency of `ziskos`,
 # when we need to compile guest, the `build.rs` of `lib-c` will need to be ran once,
@@ -98,8 +78,8 @@ fi
 # So here we make sure it's already ran, and the built thing will be stored in
 # `$CARGO_HOME/git/checkouts/zisk-{hash}/{rev}/lib-c/c/build`, so could be
 # re-used as long as the `ziskos` has the same version.
-WORKSPACE="/tmp/build-lib-c"
-cargo new "$WORKSPACE" --name build-lib-c
-cargo add lib-c --git https://github.com/0xPolygonHermez/zisk.git --tag "v$ZISK_VERSION" --manifest-path "$WORKSPACE/Cargo.toml"
+WORKSPACE=$(mktemp -d)
+cargo init "$WORKSPACE" --name build-lib-c
+cargo add lib-c --git https://github.com/0xPolygonHermez/zisk.git --branch "pre-develop-$ZISK_VERSION" --manifest-path "$WORKSPACE/Cargo.toml"
 cargo build --manifest-path "$WORKSPACE/Cargo.toml"
 rm -rf "$WORKSPACE"

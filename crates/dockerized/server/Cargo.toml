@@ -59,4 +59,4 @@ ziren = ["dep:ere-ziren", "server"]
 zisk = ["dep:ere-zisk", "server"]
 
 # Cuda
-cuda = ["ere-openvm?/cuda"]
+cuda = ["ere-openvm?/cuda", "ere-zisk?/cuda"]
