@@ -1,9 +1,7 @@
 use crate::{compiler::Error, program::JoltProgram};
 use ere_compile_utils::CargoBuildCmd;
 use ere_zkvm_interface::compiler::Compiler;
-use jolt_common::constants::{
-    DEFAULT_MEMORY_SIZE, DEFAULT_STACK_SIZE, EMULATOR_MEMORY_CAPACITY, STACK_CANARY_SIZE,
-};
+use jolt_common::constants::{DEFAULT_HEAP_SIZE, DEFAULT_STACK_SIZE, STACK_CANARY_SIZE};
 use std::{env, path::Path};
 
 const TARGET_TRIPLE: &str = "riscv64imac-unknown-none-elf";
@@ -29,9 +27,8 @@ const LINKER_SCRIPT_TEMPLATE: &str = include_str!("rust_rv64imac/template.ld");
 
 fn make_linker_script() -> String {
     LINKER_SCRIPT_TEMPLATE
-        .replace("{EMULATOR_MEMORY}", &EMULATOR_MEMORY_CAPACITY.to_string())
+        .replace("{EMULATOR_MEMORY}", &DEFAULT_HEAP_SIZE.to_string())
         .replace("{STACK_CANARY}", &STACK_CANARY_SIZE.to_string())
-        .replace("{MEMORY_SIZE}", &DEFAULT_MEMORY_SIZE.to_string())
         .replace("{STACK_SIZE}", &DEFAULT_STACK_SIZE.to_string())
 }
 

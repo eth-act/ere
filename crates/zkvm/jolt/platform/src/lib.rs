@@ -4,8 +4,8 @@ extern crate alloc;
 
 use core::{marker::PhantomData, ops::Deref};
 use jolt_common::constants::{
-    DEFAULT_MAX_INPUT_SIZE, DEFAULT_MAX_OUTPUT_SIZE, DEFAULT_MAX_TRUSTED_ADVICE_SIZE,
-    DEFAULT_MAX_UNTRUSTED_ADVICE_SIZE, DEFAULT_MEMORY_SIZE, DEFAULT_STACK_SIZE,
+    DEFAULT_HEAP_SIZE, DEFAULT_MAX_INPUT_SIZE, DEFAULT_MAX_OUTPUT_SIZE,
+    DEFAULT_MAX_TRUSTED_ADVICE_SIZE, DEFAULT_MAX_UNTRUSTED_ADVICE_SIZE, DEFAULT_STACK_SIZE,
 };
 use jolt_common::jolt_device::{MemoryConfig, MemoryLayout};
 
@@ -19,7 +19,7 @@ pub trait JoltMemoryConfig {
     const MAX_UNTRUSTED_ADVICE_SIZE: u64;
     const MAX_OUTPUT_SIZE: u64;
     const STACK_SIZE: u64;
-    const MEMORY_SIZE: u64;
+    const HEAP_SIZE: u64;
 
     fn memory_layout() -> MemoryLayout {
         MemoryLayout::new(&MemoryConfig {
@@ -28,7 +28,7 @@ pub trait JoltMemoryConfig {
             max_untrusted_advice_size: Self::MAX_UNTRUSTED_ADVICE_SIZE,
             max_output_size: Self::MAX_OUTPUT_SIZE,
             stack_size: Self::STACK_SIZE,
-            memory_size: Self::MEMORY_SIZE,
+            heap_size: Self::HEAP_SIZE,
             program_size: Some(0),
         })
     }
@@ -42,7 +42,7 @@ impl JoltMemoryConfig for DefaultJoltMemoryConfig {
     const MAX_UNTRUSTED_ADVICE_SIZE: u64 = DEFAULT_MAX_UNTRUSTED_ADVICE_SIZE;
     const MAX_OUTPUT_SIZE: u64 = DEFAULT_MAX_OUTPUT_SIZE;
     const STACK_SIZE: u64 = DEFAULT_STACK_SIZE;
-    const MEMORY_SIZE: u64 = DEFAULT_MEMORY_SIZE;
+    const HEAP_SIZE: u64 = DEFAULT_HEAP_SIZE;
 }
 
 /// Jolt [`Platform`] implementation.
@@ -80,6 +80,6 @@ impl<C: JoltMemoryConfig> Platform for JoltPlatform<C> {
     }
 
     fn print(message: &str) {
-        jolt::print(message);
+        jolt::puts(message);
     }
 }

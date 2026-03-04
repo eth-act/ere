@@ -33,10 +33,14 @@ SECTIONS {
   . = ALIGN(8);
   _STACK_END = .;
   . = . + {STACK_CANARY};
+  __stack_bottom = .;
   . = . + {STACK_SIZE};
   . = ALIGN(8);
   _STACK_PTR = .;
+  __stack_top = .;
 
   . = ALIGN(8);
   _HEAP_PTR = .;
+  __heap_start = .;
+  __heap_end = ORIGIN(program) + LENGTH(program);
 }
