@@ -30,9 +30,6 @@ ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH
 
-# Copy Jolt SDK
-COPY --from=base_zkvm /root/.jolt /root/.jolt
-
 # Copy ere-compiler
 COPY --from=build_stage /ere/bin/ere-compiler /ere/bin/ere-compiler
 
