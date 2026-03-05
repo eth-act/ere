@@ -16,8 +16,8 @@ pub enum Error {
 
     // Verify
     #[error("Failed to construct verifier: {0}")]
-    VerifierInitFailed(#[from] ProofVerifyError),
+    VerifierInitFailed(ProofVerifyError),
 
     #[error("Verification failed: {0}")]
-    VerifyFailed(anyhow::Error),
+    VerifyFailed(#[from] ProofVerifyError),
 }

@@ -3,18 +3,17 @@ use core::{
     panic::PanicInfo,
 };
 
-// According to https://github.com/a16z/jolt/blob/6dcd401/common/src/jolt_device.rs#L189
+// According to https://github.com/a16z/jolt/blob/35d46f5/common/src/jolt_device.rs
 const DEFAULT_TERMINATION_ADDR: usize = 0x7FFFC008;
 const DEFAULT_PANIC_ADDR: usize = 0x7FFFC000;
 
-// According to https://github.com/a16z/jolt/blob/6dcd401/jolt-sdk/macros/src/lib.rs#L808
 core::arch::global_asm!(
     r#"
 .global _start
-.extern _STACK_PTR
+.extern __stack_top
 .section .text.boot
 _start:
-    la sp, _STACK_PTR
+    la sp, __stack_top
     call main
     j .
 "#
@@ -26,7 +25,6 @@ pub extern "C" fn main() {
     unsafe { core::ptr::write_volatile(DEFAULT_TERMINATION_ADDR as *mut u8, 1) };
 }
 
-// According to https://github.com/a16z/jolt/blob/6dcd401/jolt-sdk/macros/src/lib.rs
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
     unsafe { core::ptr::write_volatile(DEFAULT_PANIC_ADDR as *mut u8, 1) };
@@ -36,7 +34,6 @@ fn panic(_info: &PanicInfo) -> ! {
 #[global_allocator]
 static ALLOCATOR: BumpAllocator = BumpAllocator;
 
-// According to https://github.com/a16z/jolt/blob/6dcd401/jolt-platform/src/alloc.rs
 pub struct BumpAllocator;
 
 unsafe impl GlobalAlloc for BumpAllocator {
@@ -48,7 +45,7 @@ unsafe impl GlobalAlloc for BumpAllocator {
 }
 
 extern "C" {
-    static _HEAP_PTR: u8;
+    static __heap_start: u8;
 }
 
 static mut ALLOC_NEXT: usize = 0;
@@ -59,7 +56,7 @@ pub unsafe extern "C" fn sys_alloc(size: usize, align: usize) -> *mut u8 {
     let mut next = unsafe { ALLOC_NEXT };
 
     if next == 0 {
-        next = unsafe { (&_HEAP_PTR) as *const u8 as usize };
+        next = unsafe { (&__heap_start) as *const u8 as usize };
     }
 
     next = align_up(next, align);

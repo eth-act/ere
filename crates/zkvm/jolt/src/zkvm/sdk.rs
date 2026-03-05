@@ -3,9 +3,8 @@ use core::{array::from_fn, cmp::min};
 use ere_zkvm_interface::zkvm::PublicValues;
 use jolt_ark_serialize::{self as ark_serialize, CanonicalDeserialize, CanonicalSerialize};
 use jolt_common::constants::{
-    DEFAULT_MAX_INPUT_SIZE, DEFAULT_MAX_OUTPUT_SIZE, DEFAULT_MAX_TRACE_LENGTH,
-    DEFAULT_MAX_TRUSTED_ADVICE_SIZE, DEFAULT_MAX_UNTRUSTED_ADVICE_SIZE, DEFAULT_MEMORY_SIZE,
-    DEFAULT_STACK_SIZE,
+    DEFAULT_HEAP_SIZE, DEFAULT_MAX_INPUT_SIZE, DEFAULT_MAX_OUTPUT_SIZE, DEFAULT_MAX_TRACE_LENGTH,
+    DEFAULT_MAX_TRUSTED_ADVICE_SIZE, DEFAULT_MAX_UNTRUSTED_ADVICE_SIZE, DEFAULT_STACK_SIZE,
 };
 use jolt_sdk::{
     F, JoltDevice, JoltProverPreprocessing, JoltSharedPreprocessing, JoltVerifierPreprocessing,
@@ -27,7 +26,7 @@ pub struct JoltConfig {
     max_untrusted_advice_size: u64,
     max_output_size: u64,
     stack_size: u64,
-    memory_size: u64,
+    heap_size: u64,
     max_trace_length: u64,
 }
 
@@ -40,7 +39,7 @@ impl JoltConfig {
             ("JOLT_MAX_UNTRUSTED_ADVICE_SIZE", DEFAULT_MAX_UNTRUSTED_ADVICE_SIZE),
             ("JOLT_MAX_OUTPUT_SIZE",           DEFAULT_MAX_OUTPUT_SIZE),
             ("JOLT_STACK_SIZE",                DEFAULT_STACK_SIZE),
-            ("JOLT_MEMORY_SIZE",               DEFAULT_MEMORY_SIZE),
+            ("JOLT_HEAP_SIZE",                 DEFAULT_HEAP_SIZE),
             ("JOLT_MAX_TRACE_LENGTH",          DEFAULT_MAX_TRACE_LENGTH),
         ];
         let [
@@ -49,7 +48,7 @@ impl JoltConfig {
             max_untrusted_advice_size,
             max_output_size,
             stack_size,
-            memory_size,
+            heap_size,
             max_trace_length,
         ] = envs.map(|(key, default)| {
             env::var(key)
@@ -63,7 +62,7 @@ impl JoltConfig {
             max_untrusted_advice_size,
             max_output_size,
             stack_size,
-            memory_size,
+            heap_size,
             max_trace_length,
         }
     }
@@ -85,7 +84,7 @@ impl JoltSdk {
             max_untrusted_advice_size: config.max_untrusted_advice_size,
             max_output_size: config.max_output_size,
             stack_size: config.stack_size,
-            memory_size: config.memory_size,
+            heap_size: config.heap_size,
             program_size: Some(program_size),
         };
         let memory_layout = MemoryLayout::new(&memory_config);
@@ -112,13 +111,14 @@ impl JoltSdk {
         // Use untrusted advice (aka private input) instead of input of Jolt device,
         // which is public to verifier.
         let untrusted_advice = input;
-        let (trace_iter, materialized_trace, _memory, io) = trace(
+        let (trace_iter, materialized_trace, _memory, io, _advice_tape) = trace(
             &self.elf,
             None,
             &[],
             untrusted_advice,
             &[],
             &self.memory_config,
+            None,
         );
         if io.panic {
             return Err(Error::ExecutionPanic);
@@ -138,6 +138,7 @@ impl JoltSdk {
             &[],
             untrusted_advice,
             &[],
+            None,
             None,
             None,
         );

@@ -16,8 +16,8 @@ jolt-sdk.workspace = true
 ere-platform-trait.workspace = true
 
 [features]
-default = ["jolt-sdk/default"]
-guest-std = ["jolt-sdk/guest-std"]
+default = ["jolt-sdk/default", "jolt-common/std"]
+guest-std = ["jolt-sdk/guest-std", "jolt-common/std"]
 
 [lints]
 workspace = true

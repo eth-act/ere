@@ -1,22 +1,15 @@
 use crate::{compiler::Error, program::JoltProgram};
 use ere_compile_utils::CargoBuildCmd;
 use ere_zkvm_interface::compiler::Compiler;
-use jolt_common::constants::{
-    DEFAULT_MEMORY_SIZE, DEFAULT_STACK_SIZE, EMULATOR_MEMORY_CAPACITY, STACK_CANARY_SIZE,
-};
 use std::{env, path::Path};
 
 const TARGET_TRIPLE: &str = "riscv64imac-unknown-none-elf";
-// According to https://github.com/a16z/jolt/blob/6dcd401/jolt-core/src/host/program.rs#L96
+// According to https://github.com/a16z/jolt/blob/35d46f5/jolt-core/src/host/program.rs#L96
 const RUSTFLAGS: &[&str] = &[
     "-C",
     "passes=lower-atomic",
     "-C",
     "panic=abort",
-    "-C",
-    "strip=symbols",
-    "-C",
-    "opt-level=z",
     "--cfg",
     "getrandom_backend=\"custom\"",
 ];
@@ -25,15 +18,7 @@ const CARGO_BUILD_OPTIONS: &[&str] = &[
     "-Zbuild-std=core,alloc",
 ];
 
-const LINKER_SCRIPT_TEMPLATE: &str = include_str!("rust_rv64imac/template.ld");
-
-fn make_linker_script() -> String {
-    LINKER_SCRIPT_TEMPLATE
-        .replace("{EMULATOR_MEMORY}", &EMULATOR_MEMORY_CAPACITY.to_string())
-        .replace("{STACK_CANARY}", &STACK_CANARY_SIZE.to_string())
-        .replace("{MEMORY_SIZE}", &DEFAULT_MEMORY_SIZE.to_string())
-        .replace("{STACK_SIZE}", &DEFAULT_STACK_SIZE.to_string())
-}
+const LINKER_SCRIPT: &str = include_str!("rust_rv64imac/link.x");
 
 /// Compiler for Rust guest program to RV64IMAC architecture.
 pub struct RustRv64imac;
@@ -46,7 +31,7 @@ impl Compiler for RustRv64imac {
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
         let toolchain = env::var("ERE_RUST_TOOLCHAIN").unwrap_or_else(|_| "nightly".into());
         let elf = CargoBuildCmd::new()
-            .linker_script(Some(make_linker_script()))
+            .linker_script(Some(LINKER_SCRIPT))
             .toolchain(toolchain)
             .build_options(CARGO_BUILD_OPTIONS)
             .rustflags(RUSTFLAGS)
