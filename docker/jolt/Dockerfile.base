@@ -7,6 +7,7 @@ FROM $BASE_IMAGE
 
 # Set default toolchain to 1.88.
 RUN rustup default 1.88
+RUN rustup component add rust-src --toolchain 1.88
 
 # Copy the Jolt SDK (CLI) installer script from the workspace context
 COPY --chmod=755 scripts/sdk_installers/install_jolt_sdk.sh /tmp/install_jolt_sdk.sh
