@@ -1,4 +1,4 @@
-/* Copied and modified from https://github.com/a16z/jolt/blob/35d46f5486769528104a91ac076d7dbc547b5c93/src/linker.ld.template */
+/* Copied and modified from https://github.com/a16z/jolt/blob/2e05fe883920054df2ee3a6df8f85c2caba77c99/src/linker.ld.template */
 
 OUTPUT_ARCH(riscv)
 ENTRY(_start)

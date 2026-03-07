@@ -33,7 +33,6 @@ impl Compiler for RustRv64imacCustomized {
         // Note that if this fails, it will panic, hence we need to catch it.
         let elf_path = std::panic::catch_unwind(|| {
             let mut program = Program::new(package_name);
-            program.set_std(true);
             program.build(&tempdir.path().to_string_lossy());
             program.elf.unwrap()
         })
