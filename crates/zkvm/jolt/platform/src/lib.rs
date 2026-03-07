@@ -12,7 +12,7 @@ use jolt_common::jolt_device::{MemoryConfig, MemoryLayout};
 pub use ere_platform_trait::{Digest, OutputHashedPlatform, Platform};
 pub use jolt_sdk as jolt;
 
-// According to https://github.com/a16z/jolt/blob/35d46f5/common/src/jolt_device.rs
+// According to https://github.com/a16z/jolt/blob/cddd96fe/common/src/jolt_device.rs
 pub trait JoltMemoryConfig {
     const MAX_INPUT_SIZE: u64;
     const MAX_TRUSTED_ADVICE_SIZE: u64;
@@ -79,7 +79,5 @@ impl<C: JoltMemoryConfig> Platform for JoltPlatform<C> {
         output_slice[4..].copy_from_slice(output);
     }
 
-    fn print(message: &str) {
-        jolt::puts(message);
-    }
+    fn print(_message: &str) {}
 }

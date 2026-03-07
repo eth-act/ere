@@ -7,8 +7,9 @@ use jolt_common::constants::{
     DEFAULT_MAX_TRUSTED_ADVICE_SIZE, DEFAULT_MAX_UNTRUSTED_ADVICE_SIZE, DEFAULT_STACK_SIZE,
 };
 use jolt_sdk::{
-    F, JoltDevice, JoltProverPreprocessing, JoltSharedPreprocessing, JoltVerifierPreprocessing,
-    MemoryConfig, MemoryLayout, PCS, RV64IMACProof, RV64IMACProver, RV64IMACVerifier,
+    Curve, F, JoltDevice, JoltProverPreprocessing, JoltSharedPreprocessing,
+    JoltVerifierPreprocessing, MemoryConfig, MemoryLayout, PCS, RV64IMACProof, RV64IMACProver,
+    RV64IMACVerifier,
     guest::program::{decode, trace},
 };
 use std::env;
@@ -71,8 +72,8 @@ impl JoltConfig {
 pub struct JoltSdk {
     elf: Vec<u8>,
     memory_config: MemoryConfig,
-    pk: JoltProverPreprocessing<F, PCS>,
-    vk: JoltVerifierPreprocessing<F, PCS>,
+    pk: JoltProverPreprocessing<F, Curve, PCS>,
+    vk: JoltVerifierPreprocessing<F, Curve, PCS>,
 }
 
 impl JoltSdk {

@@ -93,12 +93,12 @@ airbender_riscv_common = { git = "https://github.com/matter-labs/zksync-airbende
 
 # Jolt dependencies
 jolt-ark-serialize = { git = "https://github.com/a16z/arkworks-algebra", package = "ark-serialize", branch = "dev/twist-shout" }
-jolt-common = { git = "https://github.com/a16z/jolt.git", package = "common", rev = "35d46f5", default-features = false }
-jolt-core = { git = "https://github.com/a16z/jolt.git", rev = "35d46f5" }
-jolt-sdk = { git = "https://github.com/a16z/jolt.git", rev = "35d46f5", default-features = false }
-jolt-inlines-keccak256 = { git = "https://github.com/a16z/jolt.git", rev = "35d46f5", features = ["host"] }
-jolt-inlines-secp256k1 = { git = "https://github.com/a16z/jolt.git", rev = "35d46f5", features = ["host"] }
-jolt-inlines-sha2 = { git = "https://github.com/a16z/jolt.git", rev = "35d46f5", features = ["host"] }
+jolt-common = { git = "https://github.com/a16z/jolt.git", package = "common", rev = "cddd96fe", default-features = false }
+jolt-core = { git = "https://github.com/a16z/jolt.git", rev = "cddd96fe" }
+jolt-sdk = { git = "https://github.com/a16z/jolt.git", rev = "cddd96fe", default-features = false }
+jolt-inlines-keccak256 = { git = "https://github.com/a16z/jolt.git", rev = "cddd96fe", features = ["host"] }
+jolt-inlines-secp256k1 = { git = "https://github.com/a16z/jolt.git", rev = "cddd96fe", features = ["host"] }
+jolt-inlines-sha2 = { git = "https://github.com/a16z/jolt.git", rev = "cddd96fe", features = ["host"] }
 
 # Miden dependencies
 miden-assembly = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.21.0" }
