@@ -14,7 +14,7 @@ thiserror.workspace = true
 # Jolt dependencies
 jolt-ark-serialize = { workspace = true, features = ["derive"] }
 jolt-common.workspace = true
-jolt-core = { workspace = true, features = ["zk"] }
+jolt-core = { workspace = true, features = ["host", "zk"] }
 jolt-sdk = { workspace = true, features = ["host", "zk"], optional = true }
 jolt-inlines-keccak256 = { workspace = true, optional = true }
 jolt-inlines-secp256k1 = { workspace = true, optional = true }
