@@ -1,7 +1,7 @@
 use crate::CommonError;
 use cargo_metadata::{Metadata, MetadataCommand};
 use std::{
-    fs, iter,
+    fs, io, iter,
     path::{Path, PathBuf},
     process::Command,
     sync::Mutex,
@@ -228,6 +228,29 @@ pub fn rustc_path(toolchain: &str) -> Result<PathBuf, CommonError> {
     )
 }
 
+/// Returns the active toolchain.
+pub fn rustup_active_toolchain() -> Result<String, CommonError> {
+    let mut cmd = Command::new("rustup");
+    let output = cmd
+        .args(["show", "active-toolchain"])
+        .output()
+        .map_err(|err| CommonError::command(&cmd, err))?;
+
+    if !output.status.success() {
+        return Err(CommonError::command_exit_non_zero(
+            &cmd,
+            output.status,
+            Some(&output),
+        ));
+    }
+
+    String::from_utf8_lossy(&output.stdout)
+        .split(' ')
+        .next()
+        .map(ToString::to_string)
+        .ok_or_else(|| CommonError::command(&cmd, io::Error::other("missing active toolchain")))
+}
+
 /// Install `rust-src` for the given `toolchain` if not found.
 pub fn rustup_add_rust_src(toolchain: &str) -> Result<(), CommonError> {
     rustup_add_components(toolchain, ["rust-src"])
@@ -246,6 +269,29 @@ pub fn rustup_add_components(
     let output = cmd
         .args([&plus_toolchain(toolchain), "component", "add"])
         .args(components.into_iter().map(|comp| comp.to_string()))
+        .output()
+        .map_err(|err| CommonError::command(&cmd, err))?;
+
+    if !output.status.success() {
+        return Err(CommonError::command_exit_non_zero(
+            &cmd,
+            output.status,
+            Some(&output),
+        ));
+    }
+
+    Ok(())
+}
+
+/// Install `target` for the given `toolchain` if not found.
+pub fn rustup_add_target(toolchain: &str, target: impl AsRef<str>) -> Result<(), CommonError> {
+    static LOCK: Mutex<()> = Mutex::new(());
+
+    let _guard = LOCK.lock().unwrap_or_else(|err| err.into_inner());
+
+    let mut cmd = Command::new("rustup");
+    let output = cmd
+        .args([&plus_toolchain(toolchain), "target", "add", target.as_ref()])
         .output()
         .map_err(|err| CommonError::command(&cmd, err))?;
 

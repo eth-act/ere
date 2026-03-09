@@ -176,7 +176,7 @@ OutputHashedPlatform::<OpenVMPlatform, Sha256>::write_whole_output(&large_output
 | zkVM      | Version                                                                | GPU |
 | --------- | ---------------------------------------------------------------------- | --- |
 | Airbender | [`0.5.2`](https://github.com/matter-labs/zksync-airbender/tree/v0.5.2) | Yes |
-| Jolt      | [`35d46f5`](https://github.com/a16z/jolt/tree/35d46f5)                 | No  |
+| Jolt      | [`2e05fe88`](https://github.com/a16z/jolt/tree/2e05fe88)               | No  |
 | Miden     | [`0.21.0`](https://github.com/0xMiden/miden-vm/tree/v0.21.0)           | No  |
 | Nexus     | [`0.3.6`](https://github.com/nexus-xyz/nexus-zkvm/tree/v0.3.6)         | No  |
 | OpenVM    | [`1.4.3`](https://github.com/openvm-org/openvm/tree/v1.4.3)            | Yes |

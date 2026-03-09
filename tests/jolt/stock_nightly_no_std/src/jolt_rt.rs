@@ -3,7 +3,7 @@ use core::{
     panic::PanicInfo,
 };
 
-// According to https://github.com/a16z/jolt/blob/35d46f5/common/src/jolt_device.rs
+// According to https://github.com/a16z/jolt/blob/2e05fe88/common/src/jolt_device.rs
 const DEFAULT_TERMINATION_ADDR: usize = 0x7FFFC008;
 const DEFAULT_PANIC_ADDR: usize = 0x7FFFC000;
 
