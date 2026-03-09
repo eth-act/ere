@@ -1,9 +1,11 @@
 use crate::{compiler::Error, program::JoltProgram};
-use ere_compile_utils::{CommonError, cargo_metadata};
+use ere_compile_utils::{CommonError, cargo_metadata, rustup_active_toolchain, rustup_add_target};
 use ere_zkvm_interface::compiler::Compiler;
 use jolt_core::host::Program;
 use std::{env::set_current_dir, fs, path::Path};
 use tempfile::tempdir;
+
+const TARGET: &str = "riscv64imac-unknown-none-elf";
 
 /// Compiler for Rust guest program to RV64IMAC architecture, using customized
 /// Rust toolchain of Jolt.
@@ -15,6 +17,8 @@ impl Compiler for RustRv64imacCustomized {
     type Program = JoltProgram;
 
     fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
+        rustup_add_target(&rustup_active_toolchain()?, TARGET)?;
+
         let guest_directory = guest_directory
             .canonicalize()
             .map_err(|err| CommonError::canonicalize(guest_directory, err))?;

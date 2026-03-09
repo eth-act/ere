@@ -28,7 +28,7 @@ ensure_tool_installed "rustup" "to manage Rust toolchains (though Jolt uses defa
 ensure_tool_installed "git" "to install Jolt from a git repository"
 ensure_tool_installed "cargo" "to build and install Rust packages"
 
-JOLT_VERSION_TAG="35d46f5"
+JOLT_VERSION_TAG="2e05fe88"
 
 # Install Jolt CLI using cargo install with +nightly
 # This installs the 'jolt' binary directly to $HOME/.cargo/bin
