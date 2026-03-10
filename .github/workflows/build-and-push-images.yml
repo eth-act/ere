@@ -36,13 +36,10 @@ jobs:
         zkvm:
           - airbender
           - jolt
-          - miden
-          - nexus
           - openvm
           - pico
           - risc0
           - sp1
-          - ziren
           - zisk
     steps:
       - name: Checkout repository

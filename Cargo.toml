@@ -8,9 +8,6 @@ members = [
     "crates/zkvm/airbender/platform",
     "crates/zkvm/jolt",
     "crates/zkvm/jolt/platform",
-    "crates/zkvm/miden",
-    "crates/zkvm/nexus",
-    "crates/zkvm/nexus/platform",
     "crates/zkvm/openvm",
     "crates/zkvm/openvm/platform",
     "crates/zkvm/pico",
@@ -19,8 +16,6 @@ members = [
     "crates/zkvm/risc0/platform",
     "crates/zkvm/sp1",
     "crates/zkvm/sp1/platform",
-    "crates/zkvm/ziren",
-    "crates/zkvm/ziren/platform",
     "crates/zkvm/zisk",
     "crates/zkvm/zisk/platform",
     # Dockerized zkVM
@@ -100,20 +95,6 @@ jolt-inlines-keccak256 = { git = "https://github.com/a16z/jolt.git", rev = "2e05
 jolt-inlines-secp256k1 = { git = "https://github.com/a16z/jolt.git", rev = "2e05fe88", features = ["host"] }
 jolt-inlines-sha2 = { git = "https://github.com/a16z/jolt.git", rev = "2e05fe88", features = ["host"] }
 
-# Miden dependencies
-miden-assembly = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.21.0" }
-miden-core = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.21.0" }
-miden-processor = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.21.0" }
-miden-prover = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.21.0" }
-miden-core-lib = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.21.0" }
-miden-verifier = { git = "https://github.com/0xPolygonMiden/miden-vm.git", tag = "v0.21.0" }
-
-# Nexus dependencies
-nexus-core = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.6" }
-nexus-sdk = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.6" }
-nexus-vm = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.6" }
-nexus-vm-prover = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.6" }
-nexus-rt = { git = "https://github.com/nexus-xyz/nexus-zkvm.git", tag = "v0.3.6", default-features = false }
 
 # OpenVM dependencies
 openvm-build = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.3" }
@@ -144,9 +125,6 @@ sp1-sdk = "6.0.1"
 sp1-p3-field = { version = "0.3.2-succinct", package = "p3-field" }
 sp1-zkvm = { version = "6.0.1", default-features = false }
 
-# Ziren dependencies
-zkm-sdk = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.2.4" }
-zkm-zkvm = { git = "https://github.com/ProjectZKM/Ziren.git", tag = "v1.2.4", default-features = false }
 
 # ZisK dependencies
 ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.15.0" }
@@ -159,23 +137,18 @@ ere-platform-trait = { path = "crates/zkvm-interface/platform" }
 
 ere-airbender = { path = "crates/zkvm/airbender", default-features = false }
 ere-jolt = { path = "crates/zkvm/jolt", default-features = false }
-ere-miden = { path = "crates/zkvm/miden", default-features = false }
-ere-nexus = { path = "crates/zkvm/nexus", default-features = false }
 ere-openvm = { path = "crates/zkvm/openvm", default-features = false }
 ere-pico = { path = "crates/zkvm/pico", default-features = false }
 ere-risc0 = { path = "crates/zkvm/risc0", default-features = false }
 ere-sp1 = { path = "crates/zkvm/sp1", default-features = false }
-ere-ziren = { path = "crates/zkvm/ziren", default-features = false }
 ere-zisk = { path = "crates/zkvm/zisk", default-features = false }
 
 ere-platform-airbender = { path = "crates/zkvm/airbender/platform" }
 ere-platform-jolt = { path = "crates/zkvm/jolt/platform" }
-ere-platform-nexus = { path = "crates/zkvm/nexus/platform" }
 ere-platform-openvm = { path = "crates/zkvm/openvm/platform" }
 ere-platform-pico = { path = "crates/zkvm/pico/platform" }
 ere-platform-risc0 = { path = "crates/zkvm/risc0/platform" }
 ere-platform-sp1 = { path = "crates/zkvm/sp1/platform" }
-ere-platform-ziren = { path = "crates/zkvm/ziren/platform" }
 ere-platform-zisk = { path = "crates/zkvm/zisk/platform" }
 
 ere-dockerized = { path = "crates/dockerized" }

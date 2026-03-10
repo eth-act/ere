@@ -239,16 +239,6 @@ pub(crate) mod test {
         test_reproducible_elf!(Jolt, Rust, "stock_nightly_no_std");
     }
 
-    mod miden {
-        test_compile!(Miden, MidenAsm, "fib");
-        test_reproducible_elf!(Miden, MidenAsm, "fib");
-    }
-
-    mod nexus {
-        test_compile!(Nexus, Rust, "basic");
-        test_reproducible_elf!(Nexus, Rust, "basic");
-    }
-
     mod openvm {
         test_compile!(OpenVM, RustCustomized, "basic");
         test_compile!(OpenVM, Rust, "stock_nightly_no_std");
@@ -275,11 +265,6 @@ pub(crate) mod test {
         test_compile!(SP1, Rust, "stock_nightly_no_std");
         test_reproducible_elf!(SP1, RustCustomized, "basic");
         test_reproducible_elf!(SP1, Rust, "stock_nightly_no_std");
-    }
-
-    mod ziren {
-        test_compile!(Ziren, RustCustomized, "basic");
-        test_reproducible_elf!(Ziren, RustCustomized, "basic");
     }
 
     mod zisk {

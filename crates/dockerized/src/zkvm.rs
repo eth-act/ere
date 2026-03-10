@@ -552,20 +552,6 @@ mod test {
         );
     }
 
-    mod nexus {
-        use super::*;
-        test!(
-            Nexus,
-            Rust,
-            "basic",
-            [BasicProgram::<BincodeLegacy>::valid_test_case()],
-            [
-                Input::new(),
-                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
-            ]
-        );
-    }
-
     mod openvm {
         use super::*;
         test!(
@@ -612,20 +598,6 @@ mod test {
         use super::*;
         test!(
             SP1,
-            RustCustomized,
-            "basic",
-            [BasicProgram::<BincodeLegacy>::valid_test_case()],
-            [
-                Input::new(),
-                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
-            ]
-        );
-    }
-
-    mod ziren {
-        use super::*;
-        test!(
-            Ziren,
             RustCustomized,
             "basic",
             [BasicProgram::<BincodeLegacy>::valid_test_case()],
