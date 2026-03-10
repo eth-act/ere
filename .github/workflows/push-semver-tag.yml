@@ -40,13 +40,10 @@ jobs:
         include:
           - { zkvm: airbender, cuda: true , cluster: false }
           - { zkvm: jolt,      cuda: false, cluster: false }
-          - { zkvm: miden,     cuda: false, cluster: false }
-          - { zkvm: nexus,     cuda: false, cluster: false }
           - { zkvm: openvm,    cuda: true , cluster: false }
           - { zkvm: pico,      cuda: false, cluster: false }
           - { zkvm: risc0,     cuda: true , cluster: false }
           - { zkvm: sp1,       cuda: true , cluster: false }
-          - { zkvm: ziren,     cuda: false, cluster: false }
           - { zkvm: zisk,      cuda: true , cluster: true  }
     steps:
       - name: Log in to GitHub Container Registry

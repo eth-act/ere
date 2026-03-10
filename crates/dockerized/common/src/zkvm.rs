@@ -31,13 +31,10 @@ use strum::{Display, EnumIter, EnumString, IntoEnumIterator, IntoStaticStr};
 pub enum zkVMKind {
     Airbender,
     Jolt,
-    Miden,
-    Nexus,
     OpenVM,
     Pico,
     Risc0,
     SP1,
-    Ziren,
     Zisk,
 }
 
@@ -93,13 +90,10 @@ mod test {
         for (ss, kind) in [
             (["airbender", "Airbender"], zkVMKind::Airbender),
             (["jolt", "Jolt"], zkVMKind::Jolt),
-            (["miden", "Miden"], zkVMKind::Miden),
-            (["nexus", "Nexus"], zkVMKind::Nexus),
             (["openvm", "OpenVM"], zkVMKind::OpenVM),
             (["pico", "Pico"], zkVMKind::Pico),
             (["risc0", "Risc0"], zkVMKind::Risc0),
             (["sp1", "SP1"], zkVMKind::SP1),
-            (["ziren", "Ziren"], zkVMKind::Ziren),
             (["zisk", "Zisk"], zkVMKind::Zisk),
         ] {
             ss.iter().for_each(|s| assert_eq!(s.parse(), Ok(kind)));
@@ -111,7 +105,7 @@ mod test {
         assert_eq!(
             ParseError::from("xxx").to_string(),
             "Unsupported zkVM kind `xxx`, expect one of \
-                        [airbender, jolt, miden, nexus, openvm, pico, risc0, sp1, ziren, zisk]"
+                        [airbender, jolt, openvm, pico, risc0, sp1, zisk]"
                 .to_string()
         );
     }

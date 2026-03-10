@@ -50,23 +50,18 @@ This repository contains the following crates:
 - Per-zkVM implementations for [`ere-zkvm-interface`] (host)
   - [`ere-airbender`]
   - [`ere-jolt`]
-  - [`ere-miden`]
-  - [`ere-nexus`]
   - [`ere-openvm`]
   - [`ere-pico`]
   - [`ere-risc0`]
   - [`ere-sp1`]
-  - [`ere-ziren`]
   - [`ere-zisk`]
 - Per-zkVM implementations for [`ere-platform-trait`] (guest)
   - [`ere-platform-airbender`]
   - [`ere-platform-jolt`]
-  - [`ere-platform-nexus`]
   - [`ere-platform-openvm`]
   - [`ere-platform-pico`]
   - [`ere-platform-risc0`]
   - [`ere-platform-sp1`]
-  - [`ere-platform-ziren`]
   - [`ere-platform-zisk`]
 - [`ere-dockerized`] - Docker wrapper implementation for [`ere-zkvm-interface`] of all zkVMs
 - [`ere-io`] - Serialization utilities for host/guest IO communication
@@ -83,9 +78,6 @@ This repository contains the following crates:
 [`ere-platform-airbender`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/airbender/platform
 [`ere-jolt`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/jolt
 [`ere-platform-jolt`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/jolt/platform
-[`ere-miden`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/miden
-[`ere-nexus`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/nexus
-[`ere-platform-nexus`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/nexus/platform
 [`ere-openvm`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/openvm
 [`ere-platform-openvm`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/openvm/platform
 [`ere-pico`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/pico
@@ -94,8 +86,6 @@ This repository contains the following crates:
 [`ere-platform-risc0`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/risc0/platform
 [`ere-sp1`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/sp1
 [`ere-platform-sp1`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/sp1/platform
-[`ere-ziren`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/ziren
-[`ere-platform-ziren`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/ziren/platform
 [`ere-zisk`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/zisk
 [`ere-platform-zisk`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/zisk/platform
 [`ere-dockerized`]: https://github.com/eth-act/ere/tree/master/crates/dockerized
@@ -156,13 +146,10 @@ Different zkVMs handles public values in different approaches:
 | --------- | ------------------------- | ------------------------------- |
 | Airbender | 32 bytes                  | Padded to 32 bytes with zeros   |
 | Jolt      | 4096 bytes (Configurable) |                                 |
-| Miden     | 16 words                  | Word = Goldilocks field element |
-| Nexus     | unlimited                 | Size configured automatically   |
 | OpenVM    | 32 bytes                  | Padded to 32 bytes with zeros   |
 | Pico      | unlimited                 | Hashed internally               |
 | Risc0     | unlimited                 | Hashed internally               |
 | SP1       | unlimited                 | Hashed internally               |
-| Ziren     | unlimited                 | Hashed internally               |
 | Zisk      | 256 bytes                 |                                 |
 
 For zkVMs with size limits on public values, `OutputHashedPlatform<P, D>` serves as a wrapper that hashes outputs before calling the inner `P::write_whole_output`. This enables the same guest program to run across all zkVMs regardless of their size constraints:
@@ -177,13 +164,10 @@ OutputHashedPlatform::<OpenVMPlatform, Sha256>::write_whole_output(&large_output
 | --------- | ---------------------------------------------------------------------- | --- |
 | Airbender | [`0.5.2`](https://github.com/matter-labs/zksync-airbender/tree/v0.5.2) | Yes |
 | Jolt      | [`2e05fe88`](https://github.com/a16z/jolt/tree/2e05fe88)               | No  |
-| Miden     | [`0.21.0`](https://github.com/0xMiden/miden-vm/tree/v0.21.0)           | No  |
-| Nexus     | [`0.3.6`](https://github.com/nexus-xyz/nexus-zkvm/tree/v0.3.6)         | No  |
 | OpenVM    | [`1.4.3`](https://github.com/openvm-org/openvm/tree/v1.4.3)            | Yes |
 | Pico      | [`1.3.0`](https://github.com/brevis-network/pico/tree/v1.3.0)          | No  |
 | Risc0     | [`3.0.4`](https://github.com/risc0/risc0/tree/v3.0.4)                  | Yes |
 | SP1       | [`6.0.1`](https://github.com/succinctlabs/sp1/tree/v6.0.1)             | Yes |
-| Ziren     | [`1.2.4`](https://github.com/ProjectZKM/Ziren/tree/v1.2.4)             | No  |
 | Zisk      | [`0.15.0`](https://github.com/0xPolygonHermez/zisk/tree/v0.15.0)       | Yes |
 
 ## Examples

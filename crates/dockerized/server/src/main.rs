@@ -23,13 +23,10 @@ const _: () = {
         assert!(
             (cfg!(feature = "airbender") as u8
                 + cfg!(feature = "jolt") as u8
-                + cfg!(feature = "miden") as u8
-                + cfg!(feature = "nexus") as u8
                 + cfg!(feature = "openvm") as u8
                 + cfg!(feature = "pico") as u8
                 + cfg!(feature = "risc0") as u8
                 + cfg!(feature = "sp1") as u8
-                + cfg!(feature = "ziren") as u8
                 + cfg!(feature = "zisk") as u8)
                 == 1,
             "Exactly one zkVM feature must be enabled for `ere-server`"
@@ -130,12 +127,6 @@ fn construct_zkvm(program: Vec<u8>, resource: ProverResource) -> Result<impl zkV
     #[cfg(feature = "jolt")]
     let zkvm = ere_jolt::zkvm::EreJolt::new(program, resource);
 
-    #[cfg(feature = "miden")]
-    let zkvm = ere_miden::zkvm::EreMiden::new(program, resource);
-
-    #[cfg(feature = "nexus")]
-    let zkvm = ere_nexus::zkvm::EreNexus::new(program, resource);
-
     #[cfg(feature = "openvm")]
     let zkvm = ere_openvm::zkvm::EreOpenVM::new(program, resource);
 
@@ -147,9 +138,6 @@ fn construct_zkvm(program: Vec<u8>, resource: ProverResource) -> Result<impl zkV
 
     #[cfg(feature = "sp1")]
     let zkvm = ere_sp1::zkvm::EreSP1::new(program, resource);
-
-    #[cfg(feature = "ziren")]
-    let zkvm = ere_ziren::zkvm::EreZiren::new(program, resource);
 
     #[cfg(feature = "zisk")]
     let zkvm = ere_zisk::zkvm::EreZisk::new(program, resource);

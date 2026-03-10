@@ -11,13 +11,10 @@ const _: () = {
     assert!(
         (cfg!(feature = "airbender") as u8
             + cfg!(feature = "jolt") as u8
-            + cfg!(feature = "miden") as u8
-            + cfg!(feature = "nexus") as u8
             + cfg!(feature = "openvm") as u8
             + cfg!(feature = "pico") as u8
             + cfg!(feature = "risc0") as u8
             + cfg!(feature = "sp1") as u8
-            + cfg!(feature = "ziren") as u8
             + cfg!(feature = "zisk") as u8)
             == 1,
         "Exactly one zkVM feature must be enabled for `ere-compiler`"
@@ -132,36 +129,6 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> CompilationResult
         }
     };
 
-    #[cfg(feature = "miden")]
-    let result = {
-        use ere_miden::compiler::*;
-        match compiler_kind {
-            CompilerKind::MidenAsm => {
-                let program = MidenAsm.compile(&guest_dir)?;
-                (None, None, program)
-            }
-            _ => bail!(unsupported_compiler_kind_err(
-                compiler_kind,
-                [CompilerKind::MidenAsm]
-            )),
-        }
-    };
-
-    #[cfg(feature = "nexus")]
-    let result = {
-        use ere_nexus::compiler::*;
-        match compiler_kind {
-            CompilerKind::Rust | CompilerKind::RustCustomized => {
-                let program = RustRv32i.compile(&guest_dir)?;
-                (Some(program.elf().to_vec()), None, program)
-            }
-            _ => bail!(unsupported_compiler_kind_err(
-                compiler_kind,
-                [CompilerKind::Rust, CompilerKind::RustCustomized]
-            )),
-        }
-    };
-
     #[cfg(feature = "openvm")]
     let result = {
         use ere_openvm::compiler::*;
@@ -238,21 +205,6 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> CompilationResult
             _ => bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
-            )),
-        }
-    };
-
-    #[cfg(feature = "ziren")]
-    let result = {
-        use ere_ziren::compiler::*;
-        match compiler_kind {
-            CompilerKind::RustCustomized => {
-                let program = RustMips32r2Customized.compile(&guest_dir)?;
-                (Some(program.elf().to_vec()), None, program)
-            }
-            _ => bail!(unsupported_compiler_kind_err(
-                compiler_kind,
-                [CompilerKind::RustCustomized]
             )),
         }
     };

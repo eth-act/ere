@@ -22,10 +22,6 @@ jobs:
           # Skip jolt because we are using a specific revision instead of released tag
           # - zkvm: jolt
           #   crate: jolt-sdk
-          - zkvm: miden
-            crate: miden-core
-          - zkvm: nexus
-            crate: nexus-sdk
           - zkvm: openvm
             crate: openvm-sdk
           - zkvm: pico
@@ -34,8 +30,6 @@ jobs:
             crate: risc0-zkvm
           - zkvm: sp1
             crate: sp1-sdk
-          - zkvm: ziren
-            crate: zkm-sdk
           - zkvm: zisk
             crate: ziskos
     steps:

@@ -31,24 +31,18 @@ fn generate_zkvm_sdk_version_impl() {
     let [
         airbender_version,
         jolt_version,
-        miden_version,
-        nexus_version,
         openvm_version,
         pico_version,
         risc0_version,
         sp1_version,
-        ziren_version,
         zisk_version,
     ] = [
         "execution_utils",
         "jolt-sdk",
-        "miden-core",
-        "nexus-sdk",
         "openvm-sdk",
         "pico-vm",
         "risc0-zkvm",
         "sp1-sdk",
-        "zkm-sdk",
         "ziskos",
     ]
     .map(detect_sdk_version);
@@ -59,13 +53,10 @@ fn generate_zkvm_sdk_version_impl() {
         match self {{
             Self::Airbender => "{airbender_version}",
             Self::Jolt => "{jolt_version}",
-            Self::Miden => "{miden_version}",
-            Self::Nexus => "{nexus_version}",
             Self::OpenVM => "{openvm_version}",
             Self::Pico => "{pico_version}",
             Self::Risc0 => "{risc0_version}",
             Self::SP1 => "{sp1_version}",
-            Self::Ziren => "{ziren_version}",
             Self::Zisk => "{zisk_version}",
         }}
     }}
