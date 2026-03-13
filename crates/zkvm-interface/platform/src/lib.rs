@@ -1,8 +1,5 @@
 #![no_std]
 
-extern crate alloc;
-
-use alloc::vec::Vec;
 use core::{marker::PhantomData, ops::Deref};
 
 pub use digest::Digest;
@@ -108,18 +105,18 @@ where
 /// Stdin with a LE u32 length prefix.
 ///
 /// Dereferencing it returns slice to the actual data.
-pub struct LengthPrefixedStdin(Vec<u8>);
+pub struct LengthPrefixedStdin<T>(T);
 
-impl Deref for LengthPrefixedStdin {
+impl<T: Deref<Target = [u8]>> Deref for LengthPrefixedStdin<T> {
     type Target = [u8];
 
     fn deref(&self) -> &Self::Target {
-        &self.0[4..]
+        &self.0.deref()[4..]
     }
 }
 
-impl LengthPrefixedStdin {
-    pub fn new(stdin: Vec<u8>) -> Self {
+impl<T: Deref<Target = [u8]>> LengthPrefixedStdin<T> {
+    pub fn new(stdin: T) -> Self {
         assert!(
             stdin.len() >= 4,
             "stdin must have a LE u32 length prefix; use Input::with_prefixed_length(stdin) on the host side"

@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package zisk.distributed.api.v1;
+
+// ============================================================================
+// gRPC Service Definition
+// ============================================================================
+
+service ZiskDistributedApi {
+  // System status
+  rpc SystemStatus(SystemStatusRequest) returns (SystemStatusResponse);
+
+  // Launch a proof job
+  rpc LaunchProof(LaunchProofRequest) returns (LaunchProofResponse);
+
+  // Client subscription to job completion
+  rpc SubscribeToProof(SubscribeToProofRequest) returns (stream ProofStatusUpdate);
+}
+
+// ============================================================================
+// Common Types
+// ============================================================================
+
+// Standardized error response
+message ErrorResponse {
+  string code = 1;      // Error code
+  string message = 2;   // Human-readable error message
+}
+
+// ============================================================================
+// SystemStatus
+// ============================================================================
+
+message SystemStatusRequest {}
+
+message SystemStatusResponse {
+  oneof result {
+    SystemStatus status = 1;
+    ErrorResponse error = 2;
+  }
+}
+
+message SystemStatus {
+  uint32 total_workers = 1;
+  uint32 compute_capacity = 2;
+  uint32 idle_workers = 3;
+  uint32 busy_workers = 4;
+  uint32 active_jobs = 5;
+}
+
+// ============================================================================
+// LaunchProof
+// ============================================================================
+
+message LaunchProofRequest {
+  string data_id = 1;
+  uint32 compute_capacity = 2;
+  uint32 minimal_compute_capacity = 3;
+  InputMode inputs_mode = 4;
+  optional string inputs_uri = 5;
+  optional bytes input_data = 6;  // Input data sent directly from client
+  HintsMode hints_mode = 7;
+  optional string hints_uri = 8;
+  optional uint32 simulated_node = 9; // If set, indicates this is a simulated worker
+}
+
+enum InputMode {
+  INPUT_MODE_NONE = 0;  // No input provided
+  INPUT_MODE_PATH = 1;   // Input will be provided as a PATH
+  INPUT_MODE_DATA = 2;  // Input data will be sent directly
+}
+
+enum HintsMode {
+  HINTS_MODE_NONE = 0;  // No hints provided
+  HINTS_MODE_PATH = 1;   // Hints will be provided as a PATH
+  HINTS_MODE_STREAM = 2;  // Hints will be sent as a stream
+}
+
+message LaunchProofResponse {
+  oneof result {
+    string job_id = 1;
+    ErrorResponse error = 2;
+  }
+}
+
+// ============================================================================
+// SubscribeToProof
+// ============================================================================
+
+// Subscription request message
+message SubscribeToProofRequest {
+  string job_id = 1;
+}
+
+// Subscription status update (streamed to client)
+message ProofStatusUpdate {
+  string job_id = 1;
+  ProofStatusType status = 2;
+  optional FinalProof final_proof = 3;  // Present on success
+  optional ErrorResponse error = 4;      // Present on failure
+  uint64 duration_ms = 5;
+}
+
+enum ProofStatusType {
+  PROOF_STATUS_COMPLETED = 0;
+  PROOF_STATUS_FAILED = 1;
+}
+
+message FinalProof {
+  repeated uint64 values = 1;
+  uint64 executed_steps = 2;
+}
