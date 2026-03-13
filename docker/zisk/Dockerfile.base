@@ -6,9 +6,6 @@ FROM $BASE_IMAGE
 # ZisK requires Ubuntu 22.04 or higher (ere-base uses 24.04 by default).
 # We operate as root for SDK and dependency installation.
 
-# Whether to enable CUDA feature or not.
-ARG CUDA
-
 # Install ZisK system dependencies (for Ubuntu)
 # Taken from https://0xpolygonhermez.github.io/zisk/getting_started/installation.html
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -37,8 +34,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc-riscv64-unknown-elf \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Default to build for RTX 50 series
-ARG CUDA_ARCH=sm_120
 
 # Copy the ZisK SDK installer script from the workspace context
 COPY --chmod=755 scripts/sdk_installers/install_zisk_sdk.sh /tmp/install_zisk_sdk.sh

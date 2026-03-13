@@ -53,4 +53,4 @@ sp1 = ["dep:ere-sp1", "server"]
 zisk = ["dep:ere-zisk", "server"]
 
 # Cuda
-cuda = ["ere-openvm?/cuda"]
+cuda = ["ere-openvm?/cuda", "ere-zisk?/cuda"]

@@ -2,7 +2,7 @@
 
 extern crate alloc;
 
-use core::{array::from_fn, cell::UnsafeCell, hash::Hasher, ops::Deref};
+use core::{cell::UnsafeCell, hash::Hasher, ops::Deref};
 use ere_platform_trait::LengthPrefixedStdin;
 use fnv::FnvHasher;
 use ziskos::ziskos_definitions::ziskos_config::UART_ADDR;
@@ -150,7 +150,7 @@ pub struct ZiskPlatform;
 
 impl Platform for ZiskPlatform {
     fn read_whole_input() -> impl Deref<Target = [u8]> {
-        LengthPrefixedStdin::new(ziskos::read_input())
+        LengthPrefixedStdin::new(ziskos::io::read_input_slice())
     }
 
     fn write_whole_output(output: &[u8]) {
@@ -159,10 +159,7 @@ impl Platform for ZiskPlatform {
             "Maximum output size is 256 bytes, got {}",
             output.len()
         );
-        output.chunks(4).enumerate().for_each(|(idx, chunk)| {
-            let value = u32::from_le_bytes(from_fn(|i| chunk.get(i).copied().unwrap_or_default()));
-            ziskos::set_output(idx, value)
-        });
+        ziskos::io::write(output);
     }
 
     fn print(message: &str) {
