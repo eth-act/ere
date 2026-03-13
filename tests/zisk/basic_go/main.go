@@ -58,8 +58,8 @@ func compute(input BasicProgramInput) BasicProgramOutput {
 	output := BasicProgramOutput{
 		A: input.A + 1,
 		B: input.B + 1,
-		C: input.C + 1,
-		D: input.D + 1,
+		C: uint32(input.A)*input.C + 1,
+		D: uint64(input.B)*input.D + 1,
 		E: make([]byte, len(input.E)),
 	}
 	for i, b := range input.E {

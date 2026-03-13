@@ -21,8 +21,8 @@ where
         BasicProgramOutput {
             a: input.a.wrapping_add(1),
             b: input.b.wrapping_add(1),
-            c: input.c.wrapping_add(1),
-            d: input.d.wrapping_add(1),
+            c: input.c.wrapping_mul(input.a as u32).wrapping_add(1),
+            d: input.d.wrapping_mul(input.b as u64).wrapping_add(1),
             e: input.e.iter().map(|byte| byte.wrapping_add(1)).collect(),
         }
     }
