@@ -36,11 +36,6 @@ pub struct EreOpenVM {
 
 impl EreOpenVM {
     pub fn new(program: OpenVMProgram, resource: ProverResource) -> Result<Self, Error> {
-        #[cfg(not(feature = "cuda"))]
-        if resource.is_gpu() {
-            return Err(Error::CudaFeatureDisabled);
-        }
-
         if !matches!(resource, ProverResource::Cpu | ProverResource::Gpu) {
             Err(CommonError::unsupported_prover_resource_kind(
                 resource.kind(),
@@ -322,5 +317,37 @@ mod tests {
         ] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }
+
+        // Should be able to recover
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
+        run_zkvm_prove(&zkvm, &test_case);
+    }
+
+    #[cfg(feature = "cuda")]
+    #[test]
+    fn test_prove_gpu() {
+        let program = basic_program();
+        let zkvm = EreOpenVM::new(program, ProverResource::Gpu).unwrap();
+
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
+        run_zkvm_prove(&zkvm, &test_case);
+    }
+
+    #[cfg(feature = "cuda")]
+    #[test]
+    fn test_prove_invalid_test_case_gpu() {
+        let program = basic_program();
+        let zkvm = EreOpenVM::new(program, ProverResource::Gpu).unwrap();
+
+        for input in [
+            Input::new(),
+            BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
+        ] {
+            zkvm.prove(&input, ProofKind::default()).unwrap_err();
+        }
+
+        // Should be able to recover
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
+        run_zkvm_prove(&zkvm, &test_case);
     }
 }

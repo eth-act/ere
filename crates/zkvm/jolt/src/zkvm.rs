@@ -191,5 +191,9 @@ mod tests {
         ] {
             zkvm.prove(&input, ProofKind::default()).unwrap_err();
         }
+
+        // Should be able to recover
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+        run_zkvm_prove(&zkvm, &test_case);
     }
 }
