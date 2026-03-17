@@ -16,3 +16,4 @@ jobs:
     uses: ./.github/workflows/test-zkvm.yml
     with:
       zkvm: jolt
+      test_threads: 1
