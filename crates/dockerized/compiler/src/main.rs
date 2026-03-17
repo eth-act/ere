@@ -1,4 +1,4 @@
-use anyhow::{Context, Error, bail};
+use anyhow::{Context, Error};
 use clap::Parser;
 use ere_common::CompilerKind;
 use ere_zkvm_interface::compiler::Compiler;
@@ -103,7 +103,7 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> CompilationResult
                 let elf = program.elf().to_vec();
                 (Some(elf), None, program)
             }
-            _ => bail!(unsupported_compiler_kind_err(
+            _ => anyhow::bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
             )),
@@ -122,7 +122,7 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> CompilationResult
                 let program = RustRv64imacCustomized.compile(&guest_dir)?;
                 (Some(program.elf().to_vec()), None, program)
             }
-            _ => bail!(unsupported_compiler_kind_err(
+            _ => anyhow::bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
             )),
@@ -141,7 +141,7 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> CompilationResult
                 let program = RustRv32imaCustomized.compile(&guest_dir)?;
                 (Some(program.elf().to_vec()), None, program)
             }
-            _ => bail!(unsupported_compiler_kind_err(
+            _ => anyhow::bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
             )),
@@ -160,7 +160,7 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> CompilationResult
                 let program = RustRv32imaCustomized.compile(&guest_dir)?;
                 (Some(program.elf().to_vec()), None, program)
             }
-            _ => bail!(unsupported_compiler_kind_err(
+            _ => anyhow::bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
             )),
@@ -183,7 +183,7 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> CompilationResult
                 let digest = program.image_id().as_bytes().to_vec();
                 (Some(elf), Some(digest), program)
             }
-            _ => bail!(unsupported_compiler_kind_err(
+            _ => anyhow::bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
             )),
@@ -202,7 +202,7 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> CompilationResult
                 let program = RustRv64imaCustomized.compile(&guest_dir)?;
                 (Some(program.elf().to_vec()), None, program)
             }
-            _ => bail!(unsupported_compiler_kind_err(
+            _ => anyhow::bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
             )),
@@ -225,16 +225,13 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> CompilationResult
                 let program = GoCustomized.compile(&guest_dir)?;
                 (Some(program.elf().to_vec()), None, program)
             }
-            _ => bail!(unsupported_compiler_kind_err(
-                compiler_kind,
-                [CompilerKind::RustCustomized, CompilerKind::GoCustomized]
-            )),
         }
     };
 
     Ok(result)
 }
 
+#[allow(dead_code)]
 fn unsupported_compiler_kind_err(
     compiler_kind: CompilerKind,
     supported: impl IntoIterator<Item = CompilerKind>,
