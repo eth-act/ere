@@ -6,7 +6,7 @@ use blake3::Hash;
 use ere_zkvm_interface::zkvm::CommonError;
 use parking_lot::{Mutex, MutexGuard};
 use proofman_common::ParamsGPU;
-use std::{env, panic, path::PathBuf, process::Command, thread::sleep, time::Duration};
+use std::{env, fs, panic, path::PathBuf, process::Command, thread::sleep, time::Duration};
 use tempfile::tempdir;
 use tracing::info;
 use zisk_rom_setup::generate_assembly;
@@ -130,6 +130,9 @@ fn initialize(
     elf_hash: Hash,
 ) -> Result<(ZiskProver<Asm>, ZiskProgramPK), Error> {
     info!("Initializing ZisK prover...");
+
+    fs::create_dir_all(cache_dir())
+        .map_err(|err| CommonError::create_dir("cache", cache_dir(), err))?;
 
     if !assembly_files_exist(elf_hash) {
         generate_assembly(elf, ELF_NAME, &cache_dir(), false, false)

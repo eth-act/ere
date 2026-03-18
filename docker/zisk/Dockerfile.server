@@ -52,6 +52,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openmpi-common \
     libclang-dev \
     clang \
+    # Used to kill the ASM services when prover panics
+    psmisc \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy ZisK SDK
