@@ -18,7 +18,6 @@ services:
           rustup self uninstall -y
           rm -rf /root/.zisk/toolchains
           rm /root/.zisk/bin/cargo-zisk
-          rm /root/.zisk/bin/libzisk_witness.so
           rm /root/.zisk/bin/riscv2zisk
           rm /root/.zisk/bin/zisk-coordinator
           rm /root/.zisk/bin/ziskemu
@@ -36,7 +35,7 @@ services:
 
         echo "Setup complete"
     volumes:
-      - zisk_setup:/root/.zisk
+      - zisk-setup:/root/.zisk
       - ${ELF_PATH}:/app/elf:ro
     deploy:
       resources:
@@ -77,11 +76,9 @@ services:
       - "http://zisk-coordinator:50051"
       - "--elf"
       - "/app/elf"
-      - "--witness-lib"
-      - "/usr/local/bin/libzisk_witness.so"
     volumes:
       # Mount proving key
-      - zisk_setup:/root/.zisk:ro
+      - zisk-setup:/root/.zisk:ro
       # Mount ELF
       - ${ELF_PATH}:/app/elf:ro
       # Uncomment to override config
@@ -125,7 +122,7 @@ services:
   #             capabilities: [gpu]
 
 volumes:
-  zisk_setup:
+  zisk-setup:
 
 networks:
   default:

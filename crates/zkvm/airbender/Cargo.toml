@@ -30,6 +30,7 @@ ere-build-utils.workspace = true
 default = ["compiler", "zkvm"]
 compiler = ["dep:ere-compile-utils"]
 zkvm = ["dep:airbender_execution_utils"]
+cuda = []
 
 [lints]
 workspace = true

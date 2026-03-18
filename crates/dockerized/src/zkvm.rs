@@ -212,6 +212,7 @@ impl ServerContainer {
         let mut cmd = DockerRunCmd::new(server_zkvm_image(zkvm_kind, gpu))
             .rm()
             .inherit_env("RUST_LOG")
+            .inherit_env("RUST_BACKTRACE")
             .inherit_env("NO_COLOR")
             .publish(port.to_string(), port.to_string())
             .name(&name);
@@ -234,17 +235,13 @@ impl ServerContainer {
                 .option("shm-size", "32G")
                 .option("ulimit", "memlock=-1:-1")
                 .inherit_env("ERE_ZISK_SETUP_ON_INIT")
-                .inherit_env("ERE_ZISK_PORT")
                 .inherit_env("ERE_ZISK_UNLOCK_MAPPED_MEMORY")
                 .inherit_env("ERE_ZISK_MINIMAL_MEMORY")
                 .inherit_env("ERE_ZISK_PREALLOCATE")
                 .inherit_env("ERE_ZISK_SHARED_TABLES")
                 .inherit_env("ERE_ZISK_MAX_STREAMS")
                 .inherit_env("ERE_ZISK_NUMBER_THREADS_WITNESS")
-                .inherit_env("ERE_ZISK_MAX_WITNESS_STORED")
-                .inherit_env("ERE_ZISK_START_SERVER_TIMEOUT_SEC")
-                .inherit_env("ERE_ZISK_SHUTDOWN_SERVER_TIMEOUT_SEC")
-                .inherit_env("ERE_ZISK_PROVE_TIMEOUT_SEC"),
+                .inherit_env("ERE_ZISK_MAX_WITNESS_STORED"),
             _ => cmd,
         };
 
@@ -519,6 +516,11 @@ mod test {
                         matches!(err.downcast_ref::<Error>().unwrap(), Error::zkVM(_)),
                         "Expect error variant `Error::zkVM`, got {err:?}",
                     );
+                }
+
+                // Should be able to recover
+                for test_case in $valid_test_cases {
+                    run_zkvm_prove(&zkvm, &test_case);
                 }
             }
         };

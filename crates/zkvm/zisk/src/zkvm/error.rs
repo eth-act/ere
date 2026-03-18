@@ -1,5 +1,6 @@
-use crate::zkvm::sdk::RomDigest;
+use crate::zkvm::sdk::ProgramVk;
 use ere_zkvm_interface::zkvm::CommonError;
+use proofman_common::ProofmanError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -7,29 +8,53 @@ pub enum Error {
     #[error(transparent)]
     CommonError(#[from] CommonError),
 
-    // Execution
-    #[error("Total steps not found in execution report")]
-    TotalStepsNotFound,
+    // Common
+    #[error("Invalid env variable {key}, expected usize, got {value}")]
+    InvalidEnvVar { key: &'static str, value: String },
 
-    // Rom setup
-    #[error("Failed to find ROM digest in output")]
-    RomDigestNotFound,
+    #[error("Enable `cuda` feature to use `ProverResource::Gpu`")]
+    CudaFeatureDisabled,
 
-    #[error("`cargo-zisk rom-setup` failed in another thread")]
-    RomSetupFailedBefore,
+    #[error("Disable `cuda` feature to use `ProverResource::Cpu`")]
+    CudaFeatureEnabled,
 
-    // Prove
-    #[error("Server crashed")]
-    ServerCrashed,
+    // Emulator
+    #[error("ROM transpilation failed: {0}")]
+    Riscv2zisk(String),
 
-    #[error("Timeout waiting for server proving")]
-    TimeoutWaitingServerProving,
+    #[error("Emulation not terminated")]
+    EmulatorNotTerminated,
 
-    #[error("Timeout waiting for server ready")]
-    TimeoutWaitingServerReady,
+    #[error("Emulation failure")]
+    EmulatorError,
 
-    #[error("Unknown server status, stdout: {stdout}")]
-    UnknownServerStatus { stdout: String },
+    #[error("Emulator panicked: {0}")]
+    EmulatorPanic(String),
+
+    // SDK
+    #[error("Create ProofCtx failed: {0}")]
+    ProofCtx(#[source] ProofmanError),
+
+    #[error("Generate assembly failed: {0}")]
+    GenerateAssembly(String),
+
+    #[error("Compute program VK failed: {0}")]
+    ComputeProgramVk(#[source] anyhow::Error),
+
+    #[error("Invalid program VK length, expected 32, got {0}")]
+    InvalidProgramVkLength(usize),
+
+    #[error("Initialize prover failed: {0}")]
+    InitProver(#[source] anyhow::Error),
+
+    #[error("Setup prover failed: {0}")]
+    SetupProver(#[source] anyhow::Error),
+
+    #[error("Prove failed: {0}")]
+    Prove(#[source] anyhow::Error),
+
+    #[error("Prove panicked: {0}")]
+    ProvePanic(String),
 
     // Cluster
     #[error("Invalid cluster endpoint: {0}")]
@@ -44,6 +69,9 @@ pub enum Error {
     #[error("Cluster error: {0}")]
     ClusterError(String),
 
+    #[error("Invalid proof format: {0}")]
+    InvalidProofFormat(anyhow::Error),
+
     // Verify
     #[error("Invalid proof")]
     InvalidProof,
@@ -51,15 +79,9 @@ pub enum Error {
     #[error("Invalid proof size {0}, expected a multiple of 8")]
     InvalidProofSize(usize),
 
-    #[error("Invalid public value format")]
-    InvalidPublicValue,
-
-    #[error("Public values length {0}, but expected at least 6")]
-    InvalidPublicValuesLength(usize),
-
-    #[error("Unexpected ROM digest - preprocessed: {preprocessed:?}, proved: {proved:?}")]
-    UnexpectedRomDigest {
-        preprocessed: RomDigest,
-        proved: RomDigest,
+    #[error("Unexpected program VK - preprocessed: {preprocessed:?}, proved: {proved:?}")]
+    UnexpectedProgramVk {
+        preprocessed: ProgramVk,
+        proved: ProgramVk,
     },
 }

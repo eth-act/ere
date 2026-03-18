@@ -7,10 +7,11 @@ use std::time::Duration;
 use tonic::transport::Channel;
 use tracing::debug;
 use zisk_distributed_grpc_api::{
-    ErrorResponse, InputMode, LaunchProofRequest, ProofStatusType, SubscribeToProofRequest,
-    SystemStatusRequest, launch_proof_response, system_status_response,
+    ErrorResponse, HintsMode, InputMode, LaunchProofRequest, ProofStatusType,
+    SubscribeToProofRequest, SystemStatusRequest, launch_proof_response, system_status_response,
     zisk_distributed_api_client::ZiskDistributedApiClient,
 };
+use zisk_sdk::ZiskProofWithPublicValues;
 
 /// Wrapper for the ZisK cluster client.
 ///
@@ -27,14 +28,17 @@ impl ClusterClient {
     }
 
     /// Sync wrapper for [`Self::prove_async`].
-    pub fn prove(&self, input: &[u8]) -> Result<(Vec<u8>, Duration), Error> {
+    pub fn prove(&self, input: &[u8]) -> Result<(ZiskProofWithPublicValues, Duration), Error> {
         block_on(self.prove_async(input))
     }
 
     /// Send proof request to cluster and wait for completion.
     ///
-    /// Returns the proof and proving time reported by the cluster.
-    async fn prove_async(&self, input: &[u8]) -> Result<(Vec<u8>, Duration), Error> {
+    /// Returns the proof with public values and proving time reported by the cluster.
+    async fn prove_async(
+        &self,
+        input: &[u8],
+    ) -> Result<(ZiskProofWithPublicValues, Duration), Error> {
         let mut client = self.client.clone();
 
         // Check system status to get available compute capacity
@@ -80,9 +84,12 @@ impl ClusterClient {
         let launch_request = LaunchProofRequest {
             data_id,
             compute_capacity,
-            input_mode: InputMode::Data.into(),
-            input_path: None,
+            minimal_compute_capacity: compute_capacity,
+            inputs_mode: InputMode::Data.into(),
+            inputs_uri: None,
             input_data: Some(input.to_vec()),
+            hints_mode: HintsMode::None.into(),
+            hints_uri: None,
             simulated_node: None,
         };
 
@@ -120,16 +127,19 @@ impl ClusterClient {
             match ProofStatusType::try_from(update.status) {
                 Ok(ProofStatusType::ProofStatusCompleted) => match update.final_proof {
                     Some(final_proof) => {
-                        let proof = bytemuck::cast_slice(&final_proof.values).to_vec();
+                        let proof_with_publics = ZiskProofWithPublicValues::new_from_vadcop_proof(
+                            &final_proof.values,
+                            false,
+                        )
+                        .map_err(Error::InvalidProofFormat)?;
                         let proving_time = Duration::from_millis(update.duration_ms);
 
                         debug!(
-                            proof_size = proof.len(),
                             proving_time = ?proving_time,
                             "Proof generated successfully"
                         );
 
-                        Ok((proof, proving_time))
+                        Ok((proof_with_publics, proving_time))
                     }
                     None => Err(cluster_error("Missing final proof")),
                 },

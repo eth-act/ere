@@ -43,7 +43,7 @@ fn generate_zkvm_sdk_version_impl() {
         "pico-vm",
         "risc0-zkvm",
         "sp1-sdk",
-        "ziskos",
+        "zisk-sdk",
     ]
     .map(detect_sdk_version);
 

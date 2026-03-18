@@ -19,4 +19,5 @@ jobs:
       cuda: true
       cuda_archs: '120'
       cluster: true
+      test_threads: 1
       skip_prove_test: true

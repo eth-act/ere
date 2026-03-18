@@ -41,6 +41,7 @@ zkvm = [
     "dep:sp1-sdk",
     "ere-zkvm-interface/tokio",
 ]
+cuda = []
 
 [lints]
 workspace = true
