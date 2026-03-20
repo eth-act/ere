@@ -16,7 +16,14 @@ fnv.workspace = true
 ere-platform-trait.workspace = true
 
 [features]
-default = []
+default = ["user-hints", "inputcpy"]
+user-hints = ["ziskos/user-hints"]
+inputcpy = ["ziskos/inputcpy"]
+zisk-custom-alloc = ["ziskos/zisk-custom-alloc"]
+zisk-embedded-alloc = ["ziskos/zisk-embedded-alloc"]
+zisk-embedded-dlmalloc-alloc = ["ziskos/zisk-embedded-dlmalloc-alloc"]
+zisk-embedded-talc-alloc = ["ziskos/zisk-embedded-talc-alloc"]
+zisk-embedded-tlfs-alloc = ["ziskos/zisk-embedded-tlfs-alloc"]
 check-cycle-scope = []
 
 [lints]

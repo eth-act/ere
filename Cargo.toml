@@ -124,9 +124,8 @@ sp1-sdk = "6.0.1"
 sp1-p3-field = { version = "0.3.2-succinct", package = "p3-field" }
 sp1-zkvm = { version = "6.0.1", default-features = false }
 
-
 # ZisK dependencies
-ziskos = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.0" }
+ziskos = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.0", default-features = false }
 zisk-rom-setup = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.0", package = "rom-setup" }
 zisk-sdk = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.0" }
 zisk-core = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.0" }
