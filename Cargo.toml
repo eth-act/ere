@@ -6,12 +6,8 @@ members = [
     # zkVMs
     "crates/zkvm/airbender",
     "crates/zkvm/airbender/platform",
-    "crates/zkvm/jolt",
-    "crates/zkvm/jolt/platform",
     "crates/zkvm/openvm",
     "crates/zkvm/openvm/platform",
-    "crates/zkvm/pico",
-    "crates/zkvm/pico/platform",
     "crates/zkvm/risc0",
     "crates/zkvm/risc0/platform",
     "crates/zkvm/sp1",
@@ -85,16 +81,6 @@ uuid = "1"
 airbender_execution_utils = { git = "https://github.com/matter-labs/zksync-airbender", package = "execution_utils", tag = "v0.5.2" }
 airbender_riscv_common = { git = "https://github.com/matter-labs/zksync-airbender", package = "riscv_common", tag = "v0.5.2", default-features = false }
 
-# Jolt dependencies
-jolt-ark-serialize = { git = "https://github.com/a16z/arkworks-algebra", package = "ark-serialize", branch = "dev/twist-shout" }
-jolt-common = { git = "https://github.com/a16z/jolt.git", package = "common", rev = "2e05fe88", default-features = false }
-jolt-core = { git = "https://github.com/a16z/jolt.git", rev = "2e05fe88", default-features = false }
-jolt-sdk = { git = "https://github.com/a16z/jolt.git", rev = "2e05fe88", default-features = false }
-jolt-inlines-keccak256 = { git = "https://github.com/a16z/jolt.git", rev = "2e05fe88", features = ["host"] }
-jolt-inlines-secp256k1 = { git = "https://github.com/a16z/jolt.git", rev = "2e05fe88", features = ["host"] }
-jolt-inlines-sha2 = { git = "https://github.com/a16z/jolt.git", rev = "2e05fe88", features = ["host"] }
-
-
 # OpenVM dependencies
 openvm-build = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.3" }
 openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.3" }
@@ -103,11 +89,6 @@ openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.3" 
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.3" }
 openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.3" }
 openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.3", default-features = false }
-
-# Pico dependencies
-pico-p3-field = { git = "https://github.com/brevis-network/Plonky3.git", package = "p3-field", rev = "f5056c9" }
-pico-vm = { git = "https://github.com/brevis-network/pico.git", tag = "v1.3.0" }
-pico-sdk = { git = "https://github.com/brevis-network/pico", tag = "v1.3.0", default-features = false }
 
 # Risc0 dependencies
 risc0-binfmt = { version = "3.0.3", default-features = false }
@@ -142,17 +123,13 @@ ere-zkvm-interface = { path = "crates/zkvm-interface" }
 ere-platform-trait = { path = "crates/zkvm-interface/platform" }
 
 ere-airbender = { path = "crates/zkvm/airbender", default-features = false }
-ere-jolt = { path = "crates/zkvm/jolt", default-features = false }
 ere-openvm = { path = "crates/zkvm/openvm", default-features = false }
-ere-pico = { path = "crates/zkvm/pico", default-features = false }
 ere-risc0 = { path = "crates/zkvm/risc0", default-features = false }
 ere-sp1 = { path = "crates/zkvm/sp1", default-features = false }
 ere-zisk = { path = "crates/zkvm/zisk", default-features = false }
 
 ere-platform-airbender = { path = "crates/zkvm/airbender/platform" }
-ere-platform-jolt = { path = "crates/zkvm/jolt/platform" }
 ere-platform-openvm = { path = "crates/zkvm/openvm/platform" }
-ere-platform-pico = { path = "crates/zkvm/pico/platform" }
 ere-platform-risc0 = { path = "crates/zkvm/risc0/platform" }
 ere-platform-sp1 = { path = "crates/zkvm/sp1/platform" }
 ere-platform-zisk = { path = "crates/zkvm/zisk/platform" }
@@ -167,10 +144,3 @@ ere-build-utils = { path = "crates/build-utils" }
 ere-compile-utils = { path = "crates/compile-utils" }
 ere-test-utils = { path = "crates/test-utils" }
 
-[patch.crates-io]
-# These patches are only needed by Jolt
-ark-bn254 = { git = "https://github.com/a16z/arkworks-algebra", branch = "dev/twist-shout" }
-ark-ff = { git = "https://github.com/a16z/arkworks-algebra", branch = "dev/twist-shout" }
-ark-ec = { git = "https://github.com/a16z/arkworks-algebra", branch = "dev/twist-shout" }
-ark-serialize = { git = "https://github.com/a16z/arkworks-algebra", branch = "dev/twist-shout" }
-allocative = { git = "https://github.com/facebookexperimental/allocative", rev = "85b773d85d526d068ce94724ff7a7b81203fc95e" }

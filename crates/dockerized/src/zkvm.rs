@@ -540,20 +540,6 @@ mod test {
         );
     }
 
-    mod jolt {
-        use super::*;
-        test!(
-            Jolt,
-            RustCustomized,
-            "basic",
-            [BasicProgram::<BincodeLegacy>::valid_test_case()],
-            [
-                Input::new(),
-                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
-            ]
-        );
-    }
-
     mod openvm {
         use super::*;
         test!(
@@ -561,20 +547,6 @@ mod test {
             RustCustomized,
             "basic",
             [BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256()],
-            [
-                Input::new(),
-                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
-            ]
-        );
-    }
-
-    mod pico {
-        use super::*;
-        test!(
-            Pico,
-            RustCustomized,
-            "basic",
-            [BasicProgram::<BincodeLegacy>::valid_test_case()],
             [
                 Input::new(),
                 BasicProgram::<BincodeLegacy>::invalid_test_case().input()

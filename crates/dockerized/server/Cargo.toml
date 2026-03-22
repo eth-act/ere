@@ -22,9 +22,7 @@ tracing-subscriber = { workspace = true, features = ["env-filter"], optional = t
 
 # Local dependencies
 ere-airbender = { workspace = true, features = ["zkvm"], optional = true }
-ere-jolt = { workspace = true, features = ["zkvm"], optional = true }
 ere-openvm = { workspace = true, features = ["zkvm"], optional = true }
-ere-pico = { workspace = true, features = ["zkvm"], optional = true }
 ere-risc0 = { workspace = true, features = ["zkvm"], optional = true }
 ere-sp1 = { workspace = true, features = ["zkvm"], optional = true }
 ere-zisk = { workspace = true, features = ["zkvm"], optional = true }
@@ -45,9 +43,7 @@ server = ["dep:clap", "dep:tower-http", "dep:tracing", "dep:tracing-subscriber",
 
 # zkVM
 airbender = ["dep:ere-airbender", "server"]
-jolt = ["dep:ere-jolt", "server"]
 openvm = ["dep:ere-openvm", "server"]
-pico = ["dep:ere-pico", "server"]
 risc0 = ["dep:ere-risc0", "server"]
 sp1 = ["dep:ere-sp1", "server"]
 zisk = ["dep:ere-zisk", "server"]

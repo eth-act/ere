@@ -15,9 +15,7 @@ tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 # Local dependencies
 ere-airbender = { workspace = true, features = ["compiler"], optional = true }
-ere-jolt = { workspace = true, features = ["compiler"], optional = true }
 ere-openvm = { workspace = true, features = ["compiler"], optional = true }
-ere-pico = { workspace = true, features = ["compiler"], optional = true }
 ere-risc0 = { workspace = true, features = ["compiler"], optional = true }
 ere-sp1 = { workspace = true, features = ["compiler"], optional = true }
 ere-zisk = { workspace = true, features = ["compiler"], optional = true }
@@ -31,9 +29,7 @@ default = []
 
 # zkVM
 airbender = ["dep:ere-airbender"]
-jolt = ["dep:ere-jolt"]
 openvm = ["dep:ere-openvm"]
-pico = ["dep:ere-pico"]
 risc0 = ["dep:ere-risc0"]
 sp1 = ["dep:ere-sp1"]
 zisk = ["dep:ere-zisk"]
