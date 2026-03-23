@@ -253,7 +253,6 @@ impl ServerContainer {
                 zkVMKind::SP1 => cmd.gpus(),
                 zkVMKind::Risc0 => cmd.gpus().inherit_env("RISC0_DEFAULT_PROVER_NUM_GPUS"),
                 zkVMKind::Zisk => cmd.gpus(),
-                _ => cmd,
             }
         }
 
