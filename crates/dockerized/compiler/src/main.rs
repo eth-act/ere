@@ -10,9 +10,7 @@ use tracing_subscriber::EnvFilter;
 const _: () = {
     assert!(
         (cfg!(feature = "airbender") as u8
-            + cfg!(feature = "jolt") as u8
             + cfg!(feature = "openvm") as u8
-            + cfg!(feature = "pico") as u8
             + cfg!(feature = "risc0") as u8
             + cfg!(feature = "sp1") as u8
             + cfg!(feature = "zisk") as u8)
@@ -110,47 +108,9 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> CompilationResult
         }
     };
 
-    #[cfg(feature = "jolt")]
-    let result = {
-        use ere_jolt::compiler::*;
-        match compiler_kind {
-            CompilerKind::Rust => {
-                let program = RustRv64imac.compile(&guest_dir)?;
-                (Some(program.elf().to_vec()), None, program)
-            }
-            CompilerKind::RustCustomized => {
-                let program = RustRv64imacCustomized.compile(&guest_dir)?;
-                (Some(program.elf().to_vec()), None, program)
-            }
-            _ => anyhow::bail!(unsupported_compiler_kind_err(
-                compiler_kind,
-                [CompilerKind::Rust, CompilerKind::RustCustomized]
-            )),
-        }
-    };
-
     #[cfg(feature = "openvm")]
     let result = {
         use ere_openvm::compiler::*;
-        match compiler_kind {
-            CompilerKind::Rust => {
-                let program = RustRv32ima.compile(&guest_dir)?;
-                (Some(program.elf().to_vec()), None, program)
-            }
-            CompilerKind::RustCustomized => {
-                let program = RustRv32imaCustomized.compile(&guest_dir)?;
-                (Some(program.elf().to_vec()), None, program)
-            }
-            _ => anyhow::bail!(unsupported_compiler_kind_err(
-                compiler_kind,
-                [CompilerKind::Rust, CompilerKind::RustCustomized]
-            )),
-        }
-    };
-
-    #[cfg(feature = "pico")]
-    let result = {
-        use ere_pico::compiler::*;
         match compiler_kind {
             CompilerKind::Rust => {
                 let program = RustRv32ima.compile(&guest_dir)?;

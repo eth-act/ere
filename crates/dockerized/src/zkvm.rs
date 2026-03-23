@@ -253,7 +253,6 @@ impl ServerContainer {
                 zkVMKind::SP1 => cmd.gpus(),
                 zkVMKind::Risc0 => cmd.gpus().inherit_env("RISC0_DEFAULT_PROVER_NUM_GPUS"),
                 zkVMKind::Zisk => cmd.gpus(),
-                _ => cmd,
             }
         }
 
@@ -540,20 +539,6 @@ mod test {
         );
     }
 
-    mod jolt {
-        use super::*;
-        test!(
-            Jolt,
-            RustCustomized,
-            "basic",
-            [BasicProgram::<BincodeLegacy>::valid_test_case()],
-            [
-                Input::new(),
-                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
-            ]
-        );
-    }
-
     mod openvm {
         use super::*;
         test!(
@@ -561,20 +546,6 @@ mod test {
             RustCustomized,
             "basic",
             [BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256()],
-            [
-                Input::new(),
-                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
-            ]
-        );
-    }
-
-    mod pico {
-        use super::*;
-        test!(
-            Pico,
-            RustCustomized,
-            "basic",
-            [BasicProgram::<BincodeLegacy>::valid_test_case()],
             [
                 Input::new(),
                 BasicProgram::<BincodeLegacy>::invalid_test_case().input()

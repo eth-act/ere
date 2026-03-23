@@ -35,9 +35,7 @@ jobs:
       matrix:
         zkvm:
           - airbender
-          - jolt
           - openvm
-          - pico
           - risc0
           - sp1
           - zisk

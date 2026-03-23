@@ -22,9 +22,7 @@ const _: () = {
     if cfg!(feature = "server") {
         assert!(
             (cfg!(feature = "airbender") as u8
-                + cfg!(feature = "jolt") as u8
                 + cfg!(feature = "openvm") as u8
-                + cfg!(feature = "pico") as u8
                 + cfg!(feature = "risc0") as u8
                 + cfg!(feature = "sp1") as u8
                 + cfg!(feature = "zisk") as u8)
@@ -124,14 +122,8 @@ fn construct_zkvm(program: Vec<u8>, resource: ProverResource) -> Result<impl zkV
     #[cfg(feature = "airbender")]
     let zkvm = ere_airbender::zkvm::EreAirbender::new(program, resource);
 
-    #[cfg(feature = "jolt")]
-    let zkvm = ere_jolt::zkvm::EreJolt::new(program, resource);
-
     #[cfg(feature = "openvm")]
     let zkvm = ere_openvm::zkvm::EreOpenVM::new(program, resource);
-
-    #[cfg(feature = "pico")]
-    let zkvm = ere_pico::zkvm::ErePico::new(program, resource);
 
     #[cfg(feature = "risc0")]
     let zkvm = ere_risc0::zkvm::EreRisc0::new(program, resource);

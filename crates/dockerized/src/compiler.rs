@@ -232,25 +232,11 @@ pub(crate) mod test {
         test_reproducible_elf!(Airbender, Rust, "basic");
     }
 
-    mod jolt {
-        test_compile!(Jolt, RustCustomized, "basic");
-        test_compile!(Jolt, Rust, "stock_nightly_no_std");
-        test_reproducible_elf!(Jolt, RustCustomized, "basic");
-        test_reproducible_elf!(Jolt, Rust, "stock_nightly_no_std");
-    }
-
     mod openvm {
         test_compile!(OpenVM, RustCustomized, "basic");
         test_compile!(OpenVM, Rust, "stock_nightly_no_std");
         test_reproducible_elf!(OpenVM, RustCustomized, "basic");
         test_reproducible_elf!(OpenVM, Rust, "stock_nightly_no_std");
-    }
-
-    mod pico {
-        test_compile!(Pico, RustCustomized, "basic");
-        test_compile!(Pico, Rust, "stock_nightly_no_std");
-        test_reproducible_elf!(Pico, RustCustomized, "basic");
-        test_reproducible_elf!(Pico, Rust, "stock_nightly_no_std");
     }
 
     mod risc0 {

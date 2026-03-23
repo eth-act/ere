@@ -49,17 +49,13 @@ This repository contains the following crates:
   - [`ere-platform-trait`] - `Platform` trait for guest program
 - Per-zkVM implementations for [`ere-zkvm-interface`] (host)
   - [`ere-airbender`]
-  - [`ere-jolt`]
   - [`ere-openvm`]
-  - [`ere-pico`]
   - [`ere-risc0`]
   - [`ere-sp1`]
   - [`ere-zisk`]
 - Per-zkVM implementations for [`ere-platform-trait`] (guest)
   - [`ere-platform-airbender`]
-  - [`ere-platform-jolt`]
   - [`ere-platform-openvm`]
-  - [`ere-platform-pico`]
   - [`ere-platform-risc0`]
   - [`ere-platform-sp1`]
   - [`ere-platform-zisk`]
@@ -76,12 +72,8 @@ This repository contains the following crates:
 [`ere-platform-trait`]: https://github.com/eth-act/ere/tree/master/crates/zkvm-interface/platform
 [`ere-airbender`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/airbender
 [`ere-platform-airbender`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/airbender/platform
-[`ere-jolt`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/jolt
-[`ere-platform-jolt`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/jolt/platform
 [`ere-openvm`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/openvm
 [`ere-platform-openvm`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/openvm/platform
-[`ere-pico`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/pico
-[`ere-platform-pico`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/pico/platform
 [`ere-risc0`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/risc0
 [`ere-platform-risc0`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/risc0/platform
 [`ere-sp1`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/sp1
@@ -142,15 +134,13 @@ Public values written in the guest program (via `Platform::write_whole_output()`
 
 Different zkVMs handles public values in different approaches:
 
-| zkVM      | Size Limit                | Note                          |
-| --------- | ------------------------- | ----------------------------- |
-| Airbender | 32 bytes                  | Padded to 32 bytes with zeros |
-| Jolt      | 4096 bytes (Configurable) |                               |
-| OpenVM    | 32 bytes                  | Padded to 32 bytes with zeros |
-| Pico      | unlimited                 | Hashed internally             |
-| Risc0     | unlimited                 | Hashed internally             |
-| SP1       | unlimited                 | Hashed internally             |
-| Zisk      | 256 bytes                 |                               |
+| zkVM      | Size Limit | Note                          |
+| --------- | ---------- | ----------------------------- |
+| Airbender | 32 bytes   | Padded to 32 bytes with zeros |
+| OpenVM    | 32 bytes   | Padded to 32 bytes with zeros |
+| Risc0     | unlimited  | Hashed internally             |
+| SP1       | unlimited  | Hashed internally             |
+| Zisk      | 256 bytes  |                               |
 
 For zkVMs with size limits on public values, `OutputHashedPlatform<P, D>` serves as a wrapper that hashes outputs before calling the inner `P::write_whole_output`. This enables the same guest program to run across all zkVMs regardless of their size constraints:
 
@@ -160,15 +150,13 @@ OutputHashedPlatform::<OpenVMPlatform, Sha256>::write_whole_output(&large_output
 
 ## Supported zkVMs
 
-| zkVM      | Version                                                                | ISA        |  GPU  | Multi GPU | Cluster |
-| --------- | ---------------------------------------------------------------------- | ---------- | :---: | :-------: | :-----: |
-| Airbender | [`0.5.2`](https://github.com/matter-labs/zksync-airbender/tree/v0.5.2) | `RV32IMA`  |   V   |     V     |         |
-| Jolt      | [`2e05fe88`](https://github.com/a16z/jolt/tree/2e05fe88)               | `RV64IMAC` |       |           |         |
-| OpenVM    | [`1.4.3`](https://github.com/openvm-org/openvm/tree/v1.4.3)            | `RV32IMA`  |   V   |           |         |
-| Pico      | [`1.3.0`](https://github.com/brevis-network/pico/tree/v1.3.0)          | `RV32IMA`  |       |           |         |
-| Risc0     | [`3.0.4`](https://github.com/risc0/risc0/tree/v3.0.4)                  | `RV32IMA`  |   V   |     V     |         |
-| SP1       | [`6.0.1`](https://github.com/succinctlabs/sp1/tree/v6.0.1)             | `RV64IMA`  |   V   |           |         |
-| Zisk      | [`0.16.0`](https://github.com/0xPolygonHermez/zisk/tree/v0.16.0)       | `RV64IMA`  |   V   |     V     |    V    |
+| zkVM      | Version                                                                | ISA       |  GPU  | Multi GPU | Cluster |
+| --------- | ---------------------------------------------------------------------- | --------- | :---: | :-------: | :-----: |
+| Airbender | [`0.5.2`](https://github.com/matter-labs/zksync-airbender/tree/v0.5.2) | `RV32IMA` |   V   |     V     |         |
+| OpenVM    | [`1.4.3`](https://github.com/openvm-org/openvm/tree/v1.4.3)            | `RV32IMA` |   V   |           |         |
+| Risc0     | [`3.0.4`](https://github.com/risc0/risc0/tree/v3.0.4)                  | `RV32IMA` |   V   |     V     |         |
+| SP1       | [`6.0.1`](https://github.com/succinctlabs/sp1/tree/v6.0.1)             | `RV64IMA` |   V   |           |         |
+| Zisk      | [`0.16.0`](https://github.com/0xPolygonHermez/zisk/tree/v0.16.0)       | `RV64IMA` |   V   |     V     |    V    |
 
 ## Examples
 

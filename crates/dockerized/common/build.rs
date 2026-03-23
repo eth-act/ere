@@ -30,17 +30,13 @@ fn generate_docker_image_tag() {
 fn generate_zkvm_sdk_version_impl() {
     let [
         airbender_version,
-        jolt_version,
         openvm_version,
-        pico_version,
         risc0_version,
         sp1_version,
         zisk_version,
     ] = [
         "execution_utils",
-        "jolt-sdk",
         "openvm-sdk",
-        "pico-vm",
         "risc0-zkvm",
         "sp1-sdk",
         "zisk-sdk",
@@ -52,9 +48,7 @@ fn generate_zkvm_sdk_version_impl() {
     pub fn sdk_version(&self) -> &'static str {{
         match self {{
             Self::Airbender => "{airbender_version}",
-            Self::Jolt => "{jolt_version}",
             Self::OpenVM => "{openvm_version}",
-            Self::Pico => "{pico_version}",
             Self::Risc0 => "{risc0_version}",
             Self::SP1 => "{sp1_version}",
             Self::Zisk => "{zisk_version}",
