@@ -156,7 +156,7 @@ OutputHashedPlatform::<OpenVMPlatform, Sha256>::write_whole_output(&large_output
 | OpenVM    | [`1.4.3`](https://github.com/openvm-org/openvm/tree/v1.4.3)            | `RV32IMA` |   V   |           |         |
 | Risc0     | [`3.0.4`](https://github.com/risc0/risc0/tree/v3.0.4)                  | `RV32IMA` |   V   |     V     |         |
 | SP1       | [`6.0.1`](https://github.com/succinctlabs/sp1/tree/v6.0.1)             | `RV64IMA` |   V   |           |         |
-| Zisk      | [`0.16.0`](https://github.com/0xPolygonHermez/zisk/tree/v0.16.0)       | `RV64IMA` |   V   |     V     |    V    |
+| Zisk      | [`0.16.1`](https://github.com/0xPolygonHermez/zisk/tree/v0.16.1)       | `RV64IMA` |   V   |     V     |    V    |
 
 ## Examples
 
