@@ -106,17 +106,17 @@ sp1-p3-field = { version = "0.3.2-succinct", package = "p3-field" }
 sp1-zkvm = { version = "6.0.1", default-features = false }
 
 # ZisK dependencies
-ziskos = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.0", default-features = false }
-zisk-rom-setup = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.0", package = "rom-setup" }
-zisk-sdk = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.0" }
-zisk-core = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.0" }
-ziskemu = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.0" }
-zisk-distributed-grpc-api = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.0" }
-proofman-common = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.16.0" }
-proofman-util = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.16.0" }
-proofman-fields = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.16.0", package = "fields" }
-proofman-starks-lib-c = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.16.0" }
-proofman-verifier = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.16.0" }
+ziskos = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1", default-features = false }
+zisk-rom-setup = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1", package = "rom-setup" }
+zisk-sdk = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1" }
+zisk-core = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1" }
+ziskemu = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1" }
+zisk-distributed-grpc-api = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1" }
+proofman-common = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.16.1" }
+proofman-util = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.16.1" }
+proofman-fields = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.16.1", package = "fields" }
+proofman-starks-lib-c = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.16.1" }
+proofman-verifier = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.16.1" }
 
 # Local dependencies
 ere-zkvm-interface = { path = "crates/zkvm-interface" }

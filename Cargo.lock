@@ -1044,8 +1044,8 @@ dependencies = [
 
 [[package]]
 name = "asm-runner"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "anyhow",
  "libc",
@@ -2324,8 +2324,8 @@ dependencies = [
 
 [[package]]
 name = "circuit"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 
 [[package]]
 name = "circuit_common"
@@ -2826,10 +2826,10 @@ dependencies = [
 
 [[package]]
 name = "curves"
-version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0#d61d40bee66b3c7f02bd4ab8661f9f29ad6730a4"
+version = "0.16.1"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.1#971209423e8fa53fa32dc747744d68c65aafa6c7"
 dependencies = [
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "num-bigint 0.4.6",
  "num-traits",
 ]
@@ -3040,8 +3040,8 @@ dependencies = [
 
 [[package]]
 name = "data-bus"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "zisk-common",
  "zisk-core",
@@ -3898,7 +3898,7 @@ dependencies = [
  "ere-compile-utils",
  "ere-test-utils",
  "ere-zkvm-interface",
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "futures-util",
  "http 1.4.0",
  "mpi",
@@ -3974,14 +3974,14 @@ dependencies = [
 
 [[package]]
 name = "executor"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "anyhow",
  "asm-runner",
  "crossbeam",
  "data-bus",
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "itertools 0.14.0",
  "mem-common",
  "mem-planner-cpp",
@@ -4136,19 +4136,8 @@ dependencies = [
 
 [[package]]
 name = "fields"
-version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0#d61d40bee66b3c7f02bd4ab8661f9f29ad6730a4"
-dependencies = [
- "cfg-if",
- "num-bigint 0.4.6",
- "paste",
- "serde",
-]
-
-[[package]]
-name = "fields"
-version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0#620e7c89f39ee2b608bd0f5d43765dc89728ff67"
+version = "0.16.1"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.1#971209423e8fa53fa32dc747744d68c65aafa6c7"
 dependencies = [
  "cfg-if",
  "num-bigint 0.4.6",
@@ -5481,13 +5470,13 @@ checksum = "09edd9e8b54e49e587e4f6295a7d29c3ea94d469cb40ab8ca70b288248a81db2"
 
 [[package]]
 name = "lib-c"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 
 [[package]]
 name = "lib-float"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 
 [[package]]
 name = "lib-rv32-asm"
@@ -5800,11 +5789,11 @@ dependencies = [
 
 [[package]]
 name = "mem-common"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "clap",
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "num-bigint 0.4.6",
  "num-traits",
  "proofman-common",
@@ -5820,8 +5809,8 @@ dependencies = [
 
 [[package]]
 name = "mem-planner-cpp"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "mem-common",
  "proofman-common",
@@ -8265,11 +8254,11 @@ dependencies = [
 
 [[package]]
 name = "pil-std-lib"
-version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0#d61d40bee66b3c7f02bd4ab8661f9f29ad6730a4"
+version = "0.16.1"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.1#971209423e8fa53fa32dc747744d68c65aafa6c7"
 dependencies = [
  "colored",
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "num-bigint 0.4.6",
  "num-traits",
  "proofman-common",
@@ -8407,15 +8396,15 @@ dependencies = [
 
 [[package]]
 name = "precomp-arith-eq"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "ark-bn254",
  "ark-ff 0.5.0",
  "ark-secp256k1",
  "ark-secp256r1",
  "ark-std 0.5.0",
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "lazy_static",
  "lib-c",
  "mem-common",
@@ -8444,15 +8433,15 @@ dependencies = [
 
 [[package]]
 name = "precomp-arith-eq-384"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
  "ark-ff 0.5.0",
  "ark-secp256k1",
  "ark-std 0.5.0",
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "lazy_static",
  "lib-c",
  "mem-common",
@@ -8481,10 +8470,10 @@ dependencies = [
 
 [[package]]
 name = "precomp-big-int"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "generic-array 0.14.9",
  "lib-c",
  "mem-common",
@@ -8503,10 +8492,10 @@ dependencies = [
 
 [[package]]
 name = "precomp-blake2"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "mem-common",
  "pil-std-lib",
  "precompiles-common",
@@ -8523,10 +8512,10 @@ dependencies = [
 
 [[package]]
 name = "precomp-dma"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "generic-array 0.14.9",
  "lib-c",
  "mem-common",
@@ -8547,11 +8536,11 @@ dependencies = [
 
 [[package]]
 name = "precomp-keccakf"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "circuit",
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "path-clean",
  "pil-std-lib",
  "precompiles-common",
@@ -8569,10 +8558,10 @@ dependencies = [
 
 [[package]]
 name = "precomp-poseidon2"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "mem-common",
  "pil-std-lib",
  "precompiles-common",
@@ -8590,10 +8579,10 @@ dependencies = [
 
 [[package]]
 name = "precomp-sha256f"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "mem-common",
  "pil-std-lib",
  "precompiles-common",
@@ -8610,10 +8599,10 @@ dependencies = [
 
 [[package]]
 name = "precompiles-common"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "mem-common",
  "sm-mem",
  "zisk-common",
@@ -8622,8 +8611,8 @@ dependencies = [
 
 [[package]]
 name = "precompiles-helpers"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -8640,8 +8629,8 @@ dependencies = [
 
 [[package]]
 name = "precompiles-hints"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "anyhow",
  "borsh",
@@ -8737,8 +8726,8 @@ dependencies = [
 
 [[package]]
 name = "proofman"
-version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0#d61d40bee66b3c7f02bd4ab8661f9f29ad6730a4"
+version = "0.16.1"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.1#971209423e8fa53fa32dc747744d68c65aafa6c7"
 dependencies = [
  "bincode 1.3.3",
  "blake3",
@@ -8749,7 +8738,7 @@ dependencies = [
  "crossbeam-channel",
  "csv",
  "curves",
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "libloading 0.8.9",
  "mpi",
  "num-bigint 0.4.6",
@@ -8772,8 +8761,8 @@ dependencies = [
 
 [[package]]
 name = "proofman-common"
-version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0#d61d40bee66b3c7f02bd4ab8661f9f29ad6730a4"
+version = "0.16.1"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.1#971209423e8fa53fa32dc747744d68c65aafa6c7"
 dependencies = [
  "bincode 1.3.3",
  "borsh",
@@ -8783,8 +8772,9 @@ dependencies = [
  "crossbeam-queue",
  "csv",
  "env",
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "lazy_static",
+ "libc",
  "libloading 0.8.9",
  "mpi",
  "num_cpus",
@@ -8803,10 +8793,10 @@ dependencies = [
 
 [[package]]
 name = "proofman-hints"
-version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0#d61d40bee66b3c7f02bd4ab8661f9f29ad6730a4"
+version = "0.16.1"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.1#971209423e8fa53fa32dc747744d68c65aafa6c7"
 dependencies = [
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "itoa",
  "proofman-common",
  "proofman-starks-lib-c",
@@ -8816,8 +8806,8 @@ dependencies = [
 
 [[package]]
 name = "proofman-macros"
-version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0#d61d40bee66b3c7f02bd4ab8661f9f29ad6730a4"
+version = "0.16.1"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.1#971209423e8fa53fa32dc747744d68c65aafa6c7"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -8826,8 +8816,8 @@ dependencies = [
 
 [[package]]
 name = "proofman-starks-lib-c"
-version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0#d61d40bee66b3c7f02bd4ab8661f9f29ad6730a4"
+version = "0.16.1"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.1#971209423e8fa53fa32dc747744d68c65aafa6c7"
 dependencies = [
  "crossbeam-channel",
  "tracing",
@@ -8835,8 +8825,8 @@ dependencies = [
 
 [[package]]
 name = "proofman-util"
-version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0#d61d40bee66b3c7f02bd4ab8661f9f29ad6730a4"
+version = "0.16.1"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.1#971209423e8fa53fa32dc747744d68c65aafa6c7"
 dependencies = [
  "bincode 1.3.3",
  "bytemuck",
@@ -8847,11 +8837,11 @@ dependencies = [
 
 [[package]]
 name = "proofman-verifier"
-version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0#d61d40bee66b3c7f02bd4ab8661f9f29ad6730a4"
+version = "0.16.1"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.1#971209423e8fa53fa32dc747744d68c65aafa6c7"
 dependencies = [
  "bytemuck",
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "proofman-util",
  "rayon",
  "tracing",
@@ -9984,8 +9974,8 @@ dependencies = [
 
 [[package]]
 name = "riscv"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 
 [[package]]
 name = "riscv_common"
@@ -10047,13 +10037,13 @@ dependencies = [
 
 [[package]]
 name = "rom-setup"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "anyhow",
  "blake3",
  "colored",
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "proofman-common",
  "sm-rom",
  "tracing",
@@ -11365,10 +11355,10 @@ dependencies = [
 
 [[package]]
 name = "sm-arith"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "num-bigint 0.4.6",
  "pil-std-lib",
  "proofman-common",
@@ -11386,10 +11376,10 @@ dependencies = [
 
 [[package]]
 name = "sm-binary"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "num-bigint 0.4.6",
  "pil-std-lib",
  "proofman-common",
@@ -11406,11 +11396,11 @@ dependencies = [
 
 [[package]]
 name = "sm-frequent-ops"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "clap",
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "num-bigint 0.4.6",
  "proofman-common",
  "proofman-util",
@@ -11422,10 +11412,10 @@ dependencies = [
 
 [[package]]
 name = "sm-main"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "mem-common",
  "num-bigint 0.4.6",
  "pil-std-lib",
@@ -11442,10 +11432,10 @@ dependencies = [
 
 [[package]]
 name = "sm-mem"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "mem-common",
  "num-bigint 0.4.6",
  "num-traits",
@@ -11463,11 +11453,11 @@ dependencies = [
 
 [[package]]
 name = "sm-rom"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "asm-runner",
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "itertools 0.14.0",
  "proofman-common",
  "proofman-macros",
@@ -14366,11 +14356,11 @@ dependencies = [
 
 [[package]]
 name = "witness"
-version = "0.16.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0#d61d40bee66b3c7f02bd4ab8661f9f29ad6730a4"
+version = "0.16.1"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.1#971209423e8fa53fa32dc747744d68c65aafa6c7"
 dependencies = [
  "colored",
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "libloading 0.8.9",
  "proofman-common",
  "proofman-util",
@@ -14588,8 +14578,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-build"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "anyhow",
  "cargo_metadata 0.23.1",
@@ -14601,12 +14591,12 @@ dependencies = [
 
 [[package]]
 name = "zisk-common"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "libc",
  "mpi",
  "proofman",
@@ -14626,11 +14616,11 @@ dependencies = [
 
 [[package]]
 name = "zisk-core"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "elf",
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "lib-c",
  "lib-float",
  "paste",
@@ -14646,13 +14636,13 @@ dependencies = [
 
 [[package]]
 name = "zisk-definitions"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 
 [[package]]
 name = "zisk-distributed-common"
 version = "0.1.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "anyhow",
  "borsh",
@@ -14672,8 +14662,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-distributed-grpc-api"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "anyhow",
  "chrono",
@@ -14691,10 +14681,10 @@ dependencies = [
 
 [[package]]
 name = "zisk-pil"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "proofman-common",
  "proofman-macros",
  "rayon",
@@ -14704,15 +14694,15 @@ dependencies = [
 
 [[package]]
 name = "zisk-sdk"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "anyhow",
  "asm-runner",
  "bincode 1.3.3",
  "colored",
  "executor",
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "precompiles-hints",
  "proofman",
  "proofman-common",
@@ -14731,20 +14721,20 @@ dependencies = [
 
 [[package]]
 name = "zisk-verifier"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "proofman-verifier",
 ]
 
 [[package]]
 name = "ziskemu"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "clap",
  "data-bus",
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "mem-common",
  "memmap2",
  "num-format",
@@ -14766,8 +14756,8 @@ dependencies = [
 
 [[package]]
 name = "ziskos"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
@@ -14777,7 +14767,7 @@ dependencies = [
  "ctor 0.2.9",
  "dlmalloc",
  "embedded-alloc",
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?branch=pre-develop-0.16.0)",
+ "fields",
  "getrandom 0.2.17",
  "lazy_static",
  "lib-c",
@@ -14800,13 +14790,13 @@ dependencies = [
 
 [[package]]
 name = "ziskos-hints"
-version = "0.16.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.0#61fe43922231290ec0e09f482a88bbf3572a8f1c"
+version = "0.16.1"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#48bba0e327f9de7360ec58583e561bfbe12b3632"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
  "cfg-if",
- "fields 0.16.0 (git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.16.0)",
+ "fields",
  "getrandom 0.2.17",
  "lazy_static",
  "lib-c",

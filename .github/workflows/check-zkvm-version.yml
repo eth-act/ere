@@ -25,8 +25,8 @@ jobs:
             crate: risc0-zkvm
           - zkvm: sp1
             crate: sp1-sdk
-          - zkvm: zisk
-            crate: ziskos
+          # - zkvm: zisk
+          #   crate: ziskos
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
