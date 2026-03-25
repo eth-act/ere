@@ -5,7 +5,7 @@ unsafe extern "C" fn _zisk_main() {
     crate::main();
 }
 
-// According to https://github.com/0xPolygonHermez/zisk/blob/v0.16.0/ziskos/entrypoint/src/lib.rs#L116
+// According to https://github.com/0xPolygonHermez/zisk/blob/v0.16.1/ziskos/entrypoint/src/lib.rs#L232
 core::arch::global_asm!(
     r#"
 .section .text.init
@@ -46,7 +46,7 @@ unsafe impl GlobalAlloc for SimpleAlloc {
 #[global_allocator]
 static HEAP: SimpleAlloc = SimpleAlloc;
 
-// According to https://github.com/0xPolygonHermez/zisk/blob/v0.16.0/ziskos/entrypoint/src/lib.rs#L241
+// According to https://github.com/0xPolygonHermez/zisk/blob/v0.16.1/ziskos/entrypoint/src/lib.rs#L241
 #[no_mangle]
 pub unsafe extern "C" fn sys_alloc_aligned(bytes: usize, align: usize) -> *mut u8 {
     use core::arch::asm;
