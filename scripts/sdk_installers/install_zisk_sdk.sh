@@ -54,4 +54,5 @@ rm -rf "$WORKSPACE"
 # FIXME: Remove this step when upgrading to `v0.17.0`
 # Step 3: Rebuild `ziskemu` using the patched repo
 cargo install --git https://github.com/han0110/zisk.git --branch "patch/v$ZISK_VERSION" --locked ziskemu
-mv $HOME/.cargo/bin/ziskemu $HOME/.zisk/bin/ziskemu
+CARGO_BIN="${CARGO_HOME:-$HOME/.cargo}/bin"
+mv $CARGO_BIN/ziskemu $HOME/.zisk/bin/ziskemu
