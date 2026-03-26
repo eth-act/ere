@@ -1,0 +1,25 @@
+name: Check PR title
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate conventional commit format
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          PATTERN='^(feat|fix|refactor|docs|test|chore|ci|perf|build|revert)(\(.+\))?\!?: .+'
+          if [[ ! "$TITLE" =~ $PATTERN ]]; then
+            echo "::error::PR title must follow conventional commits: <type>[optional scope]: <description>"
+            echo "::error::Allowed types: feat, fix, refactor, docs, test, chore, ci, perf, build, revert"
+            echo "::error::Got: $TITLE"
+            exit 1
+          fi

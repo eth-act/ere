@@ -1,35 +1,49 @@
-name: Push SemVer tag
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+name: Push SemVer image tag
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_run:
+    workflows: ["Build and push images"]
+    types: [completed]
 
 jobs:
   image_meta:
     name: Get image metadata
     runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    permissions:
+      contents: read
     outputs:
       sha_tag: ${{ steps.meta.outputs.sha_tag }}
       semver_tag: ${{ steps.meta.outputs.semver_tag }}
       registry: ${{ steps.meta.outputs.registry }}
+      has_tag: ${{ steps.meta.outputs.has_tag }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha }}
+
       - name: Get image metadata
         id: meta
         run: |
-          GIT_SHA="${{ github.sha }}"
-          GIT_TAG="${{ github.ref_name }}"
+          GIT_SHA="${{ github.event.workflow_run.head_sha }}"
           echo "sha_tag=${GIT_SHA:0:7}" >> $GITHUB_OUTPUT
-          echo "semver_tag=${GIT_TAG#v}" >> $GITHUB_OUTPUT
           echo "registry=ghcr.io/${{ github.repository }}" >> $GITHUB_OUTPUT
+
+          VERSION_TAG=$(git tag --points-at "$GIT_SHA" | grep '^v' | head -n1)
+          if [ -n "$VERSION_TAG" ]; then
+            echo "has_tag=true" >> $GITHUB_OUTPUT
+            echo "semver_tag=${VERSION_TAG#v}" >> $GITHUB_OUTPUT
+            echo "Found tag: $VERSION_TAG"
+          else
+            echo "has_tag=false" >> $GITHUB_OUTPUT
+            echo "No v* tag found on $GIT_SHA, skipping"
+          fi
 
   create_semver_tag:
     name: Tag images with SemVer (${{ matrix.zkvm }})
     needs: image_meta
+    if: needs.image_meta.outputs.has_tag == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
