@@ -6,6 +6,7 @@ use crate::api::{
 use ere_zkvm_interface::zkvm::{
     Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, PublicValues,
 };
+use std::time::Duration;
 use thiserror::Error;
 use twirp::{Client, Request, reqwest};
 
@@ -13,6 +14,8 @@ pub use twirp::{
     TwirpErrorResponse,
     url::{ParseError, Url},
 };
+
+const HEALTH_CHECK_TIMEOUT: Duration = Duration::from_secs(3);
 
 #[derive(Debug, Error)]
 #[allow(non_camel_case_types)]
@@ -29,18 +32,40 @@ pub enum Error {
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct zkVMClient {
+    endpoint: Url,
+    http_client: reqwest::Client,
     client: Client,
 }
 
 impl zkVMClient {
     pub fn new(endpoint: Url, http_client: reqwest::Client) -> Result<Self, Error> {
+        let client = Client::new(
+            endpoint.join("twirp")?,
+            http_client.clone(),
+            Vec::new(),
+            None,
+        );
         Ok(Self {
-            client: Client::new(endpoint.join("twirp")?, http_client, Vec::new(), None),
+            endpoint,
+            http_client,
+            client,
         })
     }
 
     pub fn from_endpoint(endpoint: Url) -> Result<Self, Error> {
         Self::new(endpoint, reqwest::Client::new())
+    }
+
+    pub async fn is_healthy(&self) -> bool {
+        let Ok(url) = self.endpoint.join("health") else {
+            return false;
+        };
+        self.http_client
+            .get(url)
+            .timeout(HEALTH_CHECK_TIMEOUT)
+            .send()
+            .await
+            .is_ok_and(|r| r.status().is_success())
     }
 
     pub async fn execute(

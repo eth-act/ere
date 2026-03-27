@@ -6,6 +6,7 @@ use std::{
     io::Write,
     path::Path,
     process::{Child, Command, Stdio},
+    time::Duration,
 };
 use tracing::debug;
 
@@ -238,10 +239,10 @@ impl DockerRunCmd {
     }
 }
 
-pub fn stop_docker_container(container_name: impl AsRef<str>) -> Result<(), CommonError> {
+pub fn remove_docker_container(container_name: impl AsRef<str>) -> Result<(), CommonError> {
     let mut cmd = Command::new("docker");
     let output = cmd
-        .args(["container", "stop", container_name.as_ref()])
+        .args(["rm", "-f", container_name.as_ref()])
         .output()
         .map_err(|err| CommonError::command(&cmd, err))?;
 
@@ -254,32 +255,6 @@ pub fn stop_docker_container(container_name: impl AsRef<str>) -> Result<(), Comm
     }
 
     Ok(())
-}
-
-pub fn docker_container_exists(container_name: impl AsRef<str>) -> Result<bool, CommonError> {
-    let mut cmd = Command::new("docker");
-    let output = cmd
-        .args([
-            "ps",
-            "--filter",
-            &format!("name={}", container_name.as_ref()),
-            "--format",
-            "{{.Names}}",
-        ])
-        .output()
-        .map_err(|err| CommonError::command(&cmd, err))?;
-
-    if !output.status.success() {
-        Err(CommonError::command_exit_non_zero(
-            &cmd,
-            output.status,
-            Some(&output),
-        ))?
-    }
-
-    // If container exists and is running, its name will be printed
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    Ok(stdout.trim() == container_name.as_ref())
 }
 
 pub fn docker_pull_image(image: impl AsRef<str>) -> Result<(), CommonError> {
@@ -318,6 +293,75 @@ pub fn docker_image_exists(image: impl AsRef<str>) -> Result<bool, CommonError> 
 
     // If image exists, image id will be printed hence stdout will be non-empty.
     Ok(!output.stdout.is_empty())
+}
+
+#[derive(Debug)]
+pub struct ContainerExitInfo {
+    pub exit_code: i32,
+    pub oom_killed: bool,
+}
+
+impl Display for ContainerExitInfo {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "exit code {}", self.exit_code)?;
+        if self.oom_killed {
+            write!(f, ", OOM killed")?;
+        }
+        Ok(())
+    }
+}
+
+pub fn docker_inspect_exit_info(
+    container_name: impl AsRef<str>,
+) -> Result<ContainerExitInfo, CommonError> {
+    let mut cmd = Command::new("docker");
+    let output = cmd
+        .args([
+            "inspect",
+            "--format",
+            "{{.State.ExitCode}} {{.State.OOMKilled}}",
+            container_name.as_ref(),
+        ])
+        .output()
+        .map_err(|err| CommonError::command(&cmd, err))?;
+
+    if !output.status.success() {
+        Err(CommonError::command_exit_non_zero(
+            &cmd,
+            output.status,
+            Some(&output),
+        ))?
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut parts = stdout.split_whitespace();
+    let exit_code = parts.next().and_then(|s| s.parse().ok()).unwrap_or(-1);
+    let oom_killed = parts.next().is_some_and(|s| s == "true");
+
+    Ok(ContainerExitInfo {
+        exit_code,
+        oom_killed,
+    })
+}
+
+pub async fn docker_wait_for_exit(
+    container_name: impl AsRef<str>,
+    timeout: Duration,
+) -> Option<ContainerExitInfo> {
+    let container_name = container_name.as_ref();
+    let result = tokio::time::timeout(timeout, async {
+        tokio::process::Command::new("docker")
+            .arg("wait")
+            .arg(container_name)
+            .output()
+            .await
+    })
+    .await;
+
+    match result {
+        Ok(Ok(output)) if output.status.success() => docker_inspect_exit_info(container_name).ok(),
+        _ => None,
+    }
 }
 
 fn to_string(s: impl AsRef<str>) -> String {
