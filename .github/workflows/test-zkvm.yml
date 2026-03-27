@@ -217,14 +217,14 @@ jobs:
             --tag ${{ needs.image_meta.outputs.image_tag }} \
             --cached-tag ${{ needs.image_meta.outputs.cached_image_tag }}
 
-      - name: Increase swap to 10GB
+      - name: Increase swap to 8GB
         run: |
           df -h /
 
           free -h && swapon --show
 
           sudo swapoff -a
-          sudo fallocate -l 10G /swapfile
+          sudo fallocate -l 8G /swapfile
           sudo chmod 600 /swapfile
           sudo mkswap /swapfile
           sudo swapon /swapfile
@@ -306,14 +306,14 @@ jobs:
           docker builder prune -f
           docker image prune -f
 
-      - name: Increase swap to 10GB
+      - name: Increase swap to 8GB
         run: |
           df -h /
 
           free -h && swapon --show
 
           sudo swapoff -a
-          sudo fallocate -l 10G /swapfile
+          sudo fallocate -l 8G /swapfile
           sudo chmod 600 /swapfile
           sudo mkswap /swapfile
           sudo swapon /swapfile
