@@ -1,3 +1,4 @@
+use crate::util::docker::ContainerExitInfo;
 use ere_common::zkVMKind;
 use ere_server::client::{self, ParseError, TwirpErrorResponse};
 use ere_zkvm_interface::CommonError;
@@ -30,4 +31,9 @@ pub enum Error {
     ConnectionTimeout,
     #[error("RPC to zkVM server error: {0}")]
     Rpc(TwirpErrorResponse),
+    #[error("Server container '{container_name}' exited during request: {exit_info}")]
+    ContainerExited {
+        container_name: String,
+        exit_info: ContainerExitInfo,
+    },
 }

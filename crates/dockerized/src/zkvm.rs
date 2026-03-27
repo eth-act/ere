@@ -4,8 +4,8 @@ use crate::{
     util::{
         cuda::cuda_archs,
         docker::{
-            DockerBuildCmd, DockerRunCmd, docker_container_exists, docker_image_exists,
-            docker_pull_image, stop_docker_container,
+            DockerBuildCmd, DockerRunCmd, docker_image_exists, docker_pull_image,
+            docker_wait_for_exit, remove_docker_container,
         },
         env::{docker_network, force_rebuild_docker_image, image_registry},
         home_dir, workspace_dir,
@@ -27,12 +27,19 @@ use std::{
     time::{Duration, Instant},
 };
 use tempfile::TempDir;
-use tokio::{sync::RwLock, time::sleep};
+use tokio::{
+    sync::{RwLock, RwLockReadGuard},
+    time::sleep,
+};
 use tracing::{error, info, warn};
 
 mod error;
 
 pub use error::Error;
+
+/// Timeout to wait for container to exit when the request is not fully
+/// responded, which is usually OOM killed.
+const DOCKER_WAIT_FOR_EXIT_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Applies per-zkVM CUDA architecture build args to a Docker build command.
 ///
@@ -190,8 +197,8 @@ struct ServerContainer {
 
 impl Drop for ServerContainer {
     fn drop(&mut self) {
-        if let Err(err) = stop_docker_container(&self.name) {
-            error!("Failed to stop docker container: {err}");
+        if let Err(err) = remove_docker_container(&self.name) {
+            error!("Failed to remove docker container: {err}");
         }
     }
 }
@@ -205,12 +212,13 @@ impl ServerContainer {
         program: &SerializedProgram,
         resource: &ProverResource,
     ) -> Result<Self, Error> {
+        let name = format!("ere-server-{zkvm_kind}");
+        remove_docker_container(&name)?;
+
         let port = Self::PORT_OFFSET + zkvm_kind as u16;
 
-        let name = format!("ere-server-{zkvm_kind}");
         let gpu = resource.is_gpu();
         let mut cmd = DockerRunCmd::new(server_zkvm_image(zkvm_kind, gpu))
-            .rm()
             .inherit_env("RUST_LOG")
             .inherit_env("RUST_BACKTRACE")
             .inherit_env("NO_COLOR")
@@ -370,6 +378,39 @@ impl DockerizedzkVM {
         .await
     }
 
+    async fn container(&self) -> anyhow::Result<RwLockReadGuard<'_, ServerContainer>> {
+        let guard = self.container.read().await;
+        let is_healthy = match guard.as_ref() {
+            Some(container) => container.client.is_healthy().await,
+            None => false,
+        };
+        if is_healthy {
+            return Ok(RwLockReadGuard::map(guard, |opt| opt.as_ref().unwrap()));
+        }
+        drop(guard);
+
+        let mut guard = self.container.write().await;
+        let is_healthy = match guard.as_ref() {
+            Some(container) => container.client.is_healthy().await,
+            None => false,
+        };
+        if is_healthy {
+            let guard = guard.downgrade();
+            return Ok(RwLockReadGuard::map(guard, |opt| opt.as_ref().unwrap()));
+        }
+
+        info!("Server not healthy, recreating...");
+        drop(guard.take());
+        *guard = Some(ServerContainer::new(
+            self.zkvm_kind,
+            &self.program,
+            &self.resource,
+        )?);
+
+        let guard = guard.downgrade();
+        Ok(RwLockReadGuard::map(guard, |opt| opt.as_ref().unwrap()))
+    }
+
     async fn with_retry<T, F>(&self, f: F) -> anyhow::Result<T>
     where
         F: Fn(zkVMClient) -> Pin<Box<dyn Future<Output = Result<T, client::Error>> + Send>>,
@@ -378,36 +419,38 @@ impl DockerizedzkVM {
 
         let mut attempt = 1;
         loop {
-            let err = match f(self.container.read().await.as_ref().unwrap().client.clone()).await {
+            if attempt > MAX_RETRY {
+                anyhow::bail!("Container is not available after {MAX_RETRY} attempts");
+            }
+
+            let container = match self.container().await {
+                Ok(container) => container,
+                Err(err) => {
+                    error!("Failed to create container (attempt {attempt}/{MAX_RETRY}): {err}");
+                    attempt += 1;
+                    continue;
+                }
+            };
+            let client = container.client.clone();
+
+            let err = match f(client).await {
                 Ok(ok) => return Ok(ok),
                 Err(err) => Error::from(err),
             };
 
-            if matches!(&err, Error::zkVM(_))
-                // Rpc error but not connection one
-                || matches!(&err, Error::Rpc(err) if err.rust_error().is_none_or(|err| !err.to_lowercase().contains("connect")))
-                || attempt > MAX_RETRY
+            if matches!(&err, Error::Rpc(_))
+                && !container.client.is_healthy().await
+                && let Some(exit_info) =
+                    docker_wait_for_exit(&container.name, DOCKER_WAIT_FOR_EXIT_TIMEOUT).await
             {
-                return Err(err.into());
+                return Err(Error::ContainerExited {
+                    container_name: container.name.clone(),
+                    exit_info,
+                }
+                .into());
             }
 
-            error!("Rpc failed (attempt {attempt}/{MAX_RETRY}): {err}, checking container...");
-
-            let mut container = self.container.write().await;
-            if docker_container_exists(&container.as_ref().unwrap().name).is_ok_and(|exists| exists)
-            {
-                info!("Container is still running, retrying...");
-            } else {
-                info!("Container not found, recreating...");
-
-                drop(container.take());
-                *container = Some(ServerContainer::new(
-                    self.zkvm_kind,
-                    &self.program,
-                    &self.resource,
-                )?);
-            }
-            attempt += 1;
+            return Err(err.into());
         }
     }
 }
