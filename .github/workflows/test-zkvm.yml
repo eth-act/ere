@@ -158,7 +158,7 @@ jobs:
             --zkvm ${{ inputs.zkvm }} \
             --registry ${{ needs.image_meta.outputs.image_registry }} \
             --tag ${{ needs.image_meta.outputs.image_tag }} \
-            --cached-tag "${{ needs.image_meta.outputs.cached_image_tag }}"
+            --cached-tag ${{ needs.image_meta.outputs.cached_image_tag }}
 
       - name: Run cargo clippy for ere-${{ inputs.zkvm }} via Docker
         run: |
@@ -215,10 +215,12 @@ jobs:
             --zkvm ${{ inputs.zkvm }} \
             --registry ${{ needs.image_meta.outputs.image_registry }} \
             --tag ${{ needs.image_meta.outputs.image_tag }} \
-            --cached-tag "${{ needs.image_meta.outputs.cached_image_tag }}"
+            --cached-tag ${{ needs.image_meta.outputs.cached_image_tag }}
 
       - name: Increase swap to 10GB
         run: |
+          df -h /
+
           free -h && swapon --show
 
           sudo swapoff -a
@@ -288,7 +290,7 @@ jobs:
             --zkvm ${{ inputs.zkvm }} \
             --registry ${{ needs.image_meta.outputs.image_registry }} \
             --tag ${{ needs.image_meta.outputs.image_tag }} \
-            --cached-tag "${{ needs.image_meta.outputs.cached_image_tag }}"
+            --cached-tag ${{ needs.image_meta.outputs.cached_image_tag }}
 
           # Build ere-compiler-${{ inputs.zkvm }} and ere-server-${{ inputs.zkvm }}
           bash .github/scripts/build-image.sh \
@@ -298,8 +300,16 @@ jobs:
             --compiler \
             --server
 
+          # Reclaim the disk space
+          docker image rm ${{ needs.image_meta.outputs.image_registry }}/ere-base:${{ needs.image_meta.outputs.image_tag }} 2>/dev/null || true
+          docker image rm ${{ needs.image_meta.outputs.image_registry }}/ere-base-${{ inputs.zkvm }}:${{ needs.image_meta.outputs.image_tag }} 2>/dev/null || true
+          docker builder prune -f
+          docker image prune -f
+
       - name: Increase swap to 10GB
         run: |
+          df -h /
+
           free -h && swapon --show
 
           sudo swapoff -a
