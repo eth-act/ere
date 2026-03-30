@@ -590,7 +590,7 @@ mod test {
 
                 // Timeout
                 let mut zkvm = zkvm;
-                let execute_timeout = Duration::from_millis(1);
+                let execute_timeout = Duration::ZERO;
                 zkvm.config.execute_timeout = Some(execute_timeout);
                 let err = zkvm.execute(&Input::new()).unwrap_err();
                 assert!(
@@ -628,7 +628,7 @@ mod test {
 
                 // Timeout
                 let mut zkvm = zkvm;
-                let prove_timeout = Duration::from_millis(1);
+                let prove_timeout = Duration::ZERO;
                 zkvm.config.prove_timeout = Some(prove_timeout);
                 let err = zkvm.prove(&Input::new(), ProofKind::default()).unwrap_err();
                 assert!(
