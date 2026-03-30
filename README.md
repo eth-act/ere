@@ -310,7 +310,9 @@ ere-dockerized = { git = "https://github.com/eth-act/ere.git" }
 ```rust
 // host/src/main.rs
 
-use ere_dockerized::{CompilerKind, DockerizedCompiler, DockerizedzkVM, zkVMKind};
+use ere_dockerized::{
+    CompilerKind, DockerizedCompiler, DockerizedzkVM, DockerizedzkVMConfig, zkVMKind,
+};
 use ere_zkvm_interface::{
     compiler::Compiler,
     zkvm::{Input, ProofKind, ProverResource, zkVM},
@@ -327,7 +329,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create zkVM instance (builds Docker images if needed)
     // It spawns a container that runs a gRPC server handling zkVM operations
-    let zkvm = DockerizedzkVM::new(zkVMKind::SP1, program, ProverResource::Cpu)?;
+    let zkvm = DockerizedzkVM::new(
+        zkVMKind::SP1,
+        program,
+        ProverResource::Cpu,
+        DockerizedzkVMConfig::default(),
+    )?;
 
     // Prepare input
     // Use `with_prefixed_stdin` when guest uses `Platform::read_whole_input()`

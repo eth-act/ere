@@ -29,17 +29,13 @@ use std::{
 use tempfile::TempDir;
 use tokio::{
     sync::{RwLock, RwLockReadGuard},
-    time::sleep,
+    time::{sleep, timeout},
 };
 use tracing::{error, info, warn};
 
 mod error;
 
 pub use error::Error;
-
-/// Timeout to wait for container to exit when the request is not fully
-/// responded, which is usually OOM killed.
-const DOCKER_WAIT_FOR_EXIT_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Applies per-zkVM CUDA architecture build args to a Docker build command.
 ///
@@ -189,7 +185,7 @@ fn build_server_image(zkvm_kind: zkVMKind, gpu: bool) -> Result<(), Error> {
 }
 
 struct ServerContainer {
-    name: String,
+    id: String,
     client: zkVMClient,
     #[allow(dead_code)]
     tempdir: TempDir,
@@ -197,7 +193,7 @@ struct ServerContainer {
 
 impl Drop for ServerContainer {
     fn drop(&mut self) {
-        if let Err(err) = remove_docker_container(&self.name) {
+        if let Err(err) = remove_docker_container(&self.id) {
             error!("Failed to remove docker container: {err}");
         }
     }
@@ -291,7 +287,7 @@ impl ServerContainer {
             _ => cmd,
         };
 
-        cmd.spawn(
+        let (_, container_id) = cmd.spawn(
             iter::empty()
                 .chain(["--port", &port.to_string()])
                 .chain(resource.to_args()),
@@ -303,17 +299,25 @@ impl ServerContainer {
         block_on(wait_until_healthy(&endpoint, http_client.clone()))?;
 
         Ok(ServerContainer {
-            name,
+            id: container_id,
             tempdir,
             client: zkVMClient::new(endpoint, http_client)?,
         })
     }
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct DockerizedzkVMConfig {
+    pub execute_timeout: Option<Duration>,
+    pub prove_timeout: Option<Duration>,
+    pub verify_timeout: Option<Duration>,
+}
+
 pub struct DockerizedzkVM {
     zkvm_kind: zkVMKind,
     program: SerializedProgram,
     resource: ProverResource,
+    config: DockerizedzkVMConfig,
     container: RwLock<Option<ServerContainer>>,
 }
 
@@ -322,6 +326,7 @@ impl DockerizedzkVM {
         zkvm_kind: zkVMKind,
         program: SerializedProgram,
         resource: ProverResource,
+        config: DockerizedzkVMConfig,
     ) -> Result<Self, Error> {
         build_server_image(zkvm_kind, resource.is_gpu())?;
 
@@ -331,6 +336,7 @@ impl DockerizedzkVM {
             zkvm_kind,
             program,
             resource,
+            config,
             container: RwLock::new(Some(container)),
         })
     }
@@ -351,10 +357,13 @@ impl DockerizedzkVM {
         &self,
         input: Input,
     ) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
-        self.with_retry(|client| {
-            let input = input.clone();
-            Box::pin(async move { client.execute(input).await })
-        })
+        self.with_retry(
+            |client| {
+                let input = input.clone();
+                Box::pin(async move { client.execute(input).await })
+            },
+            self.config.execute_timeout,
+        )
         .await
     }
 
@@ -363,18 +372,24 @@ impl DockerizedzkVM {
         input: Input,
         proof_kind: ProofKind,
     ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
-        self.with_retry(|client| {
-            let input = input.clone();
-            Box::pin(async move { client.prove(input, proof_kind).await })
-        })
+        self.with_retry(
+            |client| {
+                let input = input.clone();
+                Box::pin(async move { client.prove(input, proof_kind).await })
+            },
+            self.config.prove_timeout,
+        )
         .await
     }
 
     pub async fn verify_async(&self, proof: Proof) -> anyhow::Result<PublicValues> {
-        self.with_retry(|client| {
-            let proof = proof.clone();
-            Box::pin(async move { client.verify(proof).await })
-        })
+        self.with_retry(
+            |client| {
+                let proof = proof.clone();
+                Box::pin(async move { client.verify(proof).await })
+            },
+            self.config.verify_timeout,
+        )
         .await
     }
 
@@ -411,11 +426,15 @@ impl DockerizedzkVM {
         Ok(RwLockReadGuard::map(guard, |opt| opt.as_ref().unwrap()))
     }
 
-    async fn with_retry<T, F>(&self, f: F) -> anyhow::Result<T>
+    async fn with_retry<T, F>(&self, f: F, timeout_duration: Option<Duration>) -> anyhow::Result<T>
     where
         F: Fn(zkVMClient) -> Pin<Box<dyn Future<Output = Result<T, client::Error>> + Send>>,
     {
         const MAX_RETRY: usize = 3;
+
+        // Timeout to wait for container to exit when the request is not fully
+        // responded, which is usually OOM killed.
+        const DOCKER_WAIT_FOR_EXIT_TIMEOUT: Duration = Duration::from_secs(10);
 
         let mut attempt = 1;
         loop {
@@ -433,7 +452,28 @@ impl DockerizedzkVM {
             };
             let client = container.client.clone();
 
-            let err = match f(client).await {
+            let result = match timeout_duration {
+                Some(duration) => match timeout(duration, f(client)).await {
+                    Ok(result) => result,
+                    Err(_) => {
+                        let container_id = container.id.clone();
+                        drop(container);
+
+                        let mut guard = self.container.write().await;
+                        if let Some(container) = &*guard
+                            && container.id == container_id
+                        {
+                            info!("Operation timed out, removing container...");
+                            drop(guard.take())
+                        }
+
+                        return Err(Error::Timeout { timeout: duration }.into());
+                    }
+                },
+                None => f(client).await,
+            };
+
+            let err = match result {
                 Ok(ok) => return Ok(ok),
                 Err(err) => Error::from(err),
             };
@@ -441,10 +481,10 @@ impl DockerizedzkVM {
             if matches!(&err, Error::Rpc(_))
                 && !container.client.is_healthy().await
                 && let Some(exit_info) =
-                    docker_wait_for_exit(&container.name, DOCKER_WAIT_FOR_EXIT_TIMEOUT).await
+                    docker_wait_for_exit(&container.id, DOCKER_WAIT_FOR_EXIT_TIMEOUT).await
             {
                 return Err(Error::ContainerExited {
-                    container_name: container.name.clone(),
+                    container_id: container.id.clone(),
                     exit_info,
                 }
                 .into());
@@ -502,7 +542,7 @@ async fn wait_until_healthy(endpoint: &Url, http_client: Client) -> Result<(), E
 #[cfg(test)]
 mod test {
     use crate::{
-        CompilerKind,
+        CompilerKind, DockerizedzkVMConfig,
         compiler::test::compile,
         zkVMKind,
         zkvm::{DockerizedzkVM, Error},
@@ -518,7 +558,13 @@ mod test {
         program: &'static str,
     ) -> DockerizedzkVM {
         let program = compile(zkvm_kind, compiler_kind, program).clone();
-        DockerizedzkVM::new(zkvm_kind, program, ProverResource::Cpu).unwrap()
+        DockerizedzkVM::new(
+            zkvm_kind,
+            program,
+            ProverResource::Cpu,
+            DockerizedzkVMConfig::default(),
+        )
+        .unwrap()
     }
 
     macro_rules! test {
