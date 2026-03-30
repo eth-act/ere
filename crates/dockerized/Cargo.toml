@@ -20,6 +20,7 @@ ere-server.workspace = true
 
 [dev-dependencies]
 paste.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread"] }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 # Local dependencies

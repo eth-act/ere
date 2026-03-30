@@ -551,6 +551,7 @@ mod test {
         host::*, io::serde::bincode::BincodeLegacy, program::basic::BasicProgram,
     };
     use ere_zkvm_interface::zkvm::{Input, ProofKind, ProverResource, zkVM};
+    use std::time::Duration;
 
     fn zkvm(
         zkvm_kind: zkVMKind,
@@ -569,8 +570,8 @@ mod test {
 
     macro_rules! test {
         ($zkvm_kind:ident, $compiler_kind:ident, $program:literal, $valid_test_cases:expr, $invalid_test_cases:expr) => {
-            #[test]
-            fn test_execute() {
+            #[tokio::test(flavor = "multi_thread")]
+            async fn test_execute() {
                 let zkvm = zkvm(zkVMKind::$zkvm_kind, CompilerKind::$compiler_kind, $program);
 
                 // Valid test cases
@@ -586,10 +587,24 @@ mod test {
                         "Expect error variant `Error::zkVM`, got {err:?}",
                     );
                 }
+
+                // Timeout
+                let mut zkvm = zkvm;
+                let execute_timeout = Duration::from_millis(1);
+                zkvm.config.execute_timeout = Some(execute_timeout);
+                let err = zkvm.execute(&Input::new()).unwrap_err();
+                assert!(
+                    matches!(
+                        err.downcast_ref::<Error>().unwrap(),
+                        Error::Timeout { timeout } if *timeout == execute_timeout,
+                    ),
+                    "Expect error variant `Error::Timeout`, got {err:?}",
+                );
+                assert!(zkvm.container.write().await.is_none());
             }
 
-            #[test]
-            fn test_prove() {
+            #[tokio::test(flavor = "multi_thread")]
+            async fn test_prove() {
                 let zkvm = zkvm(zkVMKind::$zkvm_kind, CompilerKind::$compiler_kind, $program);
 
                 // Valid test cases
@@ -610,6 +625,20 @@ mod test {
                 for test_case in $valid_test_cases {
                     run_zkvm_prove(&zkvm, &test_case);
                 }
+
+                // Timeout
+                let mut zkvm = zkvm;
+                let prove_timeout = Duration::from_millis(1);
+                zkvm.config.prove_timeout = Some(prove_timeout);
+                let err = zkvm.prove(&Input::new(), ProofKind::default()).unwrap_err();
+                assert!(
+                    matches!(
+                        err.downcast_ref::<Error>().unwrap(),
+                        Error::Timeout { timeout } if *timeout == prove_timeout,
+                    ),
+                    "Expect error variant `Error::Timeout`, got {err:?}",
+                );
+                assert!(zkvm.container.write().await.is_none());
             }
         };
     }
