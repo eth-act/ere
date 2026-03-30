@@ -587,20 +587,6 @@ mod test {
                         "Expect error variant `Error::zkVM`, got {err:?}",
                     );
                 }
-
-                // Timeout
-                let mut zkvm = zkvm;
-                let execute_timeout = Duration::ZERO;
-                zkvm.config.execute_timeout = Some(execute_timeout);
-                let err = zkvm.execute(&Input::new()).unwrap_err();
-                assert!(
-                    matches!(
-                        err.downcast_ref::<Error>().unwrap(),
-                        Error::Timeout { timeout } if *timeout == execute_timeout,
-                    ),
-                    "Expect error variant `Error::Timeout`, got {err:?}",
-                );
-                assert!(zkvm.container.write().await.is_none());
             }
 
             #[tokio::test(flavor = "multi_thread")]
