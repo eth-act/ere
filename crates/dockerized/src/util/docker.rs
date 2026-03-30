@@ -180,30 +180,52 @@ impl DockerRunCmd {
     }
 
     pub fn spawn(
-        mut self,
+        self,
         commands: impl IntoIterator<Item: AsRef<str>>,
         stdin: &[u8],
-    ) -> Result<Child, CommonError> {
-        self = self.flag("interactive");
-
+    ) -> Result<(Child, String), CommonError> {
+        // `docker container create --interactive ...` to create container and get container id.
         let mut cmd = Command::new("docker");
-        cmd.arg("run");
-        for option in self.options {
+        cmd.args(["container", "create", "--interactive"]);
+        for option in &self.options {
             cmd.args(option.to_args());
         }
-        cmd.arg(self.image);
+        cmd.arg(&self.image);
         for command in commands {
             cmd.arg(command.as_ref());
         }
 
-        debug!("Docker run with command: {cmd:?}");
+        debug!("Docker container create with command: {cmd:?}");
+
+        let output = cmd
+            .output()
+            .map_err(|err| CommonError::command(&cmd, err))?;
+        if !output.status.success() {
+            return Err(CommonError::command_exit_non_zero(
+                &cmd,
+                output.status,
+                Some(&output),
+            ));
+        }
+        let container_id = String::from_utf8_lossy(&output.stdout).trim().to_string();
+
+        // `docker container start --attach --interactive ...` to start container with stdin.
+        let mut cmd = Command::new("docker");
+        cmd.args([
+            "container",
+            "start",
+            "--attach",
+            "--interactive",
+            &container_id,
+        ]);
+
+        debug!("Docker container start with command: {cmd:?}");
 
         let mut child = cmd
             .stdin(Stdio::piped())
             .spawn()
             .map_err(|err| CommonError::command(&cmd, err))?;
 
-        // Write all to stdin then drop to close the pipe.
         child
             .stdin
             .take()
@@ -211,7 +233,7 @@ impl DockerRunCmd {
             .write_all(stdin)
             .map_err(|err| CommonError::command(&cmd, err))?;
 
-        Ok(child)
+        Ok((child, container_id))
     }
 
     pub fn exec(self, commands: impl IntoIterator<Item: AsRef<str>>) -> Result<(), CommonError> {
@@ -239,10 +261,10 @@ impl DockerRunCmd {
     }
 }
 
-pub fn remove_docker_container(container_name: impl AsRef<str>) -> Result<(), CommonError> {
+pub fn remove_docker_container(container: impl AsRef<str>) -> Result<(), CommonError> {
     let mut cmd = Command::new("docker");
     let output = cmd
-        .args(["rm", "-f", container_name.as_ref()])
+        .args(["rm", "-f", container.as_ref()])
         .output()
         .map_err(|err| CommonError::command(&cmd, err))?;
 
@@ -312,7 +334,7 @@ impl Display for ContainerExitInfo {
 }
 
 pub fn docker_inspect_exit_info(
-    container_name: impl AsRef<str>,
+    container_id: impl AsRef<str>,
 ) -> Result<ContainerExitInfo, CommonError> {
     let mut cmd = Command::new("docker");
     let output = cmd
@@ -320,7 +342,7 @@ pub fn docker_inspect_exit_info(
             "inspect",
             "--format",
             "{{.State.ExitCode}} {{.State.OOMKilled}}",
-            container_name.as_ref(),
+            container_id.as_ref(),
         ])
         .output()
         .map_err(|err| CommonError::command(&cmd, err))?;
@@ -345,21 +367,21 @@ pub fn docker_inspect_exit_info(
 }
 
 pub async fn docker_wait_for_exit(
-    container_name: impl AsRef<str>,
+    container_id: impl AsRef<str>,
     timeout: Duration,
 ) -> Option<ContainerExitInfo> {
-    let container_name = container_name.as_ref();
+    let container_id = container_id.as_ref();
     let result = tokio::time::timeout(timeout, async {
         tokio::process::Command::new("docker")
             .arg("wait")
-            .arg(container_name)
+            .arg(container_id)
             .output()
             .await
     })
     .await;
 
     match result {
-        Ok(Ok(output)) if output.status.success() => docker_inspect_exit_info(container_name).ok(),
+        Ok(Ok(output)) if output.status.success() => docker_inspect_exit_info(container_id).ok(),
         _ => None,
     }
 }

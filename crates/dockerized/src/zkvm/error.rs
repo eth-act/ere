@@ -2,6 +2,7 @@ use crate::util::docker::ContainerExitInfo;
 use ere_common::zkVMKind;
 use ere_server::client::{self, ParseError, TwirpErrorResponse};
 use ere_zkvm_interface::CommonError;
+use std::time::Duration;
 use thiserror::Error;
 
 impl From<client::Error> for Error {
@@ -31,9 +32,11 @@ pub enum Error {
     ConnectionTimeout,
     #[error("RPC to zkVM server error: {0}")]
     Rpc(TwirpErrorResponse),
-    #[error("Server container '{container_name}' exited during request: {exit_info}")]
+    #[error("Server container '{container_id}' exited during request: {exit_info}")]
     ContainerExited {
-        container_name: String,
+        container_id: String,
         exit_info: ContainerExitInfo,
     },
+    #[error("Operation timed out after {timeout:?}")]
+    Timeout { timeout: Duration },
 }

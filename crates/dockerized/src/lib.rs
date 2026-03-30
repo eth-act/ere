@@ -26,7 +26,9 @@
 //!
 //! ```rust,no_run
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! use ere_dockerized::{CompilerKind, DockerizedCompiler, DockerizedzkVM, zkVMKind};
+//! use ere_dockerized::{
+//!     CompilerKind, DockerizedCompiler, DockerizedzkVM, DockerizedzkVMConfig, zkVMKind,
+//! };
 //! use ere_zkvm_interface::{
 //!     compiler::Compiler,
 //!     zkvm::{Input, ProofKind, ProverResource, zkVM},
@@ -46,7 +48,12 @@
 //!
 //! // Create zkVM instance
 //! let resource = ProverResource::Cpu;
-//! let zkvm = DockerizedzkVM::new(zkvm_kind, program, resource)?;
+//! let zkvm = DockerizedzkVM::new(
+//!     zkvm_kind,
+//!     program,
+//!     resource,
+//!     DockerizedzkVMConfig::default(),
+//! )?;
 //!
 //! // Serialize input
 //! let input = Input::new().with_stdin(42u32.to_le_bytes().to_vec());
@@ -76,6 +83,6 @@ pub mod zkvm;
 
 pub use crate::{
     compiler::{DockerizedCompiler, SerializedProgram},
-    zkvm::DockerizedzkVM,
+    zkvm::{DockerizedzkVM, DockerizedzkVMConfig},
 };
 pub use ere_common::{CompilerKind, DOCKER_IMAGE_TAG, zkVMKind};
