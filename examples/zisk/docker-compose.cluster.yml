@@ -1,6 +1,6 @@
 services:
   zisk-setup:
-    image: ere-cluster-zisk:local-cuda
+    image: ghcr.io/eth-act/ere/ere-cluster-zisk:latest-cuda
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
@@ -46,7 +46,7 @@ services:
               capabilities: [gpu]
 
   zisk-coordinator:
-    image: ere-cluster-zisk:local-cuda
+    image: ghcr.io/eth-act/ere/ere-cluster-zisk:latest-cuda
     command:
       - "zisk-coordinator"
       - "--config"
@@ -67,7 +67,7 @@ services:
       start_period: 10s
 
   zisk-worker-0:
-    image: ere-cluster-zisk:local-cuda
+    image: ghcr.io/eth-act/ere/ere-cluster-zisk:latest-cuda
     command:
       - "zisk-worker"
       - "--config"
