@@ -8,12 +8,15 @@ use ere_zkvm_interface::zkvm::{
 };
 use std::time::Duration;
 use thiserror::Error;
-use twirp::{Client, Request, reqwest};
+use twirp::{Client, Middleware, Request, reqwest};
 
 pub use twirp::{
     TwirpErrorResponse,
     url::{ParseError, Url},
 };
+
+#[cfg(feature = "otel")]
+pub use otel_propagation::OtelPropagation;
 
 const HEALTH_CHECK_TIMEOUT: Duration = Duration::from_secs(3);
 
@@ -38,11 +41,15 @@ pub struct zkVMClient {
 }
 
 impl zkVMClient {
-    pub fn new(endpoint: Url, http_client: reqwest::Client) -> Result<Self, Error> {
+    pub fn new(
+        endpoint: Url,
+        http_client: reqwest::Client,
+        middlewares: Vec<Box<dyn Middleware>>,
+    ) -> Result<Self, Error> {
         let client = Client::new(
             endpoint.join("twirp")?,
             http_client.clone(),
-            Vec::new(),
+            middlewares,
             None,
         );
         Ok(Self {
@@ -53,7 +60,7 @@ impl zkVMClient {
     }
 
     pub fn from_endpoint(endpoint: Url) -> Result<Self, Error> {
-        Self::new(endpoint, reqwest::Client::new())
+        Self::new(endpoint, reqwest::Client::new(), vec![])
     }
 
     pub async fn is_healthy(&self) -> bool {
@@ -137,4 +144,43 @@ fn result_none_err() -> TwirpErrorResponse {
 
 fn deserialize_report_err(err: bincode::error::DecodeError) -> TwirpErrorResponse {
     twirp::internal(format!("failed to deserialize report: {err}"))
+}
+
+#[cfg(feature = "otel")]
+mod otel_propagation {
+    use tracing_opentelemetry::OpenTelemetrySpanExt;
+    use twirp::{
+        Middleware, Next,
+        axum::http::{HeaderMap, HeaderName, HeaderValue},
+        reqwest,
+    };
+
+    struct OtelInjector<'a>(&'a mut HeaderMap);
+
+    impl opentelemetry::propagation::Injector for OtelInjector<'_> {
+        fn set(&mut self, key: &str, value: String) {
+            if let Ok(name) = HeaderName::from_bytes(key.as_bytes())
+                && let Ok(val) = HeaderValue::from_str(&value)
+            {
+                self.0.insert(name, val);
+            }
+        }
+    }
+
+    pub struct OtelPropagation;
+
+    #[twirp::async_trait::async_trait]
+    impl Middleware for OtelPropagation {
+        async fn handle(
+            &self,
+            mut req: reqwest::Request,
+            next: Next<'_>,
+        ) -> twirp::Result<reqwest::Response> {
+            let context = tracing::Span::current().context();
+            opentelemetry::global::get_text_map_propagator(|propagator| {
+                propagator.inject_context(&context, &mut OtelInjector(req.headers_mut()));
+            });
+            next.run(req).await
+        }
+    }
 }

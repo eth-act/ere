@@ -301,7 +301,7 @@ impl ServerContainer {
         Ok(ServerContainer {
             id: container_id,
             tempdir,
-            client: zkVMClient::new(endpoint, http_client)?,
+            client: zkVMClient::new(endpoint, http_client, vec![])?,
         })
     }
 }

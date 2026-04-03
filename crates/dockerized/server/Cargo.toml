@@ -8,16 +8,20 @@ license.workspace = true
 [dependencies]
 anyhow.workspace = true
 bincode = { workspace = true, features = ["alloc", "serde"] }
+opentelemetry = { workspace = true, optional = true }
 prost.workspace = true
 serde = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
 tokio.workspace = true
+tracing.workspace = true
+tracing-opentelemetry = { workspace = true, optional = true }
 twirp.workspace = true
 
 # Server
 clap = { workspace = true, features = ["derive"], optional = true }
-tower-http = { workspace = true, features = ["catch-panic"], optional = true }
-tracing = { workspace = true, optional = true }
+opentelemetry-otlp = { workspace = true, features = ["grpc-tonic"], optional = true }
+opentelemetry_sdk = { workspace = true, features = ["rt-tokio"], optional = true }
+tower-http = { workspace = true, features = ["catch-panic", "trace"], optional = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"], optional = true }
 
 # Local dependencies
@@ -37,9 +41,20 @@ twirp-build.workspace = true
 workspace = true
 
 [features]
-default = ["client"]
 client = []
-server = ["dep:clap", "dep:tower-http", "dep:tracing", "dep:tracing-subscriber", "tokio/macros", "tokio/rt-multi-thread", "tokio/signal"]
+default = ["client"]
+otel = ["dep:opentelemetry", "dep:tracing-opentelemetry"]
+server = [
+    "otel",
+    "dep:clap",
+    "dep:opentelemetry-otlp",
+    "dep:opentelemetry_sdk",
+    "dep:tower-http",
+    "dep:tracing-subscriber",
+    "tokio/macros",
+    "tokio/rt-multi-thread",
+    "tokio/signal",
+]
 
 # zkVM
 airbender = ["dep:ere-airbender", "server"]
