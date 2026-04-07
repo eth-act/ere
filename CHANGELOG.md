@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.0](https://github.com/eth-act/ere/compare/v0.6.1...v0.7.0) (2026-04-07)
+
+
+### Features
+
+* add `DockerizedzkVMConfig` to allow specify operation timeouts ([#324](https://github.com/eth-act/ere/issues/324)) ([3914a12](https://github.com/eth-act/ere/commit/3914a12f18b5f27807114048ae4829f3e999806b))
+* add telementry support for ere-server ([#328](https://github.com/eth-act/ere/issues/328)) ([7a6a471](https://github.com/eth-act/ere/commit/7a6a4716cf639055f9778551877f42177f0c44c4))
+
 ## [0.6.1](https://github.com/eth-act/ere/compare/v0.6.0...v0.6.1) (2026-03-28)
 
 
