@@ -91,7 +91,6 @@ openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4
 openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.3" }
 openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.3" }
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.3" }
-openvm-transpiler = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.3" }
 openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.3", default-features = false }
 
 # Risc0 dependencies
