@@ -17,3 +17,4 @@ jobs:
     with:
       zkvm: openvm
       cuda: true
+      test_min_stack: 8388608

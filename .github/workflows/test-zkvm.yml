@@ -26,7 +26,11 @@ on:
         description: 'Number of threads when testing via docker'
         required: false
         type: number
-      # Remove when we use larger runners, currently only needed to skip for zisk
+      test_min_stack:
+        description: 'RUST_MIN_STACK value when testing via docker'
+        required: false
+        type: number
+      # Remove if we use larger runners.
       skip_prove_test:
         description: 'Whether to skip prove test and ere-dockerized test or not'
         required: false
@@ -246,6 +250,7 @@ jobs:
           cat <<EOF | $DOCKER_CMD
           set -e -o pipefail
 
+          ${{ inputs.test_min_stack && format('RUST_MIN_STACK={0}', inputs.test_min_stack) || '' }} \
           cargo test --release --package ere-${{ inputs.zkvm }} \
             -- ${{ inputs.skip_prove_test && '--skip prove' || '' }} ${{ inputs.test_threads && format('--test-threads={0}', inputs.test_threads) || '' }}
 
