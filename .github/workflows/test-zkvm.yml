@@ -158,7 +158,7 @@ jobs:
             --zkvm ${{ inputs.zkvm }} \
             --registry ${{ needs.image_meta.outputs.image_registry }} \
             --tag ${{ needs.image_meta.outputs.image_tag }} \
-            --cached-tag ${{ needs.image_meta.outputs.cached_image_tag }}
+            --cached-tag "${{ needs.image_meta.outputs.cached_image_tag }}"
 
       - name: Run cargo clippy for ere-${{ inputs.zkvm }} via Docker
         run: |
@@ -215,7 +215,7 @@ jobs:
             --zkvm ${{ inputs.zkvm }} \
             --registry ${{ needs.image_meta.outputs.image_registry }} \
             --tag ${{ needs.image_meta.outputs.image_tag }} \
-            --cached-tag ${{ needs.image_meta.outputs.cached_image_tag }}
+            --cached-tag "${{ needs.image_meta.outputs.cached_image_tag }}"
 
       - name: Increase swap to 8GB
         run: |
@@ -290,7 +290,7 @@ jobs:
             --zkvm ${{ inputs.zkvm }} \
             --registry ${{ needs.image_meta.outputs.image_registry }} \
             --tag ${{ needs.image_meta.outputs.image_tag }} \
-            --cached-tag ${{ needs.image_meta.outputs.cached_image_tag }}
+            --cached-tag "${{ needs.image_meta.outputs.cached_image_tag }}"
 
           # Build ere-compiler-${{ inputs.zkvm }} and ere-server-${{ inputs.zkvm }}
           bash .github/scripts/build-image.sh \
