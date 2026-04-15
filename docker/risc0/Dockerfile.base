@@ -20,9 +20,9 @@ ARG NVCC_APPEND_FLAGS="--generate-code arch=compute_120,code=sm_120"
 COPY --chmod=755 scripts/sdk_installers/install_risc0_sdk.sh /tmp/install_risc0_sdk.sh
 
 # The install_risc0_sdk.sh script will respect these ENV variables.
-ENV RISC0_VERSION="3.0.4" \
+ENV RISC0_VERSION="3.0.5" \
     RISC0_CPP_VERSION="2024.1.5" \
-    RISC0_RUST_VERSION="1.88.0"
+    RISC0_RUST_VERSION="1.94.1"
 
 # Run the Risc0 SDK installation script
 # It will use the RISC0_VERSION, RISC0_CPP_VERSION and RISC0_RUST_VERSION defined above.
