@@ -1,6 +1,6 @@
-use crate::{compiler::Error, program::SP1Program};
+use crate::compiler::Error;
 use ere_compile_utils::{CommonError, cargo_metadata};
-use ere_zkvm_interface::compiler::Compiler;
+use ere_zkvm_interface::{Elf, compiler::Compiler};
 use std::{fs, path::Path, process::Command};
 use tempfile::tempdir;
 use tracing::info;
@@ -12,9 +12,8 @@ pub struct RustRv64imaCustomized;
 impl Compiler for RustRv64imaCustomized {
     type Error = Error;
 
-    type Program = SP1Program;
-
-    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
+    fn compile(&self, guest_directory: impl AsRef<Path>) -> Result<Elf, Self::Error> {
+        let guest_directory = guest_directory.as_ref();
         info!("Compiling SP1 program at {}", guest_directory.display());
 
         cargo_metadata(guest_directory)?;
@@ -50,7 +49,7 @@ impl Compiler for RustRv64imaCustomized {
             fs::read(&elf_path).map_err(|err| CommonError::read_file("elf", &elf_path, err))?;
         info!("SP1 program compiled OK - {} bytes", elf.len());
 
-        Ok(SP1Program { elf })
+        Ok(Elf(elf))
     }
 }
 
@@ -63,7 +62,7 @@ mod tests {
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("sp1", "basic");
-        let program = RustRv64imaCustomized.compile(&guest_directory).unwrap();
-        assert!(!program.elf().is_empty(), "ELF bytes should not be empty.");
+        let elf = RustRv64imaCustomized.compile(guest_directory).unwrap();
+        assert!(!elf.is_empty(), "ELF bytes should not be empty.");
     }
 }
