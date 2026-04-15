@@ -4,7 +4,11 @@ use airbender_execution_utils::{
     universal_circuit_verifier_vk, verify_recursion_log_23_layer,
 };
 use ere_zkvm_interface::zkvm::{CommonError, PublicValues};
-use std::{array, fs, io::BufRead, process::Command};
+use std::{
+    array, fs,
+    io::BufRead,
+    process::{Command, Stdio},
+};
 use tempfile::tempdir;
 
 /// Verification key hash chain.
@@ -25,21 +29,22 @@ pub struct AirbenderSdk {
 }
 
 impl AirbenderSdk {
-    pub fn new(bin: &[u8], gpu: bool) -> Self {
+    pub fn new(elf: &[u8], gpu: bool) -> Result<Self, Error> {
+        let bin = objcopy_elf_to_bin(elf)?;
         let vk_hash_chain = {
             // Compute base VK as `blake(PC || setup_caps)`.
-            let base_vk = generate_params_for_binary(bin, Machine::Standard);
+            let base_vk = generate_params_for_binary(&bin, Machine::Standard);
             // The 1st recursion layer VK
             let verifier_vk = universal_circuit_verifier_vk().params;
             // Compute hash chain as `blake(blake(0 || guest_vk) || verifier_vk)`,
             // that is expected to be exposed by second layer recursion program.
             compute_chain_encoding(vec![[0; 8], base_vk, verifier_vk])
         };
-        Self {
+        Ok(Self {
             bin: bin.to_vec(),
             vk_hash_chain,
             gpu,
-        }
+        })
     }
 
     pub fn vk_chain_hash(&self) -> &VkHashChain {
@@ -213,6 +218,35 @@ impl AirbenderSdk {
 
         Ok(public_values)
     }
+}
+
+fn objcopy_elf_to_bin(elf: &[u8]) -> Result<Vec<u8>, Error> {
+    let dir = tempfile::tempdir().map_err(CommonError::tempdir)?;
+    let input_path = dir.path().join("input.elf");
+    let output_path = dir.path().join("output.bin");
+
+    fs::write(&input_path, elf)
+        .map_err(|err| CommonError::write_file("objcopy input ELF", &input_path, err))?;
+
+    let mut cmd = Command::new("objcopy");
+    let output = cmd
+        .args(["-I", "elf32-little", "-O", "binary"])
+        .arg(&input_path)
+        .arg(&output_path)
+        .stderr(Stdio::piped())
+        .output()
+        .map_err(|err| CommonError::command(&cmd, err))?;
+
+    if !output.status.success() {
+        Err(CommonError::command_exit_non_zero(
+            &cmd,
+            output.status,
+            Some(&output),
+        ))?
+    }
+
+    Ok(fs::read(&output_path)
+        .map_err(|err| CommonError::read_file("objcopy output binary", &output_path, err))?)
 }
 
 /// Encode input with length prefixed to hex string for `airbender-cli`.

@@ -1,12 +1,7 @@
-use crate::{compiler::Error, program::AirbenderProgram};
-use ere_compile_utils::{CargoBuildCmd, CommonError, rustup_add_components};
-use ere_zkvm_interface::compiler::Compiler;
-use std::{
-    env,
-    io::Write,
-    path::Path,
-    process::{Command, Stdio},
-};
+use crate::compiler::Error;
+use ere_compile_utils::CargoBuildCmd;
+use ere_zkvm_interface::compiler::{Compiler, Elf};
+use std::{env, path::Path};
 
 const TARGET_TRIPLE: &str = "riscv32ima-unknown-none-elf";
 // Rust flags according to https://github.com/matter-labs/zksync-airbender/blob/v0.5.2/examples/dynamic_fibonacci/.cargo/config.toml.
@@ -37,9 +32,7 @@ pub struct RustRv32ima;
 impl Compiler for RustRv32ima {
     type Error = Error;
 
-    type Program = AirbenderProgram;
-
-    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
+    fn compile(&self, guest_directory: impl AsRef<Path>) -> Result<Elf, Self::Error> {
         let toolchain = env::var("ERE_RUST_TOOLCHAIN").unwrap_or_else(|_| "nightly".into());
         let elf = CargoBuildCmd::new()
             .linker_script(Some(LINKER_SCRIPT))
@@ -47,44 +40,8 @@ impl Compiler for RustRv32ima {
             .build_options(CARGO_BUILD_OPTIONS)
             .rustflags(RUSTFLAGS)
             .exec(guest_directory, TARGET_TRIPLE)?;
-        let bin = objcopy_binary(&toolchain, &elf)?;
-        Ok(AirbenderProgram { bin, elf })
+        Ok(Elf(elf))
     }
-}
-
-fn objcopy_binary(toolchain: &str, elf: &[u8]) -> Result<Vec<u8>, Error> {
-    rustup_add_components(toolchain, ["llvm-tools"])?;
-
-    let mut cmd = Command::new("rust-objcopy");
-    let mut child = cmd
-        .args(["-O", "binary", "-", "-"])
-        .env("RUSTUP_TOOLCHAIN", toolchain)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|err| CommonError::command(&cmd, err))?;
-
-    child
-        .stdin
-        .as_mut()
-        .unwrap()
-        .write_all(elf)
-        .map_err(|err| CommonError::command(&cmd, err))?;
-
-    let output = child
-        .wait_with_output()
-        .map_err(|err| CommonError::command(&cmd, err))?;
-
-    if !output.status.success() {
-        Err(CommonError::command_exit_non_zero(
-            &cmd,
-            output.status,
-            Some(&output),
-        ))?
-    }
-
-    Ok(output.stdout)
 }
 
 #[cfg(test)]
@@ -96,7 +53,7 @@ mod tests {
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("airbender", "basic");
-        let program = RustRv32ima.compile(&guest_directory).unwrap();
-        assert!(!program.bin.is_empty(), "Binary should not be empty.");
+        let elf = RustRv32ima.compile(guest_directory).unwrap();
+        assert!(!elf.is_empty(), "ELF should not be empty.");
     }
 }

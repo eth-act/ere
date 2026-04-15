@@ -1,8 +1,8 @@
-use crate::{program::AirbenderProgram, zkvm::sdk::AirbenderSdk};
+use crate::zkvm::sdk::AirbenderSdk;
 use airbender_execution_utils::ProgramProof;
 use anyhow::bail;
 use ere_zkvm_interface::{
-    ProverResourceKind,
+    Elf, ProverResourceKind,
     zkvm::{
         CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
         ProverResource, PublicValues, zkVM, zkVMProgramDigest,
@@ -23,14 +23,14 @@ pub struct EreAirbender {
 }
 
 impl EreAirbender {
-    pub fn new(program: AirbenderProgram, resource: ProverResource) -> Result<Self, Error> {
+    pub fn new(elf: Elf, resource: ProverResource) -> Result<Self, Error> {
         if !matches!(resource, ProverResource::Cpu | ProverResource::Gpu) {
             Err(CommonError::unsupported_prover_resource_kind(
                 resource.kind(),
                 [ProverResourceKind::Cpu, ProverResourceKind::Gpu],
             ))?;
         }
-        let sdk = AirbenderSdk::new(program.bin(), resource.is_gpu());
+        let sdk = AirbenderSdk::new(&elf, resource.is_gpu())?;
         Ok(Self { sdk })
     }
 }
@@ -123,33 +123,33 @@ impl zkVMProgramDigest for EreAirbender {
 
 #[cfg(test)]
 mod tests {
-    use crate::{compiler::RustRv32ima, program::AirbenderProgram, zkvm::EreAirbender};
+    use crate::{compiler::RustRv32ima, zkvm::EreAirbender};
     use ere_test_utils::{
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
         io::serde::bincode::BincodeLegacy,
         program::basic::BasicProgram,
     };
     use ere_zkvm_interface::{
+        Elf,
         compiler::Compiler,
         zkvm::{Input, ProofKind, ProverResource, zkVM},
     };
     use std::sync::OnceLock;
 
-    fn basic_program() -> AirbenderProgram {
-        static PROGRAM: OnceLock<AirbenderProgram> = OnceLock::new();
-        PROGRAM
-            .get_or_init(|| {
-                RustRv32ima
-                    .compile(&testing_guest_directory("airbender", "basic"))
-                    .unwrap()
-            })
-            .clone()
+    fn basic_elf() -> Elf {
+        static ELF: OnceLock<Elf> = OnceLock::new();
+        ELF.get_or_init(|| {
+            RustRv32ima
+                .compile(testing_guest_directory("airbender", "basic"))
+                .unwrap()
+        })
+        .clone()
     }
 
     #[test]
     fn test_execute() {
-        let program = basic_program();
-        let zkvm = EreAirbender::new(program, ProverResource::Cpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreAirbender::new(elf, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
         run_zkvm_execute(&zkvm, &test_case);
@@ -157,8 +157,8 @@ mod tests {
 
     #[test]
     fn test_execute_invalid_test_case() {
-        let program = basic_program();
-        let zkvm = EreAirbender::new(program, ProverResource::Cpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreAirbender::new(elf, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -170,8 +170,8 @@ mod tests {
 
     #[test]
     fn test_prove() {
-        let program = basic_program();
-        let zkvm = EreAirbender::new(program, ProverResource::Cpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreAirbender::new(elf, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
         run_zkvm_prove(&zkvm, &test_case);
@@ -179,8 +179,8 @@ mod tests {
 
     #[test]
     fn test_prove_invalid_test_case() {
-        let program = basic_program();
-        let zkvm = EreAirbender::new(program, ProverResource::Cpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreAirbender::new(elf, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -197,8 +197,8 @@ mod tests {
     #[cfg(feature = "cuda")]
     #[test]
     fn test_prove_gpu() {
-        let program = basic_program();
-        let zkvm = EreAirbender::new(program, ProverResource::Gpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreAirbender::new(elf, ProverResource::Gpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
         run_zkvm_prove(&zkvm, &test_case);
@@ -207,8 +207,8 @@ mod tests {
     #[cfg(feature = "cuda")]
     #[test]
     fn test_prove_invalid_test_case_gpu() {
-        let program = basic_program();
-        let zkvm = EreAirbender::new(program, ProverResource::Gpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreAirbender::new(elf, ProverResource::Gpu).unwrap();
 
         for input in [
             Input::new(),
