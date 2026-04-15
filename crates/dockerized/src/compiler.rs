@@ -8,8 +8,7 @@ use crate::{
     },
     zkVMKind,
 };
-use ere_zkvm_interface::{CommonError, compiler::Compiler};
-use serde::{Deserialize, Serialize};
+use ere_zkvm_interface::{CommonError, Elf, compiler::Compiler};
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -88,11 +87,6 @@ fn build_compiler_image(zkvm_kind: zkVMKind) -> Result<(), Error> {
     Ok(())
 }
 
-/// Wrapper for serialized program.
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct SerializedProgram(pub Vec<u8>);
-
 pub struct DockerizedCompiler {
     zkvm_kind: zkVMKind,
     compiler_kind: CompilerKind,
@@ -124,9 +118,9 @@ impl DockerizedCompiler {
 
 impl Compiler for DockerizedCompiler {
     type Error = Error;
-    type Program = SerializedProgram;
 
-    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
+    fn compile(&self, guest_directory: impl AsRef<Path>) -> Result<Elf, Self::Error> {
+        let guest_directory = guest_directory.as_ref();
         let guest_relative_path = guest_directory
             .strip_prefix(&self.mount_directory)
             .map_err(|_| Error::GuestNotInMountingDirecty {
@@ -151,6 +145,8 @@ impl Compiler for DockerizedCompiler {
             _ => cmd,
         };
 
+        const ELF_NAME: &str = "guest.elf";
+
         cmd.exec([
             "--compiler-kind",
             self.compiler_kind.as_str(),
@@ -158,41 +154,32 @@ impl Compiler for DockerizedCompiler {
             guest_path_in_docker.to_string_lossy().as_ref(),
             "--output-dir",
             "/output",
-            "--program-name",
-            "program",
+            "--elf-name",
+            ELF_NAME,
         ])?;
 
-        let program_path = tempdir.path().join("program");
-        let program = fs::read(&program_path)
-            .map_err(|err| CommonError::read_file("program", &program_path, err))?;
-        Ok(SerializedProgram(program))
+        let elf_path = tempdir.path().join(ELF_NAME);
+        let elf =
+            fs::read(&elf_path).map_err(|err| CommonError::read_file("elf", &elf_path, err))?;
+        Ok(Elf(elf))
     }
 }
 
 #[cfg(test)]
 pub(crate) mod test {
-    use crate::{
-        CompilerKind,
-        compiler::{DockerizedCompiler, SerializedProgram},
-        util::workspace_dir,
-        zkVMKind,
-    };
+    use crate::{CompilerKind, compiler::DockerizedCompiler, util::workspace_dir, zkVMKind};
     use ere_test_utils::host::testing_guest_directory;
-    use ere_zkvm_interface::compiler::Compiler;
+    use ere_zkvm_interface::{Elf, compiler::Compiler};
     use tracing_subscriber::EnvFilter;
 
-    pub fn compile(
-        zkvm_kind: zkVMKind,
-        compiler_kind: CompilerKind,
-        program: &'static str,
-    ) -> SerializedProgram {
+    pub fn compile(zkvm_kind: zkVMKind, compiler_kind: CompilerKind, program: &'static str) -> Elf {
         let _ = tracing_subscriber::fmt()
             .with_env_filter(EnvFilter::from_default_env())
             .try_init();
 
         DockerizedCompiler::new(zkvm_kind, compiler_kind, workspace_dir().unwrap())
             .unwrap()
-            .compile(&testing_guest_directory(zkvm_kind.as_str(), program))
+            .compile(testing_guest_directory(zkvm_kind.as_str(), program))
             .unwrap()
     }
 
@@ -203,9 +190,9 @@ pub(crate) mod test {
                 fn [<test_compile_ $compiler_kind:snake>]() {
                     let zkvm_kind = crate::zkVMKind::$zkvm_kind;
                     let compiler_kind = crate::CompilerKind::$compiler_kind;
-                    let program = crate::compiler::test::compile(zkvm_kind, compiler_kind, $program);
+                    let elf = crate::compiler::test::compile(zkvm_kind, compiler_kind, $program);
 
-                    assert!(!program.0.is_empty(), "Program should not be empty");
+                    assert!(!elf.is_empty(), "ELF should not be empty");
                 }
             }
         };
@@ -218,10 +205,10 @@ pub(crate) mod test {
                 fn [<test_reproducible_elf_ $compiler_kind:snake>]() {
                     let zkvm_kind = crate::zkVMKind::$zkvm_kind;
                     let compiler_kind = crate::CompilerKind::$compiler_kind;
-                    let program_1 = crate::compiler::test::compile(zkvm_kind, compiler_kind, $program);
-                    let program_2 = crate::compiler::test::compile(zkvm_kind, compiler_kind, $program);
+                    let elf_1 = crate::compiler::test::compile(zkvm_kind, compiler_kind, $program);
+                    let elf_2 = crate::compiler::test::compile(zkvm_kind, compiler_kind, $program);
 
-                    assert!(program_1.0 == program_2.0, "Programs should be equal");
+                    assert!(elf_1 == elf_2, "ELF outputs should be equal");
                 }
             }
         };

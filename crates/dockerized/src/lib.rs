@@ -82,7 +82,7 @@ pub mod image;
 pub mod zkvm;
 
 pub use crate::{
-    compiler::{DockerizedCompiler, SerializedProgram},
+    compiler::DockerizedCompiler,
     zkvm::{DockerizedzkVM, DockerizedzkVMConfig},
 };
 pub use ere_common::{CompilerKind, DOCKER_IMAGE_TAG, zkVMKind};

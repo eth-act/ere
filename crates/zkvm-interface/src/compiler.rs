@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::{error::Error, ops::Deref, path::Path};
 
 /// ELF binary of a compiled guest program.
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct Elf(pub Vec<u8>);
 

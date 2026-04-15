@@ -1,5 +1,4 @@
 use crate::{
-    compiler::SerializedProgram,
     image::{base_image, base_zkvm_image, server_zkvm_image},
     util::{
         cuda::cuda_archs,
@@ -16,9 +15,12 @@ use ere_server::{
     api::twirp::reqwest::Client,
     client::{self, Url, zkVMClient},
 };
-use ere_zkvm_interface::zkvm::{
-    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResource, PublicValues, block_on, zkVM,
+use ere_zkvm_interface::{
+    Elf,
+    zkvm::{
+        CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+        ProverResource, PublicValues, block_on, zkVM,
+    },
 };
 use std::{
     future::Future,
@@ -203,11 +205,7 @@ impl ServerContainer {
     /// Offset of port used for `ere-server`.
     const PORT_OFFSET: u16 = 4174;
 
-    fn new(
-        zkvm_kind: zkVMKind,
-        program: &SerializedProgram,
-        resource: &ProverResource,
-    ) -> Result<Self, Error> {
+    fn new(zkvm_kind: zkVMKind, elf: &Elf, resource: &ProverResource) -> Result<Self, Error> {
         let name = format!("ere-server-{zkvm_kind}");
         remove_docker_container(&name)?;
 
@@ -291,7 +289,7 @@ impl ServerContainer {
             iter::empty()
                 .chain(["--port", &port.to_string()])
                 .chain(resource.to_args()),
-            &program.0,
+            elf,
         )?;
 
         let endpoint = Url::parse(&format!("http://{host}:{port}"))?;
@@ -315,7 +313,7 @@ pub struct DockerizedzkVMConfig {
 
 pub struct DockerizedzkVM {
     zkvm_kind: zkVMKind,
-    program: SerializedProgram,
+    elf: Elf,
     resource: ProverResource,
     config: DockerizedzkVMConfig,
     container: RwLock<Option<ServerContainer>>,
@@ -324,17 +322,17 @@ pub struct DockerizedzkVM {
 impl DockerizedzkVM {
     pub fn new(
         zkvm_kind: zkVMKind,
-        program: SerializedProgram,
+        elf: Elf,
         resource: ProverResource,
         config: DockerizedzkVMConfig,
     ) -> Result<Self, Error> {
         build_server_image(zkvm_kind, resource.is_gpu())?;
 
-        let container = ServerContainer::new(zkvm_kind, &program, &resource)?;
+        let container = ServerContainer::new(zkvm_kind, &elf, &resource)?;
 
         Ok(Self {
             zkvm_kind,
-            program,
+            elf,
             resource,
             config,
             container: RwLock::new(Some(container)),
@@ -345,8 +343,8 @@ impl DockerizedzkVM {
         self.zkvm_kind
     }
 
-    pub fn program(&self) -> &SerializedProgram {
-        &self.program
+    pub fn elf(&self) -> &Elf {
+        &self.elf
     }
 
     pub fn resource(&self) -> &ProverResource {
@@ -418,7 +416,7 @@ impl DockerizedzkVM {
         drop(guard.take());
         *guard = Some(ServerContainer::new(
             self.zkvm_kind,
-            &self.program,
+            &self.elf,
             &self.resource,
         )?);
 
@@ -558,10 +556,10 @@ mod test {
         compiler_kind: CompilerKind,
         program: &'static str,
     ) -> DockerizedzkVM {
-        let program = compile(zkvm_kind, compiler_kind, program).clone();
+        let elf = compile(zkvm_kind, compiler_kind, program).clone();
         DockerizedzkVM::new(
             zkvm_kind,
-            program,
+            elf,
             ProverResource::Cpu,
             DockerizedzkVMConfig::default(),
         )
