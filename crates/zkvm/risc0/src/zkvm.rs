@@ -1,8 +1,10 @@
-use crate::program::Risc0Program;
 use anyhow::bail;
-use ere_zkvm_interface::zkvm::{
-    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResource, ProverResourceKind, PublicValues, zkVM, zkVMProgramDigest,
+use ere_zkvm_interface::{
+    compiler::Elf,
+    zkvm::{
+        CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+        ProverResource, ProverResourceKind, PublicValues, zkVM, zkVMProgramDigest,
+    },
 };
 use risc0_zkvm::{
     AssumptionReceipt, DEFAULT_MAX_PO2, DefaultProver, Digest, ExecutorEnv, ExternalProver,
@@ -43,20 +45,23 @@ const DEFAULT_KECCAK_PO2: usize = 17;
 const KECCAK_PO2_RANGE: RangeInclusive<usize> = 14..=18;
 
 pub struct EreRisc0 {
-    program: Risc0Program,
+    elf: Elf,
+    image_id: Digest,
     resource: ProverResource,
     segment_po2: usize,
     keccak_po2: usize,
 }
 
 impl EreRisc0 {
-    pub fn new(program: Risc0Program, resource: ProverResource) -> Result<Self, Error> {
+    pub fn new(elf: Elf, resource: ProverResource) -> Result<Self, Error> {
         if !matches!(resource, ProverResource::Cpu | ProverResource::Gpu) {
             Err(CommonError::unsupported_prover_resource_kind(
                 resource.kind(),
                 [ProverResourceKind::Cpu, ProverResourceKind::Gpu],
             ))?;
         }
+
+        let image_id = risc0_binfmt::compute_image_id(&elf).map_err(Error::ComputeImageId)?;
 
         let parse_env = |key: &str, default: usize, range: RangeInclusive<usize>| {
             let Ok(val) = env::var(key) else {
@@ -81,7 +86,8 @@ impl EreRisc0 {
         let keccak_po2 = parse_env("ERE_RISC0_KECCAK_PO2", DEFAULT_KECCAK_PO2, KECCAK_PO2_RANGE)?;
 
         Ok(Self {
-            program,
+            elf,
+            image_id,
             resource,
             segment_po2,
             keccak_po2,
@@ -96,9 +102,7 @@ impl zkVM for EreRisc0 {
         let executor = default_executor();
 
         let start = Instant::now();
-        let session_info = executor
-            .execute(env, &self.program.elf)
-            .map_err(Error::Execute)?;
+        let session_info = executor.execute(env, &self.elf).map_err(Error::Execute)?;
 
         let public_values = session_info.journal.bytes.clone();
 
@@ -148,7 +152,7 @@ impl zkVM for EreRisc0 {
 
         let now = Instant::now();
         let prove_info = prover
-            .prove_with_opts(env, &self.program.elf, &opts)
+            .prove_with_opts(env, &self.elf, &opts)
             .map_err(Error::Prove)?;
         let proving_time = now.elapsed();
 
@@ -188,9 +192,7 @@ impl zkVM for EreRisc0 {
             bail!(Error::InvalidProofKind(proof_kind, got.to_string()));
         }
 
-        receipt
-            .verify(self.program.image_id)
-            .map_err(Error::Verify)?;
+        receipt.verify(self.image_id).map_err(Error::Verify)?;
 
         let public_values = receipt.journal.bytes.clone();
 
@@ -210,7 +212,7 @@ impl zkVMProgramDigest for EreRisc0 {
     type ProgramDigest = Digest;
 
     fn program_digest(&self) -> anyhow::Result<Self::ProgramDigest> {
-        Ok(self.program.image_id)
+        Ok(self.image_id)
     }
 }
 
@@ -232,7 +234,7 @@ impl EreRisc0 {
 
 #[cfg(test)]
 mod tests {
-    use crate::{compiler::RustRv32imaCustomized, program::Risc0Program, zkvm::EreRisc0};
+    use crate::{compiler::RustRv32imaCustomized, zkvm::EreRisc0};
     use ere_io::serde::bincode::BincodeLegacy;
     use ere_test_utils::{
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
@@ -240,26 +242,25 @@ mod tests {
     };
     use ere_zkvm_interface::{
         Input,
-        compiler::Compiler,
+        compiler::{Compiler, Elf},
         zkvm::{ProofKind, ProverResource, zkVM},
     };
     use std::sync::OnceLock;
 
-    fn basic_program() -> Risc0Program {
-        static PROGRAM: OnceLock<Risc0Program> = OnceLock::new();
-        PROGRAM
-            .get_or_init(|| {
-                RustRv32imaCustomized
-                    .compile(&testing_guest_directory("risc0", "basic"))
-                    .unwrap()
-            })
-            .clone()
+    fn basic_elf() -> Elf {
+        static ELF: OnceLock<Elf> = OnceLock::new();
+        ELF.get_or_init(|| {
+            RustRv32imaCustomized
+                .compile(testing_guest_directory("risc0", "basic"))
+                .unwrap()
+        })
+        .clone()
     }
 
     #[test]
     fn test_execute() {
-        let program = basic_program();
-        let zkvm = EreRisc0::new(program, ProverResource::Cpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreRisc0::new(elf, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_execute(&zkvm, &test_case);
@@ -267,8 +268,8 @@ mod tests {
 
     #[test]
     fn test_execute_invalid_test_case() {
-        let program = basic_program();
-        let zkvm = EreRisc0::new(program, ProverResource::Cpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreRisc0::new(elf, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -280,8 +281,8 @@ mod tests {
 
     #[test]
     fn test_prove() {
-        let program = basic_program();
-        let zkvm = EreRisc0::new(program, ProverResource::Cpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreRisc0::new(elf, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
@@ -289,8 +290,8 @@ mod tests {
 
     #[test]
     fn test_prove_invalid_test_case() {
-        let program = basic_program();
-        let zkvm = EreRisc0::new(program, ProverResource::Cpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreRisc0::new(elf, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -306,12 +307,12 @@ mod tests {
 
     #[test]
     fn test_aligned_allocs() {
-        let program = RustRv32imaCustomized
-            .compile(&testing_guest_directory("risc0", "allocs_alignment"))
+        let elf = RustRv32imaCustomized
+            .compile(testing_guest_directory("risc0", "allocs_alignment"))
             .unwrap();
 
         for i in 1..=16_u32 {
-            let zkvm = EreRisc0::new(program.clone(), ProverResource::Cpu).unwrap();
+            let zkvm = EreRisc0::new(elf.clone(), ProverResource::Cpu).unwrap();
 
             let input = Input::new().with_stdin(i.to_le_bytes().to_vec());
 
@@ -328,8 +329,8 @@ mod tests {
     #[cfg(any(feature = "cuda", feature = "metal"))]
     #[test]
     fn test_prove_gpu() {
-        let program = basic_program();
-        let zkvm = EreRisc0::new(program, ProverResource::Gpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreRisc0::new(elf, ProverResource::Gpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
@@ -338,8 +339,8 @@ mod tests {
     #[cfg(any(feature = "cuda", feature = "metal"))]
     #[test]
     fn test_prove_invalid_test_case_gpu() {
-        let program = basic_program();
-        let zkvm = EreRisc0::new(program, ProverResource::Gpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreRisc0::new(elf, ProverResource::Gpu).unwrap();
 
         for input in [
             Input::new(),

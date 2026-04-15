@@ -18,6 +18,9 @@ pub enum Error {
         range: RangeInclusive<usize>,
     },
 
+    #[error("Failed to compute image ID: {0}")]
+    ComputeImageId(anyhow::Error),
+
     // Execute
     #[error("Failed to build `ExecutorEnv`: {0}")]
     BuildExecutorEnv(anyhow::Error),
