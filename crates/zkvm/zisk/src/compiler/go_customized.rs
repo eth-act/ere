@@ -1,20 +1,18 @@
 use std::{env, fs, path::Path, process::Command};
 
+use crate::compiler::Error;
 use ere_compile_utils::CommonError;
-use ere_zkvm_interface::Compiler;
+use ere_zkvm_interface::{Compiler, Elf};
 use tempfile::tempdir;
 use tracing::info;
-
-use crate::{compiler::Error, program::ZiskProgram};
 
 pub struct GoCustomized;
 
 impl Compiler for GoCustomized {
     type Error = Error;
 
-    type Program = ZiskProgram;
-
-    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
+    fn compile(&self, guest_directory: impl AsRef<Path>) -> Result<Elf, Self::Error> {
+        let guest_directory = guest_directory.as_ref();
         info!(
             "Compiling TamaGo ZisK program at {}",
             guest_directory.display()
@@ -56,7 +54,7 @@ impl Compiler for GoCustomized {
         let elf =
             fs::read(&executable).map_err(|err| CommonError::read_file("elf", executable, err))?;
 
-        Ok(ZiskProgram { elf })
+        Ok(Elf(elf))
     }
 }
 
@@ -73,15 +71,15 @@ mod tests {
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("zisk", "basic_go");
-        let program = GoCustomized.compile(&guest_directory).unwrap();
-        assert!(!program.elf().is_empty(), "ELF bytes should not be empty.");
+        let elf = GoCustomized.compile(guest_directory).unwrap();
+        assert!(!elf.is_empty(), "ELF bytes should not be empty.");
     }
 
     #[test]
     fn test_execute() {
         let guest_directory = testing_guest_directory("zisk", "basic_go");
-        let program = GoCustomized.compile(&guest_directory).unwrap();
-        let zkvm = EreZisk::new(program, ProverResource::Cpu).unwrap();
+        let elf = GoCustomized.compile(guest_directory).unwrap();
+        let zkvm = EreZisk::new(elf, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<Cbor>::valid_test_case();
         run_zkvm_execute(&zkvm, &test_case);
