@@ -1,6 +1,6 @@
 use crate::compiler::Error;
 use ere_compile_utils::{CommonError, cargo_metadata};
-use ere_zkvm_interface::{Elf, compiler::Compiler};
+use ere_zkvm_interface::compiler::{Compiler, Elf};
 use std::{fs, path::Path, process::Command};
 use tempfile::tempdir;
 use tracing::info;

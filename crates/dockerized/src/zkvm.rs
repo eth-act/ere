@@ -16,7 +16,7 @@ use ere_server::{
     client::{self, Url, zkVMClient},
 };
 use ere_zkvm_interface::{
-    Elf,
+    compiler::Elf,
     zkvm::{
         CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
         ProverResource, PublicValues, block_on, zkVM,

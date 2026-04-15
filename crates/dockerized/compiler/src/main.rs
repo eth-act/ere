@@ -1,7 +1,7 @@
 use anyhow::{Context, Error};
 use clap::Parser;
 use ere_common::CompilerKind;
-use ere_zkvm_interface::{Compiler, Elf};
+use ere_zkvm_interface::compiler::{Compiler, Elf};
 use std::path::PathBuf;
 use tracing_subscriber::EnvFilter;
 
@@ -27,7 +27,7 @@ struct Args {
     /// Directory of the guest program
     #[arg(long)]
     guest_dir: PathBuf,
-    /// Directory where the compiled program/artifacts will be written
+    /// Directory where the compiled ELF will be written
     #[arg(long)]
     output_dir: PathBuf,
     /// Name of the output ELF file (optional)

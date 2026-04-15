@@ -2,7 +2,8 @@ use crate::zkvm::sdk::AirbenderSdk;
 use airbender_execution_utils::ProgramProof;
 use anyhow::bail;
 use ere_zkvm_interface::{
-    Elf, ProverResourceKind,
+    ProverResourceKind,
+    compiler::Elf,
     zkvm::{
         CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
         ProverResource, PublicValues, zkVM, zkVMProgramDigest,
@@ -130,8 +131,7 @@ mod tests {
         program::basic::BasicProgram,
     };
     use ere_zkvm_interface::{
-        Elf,
-        compiler::Compiler,
+        compiler::{Compiler, Elf},
         zkvm::{Input, ProofKind, ProverResource, zkVM},
     };
     use std::sync::OnceLock;

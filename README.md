@@ -96,11 +96,11 @@ This repository contains the following crates:
 
 - `Compiler`
 
-  Compile a guest program into a zkVM-specific artifact (typically a RISC-V ELF, or a wrapper with preprocessing data).
+  Compile a guest program into an `Elf`.
 
 - `zkVM`
 
-  Execute, prove and verify that artifact. A zkVM instance is created for specific artifact that comes from the `Compiler`.
+  Execute, prove and verify. A zkVM instance is created for an `Elf` that comes from the `Compiler`.
 
 `ere-platform-trait` provides traits for guest program:
 
@@ -242,7 +242,7 @@ ere-sp1 = { git = "https://github.com/eth-act/ere.git" }
 ```rust
 // host/src/main.rs
 
-use ere_sp1::{compiler::RustRv32imaCustomized, zkvm::EreSP1};
+use ere_sp1::{compiler::RustRv64imaCustomized, zkvm::EreSP1};
 use ere_zkvm_interface::{
     compiler::Compiler,
     zkvm::{Input, ProofKind, ProverResource, zkVM},
@@ -253,11 +253,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let guest_directory = Path::new("path/to/guest");
 
     // Compile guest program with SP1 customized toolchain
-    let compiler = RustRv32imaCustomized;
-    let program = compiler.compile(guest_directory)?;
+    let compiler = RustRv64imaCustomized;
+    let elf = compiler.compile(guest_directory)?;
 
     // Create zkVM instance (setup/preprocessing happens here)
-    let zkvm = EreSP1::new(program, ProverResource::Cpu)?;
+    let zkvm = EreSP1::new(elf, ProverResource::Cpu)?;
 
     // Prepare input
     // Use `with_prefixed_stdin` when guest uses `Platform::read_whole_input()`
@@ -325,13 +325,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Compile guest program with SP1 customized toolchain (builds Docker images if needed)
     let compiler =
         DockerizedCompiler::new(zkVMKind::SP1, CompilerKind::RustCustomized, guest_directory)?;
-    let program = compiler.compile(guest_directory)?;
+    let elf = compiler.compile(guest_directory)?;
 
     // Create zkVM instance (builds Docker images if needed)
     // It spawns a container that runs a gRPC server handling zkVM operations
     let zkvm = DockerizedzkVM::new(
         zkVMKind::SP1,
-        program,
+        elf,
         ProverResource::Cpu,
         DockerizedzkVMConfig::default(),
     )?;

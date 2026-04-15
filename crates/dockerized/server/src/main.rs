@@ -2,7 +2,7 @@ use anyhow::{Context, Error};
 use clap::Parser;
 use ere_server::server::{router, zkVMServer};
 use ere_zkvm_interface::{
-    Elf,
+    compiler::Elf,
     zkvm::{ProverResource, zkVM},
 };
 use std::{

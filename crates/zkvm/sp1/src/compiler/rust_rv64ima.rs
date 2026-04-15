@@ -1,6 +1,6 @@
 use crate::compiler::Error;
 use ere_compile_utils::{CargoBuildCmd, RustTarget};
-use ere_zkvm_interface::{Elf, compiler::Compiler};
+use ere_zkvm_interface::compiler::{Compiler, Elf};
 use std::{env, path::Path};
 
 /// Target spec modified from `riscv64im-unknown-none-elf` with patch `atomic-cas = true`.

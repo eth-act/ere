@@ -41,7 +41,7 @@ impl AirbenderSdk {
             compute_chain_encoding(vec![[0; 8], base_vk, verifier_vk])
         };
         Ok(Self {
-            bin: bin.to_vec(),
+            bin,
             vk_hash_chain,
             gpu,
         })

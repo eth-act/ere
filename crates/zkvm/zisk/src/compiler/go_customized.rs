@@ -2,7 +2,7 @@ use std::{env, fs, path::Path, process::Command};
 
 use crate::compiler::Error;
 use ere_compile_utils::CommonError;
-use ere_zkvm_interface::{Compiler, Elf};
+use ere_zkvm_interface::compiler::{Compiler, Elf};
 use tempfile::tempdir;
 use tracing::info;
 

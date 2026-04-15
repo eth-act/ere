@@ -47,7 +47,3 @@ else
     echo "       Ensure $CARGO_HOME/bin is in your PATH for new shells." >&2
     exit 1
 fi
-
-# Install cargo-binutils to objcopy ELF to binary file
-rustup +${AIRBENDER_TOOLCHAIN} component add llvm-tools
-cargo install cargo-binutils

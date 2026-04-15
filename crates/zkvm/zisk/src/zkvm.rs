@@ -1,6 +1,6 @@
 use crate::zkvm::sdk::{ProgramVk, ZiskSdk};
 use anyhow::bail;
-use ere_zkvm_interface::Elf;
+use ere_zkvm_interface::compiler::Elf;
 use ere_zkvm_interface::zkvm::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
     ProverResource, PublicValues, zkVM, zkVMProgramDigest,
@@ -111,8 +111,8 @@ mod tests {
         program::basic::BasicProgram,
     };
     use ere_zkvm_interface::{
-        Elf, RemoteProverConfig,
-        compiler::Compiler,
+        RemoteProverConfig,
+        compiler::{Compiler, Elf},
         zkvm::{Input, ProofKind, ProverResource, zkVM},
     };
     use std::sync::{Mutex, OnceLock};

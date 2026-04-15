@@ -11,9 +11,6 @@ pub enum Error {
     #[error("Enable `cuda` feature to enable `ProverResource::Gpu`")]
     CudaFeatureDisabled,
 
-    #[error("Decode elf failed: {0}")]
-    ElfDecode(eyre::Error),
-
     #[error("Transpile elf failed: {0}")]
     Transpile(SdkError),
 

@@ -44,13 +44,13 @@
 //! // Compile a guest program
 //! let compiler = DockerizedCompiler::new(zkvm_kind, compiler_kind, "mounting/directory")?;
 //! let guest_path = Path::new("relative/path/to/guest/program");
-//! let program = compiler.compile(&guest_path)?;
+//! let elf = compiler.compile(&guest_path)?;
 //!
 //! // Create zkVM instance
 //! let resource = ProverResource::Cpu;
 //! let zkvm = DockerizedzkVM::new(
 //!     zkvm_kind,
-//!     program,
+//!     elf,
 //!     resource,
 //!     DockerizedzkVMConfig::default(),
 //! )?;

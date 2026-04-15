@@ -8,7 +8,10 @@ use crate::{
     },
     zkVMKind,
 };
-use ere_zkvm_interface::{CommonError, Elf, compiler::Compiler};
+use ere_zkvm_interface::{
+    CommonError,
+    compiler::{Compiler, Elf},
+};
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -169,7 +172,7 @@ impl Compiler for DockerizedCompiler {
 pub(crate) mod test {
     use crate::{CompilerKind, compiler::DockerizedCompiler, util::workspace_dir, zkVMKind};
     use ere_test_utils::host::testing_guest_directory;
-    use ere_zkvm_interface::{Elf, compiler::Compiler};
+    use ere_zkvm_interface::compiler::{Compiler, Elf};
     use tracing_subscriber::EnvFilter;
 
     pub fn compile(zkvm_kind: zkVMKind, compiler_kind: CompilerKind, program: &'static str) -> Elf {
