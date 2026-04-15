@@ -1,8 +1,10 @@
-use crate::program::OpenVMProgram;
 use anyhow::bail;
-use ere_zkvm_interface::zkvm::{
-    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResource, ProverResourceKind, PublicValues, zkVM, zkVMProgramDigest,
+use ere_zkvm_interface::{
+    compiler::Elf,
+    zkvm::{
+        CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
+        ProverResource, ProverResourceKind, PublicValues, zkVM, zkVMProgramDigest,
+    },
 };
 use openvm_circuit::arch::instructions::exe::VmExe;
 use openvm_continuations::verifier::internal::types::VmStarkProof;
@@ -10,13 +12,12 @@ use openvm_sdk::{
     CpuSdk, F, SC, StdIn,
     codec::{Decode, Encode},
     commit::AppExecutionCommit,
-    config::{AppConfig, DEFAULT_APP_LOG_BLOWUP, DEFAULT_LEAF_LOG_BLOWUP, SdkVmConfig},
+    config::SdkVmConfig,
     fs::read_object_from_file,
     keygen::{AggProvingKey, AggVerifyingKey, AppProvingKey},
 };
-use openvm_stark_sdk::{config::FriParameters, openvm_stark_backend::p3_field::PrimeField32};
-use openvm_transpiler::{elf::Elf, openvm_platform::memory::MEM_SIZE};
-use std::{env, path::PathBuf, sync::Arc, time::Instant};
+use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+use std::{path::PathBuf, sync::Arc, time::Instant};
 
 mod error;
 
@@ -25,7 +26,6 @@ pub use error::Error;
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 pub struct EreOpenVM {
-    app_config: AppConfig<SdkVmConfig>,
     app_exe: Arc<VmExe<F>>,
     app_pk: AppProvingKey<SdkVmConfig>,
     agg_pk: AggProvingKey,
@@ -35,7 +35,7 @@ pub struct EreOpenVM {
 }
 
 impl EreOpenVM {
-    pub fn new(program: OpenVMProgram, resource: ProverResource) -> Result<Self, Error> {
+    pub fn new(elf: Elf, resource: ProverResource) -> Result<Self, Error> {
         if !matches!(resource, ProverResource::Cpu | ProverResource::Gpu) {
             Err(CommonError::unsupported_prover_resource_kind(
                 resource.kind(),
@@ -43,35 +43,9 @@ impl EreOpenVM {
             ))?;
         }
 
-        let app_config = if let Some(value) = program.app_config() {
-            toml::from_str(value).map_err(Error::InvalidAppConfig)?
-        } else {
-            // The default `AppConfig` copied from https://github.com/openvm-org/openvm/blob/v1.4.3/crates/cli/src/default.rs#L35.
-            AppConfig {
-                app_fri_params: FriParameters::standard_with_100_bits_conjectured_security(
-                    DEFAULT_APP_LOG_BLOWUP,
-                )
-                .into(),
-                // By default it supports RISCV32IM with IO but no precompiles.
-                app_vm_config: SdkVmConfig::builder()
-                    .system(Default::default())
-                    .rv32i(Default::default())
-                    .rv32m(Default::default())
-                    .io(Default::default())
-                    .build(),
-                leaf_fri_params: FriParameters::standard_with_100_bits_conjectured_security(
-                    DEFAULT_LEAF_LOG_BLOWUP,
-                )
-                .into(),
-                compiler_options: Default::default(),
-            }
-        };
+        let sdk = CpuSdk::standard();
 
-        let sdk = CpuSdk::new(app_config.clone()).map_err(Error::SdkInit)?;
-
-        let elf = Elf::decode(program.elf(), MEM_SIZE as u32).map_err(Error::ElfDecode)?;
-
-        let app_exe = sdk.convert_to_exe(elf).map_err(Error::Transpile)?;
+        let app_exe = sdk.convert_to_exe(elf.0).map_err(Error::Transpile)?;
 
         let (app_pk, _) = sdk.app_keygen();
 
@@ -87,7 +61,6 @@ impl EreOpenVM {
             .app_commit();
 
         Ok(Self {
-            app_config,
             app_exe,
             app_pk,
             agg_pk,
@@ -98,8 +71,7 @@ impl EreOpenVM {
     }
 
     fn cpu_sdk(&self) -> Result<CpuSdk, Error> {
-        let sdk =
-            CpuSdk::new_without_transpiler(self.app_config.clone()).map_err(Error::SdkInit)?;
+        let sdk = CpuSdk::standard();
         let _ = sdk.set_app_pk(self.app_pk.clone());
         let _ = sdk.set_agg_pk(self.agg_pk.clone());
         Ok(sdk)
@@ -107,8 +79,7 @@ impl EreOpenVM {
 
     #[cfg(feature = "cuda")]
     fn gpu_sdk(&self) -> Result<openvm_sdk::GpuSdk, Error> {
-        let sdk = openvm_sdk::GpuSdk::new_without_transpiler(self.app_config.clone())
-            .map_err(Error::SdkInit)?;
+        let sdk = openvm_sdk::GpuSdk::standard();
         let _ = sdk.set_app_pk(self.app_pk.clone());
         let _ = sdk.set_agg_pk(self.agg_pk.clone());
         Ok(sdk)
@@ -252,33 +223,32 @@ fn agg_pk_path() -> PathBuf {
 
 #[cfg(test)]
 mod tests {
-    use crate::{compiler::RustRv32imaCustomized, program::OpenVMProgram, zkvm::EreOpenVM};
+    use crate::{compiler::RustRv32imaCustomized, zkvm::EreOpenVM};
     use ere_test_utils::{
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
         io::serde::bincode::BincodeLegacy,
         program::basic::BasicProgram,
     };
     use ere_zkvm_interface::{
-        compiler::Compiler,
+        compiler::{Compiler, Elf},
         zkvm::{Input, ProofKind, ProverResource, zkVM},
     };
     use std::sync::OnceLock;
 
-    fn basic_program() -> OpenVMProgram {
-        static PROGRAM: OnceLock<OpenVMProgram> = OnceLock::new();
-        PROGRAM
-            .get_or_init(|| {
-                RustRv32imaCustomized
-                    .compile(&testing_guest_directory("openvm", "basic"))
-                    .unwrap()
-            })
-            .clone()
+    fn basic_elf() -> Elf {
+        static ELF: OnceLock<Elf> = OnceLock::new();
+        ELF.get_or_init(|| {
+            RustRv32imaCustomized
+                .compile(testing_guest_directory("openvm", "basic"))
+                .unwrap()
+        })
+        .clone()
     }
 
     #[test]
     fn test_execute() {
-        let program = basic_program();
-        let zkvm = EreOpenVM::new(program, ProverResource::Cpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreOpenVM::new(elf, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
         run_zkvm_execute(&zkvm, &test_case);
@@ -286,8 +256,8 @@ mod tests {
 
     #[test]
     fn test_execute_invalid_test_case() {
-        let program = basic_program();
-        let zkvm = EreOpenVM::new(program, ProverResource::Cpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreOpenVM::new(elf, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -299,8 +269,8 @@ mod tests {
 
     #[test]
     fn test_prove() {
-        let program = basic_program();
-        let zkvm = EreOpenVM::new(program, ProverResource::Cpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreOpenVM::new(elf, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
         run_zkvm_prove(&zkvm, &test_case);
@@ -308,8 +278,8 @@ mod tests {
 
     #[test]
     fn test_prove_invalid_test_case() {
-        let program = basic_program();
-        let zkvm = EreOpenVM::new(program, ProverResource::Cpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreOpenVM::new(elf, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -326,8 +296,8 @@ mod tests {
     #[cfg(feature = "cuda")]
     #[test]
     fn test_prove_gpu() {
-        let program = basic_program();
-        let zkvm = EreOpenVM::new(program, ProverResource::Gpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreOpenVM::new(elf, ProverResource::Gpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
         run_zkvm_prove(&zkvm, &test_case);
@@ -336,8 +306,8 @@ mod tests {
     #[cfg(feature = "cuda")]
     #[test]
     fn test_prove_invalid_test_case_gpu() {
-        let program = basic_program();
-        let zkvm = EreOpenVM::new(program, ProverResource::Gpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreOpenVM::new(elf, ProverResource::Gpu).unwrap();
 
         for input in [
             Input::new(),

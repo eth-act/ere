@@ -11,12 +11,6 @@ pub enum Error {
     #[error("Enable `cuda` feature to enable `ProverResource::Gpu`")]
     CudaFeatureDisabled,
 
-    #[error("Invalid AppConfig: {0}")]
-    InvalidAppConfig(toml::de::Error),
-
-    #[error("Initialize SDK failed: {0}")]
-    SdkInit(SdkError),
-
     #[error("Decode elf failed: {0}")]
     ElfDecode(eyre::Error),
 
