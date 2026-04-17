@@ -1,10 +1,7 @@
 use ere_compiler_core::Elf;
 use ere_prover_core::{
-    prover::{
-        CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource,
-        ProverResourceKind, PublicValues, zkVMProver,
-    },
-    zkVMVerifier,
+    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource,
+    ProverResourceKind, PublicValues, zkVMProver, zkVMVerifier,
 };
 use ere_verifier_openvm::{OpenVMProgramVk, OpenVMProof, OpenVMVerifier};
 use openvm_circuit::arch::instructions::exe::VmExe;
@@ -168,7 +165,7 @@ mod tests {
     use crate::prover::OpenVMProver;
     use ere_compiler_core::{Compiler, Elf};
     use ere_compiler_openvm::OpenVMRustRv32imaCustomized;
-    use ere_prover_core::prover::{Input, ProverResource, zkVMProver};
+    use ere_prover_core::{Input, ProverResource, zkVMProver};
     use ere_util_test::{
         codec::BincodeLegacy,
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
@@ -190,10 +187,7 @@ mod tests {
     fn test_execute_rust_rv32ima() {
         use ere_compiler_core::Compiler;
         use ere_compiler_openvm::OpenVMRustRv32ima;
-        use ere_prover_core::{
-            Input,
-            prover::{ProverResource, zkVMProver},
-        };
+        use ere_prover_core::{Input, ProverResource, zkVMProver};
         use ere_util_test::host::testing_guest_directory;
 
         let guest_directory = testing_guest_directory("openvm", "stock_nightly_no_std");

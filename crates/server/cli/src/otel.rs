@@ -1,3 +1,4 @@
+use core::time::Duration;
 use opentelemetry::{propagation::Extractor, trace::TracerProvider};
 use opentelemetry_otlp::{SpanExporter, WithExportConfig};
 use opentelemetry_sdk::{
@@ -5,7 +6,7 @@ use opentelemetry_sdk::{
     propagation::TraceContextPropagator,
     trace::{SdkTracer, SdkTracerProvider},
 };
-use std::{env, time::Duration};
+use std::env;
 use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
 use tracing::{Span, error, info, info_span, warn};
 use tracing_opentelemetry::{OpenTelemetryLayer, OpenTelemetrySpanExt};

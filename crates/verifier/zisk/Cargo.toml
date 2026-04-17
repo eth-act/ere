@@ -12,9 +12,11 @@ serde = { workspace = true, features = ["derive"] }
 serde-big-array.workspace = true
 thiserror.workspace = true
 
+# ZisK dependencies
 proofman-util.workspace = true
 proofman-verifier.workspace = true
 
+# Local dependencies
 ere-verifier-core.workspace = true
 
 [build-dependencies]

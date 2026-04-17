@@ -1,6 +1,6 @@
 use crate::prover::sdk::ZiskSdk;
 use ere_compiler_core::Elf;
-use ere_prover_core::prover::{
+use ere_prover_core::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues,
     zkVMProver,
 };
@@ -76,10 +76,7 @@ mod tests {
     use crate::prover::ZiskProver;
     use ere_compiler_core::{Compiler, Elf};
     use ere_compiler_zisk::ZiskRustRv64imaCustomized;
-    use ere_prover_core::{
-        RemoteProverConfig,
-        prover::{Input, ProverResource, zkVMProver},
-    };
+    use ere_prover_core::{Input, ProverResource, RemoteProverConfig, zkVMProver};
     use ere_util_test::{
         codec::BincodeLegacy,
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
@@ -103,10 +100,7 @@ mod tests {
     fn test_execute_rust_rv64ima() {
         use ere_compiler_core::Compiler;
         use ere_compiler_zisk::ZiskRustRv64ima;
-        use ere_prover_core::{
-            Input,
-            prover::{ProverResource, zkVMProver},
-        };
+        use ere_prover_core::{Input, ProverResource, zkVMProver};
         use ere_util_test::host::testing_guest_directory;
 
         let guest_directory = testing_guest_directory("zisk", "stock_nightly_no_std");

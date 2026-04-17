@@ -10,8 +10,10 @@ bincode = { workspace = true, features = ["alloc", "serde"] }
 serde = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
 
+# Airbender dependencies
 airbender_execution_utils.workspace = true
 
+# Local dependencies
 ere-verifier-core.workspace = true
 
 [build-dependencies]

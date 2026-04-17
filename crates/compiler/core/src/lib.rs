@@ -1,7 +1,8 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
+use core::{error::Error, ops::Deref};
 use serde::{Deserialize, Serialize};
-use std::{error::Error, ops::Deref, path::Path};
+use std::path::Path;
 
 /// ELF binary of a compiled guest program.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

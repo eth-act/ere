@@ -15,8 +15,8 @@ airbender_execution_utils.workspace = true
 
 # Local dependencies
 ere-compiler-core.workspace = true
-ere-verifier-airbender.workspace = true
 ere-prover-core.workspace = true
+ere-verifier-airbender.workspace = true
 
 [dev-dependencies]
 ere-compiler-airbender.workspace = true

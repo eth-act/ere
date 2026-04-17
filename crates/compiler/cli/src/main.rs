@@ -22,7 +22,7 @@ const _: () = {
 #[command(author, version)]
 struct Args {
     /// Compiler kind to use
-    #[arg(long, value_parser = <CompilerKind as std::str::FromStr>::from_str)]
+    #[arg(long, value_parser = <CompilerKind as core::str::FromStr>::from_str)]
     compiler_kind: CompilerKind,
     /// Directory of the guest program
     #[arg(long)]

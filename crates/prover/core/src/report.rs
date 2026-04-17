@@ -1,6 +1,6 @@
+use core::time::Duration;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
 
 /// ProgramExecutionReport produces information about a particular program
 /// execution.

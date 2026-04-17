@@ -1,5 +1,6 @@
+use core::ops::RangeInclusive;
 use ere_compiler_core::Elf;
-use ere_prover_core::prover::{
+use ere_prover_core::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource,
     ProverResourceKind, PublicValues, zkVMProver,
 };
@@ -8,7 +9,7 @@ use risc0_zkvm::{
     AssumptionReceipt, DEFAULT_MAX_PO2, DefaultProver, ExecutorEnv, ExternalProver, ProverOpts,
     default_executor, default_prover,
 };
-use std::{env, ops::RangeInclusive, rc::Rc, time::Instant};
+use std::{env, rc::Rc, time::Instant};
 
 mod error;
 
@@ -188,10 +189,7 @@ mod tests {
     use crate::prover::Risc0Prover;
     use ere_compiler_core::{Compiler, Elf};
     use ere_compiler_risc0::Risc0RustRv32imaCustomized;
-    use ere_prover_core::{
-        Input,
-        prover::{ProverResource, zkVMProver},
-    };
+    use ere_prover_core::{Input, ProverResource, zkVMProver};
     use ere_util_test::{
         codec::BincodeLegacy,
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
@@ -213,10 +211,7 @@ mod tests {
     fn test_execute_rust_rv32ima() {
         use ere_compiler_core::Compiler;
         use ere_compiler_risc0::Risc0RustRv32ima;
-        use ere_prover_core::{
-            Input,
-            prover::{ProverResource, zkVMProver},
-        };
+        use ere_prover_core::{Input, ProverResource, zkVMProver};
         use ere_util_test::host::testing_guest_directory;
 
         let guest_directory = testing_guest_directory("risc0", "stock_nightly_no_std");

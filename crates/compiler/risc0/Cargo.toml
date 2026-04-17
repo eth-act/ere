@@ -7,11 +7,14 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
-risc0-binfmt.workspace = true
-risc0-build = { workspace = true, features = ["unstable"] }
 thiserror.workspace = true
 tracing.workspace = true
 
+# Risc0 dependencies
+risc0-binfmt.workspace = true
+risc0-build = { workspace = true, features = ["unstable"] }
+
+# Local dependencies
 ere-compiler-core.workspace = true
 ere-util-compile.workspace = true
 

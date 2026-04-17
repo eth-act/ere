@@ -12,7 +12,7 @@ clap = { workspace = true, features = ["derive"] }
 opentelemetry = { workspace = true }
 opentelemetry-otlp = { workspace = true, features = ["grpc-tonic"] }
 opentelemetry_sdk = { workspace = true, features = ["rt-tokio"] }
-tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal"]}
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal"] }
 tower-http = { workspace = true, features = ["catch-panic", "trace"] }
 tracing = { workspace = true }
 tracing-opentelemetry = { workspace = true }
@@ -21,15 +21,13 @@ twirp = { workspace = true }
 
 # Local dependencies
 ere-compiler-core = { workspace = true }
-ere-prover-core = { workspace = true, features = ["clap"] }
-ere-server-client = { workspace = true, features = ["otel"] }
-ere-verifier-core = { workspace = true }
-
 ere-prover-airbender = { workspace = true, optional = true }
+ere-prover-core = { workspace = true, features = ["clap"] }
 ere-prover-openvm = { workspace = true, optional = true }
 ere-prover-risc0 = { workspace = true, optional = true }
 ere-prover-sp1 = { workspace = true, optional = true }
 ere-prover-zisk = { workspace = true, optional = true }
+ere-server-client = { workspace = true, features = ["otel"] }
 
 [features]
 default = []

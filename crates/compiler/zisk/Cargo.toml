@@ -10,6 +10,7 @@ tempfile.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 
+# Local dependencies
 ere-compiler-core.workspace = true
 ere-util-compile.workspace = true
 

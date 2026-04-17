@@ -1,9 +1,9 @@
 //! Remote ZisK cluster proving.
 
 use crate::prover::Error;
-use ere_prover_core::prover::{RemoteProverConfig, block_on};
+use core::time::Duration;
+use ere_prover_core::{RemoteProverConfig, block_on};
 use futures_util::StreamExt;
-use std::time::Duration;
 use tonic::transport::Channel;
 use tracing::debug;
 use zisk_distributed_grpc_api::{

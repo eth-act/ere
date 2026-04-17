@@ -6,9 +6,11 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
+thiserror.workspace = true
+
+# Local dependencies
 ere-compiler-core.workspace = true
 ere-util-compile.workspace = true
-thiserror.workspace = true
 
 [dev-dependencies]
 ere-util-test = { workspace = true, features = ["host"] }

@@ -1,11 +1,8 @@
 use crate::prover::sdk::AirbenderSdk;
 use ere_compiler_core::Elf;
 use ere_prover_core::{
-    ProverResourceKind,
-    prover::{
-        CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource,
-        PublicValues, zkVMProver,
-    },
+    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource,
+    ProverResourceKind, PublicValues, zkVMProver,
 };
 use ere_verifier_airbender::{AirbenderProof, AirbenderVerifier};
 use std::time::Instant;
@@ -85,7 +82,7 @@ mod tests {
     use crate::prover::AirbenderProver;
     use ere_compiler_airbender::AirbenderRustRv32ima;
     use ere_compiler_core::{Compiler, Elf};
-    use ere_prover_core::prover::{Input, ProverResource, zkVMProver};
+    use ere_prover_core::{Input, ProverResource, zkVMProver};
     use ere_util_test::{
         codec::BincodeLegacy,
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},

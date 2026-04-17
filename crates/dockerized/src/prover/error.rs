@@ -1,8 +1,8 @@
 use crate::util::docker::ContainerExitInfo;
+use core::time::Duration;
 use ere_catalog::zkVMKind;
 use ere_prover_core::CommonError;
 use ere_server_client::client::{self, ParseError, TwirpErrorResponse};
-use std::time::Duration;
 use thiserror::Error;
 
 impl From<client::Error> for Error {

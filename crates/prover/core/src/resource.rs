@@ -69,7 +69,7 @@ impl ProverResource {
 
 #[cfg(test)]
 mod tests {
-    use crate::prover::resource::ProverResource;
+    use crate::resource::ProverResource;
     use core::fmt::Debug;
     use serde::{Deserialize, Serialize};
 

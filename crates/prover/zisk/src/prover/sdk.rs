@@ -2,21 +2,15 @@ use crate::prover::{
     Error,
     sdk::{cluster::ClusterClient, local::LocalProver},
 };
-use ere_prover_core::prover::{CommonError, ProverResource, ProverResourceKind, PublicValues};
+use core::{any::Any, panic::AssertUnwindSafe, time::Duration};
+use ere_prover_core::{CommonError, ProverResource, ProverResourceKind, PublicValues};
 use ere_verifier_zisk::{PUBLIC_VALUES_SIZE, ZiskProgramVk, ZiskProof};
 use proofman_common::{
     MpiCtx, ParamsGPU, ProofCtx, ProofType, SetupCtx, SetupsVadcop, VerboseMode,
 };
 use proofman_fields::Goldilocks;
 use proofman_starks_lib_c::free_device_buffers_c;
-use std::{
-    any::Any,
-    env,
-    panic::{self, AssertUnwindSafe},
-    path::PathBuf,
-    sync::Arc,
-    time::Duration,
-};
+use std::{env, panic, path::PathBuf, sync::Arc};
 use tempfile::tempdir;
 use zisk_core::{Riscv2zisk, ZiskRom};
 use zisk_rom_setup::rom_merkle_setup;

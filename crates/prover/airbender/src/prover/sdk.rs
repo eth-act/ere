@@ -3,7 +3,7 @@ use airbender_execution_utils::{
     Machine, ProgramProof, compute_chain_encoding, generate_params_for_binary,
     universal_circuit_verifier_vk,
 };
-use ere_prover_core::prover::{CommonError, PublicValues};
+use ere_prover_core::{CommonError, PublicValues};
 use ere_verifier_airbender::{AirbenderProgramVk, extract_public_values_and_program_vk};
 use std::{
     fs,

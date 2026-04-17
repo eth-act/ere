@@ -1,4 +1,4 @@
-use crate::prover::resource::ProverResourceKind;
+use crate::resource::ProverResourceKind;
 use std::{
     io,
     path::Path,

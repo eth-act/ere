@@ -3,8 +3,8 @@ use crate::api::{
     execute_response::Result as ExecuteResult, prove_response::Result as ProveResult,
     verify_response::Result as VerifyResult,
 };
-use ere_prover_core::prover::{Input, ProgramExecutionReport, ProgramProvingReport, PublicValues};
-use std::time::Duration;
+use core::time::Duration;
+use ere_prover_core::{Input, ProgramExecutionReport, ProgramProvingReport, PublicValues};
 use thiserror::Error;
 use twirp::{Client, Middleware, Request, reqwest};
 

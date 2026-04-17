@@ -1,7 +1,8 @@
 use anyhow::{Context, Error};
 use ere_compiler_core::Elf;
-use ere_prover_core::prover::{
-    self, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues,
+use ere_prover_core::{
+    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResource, PublicValues,
+    codec::{Decode, Encode},
     zkVMProver,
 };
 use ere_server_client::api::{
@@ -9,7 +10,7 @@ use ere_server_client::api::{
     VerifyRequest, VerifyResponse, ZkvmService, execute_response::Result as ExecuteResult,
     prove_response::Result as ProveResult, router, verify_response::Result as VerifyResult,
 };
-use ere_verifier_core::codec::{Decode, Encode};
+
 use std::{
     net::{Ipv4Addr, SocketAddr},
     sync::Arc,
@@ -54,14 +55,14 @@ impl<T: 'static + zkVMProver + Send + Sync> zkVMServer<T> {
     async fn prove(
         &self,
         input: Input,
-    ) -> anyhow::Result<(PublicValues, prover::Proof<T>, ProgramProvingReport)> {
+    ) -> anyhow::Result<(PublicValues, Proof<T>, ProgramProvingReport)> {
         let zkvm = Arc::clone(&self.zkvm);
         tokio::task::spawn_blocking(move || zkvm.prove(&input).map_err(anyhow::Error::from))
             .await
             .context("prove panicked")?
     }
 
-    async fn verify(&self, proof: prover::Proof<T>) -> anyhow::Result<PublicValues> {
+    async fn verify(&self, proof: Proof<T>) -> anyhow::Result<PublicValues> {
         let zkvm = Arc::clone(&self.zkvm);
         tokio::task::spawn_blocking(move || zkvm.verify(&proof).map_err(anyhow::Error::from))
             .await
@@ -130,7 +131,7 @@ impl<T: 'static + zkVMProver + Send + Sync> ZkvmService for zkVMServer<T> {
     ) -> twirp::Result<Response<VerifyResponse>> {
         let request = request.into_body();
 
-        let proof = prover::Proof::<T>::decode_from_slice(&request.proof)
+        let proof = Proof::<T>::decode_from_slice(&request.proof)
             .map_err(|err| internal(format!("failed to decode proof: {err:?}")))?;
 
         let result = match self.verify(proof).await {

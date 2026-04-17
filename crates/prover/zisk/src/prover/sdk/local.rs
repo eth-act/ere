@@ -3,7 +3,7 @@ use crate::prover::{
     sdk::{dot_zisk_dir, panic_msg},
 };
 use blake3::Hash;
-use ere_prover_core::prover::CommonError;
+use ere_prover_core::CommonError;
 use parking_lot::{Mutex, MutexGuard};
 use proofman_common::ParamsGPU;
 use std::{env, fs, panic, path::PathBuf, process::Command, thread::sleep, time::Duration};

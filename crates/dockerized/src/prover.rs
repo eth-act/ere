@@ -11,20 +11,16 @@ use crate::{
     },
     zkVMKind,
 };
+use core::{future::Future, iter, pin::Pin, time::Duration};
 use ere_compiler_core::Elf;
-use ere_prover_core::prover::{
+use ere_prover_core::{
     Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues, block_on,
 };
 use ere_server_client::{
     api::twirp::reqwest::Client,
     client::{self, EncodedProof, Url, zkVMClient},
 };
-use std::{
-    future::Future,
-    iter,
-    pin::Pin,
-    time::{Duration, Instant},
-};
+use std::time::Instant;
 use tokio::{
     sync::{RwLock, RwLockReadGuard},
     time::{sleep, timeout},
@@ -499,9 +495,9 @@ mod tests {
         prover::{DockerizedzkVM, Error},
         zkVMKind,
     };
-    use ere_prover_core::prover::{Input, ProverResource};
+    use core::time::Duration;
+    use ere_prover_core::{Input, ProverResource};
     use ere_util_test::{codec::BincodeLegacy, host::TestCase, program::basic::BasicProgram};
-    use std::time::Duration;
 
     fn zkvm(
         zkvm_kind: zkVMKind,

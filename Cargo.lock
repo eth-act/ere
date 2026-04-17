@@ -3917,7 +3917,6 @@ dependencies = [
  "ere-prover-sp1",
  "ere-prover-zisk",
  "ere-server-client",
- "ere-verifier-core",
  "opentelemetry 0.31.0",
  "opentelemetry-otlp",
  "opentelemetry_sdk",

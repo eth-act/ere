@@ -15,10 +15,11 @@ openvm-sdk = { workspace = true, features = ["nightly-features"], default-featur
 
 # Local dependencies
 ere-compiler-core.workspace = true
-ere-verifier-openvm.workspace = true
 ere-prover-core.workspace = true
+ere-verifier-openvm.workspace = true
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
+# OpenVM dependencies
 openvm-sdk = { workspace = true, features = ["aot", "nightly-features"] }
 
 [dev-dependencies]

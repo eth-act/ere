@@ -30,7 +30,7 @@
 //!     CompilerKind, DockerizedCompiler, DockerizedzkVM, DockerizedzkVMConfig, zkVMKind,
 //! };
 //! use ere_compiler_core::Compiler;
-//! use ere_prover_core::prover::{Input, ProverResource, zkVMProver};
+//! use ere_prover_core::{Input, ProverResource, zkVMProver};
 //! use std::path::Path;
 //!
 //! // The zkVMProver we plan to use

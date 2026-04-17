@@ -1,7 +1,8 @@
 use crate::CommonError;
 use cargo_metadata::{Metadata, MetadataCommand};
+use core::iter;
 use std::{
-    fs, io, iter,
+    fs, io,
     path::{Path, PathBuf},
     process::Command,
     sync::Mutex,

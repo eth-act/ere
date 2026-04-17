@@ -1,8 +1,5 @@
 use crate::prover::Error;
-use ere_prover_core::{
-    CommonError, RemoteProverConfig,
-    prover::{ProverResource, ProverResourceKind},
-};
+use ere_prover_core::{CommonError, ProverResource, ProverResourceKind, RemoteProverConfig};
 use sp1_cuda::CudaProvingKey;
 use sp1_hypercube::air::{PublicValues, SP1_PROOF_NUM_PV_ELTS};
 use sp1_p3_field::PrimeField32;

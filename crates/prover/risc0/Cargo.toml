@@ -16,8 +16,8 @@ risc0-zkvm = { workspace = true, features = ["client", "unstable"] }
 
 # Local dependencies
 ere-compiler-core.workspace = true
-ere-verifier-risc0.workspace = true
 ere-prover-core.workspace = true
+ere-verifier-risc0.workspace = true
 
 [dev-dependencies]
 ere-compiler-risc0.workspace = true

@@ -1,8 +1,8 @@
-use serde::{Deserialize, Serialize};
-use std::{
+use core::{
     error::Error,
     fmt::{self, Display, Formatter},
 };
+use serde::{Deserialize, Serialize};
 use strum::{Display, EnumIter, EnumString, IntoEnumIterator, IntoStaticStr};
 
 /// Compiler kind to use to compile the guest.

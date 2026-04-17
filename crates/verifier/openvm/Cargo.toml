@@ -10,10 +10,12 @@ bitcode.workspace = true
 serde = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
 
+# OpenVM dependencies
 openvm-continuations.workspace = true
 openvm-sdk.workspace = true
 openvm-stark-sdk.workspace = true
 
+# Local dependencies
 ere-verifier-core.workspace = true
 
 [build-dependencies]

@@ -12,13 +12,13 @@ tracing.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 # Local dependencies
+ere-catalog.workspace = true
 ere-compiler-airbender = { workspace = true, optional = true }
+ere-compiler-core.workspace = true
 ere-compiler-openvm = { workspace = true, optional = true }
 ere-compiler-risc0 = { workspace = true, optional = true }
 ere-compiler-sp1 = { workspace = true, optional = true }
 ere-compiler-zisk = { workspace = true, optional = true }
-ere-compiler-core.workspace = true
-ere-catalog.workspace = true
 
 [dev-dependencies]
 

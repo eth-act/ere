@@ -6,7 +6,7 @@ use std::{
 use anyhow::{Context, Error};
 use clap::Parser;
 use ere_compiler_core::Elf;
-use ere_prover_core::prover::{ProverResource, zkVMProver};
+use ere_prover_core::{ProverResource, zkVMProver};
 use tracing::info;
 
 mod commands;

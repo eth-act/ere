@@ -1,4 +1,4 @@
-use ere_prover_core::prover::CommonError;
+use ere_prover_core::CommonError;
 use proofman_common::ProofmanError;
 use thiserror::Error;
 

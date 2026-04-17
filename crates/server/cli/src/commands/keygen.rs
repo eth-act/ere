@@ -1,8 +1,7 @@
 use crate::construct_zkvm;
 use anyhow::{Context, Error};
 use ere_compiler_core::Elf;
-use ere_prover_core::prover::{ProverResource, zkVMProver};
-use ere_verifier_core::codec::Encode;
+use ere_prover_core::{ProverResource, codec::Encode, zkVMProver};
 use std::fs;
 use tracing::info;
 

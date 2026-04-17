@@ -20,8 +20,8 @@ sp1-sdk = { workspace = true, features = ["network"] }
 
 # Local dependencies
 ere-compiler-core.workspace = true
-ere-verifier-sp1.workspace = true
 ere-prover-core = { workspace = true, features = ["tokio"] }
+ere-verifier-sp1.workspace = true
 
 [dev-dependencies]
 ere-compiler-sp1.workspace = true

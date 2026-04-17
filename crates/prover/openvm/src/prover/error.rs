@@ -1,4 +1,4 @@
-use ere_prover_core::prover::CommonError;
+use ere_prover_core::CommonError;
 use openvm_sdk::{SdkError, commit::AppExecutionCommit};
 use thiserror::Error;
 

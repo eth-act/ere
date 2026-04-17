@@ -1,5 +1,5 @@
 use core::ops::RangeInclusive;
-use ere_prover_core::prover::CommonError;
+use ere_prover_core::CommonError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]

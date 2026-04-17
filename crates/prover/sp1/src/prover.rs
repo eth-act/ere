@@ -1,6 +1,6 @@
 use crate::prover::sdk::SP1Sdk;
 use ere_compiler_core::Elf;
-use ere_prover_core::prover::{
+use ere_prover_core::{
     Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues, block_on,
     zkVMProver,
 };
@@ -91,10 +91,7 @@ mod tests {
     use crate::prover::SP1Prover;
     use ere_compiler_core::{Compiler, Elf};
     use ere_compiler_sp1::SP1RustRv64imaCustomized;
-    use ere_prover_core::{
-        Input,
-        prover::{ProverResource, RemoteProverConfig, zkVMProver},
-    };
+    use ere_prover_core::{Input, ProverResource, RemoteProverConfig, zkVMProver};
     use ere_util_test::{
         codec::BincodeLegacy,
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
@@ -116,10 +113,7 @@ mod tests {
     fn test_execute_rust_rv64ima() {
         use ere_compiler_core::Compiler;
         use ere_compiler_sp1::SP1RustRv64ima;
-        use ere_prover_core::{
-            Input,
-            prover::{ProverResource, zkVMProver},
-        };
+        use ere_prover_core::{Input, ProverResource, zkVMProver};
         use ere_util_test::host::testing_guest_directory;
 
         let guest_directory = testing_guest_directory("sp1", "stock_nightly_no_std");

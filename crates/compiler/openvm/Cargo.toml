@@ -7,9 +7,12 @@ license.workspace = true
 
 [dependencies]
 eyre.workspace = true
-openvm-build.workspace = true
 thiserror.workspace = true
 
+# OpenVM dependencies
+openvm-build.workspace = true
+
+# Local dependencies
 ere-compiler-core.workspace = true
 ere-util-compile.workspace = true
 

@@ -1,12 +1,10 @@
 use crate::program::Program;
+use core::marker::PhantomData;
 use core::ops::Deref;
 use ere_codec::{Decode, Encode};
-use ere_prover_core::{
-    Input,
-    prover::{PublicValues, zkVMProver},
-};
+use ere_prover_core::{Input, PublicValues, zkVMProver};
 use sha2::{Digest, Sha256};
-use std::{marker::PhantomData, path::PathBuf};
+use std::path::PathBuf;
 
 fn workspace() -> PathBuf {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
