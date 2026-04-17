@@ -5,7 +5,7 @@ extern crate alloc;
 use core::{array::from_fn, ops::Deref};
 
 use ere_platform_core::LengthPrefixedStdin;
-pub use ere_platform_core::{Digest, OutputHashedPlatform, Platform};
+pub use ere_platform_core::Platform;
 pub use openvm;
 
 /// OpenVM [`Platform`] implementation.

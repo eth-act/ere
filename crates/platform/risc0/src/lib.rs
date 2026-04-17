@@ -5,7 +5,7 @@ extern crate alloc;
 use alloc::vec;
 use core::ops::Deref;
 
-pub use ere_platform_core::{Digest, OutputHashedPlatform, Platform};
+pub use ere_platform_core::Platform;
 pub use risc0_zkvm;
 use risc0_zkvm::guest::env::Write;
 

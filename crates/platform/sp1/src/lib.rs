@@ -6,7 +6,7 @@ use alloc::format;
 use core::ops::Deref;
 
 use ere_platform_core::LengthPrefixedStdin;
-pub use ere_platform_core::{Digest, OutputHashedPlatform, Platform};
+pub use ere_platform_core::Platform;
 pub use sp1_zkvm;
 
 /// SP1 [`Platform`] implementation.

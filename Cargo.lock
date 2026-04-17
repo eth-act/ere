@@ -3764,9 +3764,6 @@ dependencies = [
 [[package]]
 name = "ere-platform-core"
 version = "0.7.0"
-dependencies = [
- "digest 0.10.7",
-]
 
 [[package]]
 name = "ere-platform-openvm"

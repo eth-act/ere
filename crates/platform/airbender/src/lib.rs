@@ -6,7 +6,7 @@ use alloc::vec::Vec;
 use core::{array, iter::repeat_with, ops::Deref};
 
 pub use airbender_riscv_common as riscv_common;
-pub use ere_platform_core::{Digest, OutputHashedPlatform, Platform};
+pub use ere_platform_core::Platform;
 
 /// Airbender [`Platform`] implementation.
 ///

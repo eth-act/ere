@@ -1,8 +1,6 @@
 #![no_std]
 
-use core::{marker::PhantomData, ops::Deref};
-
-pub use digest::Digest;
+use core::ops::Deref;
 
 /// Platform dependent methods.
 pub trait Platform {
@@ -54,51 +52,6 @@ pub trait Platform {
         let t = f();
         Self::cycle_scope_end(name);
         t
-    }
-}
-
-/// Wrapper for `Platform` implementation that hashes output before calling
-/// the inner `P::write_whole_output`.
-pub struct OutputHashedPlatform<P, D>(PhantomData<(P, D)>);
-
-impl<P, D> Platform for OutputHashedPlatform<P, D>
-where
-    P: Platform,
-    D: Digest,
-{
-    #[inline]
-    fn read_whole_input() -> impl Deref<Target = [u8]> {
-        P::read_whole_input()
-    }
-
-    #[inline]
-    fn write_whole_output(output: &[u8]) {
-        P::write_whole_output(&D::digest(output));
-    }
-
-    #[inline]
-    fn print(message: &str) {
-        P::print(message);
-    }
-
-    #[inline]
-    fn cycle_count() -> u64 {
-        P::cycle_count()
-    }
-
-    #[inline]
-    fn cycle_scope_start(name: &str) {
-        P::cycle_scope_start(name)
-    }
-
-    #[inline]
-    fn cycle_scope_end(name: &str) {
-        P::cycle_scope_end(name)
-    }
-
-    #[inline]
-    fn cycle_scope<T>(name: &str, f: impl FnOnce() -> T) -> T {
-        P::cycle_scope(name, f)
     }
 }
 

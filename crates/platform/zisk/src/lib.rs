@@ -7,7 +7,7 @@ use alloc::string::String;
 use core::{cell::UnsafeCell, hash::Hasher, ops::Deref};
 
 use ere_platform_core::LengthPrefixedStdin;
-pub use ere_platform_core::{Digest, OutputHashedPlatform, Platform};
+pub use ere_platform_core::Platform;
 use fnv::FnvHasher;
 pub use ziskos;
 use ziskos::ziskos_definitions::ziskos_config::UART_ADDR;
