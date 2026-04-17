@@ -1,7 +1,7 @@
 use core::ops::Deref;
 use serde::{Deserialize, Serialize};
 
-/// Public values of the zkVM proof.
+/// Public values committed/revealed by guest program.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct PublicValues(pub Vec<u8>);

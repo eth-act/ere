@@ -3,7 +3,7 @@ use core::ops::Deref;
 use ere_io::Io;
 use ere_zkvm_interface::{
     Input,
-    zkvm::{ProofKind, PublicValues, zkVM},
+    zkvm::{PublicValues, zkVM},
 };
 use sha2::{Digest, Sha256};
 use std::{marker::PhantomData, path::PathBuf};
@@ -31,7 +31,7 @@ pub fn run_zkvm_execute(zkvm: &impl zkVM, test_case: &impl TestCase) -> PublicVa
 
 pub fn run_zkvm_prove(zkvm: &impl zkVM, test_case: &impl TestCase) -> PublicValues {
     let (prover_public_values, proof, _report) = zkvm
-        .prove(&test_case.input(), ProofKind::default())
+        .prove(&test_case.input())
         .expect("prove should not fail with valid input");
 
     let verifier_public_values = zkvm

@@ -7,14 +7,14 @@ use core::error::Error;
 
 /// Serializes a value into the canonical byte representation for transport.
 pub trait Encode {
-    type Error: Error;
+    type Error: 'static + Send + Sync + Error;
 
     fn encode_to_vec(&self) -> Result<Vec<u8>, Self::Error>;
 }
 
 /// Deserializes a value from its canonical byte representation.
 pub trait Decode: Sized {
-    type Error: Error;
+    type Error: 'static + Send + Sync + Error;
 
     fn decode_from_slice(slice: &[u8]) -> Result<Self, Self::Error>;
 }

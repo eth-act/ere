@@ -10,7 +10,7 @@ use core::error::Error;
 pub trait zkVMVerifier {
     type ProgramVk: 'static + Send + Sync + Encode + Decode;
     type Proof: 'static + Send + Sync + Encode + Decode;
-    type Error: Error;
+    type Error: 'static + Send + Sync + Error;
 
     /// Verifies a proof of the program used to create this zkVM instance, then
     /// returns the public values extracted from the proof.

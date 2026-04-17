@@ -106,7 +106,7 @@ impl Input {
 #[auto_impl::auto_impl(&, Arc, Box)]
 pub trait zkVM {
     type Verifier: zkVMVerifier;
-    type Error: Error + Send + Sync + 'static + From<<Self::Verifier as zkVMVerifier>::Error>;
+    type Error: 'static + Send + Sync + Error + From<<Self::Verifier as zkVMVerifier>::Error>;
 
     /// Returns a reference to the verifier.
     fn verifier(&self) -> &Self::Verifier;

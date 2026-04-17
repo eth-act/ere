@@ -15,18 +15,21 @@ pub enum Error {
     #[error("Missing `api_key` in `RemoteProverConfig`")]
     MissingApiKey,
 
+    // Execute
     #[error("SP1 execution failed: {0}")]
     Execute(#[source] anyhow::Error),
 
     #[error("SP1 execution completed with non-success exit code: {0}")]
     ExecutionFailed(u32),
 
+    // Prove
     #[error("SP1 SDK proving failed: {0}")]
     Prove(#[source] anyhow::Error),
 
     #[error("Failed to extract exit code from proof")]
     ExitCodeExtractionFailed,
 
+    // Verify
     #[error(transparent)]
     Verifier(#[from] ere_verifier_sp1::Error),
 }

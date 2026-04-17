@@ -93,7 +93,7 @@ impl zkVM for EreOpenVM {
 
     fn execute(&self, input: &Input) -> Result<(PublicValues, ProgramExecutionReport), Error> {
         if input.proofs.is_some() {
-            return Err(CommonError::unsupported_input("no dedicated proofs stream").into());
+            return Err(CommonError::unsupported_input("no dedicated proofs stream"))?;
         }
 
         let mut stdin = StdIn::default();
@@ -119,7 +119,7 @@ impl zkVM for EreOpenVM {
         input: &Input,
     ) -> Result<(PublicValues, OpenVMProof, ProgramProvingReport), Error> {
         if input.proofs.is_some() {
-            return Err(CommonError::unsupported_input("no dedicated proofs stream").into());
+            return Err(CommonError::unsupported_input("no dedicated proofs stream"))?;
         }
 
         let mut stdin = StdIn::default();
@@ -136,8 +136,7 @@ impl zkVM for EreOpenVM {
                 return Err(CommonError::unsupported_prover_resource_kind(
                     self.resource.kind(),
                     [ProverResourceKind::Cpu, ProverResourceKind::Gpu],
-                )
-                .into());
+                ))?;
             }
         }
         .map_err(Error::Prove)?;

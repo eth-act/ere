@@ -185,8 +185,7 @@ impl AirbenderSdk {
             return Err(ere_verifier_airbender::Error::UnexpectedProgramVk {
                 expected: self.program_vk,
                 got: program_vk,
-            }
-            .into());
+            })?;
         }
 
         Ok((public_values, proof))

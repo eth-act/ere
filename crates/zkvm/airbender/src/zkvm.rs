@@ -44,7 +44,7 @@ impl zkVM for EreAirbender {
 
     fn execute(&self, input: &Input) -> Result<(PublicValues, ProgramExecutionReport), Error> {
         if input.proofs.is_some() {
-            return Err(CommonError::unsupported_input("no dedicated proofs stream").into());
+            return Err(CommonError::unsupported_input("no dedicated proofs stream"))?;
         }
 
         let start = Instant::now();
@@ -66,7 +66,7 @@ impl zkVM for EreAirbender {
         input: &Input,
     ) -> Result<(PublicValues, AirbenderProof, ProgramProvingReport), Error> {
         if input.proofs.is_some() {
-            return Err(CommonError::unsupported_input("no dedicated proofs stream").into());
+            return Err(CommonError::unsupported_input("no dedicated proofs stream"))?;
         }
         let start = Instant::now();
         let (public_values, proof) = self.sdk.prove(input.stdin())?;

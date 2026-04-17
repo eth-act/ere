@@ -146,8 +146,7 @@ impl zkVM for EreRisc0 {
                 return Err(CommonError::unsupported_prover_resource_kind(
                     self.resource.kind(),
                     [ProverResourceKind::Cpu, ProverResourceKind::Gpu],
-                )
-                .into());
+                ))?;
             }
         };
 

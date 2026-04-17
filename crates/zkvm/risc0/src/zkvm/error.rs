@@ -20,18 +20,21 @@ pub enum Error {
     #[error("Failed to compute image ID: {0}")]
     ComputeImageId(anyhow::Error),
 
+    // Execute
     #[error("Failed to build `ExecutorEnv`: {0}")]
     BuildExecutorEnv(anyhow::Error),
 
     #[error("Failed to execute: {0}")]
     Execute(anyhow::Error),
 
+    // Prove
     #[error("Failed to initialize cuda prover: {0}")]
     InitializeCudaProver(anyhow::Error),
 
     #[error("Failed to prove: {0}")]
     Prove(anyhow::Error),
 
+    // Verify
     #[error(transparent)]
     Verifier(#[from] ere_verifier_risc0::Error),
 }

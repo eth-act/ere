@@ -27,7 +27,7 @@ impl From<Vec<u8>> for Elf {
 
 /// Compiler trait for compiling guest programs into an [`Elf`] binary.
 pub trait Compiler {
-    type Error: Error + Send + Sync + 'static;
+    type Error: 'static + Send + Sync + Error;
 
     /// Compiles the program and returns the [`Elf`]
     ///
