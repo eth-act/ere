@@ -1,9 +1,9 @@
-use crate::prover::{
-    Error,
-    sdk::{cluster::ClusterClient, local::LocalProver},
-};
+use crate::prover::{Error, sdk::local::LocalProver};
 use core::{any::Any, panic::AssertUnwindSafe, time::Duration};
-use ere_prover_core::{CommonError, ProverResource, ProverResourceKind, PublicValues};
+use ere_cluster_client_zisk::ZiskClusterClient;
+use ere_prover_core::{
+    CommonError, Input, ProverResource, ProverResourceKind, PublicValues, block_on,
+};
 use ere_verifier_zisk::{PUBLIC_VALUES_SIZE, ZiskProgramVk, ZiskProof};
 use proofman_common::{
     MpiCtx, ParamsGPU, ProofCtx, ProofType, SetupCtx, SetupsVadcop, VerboseMode,
@@ -17,14 +17,13 @@ use zisk_rom_setup::rom_merkle_setup;
 use zisk_sdk::{ElfBinaryFromFile, ZiskProofWithPublicValues};
 use ziskemu::{Emu, EmuOptions};
 
-mod cluster;
 mod local;
 
 /// Prover backend - either local or cluster.
 #[allow(clippy::large_enum_variant)]
 pub enum ZiskProver {
     Local(LocalProver),
-    Cluster(ClusterClient),
+    Cluster(ZiskClusterClient),
 }
 
 pub struct ZiskSdk {
@@ -48,7 +47,7 @@ impl ZiskSdk {
         // Initialize prover
         let prover = match &resource {
             ProverResource::Cpu | ProverResource::Gpu => ZiskProver::Local(LocalProver::new(elf)?),
-            ProverResource::Cluster(config) => ZiskProver::Cluster(ClusterClient::new(config)?),
+            ProverResource::Cluster(config) => ZiskProver::Cluster(ZiskClusterClient::new(config)?),
             ProverResource::Network(_) => Err(CommonError::unsupported_prover_resource_kind(
                 resource.kind(),
                 [
@@ -73,7 +72,7 @@ impl ZiskSdk {
 
     /// Execute the ELF with the given `stdin`.
     pub fn execute(&self, stdin: &[u8]) -> Result<(PublicValues, u64), Error> {
-        let stdin = length_prefixed_and_padded(stdin);
+        let stdin = framed_stdin(stdin);
         let mut emu = Emu::new(&self.rom);
         emu.ctx = emu.create_emu_context(stdin, &EmuOptions::default());
 
@@ -94,17 +93,16 @@ impl ZiskSdk {
         Ok((public_values, total_num_cycles))
     }
 
-    pub fn prove(&self, stdin: &[u8]) -> Result<(PublicValues, ZiskProof, Duration), Error> {
+    pub fn prove(&self, input: &Input) -> Result<(PublicValues, ZiskProof, Duration), Error> {
         match &self.resource {
             ProverResource::Cpu if cfg!(feature = "cuda") => Err(Error::CudaFeatureEnabled)?,
             ProverResource::Gpu if cfg!(not(feature = "cuda")) => Err(Error::CudaFeatureDisabled)?,
             _ => {}
         };
 
-        let stdin = length_prefixed_and_padded(stdin);
         let (proof, proving_time) = match &self.prover {
-            ZiskProver::Local(local) => local.prove(&stdin)?,
-            ZiskProver::Cluster(client) => client.prove(&stdin)?,
+            ZiskProver::Local(local) => local.prove(&framed_stdin(input.stdin()))?,
+            ZiskProver::Cluster(client) => block_on(client.prove(input))?,
         };
 
         // Extract public values and program_vk
@@ -189,7 +187,7 @@ fn extract_public_values_and_program_vk(
 /// Returns `data` with a LE u64 length prefix and padding to multiple of 8.
 ///
 /// The length prefix and padding is expected by ZisK emulator/prover runtime.
-fn length_prefixed_and_padded(data: &[u8]) -> Vec<u8> {
+fn framed_stdin(data: &[u8]) -> Vec<u8> {
     let len = (8 + data.len()).next_multiple_of(8);
     let mut buf = Vec::with_capacity(len);
     buf.extend_from_slice(&(data.len() as u64).to_le_bytes());

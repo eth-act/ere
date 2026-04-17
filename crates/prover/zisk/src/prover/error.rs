@@ -56,20 +56,8 @@ pub enum Error {
     ProvePanic(String),
 
     // Cluster
-    #[error("Invalid cluster endpoint: {0}")]
-    InvalidClusterEndpoint(#[from] http::uri::InvalidUri),
-
-    #[error("Cluster gRPC error: {0}")]
-    ClusterGrpcError(#[from] tonic::Status),
-
-    #[error("Failed to connect to cluster: {0}")]
-    ClusterConnectionFailed(#[from] tonic::transport::Error),
-
-    #[error("Cluster error: {0}")]
-    ClusterError(String),
-
-    #[error("Invalid proof format: {0}")]
-    InvalidProofFormat(anyhow::Error),
+    #[error(transparent)]
+    Cluster(#[from] ere_cluster_client_zisk::Error),
 
     #[error("Expected VadcopFinal but got {0}")]
     UnexpectedProofKind(&'static str),

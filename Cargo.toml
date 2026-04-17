@@ -32,6 +32,8 @@ members = [
     # Server
     "crates/server/cli",
     "crates/server/client",
+    # Cluster client
+    "crates/cluster-client/zisk",
     # Dockerized wrapper
     "crates/dockerized",
     # Util
@@ -167,6 +169,7 @@ ere-verifier-sp1 = { path = "crates/verifier/sp1" }
 ere-verifier-zisk = { path = "crates/verifier/zisk" }
 ere-server = { path = "crates/server/cli" }
 ere-server-client = { path = "crates/server/client" }
+ere-cluster-client-zisk = { path = "crates/cluster-client/zisk" }
 ere-dockerized = { path = "crates/dockerized" }
 ere-catalog = { path = "crates/catalog" }
 ere-codec = { path = "crates/codec" }

@@ -8,27 +8,23 @@ license.workspace = true
 [dependencies]
 anyhow.workspace = true
 blake3.workspace = true
-futures-util.workspace = true
-http.workspace = true
 mpi.workspace = true
 parking_lot.workspace = true
 tempfile.workspace = true
 thiserror.workspace = true
-tonic.workspace = true
 tracing.workspace = true
-uuid = { workspace = true, features = ["v4"] }
 
 # ZisK dependencies
 proofman-common.workspace = true
 proofman-fields.workspace = true
 proofman-starks-lib-c.workspace = true
 zisk-core.workspace = true
-zisk-distributed-grpc-api.workspace = true
 zisk-rom-setup.workspace = true
 zisk-sdk = { workspace = true, features = ["disable_distributed"] }
 ziskemu.workspace = true
 
 # Local dependencies
+ere-cluster-client-zisk.workspace = true
 ere-compiler-core.workspace = true
 ere-prover-core = { workspace = true, features = ["tokio"] }
 ere-verifier-zisk.workspace = true

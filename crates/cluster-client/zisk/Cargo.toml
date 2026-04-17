@@ -1,0 +1,25 @@
+[package]
+name = "ere-cluster-client-zisk"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+futures-util.workspace = true
+http.workspace = true
+thiserror.workspace = true
+tonic.workspace = true
+tracing.workspace = true
+uuid = { workspace = true, features = ["v4"] }
+
+# Local dependencies
+ere-prover-core = { workspace = true, features = ["tokio"] }
+
+# Zisk dependencies
+zisk-distributed-grpc-api.workspace = true
+zisk-sdk = { workspace = true, features = ["disable_distributed"] }
+
+[lints]
+workspace = true

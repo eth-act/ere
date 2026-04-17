@@ -3632,6 +3632,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "ere-cluster-client-zisk"
+version = "0.7.0"
+dependencies = [
+ "anyhow",
+ "ere-prover-core",
+ "futures-util",
+ "http 1.4.0",
+ "thiserror 2.0.18",
+ "tonic 0.14.5",
+ "tracing",
+ "uuid",
+ "zisk-distributed-grpc-api",
+ "zisk-sdk",
+]
+
+[[package]]
 name = "ere-codec"
 version = "0.7.0"
 
@@ -3878,14 +3894,13 @@ version = "0.7.0"
 dependencies = [
  "anyhow",
  "blake3",
+ "ere-cluster-client-zisk",
  "ere-compiler-core",
  "ere-compiler-zisk",
  "ere-prover-core",
  "ere-util-test",
  "ere-verifier-zisk",
  "fields",
- "futures-util",
- "http 1.4.0",
  "mpi",
  "parking_lot",
  "proofman-common",
@@ -3893,11 +3908,8 @@ dependencies = [
  "rom-setup",
  "tempfile",
  "thiserror 2.0.18",
- "tonic 0.14.5",
  "tracing",
- "uuid",
  "zisk-core",
- "zisk-distributed-grpc-api",
  "zisk-sdk",
  "ziskemu",
 ]

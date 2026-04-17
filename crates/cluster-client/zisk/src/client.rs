@@ -1,9 +1,9 @@
 //! Remote ZisK cluster proving.
 
-use crate::prover::Error;
-use core::time::Duration;
-use ere_prover_core::{RemoteProverConfig, block_on};
+use crate::error::Error;
+use ere_prover_core::{Input, RemoteProverConfig, block_on};
 use futures_util::StreamExt;
+use std::time::Duration;
 use tonic::transport::Channel;
 use tracing::debug;
 use zisk_distributed_grpc_api::{
@@ -16,28 +16,23 @@ use zisk_sdk::ZiskProofWithPublicValues;
 /// Wrapper for the ZisK cluster client.
 ///
 /// Connects to the ZisK cluster via gRPC and submits proof jobs.
-pub struct ClusterClient {
+pub struct ZiskClusterClient {
     client: ZiskDistributedApiClient<Channel>,
 }
 
-impl ClusterClient {
-    /// Create a new ClusterClient that connects to the cluster.
+impl ZiskClusterClient {
+    /// Create a new `ZiskClusterClient` that connects to the cluster.
     pub fn new(config: &RemoteProverConfig) -> Result<Self, Error> {
         let client = block_on(connect(&config.endpoint))?;
         Ok(Self { client })
     }
 
-    /// Sync wrapper for [`Self::prove_async`].
-    pub fn prove(&self, input: &[u8]) -> Result<(ZiskProofWithPublicValues, Duration), Error> {
-        block_on(self.prove_async(input))
-    }
-
     /// Send proof request to cluster and wait for completion.
     ///
     /// Returns the proof with public values and proving time reported by the cluster.
-    async fn prove_async(
+    pub async fn prove(
         &self,
-        input: &[u8],
+        input: &Input,
     ) -> Result<(ZiskProofWithPublicValues, Duration), Error> {
         let mut client = self.client.clone();
 
@@ -87,7 +82,7 @@ impl ClusterClient {
             minimal_compute_capacity: compute_capacity,
             inputs_mode: InputMode::Data.into(),
             inputs_uri: None,
-            input_data: Some(input.to_vec()),
+            input_data: Some(framed_stdin(input.stdin())),
             hints_mode: HintsMode::None.into(),
             hints_uri: None,
             simulated_node: None,
@@ -163,17 +158,29 @@ async fn connect(endpoint: &str) -> Result<ZiskDistributedApiClient<Channel>, Er
     Ok(ZiskDistributedApiClient::new(channel))
 }
 
-/// Returns `Error::ClusterError`.
+/// Returns `Error::Cluster`.
 fn cluster_error(s: impl ToString) -> Error {
-    Error::ClusterError(s.to_string())
+    Error::Cluster(s.to_string())
 }
 
-/// Returns `Error::ClusterError` formatted with error code and message.
+/// Returns `Error::Cluster` formatted with error code and message.
 fn cluster_error_from_response(s: impl ToString, res: ErrorResponse) -> Error {
-    Error::ClusterError(format!(
+    Error::Cluster(format!(
         "{}, code: {}, message: {}",
         s.to_string(),
         res.code,
         res.message
     ))
+}
+
+/// Returns `data` with a LE u64 length prefix and padding to multiple of 8.
+///
+/// The length prefix and padding is expected by ZisK emulator/prover runtime.
+fn framed_stdin(data: &[u8]) -> Vec<u8> {
+    let len = (8 + data.len()).next_multiple_of(8);
+    let mut buf = Vec::with_capacity(len);
+    buf.extend_from_slice(&(data.len() as u64).to_le_bytes());
+    buf.extend_from_slice(data);
+    buf.resize(len, 0);
+    buf
 }

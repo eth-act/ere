@@ -61,7 +61,7 @@ impl zkVMProver for ZiskProver {
             return Err(CommonError::unsupported_input("no dedicated proofs stream"))?;
         }
 
-        let (public_values, proof, proving_time) = self.sdk.prove(input.stdin())?;
+        let (public_values, proof, proving_time) = self.sdk.prove(input)?;
 
         Ok((
             public_values,
