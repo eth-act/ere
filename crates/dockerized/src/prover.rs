@@ -500,9 +500,7 @@ mod tests {
         zkVMKind,
     };
     use ere_prover_core::prover::{Input, ProverResource};
-    use ere_util_test::{
-        host::TestCase, io::serde::bincode::BincodeLegacy, program::basic::BasicProgram,
-    };
+    use ere_util_test::{codec::BincodeLegacy, host::TestCase, program::basic::BasicProgram};
     use std::time::Duration;
 
     fn zkvm(

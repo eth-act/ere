@@ -124,3 +124,30 @@ macro_rules! impl_codec_by_bincode_legacy {
         }
     };
 }
+
+/// Implements [`Encode`] and [`Decode`] for `$ty` via `ciborium`.
+///
+/// Requires the caller's `Cargo.toml` to depend on `ciborium` and
+/// `ciborium-io`.
+#[macro_export]
+macro_rules! impl_codec_by_ciborium {
+    ($ty:ty) => {
+        impl $crate::Encode for $ty {
+            type Error = ciborium::ser::Error<core::convert::Infallible>;
+
+            fn encode_to_vec(&self) -> Result<Vec<u8>, Self::Error> {
+                let mut buf = Vec::new();
+                ciborium::into_writer(self, &mut buf)?;
+                Ok(buf)
+            }
+        }
+
+        impl $crate::Decode for $ty {
+            type Error = ciborium::de::Error<ciborium_io::EndOfFile>;
+
+            fn decode_from_slice(slice: &[u8]) -> Result<Self, Self::Error> {
+                ciborium::from_reader(slice)
+            }
+        }
+    };
+}

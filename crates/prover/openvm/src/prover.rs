@@ -170,8 +170,8 @@ mod tests {
     use ere_compiler_openvm::OpenVMRustRv32imaCustomized;
     use ere_prover_core::prover::{Input, ProverResource, zkVMProver};
     use ere_util_test::{
+        codec::BincodeLegacy,
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
-        io::serde::bincode::BincodeLegacy,
         program::basic::BasicProgram,
     };
     use std::sync::OnceLock;

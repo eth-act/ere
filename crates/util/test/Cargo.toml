@@ -6,15 +6,18 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
+bincode = { workspace = true, features = ["alloc", "serde"] }
+ciborium = { workspace = true }
+ciborium-io = { workspace = true }
 rand = { workspace = true, optional = true }
 serde = { workspace = true, features = ["derive"] }
 serde_bytes = { workspace = true, features = ["alloc"] }
 sha2.workspace = true
 
 # Local dependencies
+ere-codec.workspace = true
 ere-prover-core = { workspace = true, optional = true }
 ere-platform-core.workspace = true
-ere-io = { workspace = true, features = ["bincode", "cbor"] }
 
 [lints]
 workspace = true

@@ -1,6 +1,6 @@
 use ere_platform_openvm::OpenVMPlatform;
 use ere_util_test::{
-    io::serde::bincode::BincodeLegacy,
+    codec::BincodeLegacy,
     program::{basic::BasicProgram, Program},
 };
 

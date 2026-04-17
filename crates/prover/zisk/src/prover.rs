@@ -81,8 +81,8 @@ mod tests {
         prover::{Input, ProverResource, zkVMProver},
     };
     use ere_util_test::{
+        codec::BincodeLegacy,
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
-        io::serde::bincode::BincodeLegacy,
         program::basic::BasicProgram,
     };
     use std::sync::{Mutex, OnceLock};
@@ -121,8 +121,8 @@ mod tests {
         use ere_compiler_zisk::ZiskGoCustomized;
         use ere_prover_core::ProverResource;
         use ere_util_test::{
+            codec::Cbor,
             host::{run_zkvm_execute, testing_guest_directory},
-            io::serde::cbor::Cbor,
             program::basic::BasicProgram,
         };
 

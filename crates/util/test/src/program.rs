@@ -1,20 +1,22 @@
-use ere_io::Io;
+use core::fmt::Debug;
+use ere_codec::{Decode, Encode};
 use ere_platform_core::{OutputHashedPlatform, Platform};
 use sha2::Sha256;
 
 pub mod basic;
 
-/// Program that can be ran given [`Platform`] implementation.
+/// Program that can be run given [`Platform`] implementation.
 pub trait Program {
-    type Io: Io;
+    type Input: Encode + Decode + Clone + Debug + Send + Sync;
+    type Output: Encode + Decode + Clone + Debug + Send + Sync + PartialEq;
 
-    fn compute(input: <Self::Io as Io>::Input) -> <Self::Io as Io>::Output;
+    fn compute(input: Self::Input) -> Self::Output;
 
     fn run<P: Platform>() {
         let input_bytes = P::read_whole_input();
-        let input = Self::Io::deserialize_input(&input_bytes).unwrap();
+        let input = Self::Input::decode_from_slice(&input_bytes).unwrap();
         let output = Self::compute(input);
-        let output_bytes = Self::Io::serialize_output(&output).unwrap();
+        let output_bytes = output.encode_to_vec().unwrap();
         P::write_whole_output(&output_bytes);
     }
 

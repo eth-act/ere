@@ -21,7 +21,6 @@ ere-prover-core.workspace = true
 
 [dev-dependencies]
 ere-compiler-risc0.workspace = true
-ere-io.workspace = true
 ere-util-test = { workspace = true, features = ["host"] }
 
 [features]

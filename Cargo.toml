@@ -37,7 +37,6 @@ members = [
     # Util
     "crates/catalog",
     "crates/codec",
-    "crates/io",
     "crates/util/build",
     "crates/util/compile",
     "crates/util/test",
@@ -171,7 +170,6 @@ ere-server-client = { path = "crates/server/client" }
 ere-dockerized = { path = "crates/dockerized" }
 ere-catalog = { path = "crates/catalog" }
 ere-codec = { path = "crates/codec" }
-ere-io = { path = "crates/io" }
 ere-util-build = { path = "crates/util/build" }
 ere-util-compile = { path = "crates/util/compile" }
 ere-util-test = { path = "crates/util/test" }

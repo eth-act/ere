@@ -2,7 +2,7 @@
 
 use ere_platform_zisk::{ziskos, ZiskPlatform};
 use ere_util_test::{
-    io::serde::bincode::BincodeLegacy,
+    codec::BincodeLegacy,
     program::{basic::BasicProgram, Program},
 };
 

@@ -67,7 +67,6 @@ This repository contains the following crates:
   - [`ere-verifier-sp1`]
   - [`ere-verifier-zisk`]
 - [`ere-dockerized`] - Docker wrapper implementation for [`ere-prover-core`] of all zkVMs
-- [`ere-io`] - Serialization utilities for host/guest IO communication
 - [`ere-codec`] - Canonical byte codec shared across verifier crates
 - [`ere-catalog`] - Catalog of supported zkVMs and compilers (`zkVMKind`, `CompilerKind`, SDK versions, Docker image tag)
 - Internal crates
@@ -100,7 +99,6 @@ This repository contains the following crates:
 [`ere-compiler`]: https://github.com/eth-act/ere/tree/master/crates/compiler/cli
 [`ere-server`]: https://github.com/eth-act/ere/tree/master/crates/server/cli
 [`ere-server-client`]: https://github.com/eth-act/ere/tree/master/crates/server/client
-[`ere-io`]: https://github.com/eth-act/ere/tree/master/crates/io
 [`ere-codec`]: https://github.com/eth-act/ere/tree/master/crates/codec
 [`ere-catalog`]: https://github.com/eth-act/ere/tree/master/crates/catalog
 [`ere-util-build`]: https://github.com/eth-act/ere/tree/master/crates/util/build
@@ -429,7 +427,6 @@ ere/
 │   │   └── client/                # ere-server-client
 │   ├── core/                      # ere-catalog
 │   ├── codec/                     # ere-codec
-│   ├── io/                        # ere-io
 │   └── util/
 │       ├── build/                 # ere-util-build
 │       ├── compile/               # ere-util-compile

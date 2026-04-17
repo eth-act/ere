@@ -2,4 +2,5 @@
 
 pub mod prover;
 
+pub use ere_codec as codec;
 pub use prover::*;

@@ -1,20 +1,26 @@
-use crate::program::Program;
+use crate::{
+    codec::{BincodeLegacy, Cbor},
+    program::Program,
+};
 use alloc::vec::Vec;
-use core::{marker::PhantomData, panic};
-use ere_io::serde::{IoSerde, Serde};
+use core::{fmt::Debug, marker::PhantomData};
+use ere_codec::{Decode, Encode, impl_codec_by_bincode_legacy, impl_codec_by_ciborium};
 use serde::{Deserialize, Serialize};
 
 /// The basic program takes `BasicProgramInput` as input, and computes
 /// `BasicProgramOutput` as output.
-pub struct BasicProgram<S>(PhantomData<S>);
+pub struct BasicProgram<C>(PhantomData<C>);
 
-impl<S> Program for BasicProgram<S>
+impl<C> Program for BasicProgram<C>
 where
-    S: Serde,
+    C: Send + Sync,
+    BasicProgramInput<C>: Encode + Decode + Clone + Debug + Send + Sync,
+    BasicProgramOutput<C>: Encode + Decode + Clone + Debug + Send + Sync + PartialEq,
 {
-    type Io = IoSerde<BasicProgramInput, BasicProgramOutput, S>;
+    type Input = BasicProgramInput<C>;
+    type Output = BasicProgramOutput<C>;
 
-    fn compute(input: BasicProgramInput) -> BasicProgramOutput {
+    fn compute(input: BasicProgramInput<C>) -> BasicProgramOutput<C> {
         if input.should_panic {
             panic!("invalid data");
         }
@@ -24,12 +30,13 @@ where
             c: input.c.wrapping_mul(input.a as u32).wrapping_add(1),
             d: input.d.wrapping_mul(input.b as u64).wrapping_add(1),
             e: input.e.iter().map(|byte| byte.wrapping_add(1)).collect(),
+            _marker: PhantomData,
         }
     }
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
-pub struct BasicProgramInput {
+pub struct BasicProgramInput<C> {
     pub should_panic: bool,
     pub a: u8,
     pub b: u16,
@@ -37,28 +44,44 @@ pub struct BasicProgramInput {
     pub d: u64,
     #[serde(with = "serde_bytes")]
     pub e: Vec<u8>,
+    #[serde(skip)]
+    _marker: PhantomData<C>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct BasicProgramOutput {
+pub struct BasicProgramOutput<C> {
     #[serde(with = "serde_bytes")]
     pub e: Vec<u8>,
     pub d: u64,
     pub c: u32,
     pub b: u16,
     pub a: u8,
+    #[serde(skip)]
+    _marker: PhantomData<C>,
 }
+
+impl_codec_by_bincode_legacy!(BasicProgramInput<BincodeLegacy>);
+impl_codec_by_bincode_legacy!(BasicProgramOutput<BincodeLegacy>);
+impl_codec_by_ciborium!(BasicProgramInput<Cbor>);
+impl_codec_by_ciborium!(BasicProgramOutput<Cbor>);
 
 #[cfg(feature = "host")]
 mod host {
     use crate::{
         host::ProgramTestCase,
-        program::basic::{BasicProgram, BasicProgramInput},
+        program::{
+            Program,
+            basic::{BasicProgram, BasicProgramInput},
+        },
     };
-    use ere_io::serde::Serde;
+    use core::marker::PhantomData;
     use rand::{Rng, rng};
 
-    impl<S: Serde> BasicProgram<S> {
+    impl<C> BasicProgram<C>
+    where
+        C: Default,
+        BasicProgram<C>: Program<Input = BasicProgramInput<C>>,
+    {
         pub fn valid_test_case() -> ProgramTestCase<Self> {
             let mut rng = rng();
             let n = rng.random_range(16..32);
@@ -69,6 +92,7 @@ mod host {
                 c: rng.random(),
                 d: rng.random(),
                 e: rng.random_iter().take(n).collect(),
+                _marker: PhantomData,
             })
         }
 

@@ -1,6 +1,6 @@
 use crate::program::Program;
 use core::ops::Deref;
-use ere_io::Io;
+use ere_codec::{Decode, Encode};
 use ere_prover_core::{
     Input,
     prover::{PublicValues, zkVMProver},
@@ -56,12 +56,12 @@ pub trait TestCase {
 
 /// Wrapper for [`ProgramInput`] that implements [`TestCase`].
 pub struct ProgramTestCase<P: Program> {
-    input: <P::Io as Io>::Input,
+    input: P::Input,
     _marker: PhantomData<P>,
 }
 
 impl<P: Program> ProgramTestCase<P> {
-    pub fn new(input: <P::Io as Io>::Input) -> Self {
+    pub fn new(input: P::Input) -> Self {
         Self {
             input,
             _marker: PhantomData,
@@ -75,7 +75,7 @@ impl<P: Program> ProgramTestCase<P> {
 }
 
 impl<P: Program> Deref for ProgramTestCase<P> {
-    type Target = <P::Io as Io>::Input;
+    type Target = P::Input;
 
     fn deref(&self) -> &Self::Target {
         &self.input
@@ -84,13 +84,13 @@ impl<P: Program> Deref for ProgramTestCase<P> {
 
 impl<P: Program> TestCase for ProgramTestCase<P> {
     fn input(&self) -> Input {
-        Input::new().with_prefixed_stdin(P::Io::serialize_input(&self.input).unwrap())
+        Input::new().with_prefixed_stdin(self.input.encode_to_vec().unwrap())
     }
 
     fn assert_output(&self, public_values: &[u8]) {
         assert_eq!(
             P::compute(self.input.clone()),
-            P::Io::deserialize_output(public_values).unwrap()
+            P::Output::decode_from_slice(public_values).unwrap()
         )
     }
 }
@@ -121,7 +121,7 @@ where
 
     fn assert_output(&self, public_values: &[u8]) {
         let output = P::compute(self.test_case.clone());
-        let digest = D::digest(P::Io::serialize_output(&output).unwrap());
+        let digest = D::digest(output.encode_to_vec().unwrap());
         assert_eq!(&*digest, &public_values[..digest.len()]);
         assert!(public_values[digest.len()..].iter().all(|byte| *byte == 0));
     }

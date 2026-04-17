@@ -7,7 +7,7 @@
 
 use ere_platform_airbender::AirbenderPlatform;
 use ere_util_test::{
-    io::serde::bincode::BincodeLegacy,
+    codec::BincodeLegacy,
     program::{basic::BasicProgram, Program},
 };
 

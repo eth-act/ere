@@ -2,7 +2,7 @@
 
 use ere_platform_sp1::{sp1_zkvm, SP1Platform};
 use ere_util_test::{
-    io::serde::bincode::BincodeLegacy,
+    codec::BincodeLegacy,
     program::{basic::BasicProgram, Program},
 };
 

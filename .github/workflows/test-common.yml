@@ -22,7 +22,6 @@ env:
     -p ere-platform-core
     -p ere-verifier-core
     -p ere-codec
-    -p ere-io
     -p ere-catalog
     -p ere-util-build
     -p ere-util-compile
