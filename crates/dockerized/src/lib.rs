@@ -31,7 +31,7 @@
 //! };
 //! use ere_zkvm_interface::{
 //!     compiler::Compiler,
-//!     zkvm::{Input, ProofKind, ProverResource, zkVM},
+//!     zkvm::{Input, ProverResource, zkVM},
 //! };
 //! use std::path::Path;
 //!
@@ -63,7 +63,7 @@
 //! println!("Execution cycles: {}", execution_report.total_num_cycles);
 //!
 //! // Generate proof
-//! let (public_values, proof, proving_report) = zkvm.prove(&input, ProofKind::Compressed)?;
+//! let (public_values, proof, proving_report) = zkvm.prove(&input)?;
 //! println!("Proof generated in: {:?}", proving_report.proving_time);
 //!
 //! // Verify proof

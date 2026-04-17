@@ -79,7 +79,7 @@ impl Display for ParseError {
 impl Error for ParseError {}
 
 #[cfg(test)]
-mod test {
+mod tests {
     use crate::zkvm::{ParseError, zkVMKind};
 
     #[test]

@@ -81,7 +81,7 @@ impl Display for ParseError {
 impl Error for ParseError {}
 
 #[cfg(test)]
-mod test {
+mod tests {
     use crate::compiler::{CompilerKind, CompilerKind::*, ParseError};
 
     #[test]

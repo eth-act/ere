@@ -2,11 +2,6 @@ syntax = "proto3";
 
 package api;
 
-enum ProofKind {
-    Compressed = 0;
-    Groth16 = 1;
-}
-
 service ZkvmService {
     rpc Execute(ExecuteRequest) returns (ExecuteResponse) {}
     rpc Prove(ProveRequest) returns (ProveResponse) {}
@@ -33,7 +28,6 @@ message ExecuteOk {
 message ProveRequest {
     bytes input_stdin = 1;
     optional bytes input_proofs = 2;
-    ProofKind proof_kind = 3;
 }
 
 message ProveResponse {
@@ -51,7 +45,6 @@ message ProveOk {
 
 message VerifyRequest {
     bytes proof = 1;
-    ProofKind proof_kind = 2;
 }
 
 message VerifyResponse {

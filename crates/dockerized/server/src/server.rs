@@ -5,13 +5,12 @@ use crate::api::{
     verify_response::Result as VerifyResult,
 };
 use anyhow::Context;
+use ere_verifier_core::codec::{Decode, Encode};
 use ere_zkvm_interface::zkvm::{
-    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, PublicValues, zkVM,
+    self, Input, ProgramExecutionReport, ProgramProvingReport, PublicValues, zkVM,
 };
 use std::sync::Arc;
-use twirp::{
-    Request, Response, TwirpErrorResponse, async_trait::async_trait, internal, invalid_argument,
-};
+use twirp::{Request, Response, TwirpErrorResponse, async_trait::async_trait, internal};
 
 pub use api::router;
 
@@ -34,7 +33,7 @@ impl<T: 'static + zkVM + Send + Sync> zkVMServer<T> {
         input: Input,
     ) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         let zkvm = Arc::clone(&self.zkvm);
-        tokio::task::spawn_blocking(move || zkvm.execute(&input))
+        tokio::task::spawn_blocking(move || zkvm.execute(&input).map_err(anyhow::Error::from))
             .await
             .context("execute panicked")?
     }
@@ -42,17 +41,16 @@ impl<T: 'static + zkVM + Send + Sync> zkVMServer<T> {
     async fn prove(
         &self,
         input: Input,
-        proof_kind: ProofKind,
-    ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
+    ) -> anyhow::Result<(PublicValues, zkvm::Proof<T>, ProgramProvingReport)> {
         let zkvm = Arc::clone(&self.zkvm);
-        tokio::task::spawn_blocking(move || zkvm.prove(&input, proof_kind))
+        tokio::task::spawn_blocking(move || zkvm.prove(&input).map_err(anyhow::Error::from))
             .await
             .context("prove panicked")?
     }
 
-    async fn verify(&self, proof: Proof) -> anyhow::Result<PublicValues> {
+    async fn verify(&self, proof: zkvm::Proof<T>) -> anyhow::Result<PublicValues> {
         let zkvm = Arc::clone(&self.zkvm);
-        tokio::task::spawn_blocking(move || zkvm.verify(&proof))
+        tokio::task::spawn_blocking(move || zkvm.verify(&proof).map_err(anyhow::Error::from))
             .await
             .context("verify panicked")?
     }
@@ -73,7 +71,7 @@ impl<T: 'static + zkVM + Send + Sync> ZkvmService for zkVMServer<T> {
 
         let result = match self.execute(input).await {
             Ok((public_values, report)) => ExecuteResult::Ok(ExecuteOk {
-                public_values,
+                public_values: public_values.into(),
                 report: bincode::serde::encode_to_vec(&report, bincode::config::legacy())
                     .map_err(serialize_report_err)?,
             }),
@@ -92,17 +90,16 @@ impl<T: 'static + zkVM + Send + Sync> ZkvmService for zkVMServer<T> {
         let ProveRequest {
             input_stdin: stdin,
             input_proofs: proofs,
-            proof_kind,
         } = request.into_body();
 
         let input = Input { stdin, proofs };
-        let proof_kind = ProofKind::from_repr(proof_kind as usize)
-            .ok_or_else(|| invalid_proof_kind_err(proof_kind))?;
 
-        let result = match self.prove(input, proof_kind).await {
+        let result = match self.prove(input).await {
             Ok((public_values, proof, report)) => ProveResult::Ok(ProveOk {
-                public_values,
-                proof: proof.as_bytes().to_vec(),
+                public_values: public_values.into(),
+                proof: proof
+                    .encode_to_vec()
+                    .map_err(|err| internal(format!("failed to encode proof: {err:?}")))?,
                 report: bincode::serde::encode_to_vec(&report, bincode::config::legacy())
                     .map_err(serialize_report_err)?,
             }),
@@ -120,11 +117,13 @@ impl<T: 'static + zkVM + Send + Sync> ZkvmService for zkVMServer<T> {
     ) -> twirp::Result<Response<VerifyResponse>> {
         let request = request.into_body();
 
-        let proof_kind = ProofKind::from_repr(request.proof_kind as usize)
-            .ok_or_else(|| invalid_proof_kind_err(request.proof_kind))?;
+        let proof = zkvm::Proof::<T>::decode_from_slice(&request.proof)
+            .map_err(|err| internal(format!("failed to decode proof: {err:?}")))?;
 
-        let result = match self.verify(Proof::new(proof_kind, request.proof)).await {
-            Ok(public_values) => VerifyResult::Ok(VerifyOk { public_values }),
+        let result = match self.verify(proof).await {
+            Ok(public_values) => VerifyResult::Ok(VerifyOk {
+                public_values: public_values.into(),
+            }),
             Err(err) => VerifyResult::Err(err.to_string()),
         };
 
@@ -132,10 +131,6 @@ impl<T: 'static + zkVM + Send + Sync> ZkvmService for zkVMServer<T> {
             result: Some(result),
         }))
     }
-}
-
-fn invalid_proof_kind_err(proof_kind: i32) -> TwirpErrorResponse {
-    invalid_argument(format!("invalid proof kind: {proof_kind}"))
 }
 
 fn serialize_report_err(err: bincode::error::EncodeError) -> TwirpErrorResponse {

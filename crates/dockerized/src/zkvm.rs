@@ -7,19 +7,18 @@ use crate::{
             docker_wait_for_exit, remove_docker_container,
         },
         env::{docker_network, force_rebuild_docker_image, image_registry},
-        home_dir, workspace_dir,
+        workspace_dir,
     },
     zkVMKind,
 };
 use ere_server::{
     api::twirp::reqwest::Client,
-    client::{self, Url, zkVMClient},
+    client::{self, EncodedProof, Url, zkVMClient},
 };
 use ere_zkvm_interface::{
     compiler::Elf,
     zkvm::{
-        CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-        ProverResource, PublicValues, block_on, zkVM,
+        Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues, block_on,
     },
 };
 use std::{
@@ -28,7 +27,6 @@ use std::{
     pin::Pin,
     time::{Duration, Instant},
 };
-use tempfile::TempDir;
 use tokio::{
     sync::{RwLock, RwLockReadGuard},
     time::{sleep, timeout},
@@ -189,8 +187,6 @@ fn build_server_image(zkvm_kind: zkVMKind, gpu: bool) -> Result<(), Error> {
 struct ServerContainer {
     id: String,
     client: zkVMClient,
-    #[allow(dead_code)]
-    tempdir: TempDir,
 }
 
 impl Drop for ServerContainer {
@@ -258,33 +254,6 @@ impl ServerContainer {
             }
         }
 
-        let tempdir = TempDir::new().map_err(CommonError::tempdir)?;
-
-        // zkVM specific options needed for proving Groth16 proof.
-        cmd = match zkvm_kind {
-            // Risc0 and SP1 runs docker command to prove Groth16 proof, and
-            // they pass the input by mounting temporary directory. Here we
-            // create a temporary directory and mount it on the top level, so
-            // the volume could be shared, and override `TMPDIR` so we don't
-            // need to mount the whole `/tmp`.
-            zkVMKind::Risc0 => cmd
-                .mount_docker_socket()
-                .env("TMPDIR", tempdir.path().to_string_lossy())
-                .volume(tempdir.path(), tempdir.path()),
-            zkVMKind::SP1 => {
-                let groth16_circuit_path = home_dir().join(".sp1").join("circuits").join("groth16");
-                cmd.mount_docker_socket()
-                    .env(
-                        "SP1_GROTH16_CIRCUIT_PATH",
-                        groth16_circuit_path.to_string_lossy(),
-                    )
-                    .env("TMPDIR", tempdir.path().to_string_lossy())
-                    .volume(tempdir.path(), tempdir.path())
-                    .volume(&groth16_circuit_path, &groth16_circuit_path)
-            }
-            _ => cmd,
-        };
-
         let (_, container_id) = cmd.spawn(
             iter::empty()
                 .chain(["--port", &port.to_string()])
@@ -298,7 +267,6 @@ impl ServerContainer {
 
         Ok(ServerContainer {
             id: container_id,
-            tempdir,
             client: zkVMClient::new(endpoint, http_client, vec![])?,
         })
     }
@@ -351,6 +319,21 @@ impl DockerizedzkVM {
         &self.resource
     }
 
+    pub fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+        block_on(self.execute_async(input.clone()))
+    }
+
+    pub fn prove(
+        &self,
+        input: &Input,
+    ) -> anyhow::Result<(PublicValues, EncodedProof, ProgramProvingReport)> {
+        block_on(self.prove_async(input.clone()))
+    }
+
+    pub fn verify(&self, proof: &EncodedProof) -> anyhow::Result<PublicValues> {
+        block_on(self.verify_async(proof.clone()))
+    }
+
     pub async fn execute_async(
         &self,
         input: Input,
@@ -368,19 +351,18 @@ impl DockerizedzkVM {
     pub async fn prove_async(
         &self,
         input: Input,
-        proof_kind: ProofKind,
-    ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
+    ) -> anyhow::Result<(PublicValues, EncodedProof, ProgramProvingReport)> {
         self.with_retry(
             |client| {
                 let input = input.clone();
-                Box::pin(async move { client.prove(input, proof_kind).await })
+                Box::pin(async move { client.prove(input).await })
             },
             self.config.prove_timeout,
         )
         .await
     }
 
-    pub async fn verify_async(&self, proof: Proof) -> anyhow::Result<PublicValues> {
+    pub async fn verify_async(&self, proof: EncodedProof) -> anyhow::Result<PublicValues> {
         self.with_retry(
             |client| {
                 let proof = proof.clone();
@@ -389,39 +371,6 @@ impl DockerizedzkVM {
             self.config.verify_timeout,
         )
         .await
-    }
-
-    async fn container(&self) -> anyhow::Result<RwLockReadGuard<'_, ServerContainer>> {
-        let guard = self.container.read().await;
-        let is_healthy = match guard.as_ref() {
-            Some(container) => container.client.is_healthy().await,
-            None => false,
-        };
-        if is_healthy {
-            return Ok(RwLockReadGuard::map(guard, |opt| opt.as_ref().unwrap()));
-        }
-        drop(guard);
-
-        let mut guard = self.container.write().await;
-        let is_healthy = match guard.as_ref() {
-            Some(container) => container.client.is_healthy().await,
-            None => false,
-        };
-        if is_healthy {
-            let guard = guard.downgrade();
-            return Ok(RwLockReadGuard::map(guard, |opt| opt.as_ref().unwrap()));
-        }
-
-        info!("Server not healthy, recreating...");
-        drop(guard.take());
-        *guard = Some(ServerContainer::new(
-            self.zkvm_kind,
-            &self.elf,
-            &self.resource,
-        )?);
-
-        let guard = guard.downgrade();
-        Ok(RwLockReadGuard::map(guard, |opt| opt.as_ref().unwrap()))
     }
 
     async fn with_retry<T, F>(&self, f: F, timeout_duration: Option<Duration>) -> anyhow::Result<T>
@@ -491,31 +440,38 @@ impl DockerizedzkVM {
             return Err(err.into());
         }
     }
-}
 
-impl zkVM for DockerizedzkVM {
-    fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
-        block_on(self.execute_async(input.clone()))
-    }
+    async fn container(&self) -> anyhow::Result<RwLockReadGuard<'_, ServerContainer>> {
+        let guard = self.container.read().await;
+        let is_healthy = match guard.as_ref() {
+            Some(container) => container.client.is_healthy().await,
+            None => false,
+        };
+        if is_healthy {
+            return Ok(RwLockReadGuard::map(guard, |opt| opt.as_ref().unwrap()));
+        }
+        drop(guard);
 
-    fn prove(
-        &self,
-        input: &Input,
-        proof_kind: ProofKind,
-    ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
-        block_on(self.prove_async(input.clone(), proof_kind))
-    }
+        let mut guard = self.container.write().await;
+        let is_healthy = match guard.as_ref() {
+            Some(container) => container.client.is_healthy().await,
+            None => false,
+        };
+        if is_healthy {
+            let guard = guard.downgrade();
+            return Ok(RwLockReadGuard::map(guard, |opt| opt.as_ref().unwrap()));
+        }
 
-    fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
-        block_on(self.verify_async(proof.clone()))
-    }
+        info!("Server not healthy, recreating...");
+        drop(guard.take());
+        *guard = Some(ServerContainer::new(
+            self.zkvm_kind,
+            &self.elf,
+            &self.resource,
+        )?);
 
-    fn name(&self) -> &'static str {
-        self.zkvm_kind.as_str()
-    }
-
-    fn sdk_version(&self) -> &'static str {
-        self.zkvm_kind.sdk_version()
+        let guard = guard.downgrade();
+        Ok(RwLockReadGuard::map(guard, |opt| opt.as_ref().unwrap()))
     }
 }
 
@@ -538,17 +494,17 @@ async fn wait_until_healthy(endpoint: &Url, http_client: Client) -> Result<(), E
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use crate::{
         CompilerKind, DockerizedzkVMConfig,
-        compiler::test::compile,
+        compiler::tests::compile,
         zkVMKind,
         zkvm::{DockerizedzkVM, Error},
     };
     use ere_test_utils::{
-        host::*, io::serde::bincode::BincodeLegacy, program::basic::BasicProgram,
+        host::TestCase, io::serde::bincode::BincodeLegacy, program::basic::BasicProgram,
     };
-    use ere_zkvm_interface::zkvm::{Input, ProofKind, ProverResource, zkVM};
+    use ere_zkvm_interface::zkvm::{Input, ProverResource};
     use std::time::Duration;
 
     fn zkvm(
@@ -574,7 +530,10 @@ mod test {
 
                 // Valid test cases
                 for test_case in $valid_test_cases {
-                    run_zkvm_execute(&zkvm, &test_case);
+                    let (public_values, _report) = zkvm
+                        .execute(&test_case.input())
+                        .expect("execute should not fail with valid input");
+                    test_case.assert_output(&public_values);
                 }
 
                 // Invalid test cases
@@ -593,12 +552,19 @@ mod test {
 
                 // Valid test cases
                 for test_case in $valid_test_cases {
-                    run_zkvm_prove(&zkvm, &test_case);
+                    let (prover_public_values, proof, _report) = zkvm
+                        .prove(&test_case.input())
+                        .expect("prove should not fail with valid input");
+                    let verifier_public_values = zkvm
+                        .verify(&proof)
+                        .expect("verify should not fail with valid input");
+                    assert_eq!(prover_public_values, verifier_public_values);
+                    test_case.assert_output(&verifier_public_values);
                 }
 
                 // Invalid test cases
                 for input in $invalid_test_cases {
-                    let err = zkvm.prove(&input, ProofKind::default()).unwrap_err();
+                    let err = zkvm.prove(&input).unwrap_err();
                     assert!(
                         matches!(err.downcast_ref::<Error>().unwrap(), Error::zkVM(_)),
                         "Expect error variant `Error::zkVM`, got {err:?}",
@@ -607,14 +573,21 @@ mod test {
 
                 // Should be able to recover
                 for test_case in $valid_test_cases {
-                    run_zkvm_prove(&zkvm, &test_case);
+                    let (prover_public_values, proof, _report) = zkvm
+                        .prove(&test_case.input())
+                        .expect("prove should not fail with valid input");
+                    let verifier_public_values = zkvm
+                        .verify(&proof)
+                        .expect("verify should not fail with valid input");
+                    assert_eq!(prover_public_values, verifier_public_values);
+                    test_case.assert_output(&verifier_public_values);
                 }
 
                 // Timeout
                 let mut zkvm = zkvm;
                 let prove_timeout = Duration::ZERO;
                 zkvm.config.prove_timeout = Some(prove_timeout);
-                let err = zkvm.prove(&Input::new(), ProofKind::default()).unwrap_err();
+                let err = zkvm.prove(&Input::new()).unwrap_err();
                 assert!(
                     matches!(
                         err.downcast_ref::<Error>().unwrap(),

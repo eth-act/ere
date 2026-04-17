@@ -39,8 +39,6 @@ pub struct ProveRequest {
     pub input_stdin: ::prost::alloc::vec::Vec<u8>,
     #[prost(bytes = "vec", optional, tag = "2")]
     pub input_proofs: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
-    #[prost(enumeration = "ProofKind", tag = "3")]
-    pub proof_kind: i32,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
@@ -74,8 +72,6 @@ pub struct ProveOk {
 pub struct VerifyRequest {
     #[prost(bytes = "vec", tag = "1")]
     pub proof: ::prost::alloc::vec::Vec<u8>,
-    #[prost(enumeration = "ProofKind", tag = "2")]
-    pub proof_kind: i32,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
@@ -99,33 +95,6 @@ pub mod verify_response {
 pub struct VerifyOk {
     #[prost(bytes = "vec", tag = "1")]
     pub public_values: ::prost::alloc::vec::Vec<u8>,
-}
-#[derive(serde::Serialize, serde::Deserialize)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
-#[repr(i32)]
-pub enum ProofKind {
-    Compressed = 0,
-    Groth16 = 1,
-}
-impl ProofKind {
-    /// String value of the enum field names used in the ProtoBuf definition.
-    ///
-    /// The values are not transformed in any way and thus are considered stable
-    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
-    pub fn as_str_name(&self) -> &'static str {
-        match self {
-            Self::Compressed => "Compressed",
-            Self::Groth16 => "Groth16",
-        }
-    }
-    /// Creates an enum from field names used in the ProtoBuf definition.
-    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
-        match value {
-            "Compressed" => Some(Self::Compressed),
-            "Groth16" => Some(Self::Groth16),
-            _ => None,
-        }
-    }
 }
 pub use twirp;
 #[twirp::async_trait::async_trait]

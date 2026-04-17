@@ -3,9 +3,7 @@ use crate::api::{
     execute_response::Result as ExecuteResult, prove_response::Result as ProveResult,
     verify_response::Result as VerifyResult,
 };
-use ere_zkvm_interface::zkvm::{
-    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind, PublicValues,
-};
+use ere_zkvm_interface::zkvm::{Input, ProgramExecutionReport, ProgramProvingReport, PublicValues};
 use std::time::Duration;
 use thiserror::Error;
 use twirp::{Client, Middleware, Request, reqwest};
@@ -30,6 +28,9 @@ pub enum Error {
     #[error("RPC error: {0}")]
     Rpc(#[from] TwirpErrorResponse),
 }
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EncodedProof(pub Vec<u8>);
 
 /// zkVM client of the `zkVMServer`.
 #[allow(non_camel_case_types)]
@@ -88,7 +89,7 @@ impl zkVMClient {
 
         match response.into_body().result.ok_or_else(result_none_err)? {
             ExecuteResult::Ok(result) => Ok((
-                result.public_values,
+                result.public_values.into(),
                 bincode::serde::decode_from_slice(&result.report, bincode::config::legacy())
                     .map_err(deserialize_report_err)?
                     .0,
@@ -100,20 +101,18 @@ impl zkVMClient {
     pub async fn prove(
         &self,
         input: Input,
-        proof_kind: ProofKind,
-    ) -> Result<(PublicValues, Proof, ProgramProvingReport), Error> {
+    ) -> Result<(PublicValues, EncodedProof, ProgramProvingReport), Error> {
         let request = Request::new(ProveRequest {
             input_stdin: input.stdin,
             input_proofs: input.proofs,
-            proof_kind: proof_kind as i32,
         });
 
         let response = self.client.prove(request).await?;
 
         match response.into_body().result.ok_or_else(result_none_err)? {
             ProveResult::Ok(result) => Ok((
-                result.public_values,
-                Proof::new(proof_kind, result.proof),
+                result.public_values.into(),
+                EncodedProof(result.proof),
                 bincode::serde::decode_from_slice(&result.report, bincode::config::legacy())
                     .map_err(deserialize_report_err)?
                     .0,
@@ -122,17 +121,13 @@ impl zkVMClient {
         }
     }
 
-    pub async fn verify(&self, proof: Proof) -> Result<PublicValues, Error> {
-        let proof_kind = proof.kind() as i32;
-        let request = Request::new(VerifyRequest {
-            proof: proof.into_bytes(),
-            proof_kind,
-        });
+    pub async fn verify(&self, proof: EncodedProof) -> Result<PublicValues, Error> {
+        let request = Request::new(VerifyRequest { proof: proof.0 });
 
         let response = self.client.verify(request).await?;
 
         match response.into_body().result.ok_or_else(result_none_err)? {
-            VerifyResult::Ok(result) => Ok(result.public_values),
+            VerifyResult::Ok(result) => Ok(result.public_values.into()),
             VerifyResult::Err(err) => Err(Error::zkVM(err)),
         }
     }
