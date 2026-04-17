@@ -1,22 +1,20 @@
-use anyhow::bail;
+use ere_verifier_risc0::{Risc0ProgramVk, Risc0Proof, Risc0Verifier};
 use ere_zkvm_interface::{
     compiler::Elf,
     zkvm::{
-        CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-        ProverResource, ProverResourceKind, PublicValues, zkVM, zkVMProgramDigest,
+        CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource,
+        ProverResourceKind, PublicValues, zkVM,
     },
 };
 use risc0_zkvm::{
-    AssumptionReceipt, DEFAULT_MAX_PO2, DefaultProver, Digest, ExecutorEnv, ExternalProver,
-    InnerReceipt, ProverOpts, Receipt, default_executor, default_prover,
+    AssumptionReceipt, DEFAULT_MAX_PO2, DefaultProver, ExecutorEnv, ExternalProver, ProverOpts,
+    default_executor, default_prover,
 };
 use std::{env, ops::RangeInclusive, rc::Rc, time::Instant};
 
 mod error;
 
 pub use error::Error;
-
-include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 /// Default logarithmic segment size from [`DEFAULT_SEGMENT_LIMIT_PO2`].
 ///
@@ -46,7 +44,7 @@ const KECCAK_PO2_RANGE: RangeInclusive<usize> = 14..=18;
 
 pub struct EreRisc0 {
     elf: Elf,
-    image_id: Digest,
+    verifier: Risc0Verifier,
     resource: ProverResource,
     segment_po2: usize,
     keccak_po2: usize,
@@ -62,6 +60,7 @@ impl EreRisc0 {
         }
 
         let image_id = risc0_binfmt::compute_image_id(&elf).map_err(Error::ComputeImageId)?;
+        let verifier = Risc0Verifier::new(Risc0ProgramVk(image_id));
 
         let parse_env = |key: &str, default: usize, range: RangeInclusive<usize>| {
             let Ok(val) = env::var(key) else {
@@ -87,7 +86,7 @@ impl EreRisc0 {
 
         Ok(Self {
             elf,
-            image_id,
+            verifier,
             resource,
             segment_po2,
             keccak_po2,
@@ -96,7 +95,14 @@ impl EreRisc0 {
 }
 
 impl zkVM for EreRisc0 {
-    fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+    type Verifier = Risc0Verifier;
+    type Error = Error;
+
+    fn verifier(&self) -> &Risc0Verifier {
+        &self.verifier
+    }
+
+    fn execute(&self, input: &Input) -> Result<(PublicValues, ProgramExecutionReport), Error> {
         let env = self.input_to_env(input)?;
 
         let executor = default_executor();
@@ -104,10 +110,8 @@ impl zkVM for EreRisc0 {
         let start = Instant::now();
         let session_info = executor.execute(env, &self.elf).map_err(Error::Execute)?;
 
-        let public_values = session_info.journal.bytes.clone();
-
         Ok((
-            public_values,
+            session_info.journal.bytes.as_slice().into(),
             ProgramExecutionReport {
                 total_num_cycles: session_info.cycles() as u64,
                 execution_duration: start.elapsed(),
@@ -119,8 +123,7 @@ impl zkVM for EreRisc0 {
     fn prove(
         &self,
         input: &Input,
-        proof_kind: ProofKind,
-    ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
+    ) -> Result<(PublicValues, Risc0Proof, ProgramProvingReport), Error> {
         let env = self.input_to_env(input)?;
 
         let prover = match self.resource {
@@ -139,16 +142,16 @@ impl zkVM for EreRisc0 {
                     Rc::new(DefaultProver::new("r0vm-cuda").map_err(Error::InitializeCudaProver)?)
                 }
             }
-            _ => bail!(Error::from(CommonError::unsupported_prover_resource_kind(
-                self.resource.kind(),
-                [ProverResourceKind::Cpu, ProverResourceKind::Gpu],
-            ))),
+            _ => {
+                return Err(CommonError::unsupported_prover_resource_kind(
+                    self.resource.kind(),
+                    [ProverResourceKind::Cpu, ProverResourceKind::Gpu],
+                )
+                .into());
+            }
         };
 
-        let opts = match proof_kind {
-            ProofKind::Compressed => ProverOpts::succinct(),
-            ProofKind::Groth16 => ProverOpts::groth16(),
-        };
+        let opts = ProverOpts::succinct();
 
         let now = Instant::now();
         let prove_info = prover
@@ -156,63 +159,14 @@ impl zkVM for EreRisc0 {
             .map_err(Error::Prove)?;
         let proving_time = now.elapsed();
 
-        let public_values = prove_info.receipt.journal.bytes.clone();
-        let proof = Proof::new(
-            proof_kind,
-            bincode::serde::encode_to_vec(&prove_info.receipt, bincode::config::legacy())
-                .map_err(|err| CommonError::serialize("proof", "bincode", err))?,
-        );
+        let public_values = prove_info.receipt.journal.bytes.as_slice().into();
+        let proof = Risc0Proof(prove_info.receipt);
 
         Ok((
             public_values,
             proof,
             ProgramProvingReport::new(proving_time),
         ))
-    }
-
-    fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
-        let proof_kind = proof.kind();
-
-        let (receipt, _): (Receipt, _) =
-            bincode::serde::decode_from_slice(proof.as_bytes(), bincode::config::legacy())
-                .map_err(|err| CommonError::deserialize("proof", "bincode", err))?;
-
-        if !matches!(
-            (proof_kind, &receipt.inner),
-            (ProofKind::Compressed, InnerReceipt::Succinct(_))
-                | (ProofKind::Groth16, InnerReceipt::Groth16(_))
-        ) {
-            let got = match &receipt.inner {
-                InnerReceipt::Composite(_) => "Composite",
-                InnerReceipt::Succinct(_) => "Succinct",
-                InnerReceipt::Groth16(_) => "Groth16",
-                InnerReceipt::Fake(_) => "Fake",
-                _ => "Unknown",
-            };
-            bail!(Error::InvalidProofKind(proof_kind, got.to_string()));
-        }
-
-        receipt.verify(self.image_id).map_err(Error::Verify)?;
-
-        let public_values = receipt.journal.bytes.clone();
-
-        Ok(public_values)
-    }
-
-    fn name(&self) -> &'static str {
-        NAME
-    }
-
-    fn sdk_version(&self) -> &'static str {
-        SDK_VERSION
-    }
-}
-
-impl zkVMProgramDigest for EreRisc0 {
-    type ProgramDigest = Digest;
-
-    fn program_digest(&self) -> anyhow::Result<Self::ProgramDigest> {
-        Ok(self.image_id)
     }
 }
 
@@ -243,7 +197,7 @@ mod tests {
     use ere_zkvm_interface::{
         Input,
         compiler::{Compiler, Elf},
-        zkvm::{ProofKind, ProverResource, zkVM},
+        zkvm::{ProverResource, zkVM},
     };
     use std::sync::OnceLock;
 
@@ -297,7 +251,7 @@ mod tests {
             Input::new(),
             BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
-            zkvm.prove(&input, ProofKind::default()).unwrap_err();
+            assert!(zkvm.prove(&input).is_err());
         }
 
         // Should be able to recover
@@ -346,7 +300,7 @@ mod tests {
             Input::new(),
             BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
-            zkvm.prove(&input, ProofKind::default()).unwrap_err();
+            assert!(zkvm.prove(&input).is_err());
         }
 
         // Should be able to recover

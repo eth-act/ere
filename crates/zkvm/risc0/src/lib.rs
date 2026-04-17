@@ -19,7 +19,6 @@
 //! - Installation via `rzup install`
 //! - `r0vm-cuda` - Used by `zkVM::prove` if `ProverResource::Gpu` is
 //!   selected
-//! - `docker` - Used by `zkVM::prove` if `ProofKind::Groth16` is selected
 //!
 //! # `Compiler` implementation
 //!
