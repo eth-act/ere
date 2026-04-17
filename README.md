@@ -45,9 +45,16 @@ The current MSRV (minimum supported rust version) is 1.88.
 This repository contains the following crates:
 
 - Traits
-  - [`ere-prover-core`] - `Compiler` and `zkVMProver` traits for zkVM host operations
-  - [`ere-platform-core`] - `Platform` trait for guest program
-  - [`ere-verifier-core`] - `zkVMVerifier` trait, `PublicValues`, and the `Encode`/`Decode` codec for proofs and verifying keys
+  - [`ere-compiler-core`] - `Compiler` trait and `Elf` type for compiling guest programs
+  - [`ere-prover-core`] - `zkVMProver` trait, `Input`, `ProverResource`, and execution/proving reports
+  - [`ere-platform-core`] - `Platform` trait for guest program (plus `OutputHashedPlatform` wrapper)
+  - [`ere-verifier-core`] - `zkVMVerifier` trait and `PublicValues`
+- Per-zkVM implementations for [`ere-compiler-core`] (host)
+  - [`ere-compiler-airbender`]
+  - [`ere-compiler-openvm`]
+  - [`ere-compiler-risc0`]
+  - [`ere-compiler-sp1`]
+  - [`ere-compiler-zisk`]
 - Per-zkVM implementations for [`ere-prover-core`] (host)
   - [`ere-prover-airbender`]
   - [`ere-prover-openvm`]
@@ -66,20 +73,28 @@ This repository contains the following crates:
   - [`ere-verifier-risc0`]
   - [`ere-verifier-sp1`]
   - [`ere-verifier-zisk`]
-- [`ere-dockerized`] - Docker wrapper implementation for [`ere-prover-core`] of all zkVMs
-- [`ere-codec`] - Canonical byte codec shared across verifier crates
+- [`ere-dockerized`] - Docker wrapper that spawns [`ere-server`] containers to run zkVM operations without local SDK installation
+- [`ere-cluster-client-zisk`] - ZisK distributed-cluster client used by [`ere-prover-zisk`] when `ProverResource::Cluster` is selected
+- [`ere-codec`] - Canonical byte codec (`Encode`/`Decode` + macros) shared across verifier crates
 - [`ere-catalog`] - Catalog of supported zkVMs and compilers (`zkVMKind`, `CompilerKind`, SDK versions, Docker image tag)
 - Internal crates
-  - [`ere-compiler`] - Cli to run `Compiler` used by [`ere-dockerized`]
-  - [`ere-server`] - Server binary that exposes `zkVMProver` operations over gRPC, used by [`ere-dockerized`]
+  - [`ere-compiler`] - CLI binary to run `Compiler` used by [`ere-dockerized`]
+  - [`ere-server`] - Server binary that exposes `zkVMProver` operations over gRPC (also provides a `keygen` subcommand)
   - [`ere-server-client`] - Client library and shared API types for [`ere-server`], used by [`ere-dockerized`]
-  - [`ere-util-build`] - Build-time utilities
-  - [`ere-util-compile`] - Compilation utilities
-  - [`ere-util-test`] - Testing utilities
+  - [`ere-util-build`] - Build-time utilities (SDK version + Docker image tag detection)
+  - [`ere-util-compile`] - Cross-compilation utilities (`CargoBuildCmd`, `RustTarget`, toolchain management)
+  - [`ere-util-test`] - Testing utilities (`Program`, `TestCase`, `BasicProgram`, codec markers)
 
+[`ere-compiler-core`]: https://github.com/eth-act/ere/tree/master/crates/compiler/core
 [`ere-prover-core`]: https://github.com/eth-act/ere/tree/master/crates/prover/core
 [`ere-platform-core`]: https://github.com/eth-act/ere/tree/master/crates/platform/core
 [`ere-verifier-core`]: https://github.com/eth-act/ere/tree/master/crates/verifier/core
+[`ere-compiler-airbender`]: https://github.com/eth-act/ere/tree/master/crates/compiler/airbender
+[`ere-compiler-openvm`]: https://github.com/eth-act/ere/tree/master/crates/compiler/openvm
+[`ere-compiler-risc0`]: https://github.com/eth-act/ere/tree/master/crates/compiler/risc0
+[`ere-compiler-sp1`]: https://github.com/eth-act/ere/tree/master/crates/compiler/sp1
+[`ere-compiler-zisk`]: https://github.com/eth-act/ere/tree/master/crates/compiler/zisk
+[`ere-cluster-client-zisk`]: https://github.com/eth-act/ere/tree/master/crates/cluster-client/zisk
 [`ere-prover-airbender`]: https://github.com/eth-act/ere/tree/master/crates/prover/airbender
 [`ere-platform-airbender`]: https://github.com/eth-act/ere/tree/master/crates/platform/airbender
 [`ere-verifier-airbender`]: https://github.com/eth-act/ere/tree/master/crates/verifier/airbender
@@ -109,21 +124,25 @@ This repository contains the following crates:
 
 ### The Interface
 
-`ere-prover-core` provides traits for host:
+Host-side traits:
 
-- `Compiler`
+- `Compiler` (from `ere-compiler-core`)
 
   Compile a guest program into an `Elf`.
 
-- `zkVMProver`
+- `zkVMProver` (from `ere-prover-core`)
 
-  Execute, prove and verify. A zkVM instance is created for an `Elf` that comes from the `Compiler`.
+  Execute, prove and verify. A zkVM instance is created for an `Elf` produced by a `Compiler`; setup/preprocessing happens in the constructor.
 
-`ere-platform-core` provides traits for guest program:
+- `zkVMVerifier` (from `ere-verifier-core`)
+
+  Lightweight verifier that accepts a `{Name}ProgramVk` + `{Name}Proof` and returns `PublicValues`. Pulled in standalone by verify-only consumers without the prover deps.
+
+Guest-side trait (`ere-platform-core`):
 
 - `Platform`
 
-  Provides platform dependent methods for IO read/write and cycle tracking. It also re-exports the runtime SDK of the zkVM, that is guaranteed to match the same version with the zkVM host when `ere-{zkvm}` and `ere-platform-{zkvm}` have the same version.
+  Provides platform-dependent methods for IO read/write and cycle tracking. It also re-exports the runtime SDK of the zkVM, guaranteed to match the host when `ere-prover-{zkvm}` and `ere-platform-{zkvm}` share the same version.
 
 ### Communication between Host and Guest
 
