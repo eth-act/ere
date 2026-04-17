@@ -21,13 +21,11 @@ sp1-sdk = { workspace = true, features = ["network"], optional = true }
 
 # Local dependencies
 ere-compile-utils = { workspace = true, optional = true }
+ere-verifier-sp1 = { workspace = true, optional = true }
 ere-zkvm-interface.workspace = true
 
 [dev-dependencies]
 ere-test-utils = { workspace = true, features = ["host"] }
-
-[build-dependencies]
-ere-build-utils.workspace = true
 
 [features]
 default = ["compiler", "zkvm"]
@@ -38,6 +36,7 @@ zkvm = [
     "dep:sp1-p3-field",
     "dep:sp1-recursion-executor",
     "dep:sp1-sdk",
+    "dep:ere-verifier-sp1",
     "ere-zkvm-interface/tokio",
 ]
 cuda = []

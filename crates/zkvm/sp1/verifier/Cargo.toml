@@ -1,0 +1,22 @@
+[package]
+name = "ere-verifier-sp1"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+bincode = { workspace = true, features = ["alloc", "serde"] }
+serde = { workspace = true, features = ["derive"] }
+thiserror.workspace = true
+
+sp1-hypercube.workspace = true
+sp1-sdk = { workspace = true, features = ["blocking"] }
+
+ere-verifier-core.workspace = true
+
+[build-dependencies]
+ere-build-utils.workspace = true
+
+[lints]
+workspace = true

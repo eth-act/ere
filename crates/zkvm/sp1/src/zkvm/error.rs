@@ -1,5 +1,4 @@
-use ere_zkvm_interface::zkvm::{CommonError, ProofKind};
-use sp1_sdk::{SP1ProofMode, SP1VerificationError};
+use ere_zkvm_interface::zkvm::CommonError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -16,26 +15,20 @@ pub enum Error {
     #[error("Missing `api_key` in `RemoteProverConfig`")]
     MissingApiKey,
 
-    // Execute
     #[error("SP1 execution failed: {0}")]
     Execute(#[source] anyhow::Error),
 
     #[error("SP1 execution completed with non-success exit code: {0}")]
     ExecutionFailed(u32),
 
-    // Prove
     #[error("SP1 SDK proving failed: {0}")]
     Prove(#[source] anyhow::Error),
 
     #[error("Failed to extract exit code from proof")]
     ExitCodeExtractionFailed,
 
-    // Verify
-    #[error("Invalid proof kind, expected: {0:?}, got: {1:?}")]
-    InvalidProofKind(ProofKind, SP1ProofMode),
-
-    #[error("SP1 SDK verification failed: {0}")]
-    Verify(#[source] SP1VerificationError),
+    #[error(transparent)]
+    Verifier(#[from] ere_verifier_sp1::Error),
 }
 
 impl Error {

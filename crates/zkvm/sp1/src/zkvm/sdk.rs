@@ -117,16 +117,6 @@ impl SP1Sdk {
 
         Ok(proof)
     }
-
-    pub fn verify(&self, proof: &SP1ProofWithPublicValues) -> Result<(), Error> {
-        let vk = self.vk();
-        match self {
-            Self::Cpu { prover, .. } => prover.verify(proof, vk, Some(StatusCode::SUCCESS)),
-            Self::Gpu { prover, .. } => prover.verify(proof, vk, Some(StatusCode::SUCCESS)),
-            Self::Network { prover, .. } => prover.verify(proof, vk, Some(StatusCode::SUCCESS)),
-        }
-        .map_err(Error::Verify)
-    }
 }
 
 async fn build_network_prover(config: &RemoteProverConfig) -> Result<NetworkProver, Error> {

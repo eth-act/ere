@@ -1,11 +1,11 @@
 use crate::zkvm::sdk::SP1Sdk;
-use anyhow::bail;
+use ere_verifier_sp1::{SP1ProgramVk, SP1Proof, SP1Verifier};
 use ere_zkvm_interface::compiler::Elf;
 use ere_zkvm_interface::zkvm::{
-    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResource, PublicValues, block_on, zkVM, zkVMProgramDigest,
+    Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues, block_on,
+    zkVM,
 };
-use sp1_sdk::{SP1ProofMode, SP1ProofWithPublicValues, SP1Stdin, SP1VerifyingKey};
+use sp1_sdk::{SP1ProofMode, SP1Stdin};
 use std::time::Instant;
 use tracing::info;
 
@@ -14,21 +14,29 @@ mod sdk;
 
 pub use error::Error;
 
-include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
-
 pub struct EreSP1 {
     sdk: SP1Sdk,
+    verifier: SP1Verifier,
 }
 
 impl EreSP1 {
     pub fn new(elf: Elf, resource: ProverResource) -> Result<Self, Error> {
         let sdk = block_on(SP1Sdk::new(elf.0, &resource))?;
-        Ok(Self { sdk })
+        let program_vk = SP1ProgramVk(sdk.vk().clone());
+        let verifier = SP1Verifier::new(program_vk);
+        Ok(Self { sdk, verifier })
     }
 }
 
 impl zkVM for EreSP1 {
-    fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+    type Verifier = SP1Verifier;
+    type Error = Error;
+
+    fn verifier(&self) -> &SP1Verifier {
+        &self.verifier
+    }
+
+    fn execute(&self, input: &Input) -> Result<(PublicValues, ProgramExecutionReport), Error> {
         let stdin = input_to_stdin(input)?;
 
         let start = Instant::now();
@@ -36,7 +44,7 @@ impl zkVM for EreSP1 {
         let execution_duration = start.elapsed();
 
         Ok((
-            public_values.to_vec(),
+            public_values.as_slice().into(),
             ProgramExecutionReport {
                 total_num_cycles: exec_report.total_instruction_count(),
                 region_cycles: exec_report.cycle_tracker.into_iter().collect(),
@@ -48,74 +56,22 @@ impl zkVM for EreSP1 {
     fn prove(
         &self,
         input: &Input,
-        proof_kind: ProofKind,
-    ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
+    ) -> Result<(PublicValues, SP1Proof, ProgramProvingReport), Error> {
         info!("Generating proof...");
 
         let stdin = input_to_stdin(input)?;
 
-        let mode = match proof_kind {
-            ProofKind::Compressed => SP1ProofMode::Compressed,
-            ProofKind::Groth16 => SP1ProofMode::Groth16,
-        };
-
         let start = Instant::now();
-        let proof = block_on(self.sdk.prove(stdin, mode))?;
+        let proof = block_on(self.sdk.prove(stdin, SP1ProofMode::Compressed))?;
         let proving_time = start.elapsed();
 
-        let public_values = proof.public_values.to_vec();
-        let proof = Proof::new(
-            proof_kind,
-            bincode::serde::encode_to_vec(&proof, bincode::config::legacy())
-                .map_err(|err| CommonError::serialize("proof", "bincode", err))?,
-        );
+        let public_values = proof.public_values.as_slice().into();
 
         Ok((
             public_values,
-            proof,
+            SP1Proof(proof),
             ProgramProvingReport::new(proving_time),
         ))
-    }
-
-    fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
-        info!("Verifying proof...");
-
-        let proof_kind = proof.kind();
-
-        let (proof, _): (SP1ProofWithPublicValues, _) =
-            bincode::serde::decode_from_slice(proof.as_bytes(), bincode::config::legacy())
-                .map_err(|err| CommonError::deserialize("proof", "bincode", err))?;
-        let inner_proof_kind = SP1ProofMode::from(&proof.proof);
-
-        if !matches!(
-            (proof_kind, inner_proof_kind),
-            (ProofKind::Compressed, SP1ProofMode::Compressed)
-                | (ProofKind::Groth16, SP1ProofMode::Groth16)
-        ) {
-            bail!(Error::InvalidProofKind(proof_kind, inner_proof_kind));
-        }
-
-        self.sdk.verify(&proof)?;
-
-        let public_values_bytes = proof.public_values.as_slice().to_vec();
-
-        Ok(public_values_bytes)
-    }
-
-    fn name(&self) -> &'static str {
-        NAME
-    }
-
-    fn sdk_version(&self) -> &'static str {
-        SDK_VERSION
-    }
-}
-
-impl zkVMProgramDigest for EreSP1 {
-    type ProgramDigest = SP1VerifyingKey;
-
-    fn program_digest(&self) -> anyhow::Result<Self::ProgramDigest> {
-        Ok(self.sdk.vk().clone())
     }
 }
 
@@ -141,7 +97,7 @@ mod tests {
     use ere_zkvm_interface::{
         Input,
         compiler::{Compiler, Elf},
-        zkvm::{ProofKind, ProverResource, RemoteProverConfig, zkVM},
+        zkvm::{ProverResource, RemoteProverConfig, zkVM},
     };
     use std::sync::OnceLock;
 
@@ -195,7 +151,7 @@ mod tests {
             Input::new(),
             BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
-            zkvm.prove(&input, ProofKind::default()).unwrap_err();
+            assert!(zkvm.prove(&input).is_err());
         }
 
         // Should be able to recover
@@ -223,7 +179,7 @@ mod tests {
             Input::new(),
             BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
-            zkvm.prove(&input, ProofKind::default()).unwrap_err();
+            assert!(zkvm.prove(&input).is_err());
         }
 
         // Should be able to recover
