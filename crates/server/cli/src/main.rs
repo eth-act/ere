@@ -1,28 +1,16 @@
+use std::{
+    fs,
+    io::{self, Read},
+};
+
 use anyhow::{Context, Error};
 use clap::Parser;
 use ere_compiler_core::Elf;
 use ere_prover_core::prover::{ProverResource, zkVMProver};
-use ere_server_client::api::router;
-use std::{
-    io::{self, Read},
-    net::{Ipv4Addr, SocketAddr},
-    sync::Arc,
-};
-use tokio::{net::TcpListener, signal};
-use tower_http::catch_panic::CatchPanicLayer;
 use tracing::info;
-use tracing_subscriber::{EnvFilter, Layer, layer::SubscriberExt, util::SubscriberInitExt};
-use twirp::{
-    Router,
-    axum::{self, routing::get},
-    reqwest::StatusCode,
-    server::not_found_handler,
-};
 
+mod commands;
 mod otel;
-mod server;
-
-use server::zkVMServer;
 
 // Compile-time check to ensure exactly one zkVMProver feature is enabled for `ere-server`
 const _: () = {
@@ -46,30 +34,29 @@ struct Args {
     /// Optional path to read the ELF from. If not specified, reads from stdin.
     #[arg(long)]
     elf_path: Option<String>,
-    /// Prover resource type.
     #[command(subcommand)]
-    resource: ProverResource,
+    command: Command,
+}
+
+#[derive(clap::Subcommand)]
+enum Command {
+    #[command(flatten)]
+    Server(ProverResource),
+    /// Initialize the zkVM from an ELF and write the encoded program_vk to disk.
+    Keygen {
+        /// Path to write the encoded program verifying key.
+        #[arg(long)]
+        program_vk: String,
+    },
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let (tracer_provider, otel_layer) = otel::init();
-
-    tracing_subscriber::registry()
-        .with(otel_layer)
-        .with(
-            tracing_subscriber::fmt::layer()
-                .compact()
-                .with_filter(EnvFilter::from_default_env()),
-        )
-        .init();
-
     let args = Args::parse();
 
     // Read ELF from file or stdin.
     let elf = if let Some(path) = args.elf_path {
-        let bytes =
-            std::fs::read(&path).with_context(|| format!("failed to read ELF from {path}"))?;
+        let bytes = fs::read(&path).with_context(|| format!("failed to read ELF from {path}"))?;
         info!("loaded ELF from {path}");
         Elf(bytes)
     } else {
@@ -81,60 +68,15 @@ async fn main() -> Result<(), Error> {
         Elf(bytes)
     };
 
-    let resource_kind = args.resource.kind().to_string();
-    let zkvm = construct_zkvm(elf, args.resource)?;
-    info!("initialized zkVMProver with {resource_kind} prover");
-
-    let server = Arc::new(zkVMServer::new(zkvm));
-    let app = Router::new()
-        .nest("/twirp", router(server))
-        .fallback(not_found_handler)
-        .layer(CatchPanicLayer::new());
-    let app = otel::layer(app).route("/health", get(StatusCode::OK));
-
-    let addr = SocketAddr::new(Ipv4Addr::UNSPECIFIED.into(), args.port);
-    let tcp_listener = TcpListener::bind(addr).await?;
-
-    info!("listening on {}", addr);
-
-    axum::serve(tcp_listener, app)
-        .with_graceful_shutdown(shutdown_signal())
-        .await?;
-
-    info!("shutdown gracefully");
-
-    if let Some(provider) = tracer_provider {
-        provider.shutdown().ok();
+    match args.command {
+        Command::Server(resource) => commands::server::run(args.port, elf, resource).await?,
+        Command::Keygen { program_vk } => commands::keygen::run(elf, &program_vk)?,
     }
 
     Ok(())
 }
 
-async fn shutdown_signal() {
-    let ctrl_c = async {
-        signal::ctrl_c()
-            .await
-            .expect("failed to install Ctrl+C handler");
-    };
-
-    let terminate = async {
-        signal::unix::signal(signal::unix::SignalKind::terminate())
-            .expect("failed to install signal handler")
-            .recv()
-            .await;
-    };
-
-    tokio::select! {
-        _ = ctrl_c => {
-            info!("received Ctrl+C, shutting down gracefully");
-        },
-        _ = terminate => {
-            info!("received SIGTERM, shutting down gracefully");
-        },
-    }
-}
-
-fn construct_zkvm(elf: Elf, resource: ProverResource) -> Result<impl zkVMProver, Error> {
+pub(crate) fn construct_zkvm(elf: Elf, resource: ProverResource) -> Result<impl zkVMProver, Error> {
     #[cfg(feature = "airbender")]
     let zkvm = ere_prover_airbender::prover::AirbenderProver::new(elf, resource);
 

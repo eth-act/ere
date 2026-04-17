@@ -1,15 +1,31 @@
-use anyhow::Context;
+use anyhow::{Context, Error};
+use ere_compiler_core::Elf;
 use ere_prover_core::prover::{
-    self, Input, ProgramExecutionReport, ProgramProvingReport, PublicValues, zkVMProver,
+    self, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues,
+    zkVMProver,
 };
 use ere_server_client::api::{
     ExecuteOk, ExecuteRequest, ExecuteResponse, ProveOk, ProveRequest, ProveResponse, VerifyOk,
     VerifyRequest, VerifyResponse, ZkvmService, execute_response::Result as ExecuteResult,
-    prove_response::Result as ProveResult, verify_response::Result as VerifyResult,
+    prove_response::Result as ProveResult, router, verify_response::Result as VerifyResult,
 };
 use ere_verifier_core::codec::{Decode, Encode};
-use std::sync::Arc;
-use twirp::{Request, Response, TwirpErrorResponse, async_trait::async_trait, internal};
+use std::{
+    net::{Ipv4Addr, SocketAddr},
+    sync::Arc,
+};
+use tokio::{net::TcpListener, signal};
+use tower_http::catch_panic::CatchPanicLayer;
+use tracing::info;
+use tracing_subscriber::{EnvFilter, Layer, layer::SubscriberExt, util::SubscriberInitExt};
+use twirp::{
+    Request, Response, Router, TwirpErrorResponse,
+    async_trait::async_trait,
+    axum::{self, routing::get},
+    internal,
+    reqwest::StatusCode,
+    server::not_found_handler,
+};
 
 /// zkVMProver server that handles the request by forwarding to the underlying
 /// [`zkVMProver`] implementation methods.
@@ -132,4 +148,69 @@ impl<T: 'static + zkVMProver + Send + Sync> ZkvmService for zkVMServer<T> {
 
 fn serialize_report_err(err: bincode::error::EncodeError) -> TwirpErrorResponse {
     internal(format!("failed to serialize report: {err}"))
+}
+
+pub async fn run(port: u16, elf: Elf, resource: ProverResource) -> Result<(), Error> {
+    let (tracer_provider, otel_layer) = crate::otel::init();
+
+    tracing_subscriber::registry()
+        .with(otel_layer)
+        .with(
+            tracing_subscriber::fmt::layer()
+                .compact()
+                .with_filter(EnvFilter::from_default_env()),
+        )
+        .init();
+
+    let resource_kind = resource.kind().to_string();
+    let zkvm = crate::construct_zkvm(elf, resource)?;
+    info!("initialized zkVMProver with {resource_kind} prover");
+
+    let server = Arc::new(zkVMServer::new(zkvm));
+    let app = Router::new()
+        .nest("/twirp", router(server))
+        .fallback(not_found_handler)
+        .layer(CatchPanicLayer::new());
+    let app = crate::otel::layer(app).route("/health", get(StatusCode::OK));
+
+    let addr = SocketAddr::new(Ipv4Addr::UNSPECIFIED.into(), port);
+    let tcp_listener = TcpListener::bind(addr).await?;
+
+    info!("listening on {}", addr);
+
+    axum::serve(tcp_listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await?;
+
+    info!("shutdown gracefully");
+
+    if let Some(provider) = tracer_provider {
+        provider.shutdown().ok();
+    }
+
+    Ok(())
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    tokio::select! {
+        _ = ctrl_c => {
+            info!("received Ctrl+C, shutting down gracefully");
+        },
+        _ = terminate => {
+            info!("received SIGTERM, shutting down gracefully");
+        },
+    }
 }
