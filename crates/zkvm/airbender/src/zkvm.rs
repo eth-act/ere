@@ -1,12 +1,11 @@
 use crate::zkvm::sdk::AirbenderSdk;
-use airbender_execution_utils::ProgramProof;
-use anyhow::bail;
+use ere_verifier_airbender::{AirbenderProof, AirbenderVerifier};
 use ere_zkvm_interface::{
     ProverResourceKind,
     compiler::Elf,
     zkvm::{
-        CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-        ProverResource, PublicValues, zkVM, zkVMProgramDigest,
+        CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource,
+        PublicValues, zkVM,
     },
 };
 use std::time::Instant;
@@ -15,12 +14,10 @@ mod error;
 mod sdk;
 
 pub use error::Error;
-pub use sdk::VkHashChain;
-
-include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 pub struct EreAirbender {
     sdk: AirbenderSdk,
+    verifier: AirbenderVerifier,
 }
 
 impl EreAirbender {
@@ -32,16 +29,22 @@ impl EreAirbender {
             ))?;
         }
         let sdk = AirbenderSdk::new(&elf, resource.is_gpu())?;
-        Ok(Self { sdk })
+        let verifier = AirbenderVerifier::new(*sdk.program_vk());
+        Ok(Self { sdk, verifier })
     }
 }
 
 impl zkVM for EreAirbender {
-    fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+    type Verifier = AirbenderVerifier;
+    type Error = Error;
+
+    fn verifier(&self) -> &AirbenderVerifier {
+        &self.verifier
+    }
+
+    fn execute(&self, input: &Input) -> Result<(PublicValues, ProgramExecutionReport), Error> {
         if input.proofs.is_some() {
-            bail!(Error::from(CommonError::unsupported_input(
-                "no dedicated proofs stream"
-            )))
+            return Err(CommonError::unsupported_input("no dedicated proofs stream").into());
         }
 
         let start = Instant::now();
@@ -61,64 +64,19 @@ impl zkVM for EreAirbender {
     fn prove(
         &self,
         input: &Input,
-        proof_kind: ProofKind,
-    ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
+    ) -> Result<(PublicValues, AirbenderProof, ProgramProvingReport), Error> {
         if input.proofs.is_some() {
-            bail!(Error::from(CommonError::unsupported_input(
-                "no dedicated proofs stream"
-            )))
-        }
-        if proof_kind != ProofKind::Compressed {
-            bail!(Error::from(CommonError::unsupported_proof_kind(
-                proof_kind,
-                [ProofKind::Compressed]
-            )))
+            return Err(CommonError::unsupported_input("no dedicated proofs stream").into());
         }
         let start = Instant::now();
         let (public_values, proof) = self.sdk.prove(input.stdin())?;
         let proving_time = start.elapsed();
 
-        let proof_bytes = bincode::serde::encode_to_vec(&proof, bincode::config::legacy())
-            .map_err(|err| CommonError::serialize("proof", "bincode", err))?;
-
         Ok((
             public_values,
-            Proof::Compressed(proof_bytes),
+            AirbenderProof(proof),
             ProgramProvingReport::new(proving_time),
         ))
-    }
-
-    fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
-        let Proof::Compressed(proof) = proof else {
-            bail!(Error::from(CommonError::unsupported_proof_kind(
-                proof.kind(),
-                [ProofKind::Compressed]
-            )))
-        };
-
-        let (proof, _): (ProgramProof, _) =
-            bincode::serde::decode_from_slice(proof, bincode::config::legacy())
-                .map_err(|err| CommonError::deserialize("proof", "bincode", err))?;
-
-        let public_values = self.sdk.verify(&proof)?;
-
-        Ok(public_values)
-    }
-
-    fn name(&self) -> &'static str {
-        NAME
-    }
-
-    fn sdk_version(&self) -> &'static str {
-        SDK_VERSION
-    }
-}
-
-impl zkVMProgramDigest for EreAirbender {
-    type ProgramDigest = VkHashChain;
-
-    fn program_digest(&self) -> anyhow::Result<Self::ProgramDigest> {
-        Ok(*self.sdk.vk_chain_hash())
     }
 }
 
@@ -132,7 +90,7 @@ mod tests {
     };
     use ere_zkvm_interface::{
         compiler::{Compiler, Elf},
-        zkvm::{Input, ProofKind, ProverResource, zkVM},
+        zkvm::{Input, ProverResource, zkVM},
     };
     use std::sync::OnceLock;
 
@@ -186,7 +144,7 @@ mod tests {
             Input::new(),
             BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
-            zkvm.prove(&input, ProofKind::default()).unwrap_err();
+            assert!(zkvm.prove(&input).is_err());
         }
 
         // Should be able to recover
@@ -214,7 +172,7 @@ mod tests {
             Input::new(),
             BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
-            zkvm.prove(&input, ProofKind::default()).unwrap_err();
+            assert!(zkvm.prove(&input).is_err());
         }
 
         // Should be able to recover

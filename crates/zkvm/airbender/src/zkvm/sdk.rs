@@ -1,54 +1,44 @@
 use crate::zkvm::error::Error;
 use airbender_execution_utils::{
     Machine, ProgramProof, compute_chain_encoding, generate_params_for_binary,
-    universal_circuit_verifier_vk, verify_recursion_log_23_layer,
+    universal_circuit_verifier_vk,
 };
+use ere_verifier_airbender::{AirbenderProgramVk, extract_public_values_and_program_vk};
 use ere_zkvm_interface::zkvm::{CommonError, PublicValues};
 use std::{
-    array, fs,
+    fs,
     io::BufRead,
     process::{Command, Stdio},
 };
 use tempfile::tempdir;
 
-/// Verification key hash chain.
-///
-/// For recursive verifier program, it exposes the chaining hash of verification
-/// keys of programs that it verifies, which is computed as
-/// `blake(blake(blake(0 || base_vk)|| verifier_0_vk) || verifier_1_vk)...`.
-///
-/// For a base program, the VK is computed as `blake(PC || setup_caps)`, where
-/// `PC` is the program counter value at the end of execution, and  `setup_caps`
-/// is the merkle tree caps derived from the program.
-pub type VkHashChain = [u32; 8];
-
 pub struct AirbenderSdk {
     bin: Vec<u8>,
-    vk_hash_chain: VkHashChain,
+    program_vk: AirbenderProgramVk,
     gpu: bool,
 }
 
 impl AirbenderSdk {
     pub fn new(elf: &[u8], gpu: bool) -> Result<Self, Error> {
         let bin = objcopy_elf_to_bin(elf)?;
-        let vk_hash_chain = {
+        let program_vk = {
             // Compute base VK as `blake(PC || setup_caps)`.
             let base_vk = generate_params_for_binary(&bin, Machine::Standard);
             // The 1st recursion layer VK
             let verifier_vk = universal_circuit_verifier_vk().params;
             // Compute hash chain as `blake(blake(0 || guest_vk) || verifier_vk)`,
             // that is expected to be exposed by second layer recursion program.
-            compute_chain_encoding(vec![[0; 8], base_vk, verifier_vk])
+            AirbenderProgramVk(compute_chain_encoding(vec![[0; 8], base_vk, verifier_vk]))
         };
         Ok(Self {
             bin,
-            vk_hash_chain,
+            program_vk,
             gpu,
         })
     }
 
-    pub fn vk_chain_hash(&self) -> &VkHashChain {
-        &self.vk_hash_chain
+    pub fn program_vk(&self) -> &AirbenderProgramVk {
+        &self.program_vk
     }
 
     pub fn execute(&self, input: &[u8]) -> Result<(PublicValues, u64), Error> {
@@ -94,7 +84,7 @@ impl AirbenderSdk {
                 for _ in 0..8 {
                     bytes.extend(words.next()?.trim().parse::<u32>().ok()?.to_le_bytes())
                 }
-                Some(bytes)
+                Some(bytes.into())
             })
             .ok_or_else(|| {
                 Error::ParsePublicValue(String::from_utf8_lossy(&output.stdout).to_string())
@@ -189,34 +179,17 @@ impl AirbenderSdk {
         let proof: ProgramProof = serde_json::from_slice(&proof_bytes)
             .map_err(|err| CommonError::deserialize("proof", "serde_json", err))?;
 
-        let (public_values, vk_hash_chain) = extract_public_values_and_vk_hash_chain(&proof)?;
+        let (public_values, program_vk) = extract_public_values_and_program_vk(&proof)?;
 
-        if self.vk_hash_chain != vk_hash_chain {
-            return Err(Error::UnexpectedVkHashChain {
-                preprocessed: self.vk_hash_chain,
-                proved: vk_hash_chain,
-            });
+        if self.program_vk != program_vk {
+            return Err(ere_verifier_airbender::Error::UnexpectedProgramVk {
+                expected: self.program_vk,
+                got: program_vk,
+            }
+            .into());
         }
 
         Ok((public_values, proof))
-    }
-
-    pub fn verify(&self, proof: &ProgramProof) -> Result<PublicValues, Error> {
-        let is_valid = verify_recursion_log_23_layer(proof);
-        if !is_valid {
-            return Err(Error::ProofVerificationFailed);
-        }
-
-        let (public_values, vk_hash_chain) = extract_public_values_and_vk_hash_chain(proof)?;
-
-        if self.vk_hash_chain != vk_hash_chain {
-            return Err(Error::UnexpectedVkHashChain {
-                preprocessed: self.vk_hash_chain,
-                proved: vk_hash_chain,
-            });
-        }
-
-        Ok(public_values)
     }
 }
 
@@ -259,24 +232,4 @@ fn encode_input(input: &[u8]) -> String {
             format!("{:08x}", u32::from_le_bytes(bytes))
         })
         .collect()
-}
-
-// Extract public values and VK hash chain from register values.
-fn extract_public_values_and_vk_hash_chain(
-    proof: &ProgramProof,
-) -> Result<(PublicValues, VkHashChain), Error> {
-    if proof.register_final_values.len() != 32 {
-        return Err(Error::InvalidRegisterCount(
-            proof.register_final_values.len(),
-        ));
-    }
-
-    let public_values = proof.register_final_values[10..18]
-        .iter()
-        .flat_map(|value| value.value.to_le_bytes())
-        .collect();
-
-    let vk_chain_hash = array::from_fn(|i| proof.register_final_values[18 + i].value);
-
-    Ok((public_values, vk_chain_hash))
 }

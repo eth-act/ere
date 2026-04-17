@@ -1,0 +1,21 @@
+[package]
+name = "ere-verifier-airbender"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+bincode = { workspace = true, features = ["alloc", "serde"] }
+serde = { workspace = true, features = ["derive"] }
+thiserror.workspace = true
+
+airbender_execution_utils.workspace = true
+
+ere-verifier-core.workspace = true
+
+[build-dependencies]
+ere-build-utils.workspace = true
+
+[lints]
+workspace = true
