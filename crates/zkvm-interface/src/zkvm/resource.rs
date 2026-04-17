@@ -68,7 +68,7 @@ impl ProverResource {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use crate::zkvm::resource::ProverResource;
     use core::fmt::Debug;
     use serde::{Deserialize, Serialize};
