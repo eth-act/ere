@@ -1,9 +1,8 @@
 use anyhow::{Context, Error};
 use clap::Parser;
 use ere_common::CompilerKind;
-use ere_zkvm_interface::compiler::Compiler;
-use serde::Serialize;
-use std::{fs::File, path::PathBuf};
+use ere_zkvm_interface::compiler::{Compiler, Elf};
+use std::path::PathBuf;
 use tracing_subscriber::EnvFilter;
 
 // Compile-time check to ensure exactly one zkVM feature is enabled for `ere-compiler`
@@ -28,18 +27,12 @@ struct Args {
     /// Directory of the guest program
     #[arg(long)]
     guest_dir: PathBuf,
-    /// Directory where the compiled program/artifacts will be written
+    /// Directory where the compiled ELF will be written
     #[arg(long)]
     output_dir: PathBuf,
     /// Name of the output ELF file (optional)
     #[arg(long)]
     elf_name: Option<String>,
-    /// Name of the output digest file (optional, only for supported zkVMs)
-    #[arg(long)]
-    digest_name: Option<String>,
-    /// Name of the output serialized program file (optional)
-    #[arg(long)]
-    program_name: Option<String>,
 }
 
 fn main() -> Result<(), Error> {
@@ -55,52 +48,22 @@ fn main() -> Result<(), Error> {
             .with_context(|| "Failed to create output directory")?;
     }
 
-    let (elf, digest, program) = compile(args.guest_dir, args.compiler_kind)?;
+    let elf = compile(args.guest_dir, args.compiler_kind)?;
 
     if let Some(elf_name) = args.elf_name {
-        if let Some(elf_bytes) = elf {
-            let path = args.output_dir.join(elf_name);
-            std::fs::write(&path, &elf_bytes)
-                .with_context(|| format!("Failed to write ELF to {path:?}"))?;
-        } else {
-            tracing::warn!("ELF output requested but not available/supported for this zkVM.");
-        }
-    }
-
-    if let Some(digest_name) = args.digest_name {
-        if let Some(digest_bytes) = digest {
-            let path = args.output_dir.join(digest_name);
-            std::fs::write(&path, &digest_bytes)
-                .with_context(|| format!("Failed to write digest to {path:?}"))?;
-        } else {
-            tracing::warn!("Digest output requested but not available/supported for this zkVM.");
-        }
-    }
-
-    if let Some(program_name) = args.program_name {
-        let path = args.output_dir.join(program_name);
-        let mut output =
-            File::create(&path).with_context(|| "Failed to create program output file")?;
-        bincode::serde::encode_into_std_write(&program, &mut output, bincode::config::legacy())
-            .with_context(|| "Failed to serialize program")?;
+        let path = args.output_dir.join(elf_name);
+        std::fs::write(&path, &elf).with_context(|| format!("Failed to write ELF to {path:?}"))?;
     }
 
     Ok(())
 }
 
-type CompilationResult<P> = Result<(Option<Vec<u8>>, Option<Vec<u8>>, P), Error>;
-
-/// Compiles the guest and returns (Optional ELF bytes, Optional Digest bytes, Serialized Program)
-fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> CompilationResult<impl Serialize> {
+fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> Result<Elf, Error> {
     #[cfg(feature = "airbender")]
-    let result = {
+    let elf = {
         use ere_airbender::compiler::*;
         match compiler_kind {
-            CompilerKind::Rust | CompilerKind::RustCustomized => {
-                let program = RustRv32ima.compile(&guest_dir)?;
-                let elf = program.elf().to_vec();
-                (Some(elf), None, program)
-            }
+            CompilerKind::Rust | CompilerKind::RustCustomized => RustRv32ima.compile(guest_dir)?,
             _ => anyhow::bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
@@ -109,17 +72,11 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> CompilationResult
     };
 
     #[cfg(feature = "openvm")]
-    let result = {
+    let elf = {
         use ere_openvm::compiler::*;
         match compiler_kind {
-            CompilerKind::Rust => {
-                let program = RustRv32ima.compile(&guest_dir)?;
-                (Some(program.elf().to_vec()), None, program)
-            }
-            CompilerKind::RustCustomized => {
-                let program = RustRv32imaCustomized.compile(&guest_dir)?;
-                (Some(program.elf().to_vec()), None, program)
-            }
+            CompilerKind::Rust => RustRv32ima.compile(guest_dir)?,
+            CompilerKind::RustCustomized => RustRv32imaCustomized.compile(guest_dir)?,
             _ => anyhow::bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
@@ -128,21 +85,11 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> CompilationResult
     };
 
     #[cfg(feature = "risc0")]
-    let result = {
+    let elf = {
         use ere_risc0::compiler::*;
         match compiler_kind {
-            CompilerKind::Rust => {
-                let program = RustRv32ima.compile(&guest_dir)?;
-                let elf = program.elf().to_vec();
-                let digest = program.image_id().as_bytes().to_vec();
-                (Some(elf), Some(digest), program)
-            }
-            CompilerKind::RustCustomized => {
-                let program = RustRv32imaCustomized.compile(&guest_dir)?;
-                let elf = program.elf().to_vec();
-                let digest = program.image_id().as_bytes().to_vec();
-                (Some(elf), Some(digest), program)
-            }
+            CompilerKind::Rust => RustRv32ima.compile(guest_dir)?,
+            CompilerKind::RustCustomized => RustRv32imaCustomized.compile(guest_dir)?,
             _ => anyhow::bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
@@ -151,17 +98,11 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> CompilationResult
     };
 
     #[cfg(feature = "sp1")]
-    let result = {
+    let elf = {
         use ere_sp1::compiler::*;
         match compiler_kind {
-            CompilerKind::Rust => {
-                let program = RustRv64ima.compile(&guest_dir)?;
-                (Some(program.elf().to_vec()), None, program)
-            }
-            CompilerKind::RustCustomized => {
-                let program = RustRv64imaCustomized.compile(&guest_dir)?;
-                (Some(program.elf().to_vec()), None, program)
-            }
+            CompilerKind::Rust => RustRv64ima.compile(guest_dir)?,
+            CompilerKind::RustCustomized => RustRv64imaCustomized.compile(guest_dir)?,
             _ => anyhow::bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
@@ -170,25 +111,16 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> CompilationResult
     };
 
     #[cfg(feature = "zisk")]
-    let result = {
+    let elf = {
         use ere_zisk::compiler::*;
         match compiler_kind {
-            CompilerKind::Rust => {
-                let program = RustRv64ima.compile(&guest_dir)?;
-                (Some(program.elf().to_vec()), None, program)
-            }
-            CompilerKind::RustCustomized => {
-                let program = RustRv64imaCustomized.compile(&guest_dir)?;
-                (Some(program.elf().to_vec()), None, program)
-            }
-            CompilerKind::GoCustomized => {
-                let program = GoCustomized.compile(&guest_dir)?;
-                (Some(program.elf().to_vec()), None, program)
-            }
+            CompilerKind::Rust => RustRv64ima.compile(guest_dir)?,
+            CompilerKind::RustCustomized => RustRv64imaCustomized.compile(guest_dir)?,
+            CompilerKind::GoCustomized => GoCustomized.compile(guest_dir)?,
         }
     };
 
-    Ok(result)
+    Ok(elf)
 }
 
 #[allow(dead_code)]

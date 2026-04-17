@@ -41,8 +41,6 @@
     warn(unused_crate_dependencies)
 )]
 
-pub mod program;
-
 #[cfg(feature = "compiler")]
 pub mod compiler;
 

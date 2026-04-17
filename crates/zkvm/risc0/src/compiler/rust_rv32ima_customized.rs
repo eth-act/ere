@@ -1,6 +1,6 @@
-use crate::{compiler::Error, program::Risc0Program};
+use crate::compiler::Error;
 use ere_compile_utils::cargo_metadata;
-use ere_zkvm_interface::compiler::Compiler;
+use ere_zkvm_interface::compiler::{Compiler, Elf};
 use risc0_build::GuestOptions;
 use std::path::Path;
 use tracing::info;
@@ -12,9 +12,8 @@ pub struct RustRv32imaCustomized;
 impl Compiler for RustRv32imaCustomized {
     type Error = Error;
 
-    type Program = Risc0Program;
-
-    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
+    fn compile(&self, guest_directory: impl AsRef<Path>) -> Result<Elf, Self::Error> {
+        let guest_directory = guest_directory.as_ref();
         info!("Compiling Risc0 program at {}", guest_directory.display());
 
         let metadata = cargo_metadata(guest_directory)?;
@@ -36,12 +35,10 @@ impl Compiler for RustRv32imaCustomized {
         .ok_or(Error::Risc0BuildMissingGuest)?;
 
         let elf = guest.elf.to_vec();
-        let image_id = guest.image_id;
 
         info!("Risc0 program compiled OK - {} bytes", elf.len());
-        info!("Image ID - {image_id}");
 
-        Ok(Risc0Program { elf, image_id })
+        Ok(Elf(elf))
     }
 }
 
@@ -54,7 +51,7 @@ mod tests {
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("risc0", "basic");
-        let program = RustRv32imaCustomized.compile(&guest_directory).unwrap();
-        assert!(!program.elf.is_empty(), "ELF bytes should not be empty.");
+        let elf = RustRv32imaCustomized.compile(guest_directory).unwrap();
+        assert!(!elf.is_empty(), "ELF bytes should not be empty.");
     }
 }

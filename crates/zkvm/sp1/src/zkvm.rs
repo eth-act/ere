@@ -1,5 +1,6 @@
-use crate::{program::SP1Program, zkvm::sdk::SP1Sdk};
+use crate::zkvm::sdk::SP1Sdk;
 use anyhow::bail;
+use ere_zkvm_interface::compiler::Elf;
 use ere_zkvm_interface::zkvm::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
     ProverResource, PublicValues, block_on, zkVM, zkVMProgramDigest,
@@ -20,8 +21,8 @@ pub struct EreSP1 {
 }
 
 impl EreSP1 {
-    pub fn new(program: SP1Program, resource: ProverResource) -> Result<Self, Error> {
-        let sdk = block_on(SP1Sdk::new(program.elf, &resource))?;
+    pub fn new(elf: Elf, resource: ProverResource) -> Result<Self, Error> {
+        let sdk = block_on(SP1Sdk::new(elf.0, &resource))?;
         Ok(Self { sdk })
     }
 }
@@ -131,7 +132,7 @@ fn input_to_stdin(input: &Input) -> Result<SP1Stdin, Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{compiler::RustRv64imaCustomized, program::SP1Program, zkvm::EreSP1};
+    use crate::{compiler::RustRv64imaCustomized, zkvm::EreSP1};
     use ere_test_utils::{
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
         io::serde::bincode::BincodeLegacy,
@@ -139,26 +140,25 @@ mod tests {
     };
     use ere_zkvm_interface::{
         Input,
-        compiler::Compiler,
+        compiler::{Compiler, Elf},
         zkvm::{ProofKind, ProverResource, RemoteProverConfig, zkVM},
     };
     use std::sync::OnceLock;
 
-    fn basic_program() -> SP1Program {
-        static PROGRAM: OnceLock<SP1Program> = OnceLock::new();
-        PROGRAM
-            .get_or_init(|| {
-                RustRv64imaCustomized
-                    .compile(&testing_guest_directory("sp1", "basic"))
-                    .unwrap()
-            })
-            .clone()
+    fn basic_elf() -> Elf {
+        static ELF: OnceLock<Elf> = OnceLock::new();
+        ELF.get_or_init(|| {
+            RustRv64imaCustomized
+                .compile(testing_guest_directory("sp1", "basic"))
+                .unwrap()
+        })
+        .clone()
     }
 
     #[test]
     fn test_execute() {
-        let program = basic_program();
-        let zkvm = EreSP1::new(program, ProverResource::Cpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreSP1::new(elf, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_execute(&zkvm, &test_case);
@@ -166,8 +166,8 @@ mod tests {
 
     #[test]
     fn test_execute_invalid_test_case() {
-        let program = basic_program();
-        let zkvm = EreSP1::new(program, ProverResource::Cpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreSP1::new(elf, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -179,8 +179,8 @@ mod tests {
 
     #[test]
     fn test_prove() {
-        let program = basic_program();
-        let zkvm = EreSP1::new(program, ProverResource::Cpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreSP1::new(elf, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
@@ -188,8 +188,8 @@ mod tests {
 
     #[test]
     fn test_prove_invalid_test_case() {
-        let program = basic_program();
-        let zkvm = EreSP1::new(program, ProverResource::Cpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreSP1::new(elf, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -206,8 +206,8 @@ mod tests {
     #[cfg(feature = "cuda")]
     #[test]
     fn test_prove_gpu() {
-        let program = basic_program();
-        let zkvm = EreSP1::new(program, ProverResource::Gpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreSP1::new(elf, ProverResource::Gpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
@@ -216,8 +216,8 @@ mod tests {
     #[cfg(feature = "cuda")]
     #[test]
     fn test_prove_invalid_test_case_gpu() {
-        let program = basic_program();
-        let zkvm = EreSP1::new(program, ProverResource::Gpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreSP1::new(elf, ProverResource::Gpu).unwrap();
 
         for input in [
             Input::new(),
@@ -245,8 +245,8 @@ mod tests {
             endpoint: std::env::var("NETWORK_RPC_URL").unwrap_or_default(),
             api_key: std::env::var("NETWORK_PRIVATE_KEY").ok(),
         };
-        let program = basic_program();
-        let zkvm = EreSP1::new(program, ProverResource::Network(config)).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreSP1::new(elf, ProverResource::Network(config)).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);

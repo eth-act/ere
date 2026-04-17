@@ -1,6 +1,6 @@
-use crate::{compiler::Error, program::Risc0Program};
+use crate::compiler::Error;
 use ere_compile_utils::CargoBuildCmd;
-use ere_zkvm_interface::compiler::Compiler;
+use ere_zkvm_interface::compiler::{Compiler, Elf};
 use risc0_binfmt::ProgramBinary;
 use std::{env, path::Path};
 use tracing::info;
@@ -34,9 +34,7 @@ pub struct RustRv32ima;
 impl Compiler for RustRv32ima {
     type Error = Error;
 
-    type Program = Risc0Program;
-
-    fn compile(&self, guest_directory: &Path) -> Result<Self::Program, Self::Error> {
+    fn compile(&self, guest_directory: impl AsRef<Path>) -> Result<Elf, Self::Error> {
         let toolchain = env::var("ERE_RUST_TOOLCHAIN").unwrap_or_else(|_| "nightly".into());
         let elf = CargoBuildCmd::new()
             .toolchain(toolchain)
@@ -45,17 +43,10 @@ impl Compiler for RustRv32ima {
             .exec(guest_directory, TARGET_TRIPLE)?;
 
         let program = ProgramBinary::new(elf.as_slice(), V1COMPAT_ELF);
-        let image_id = program
-            .compute_image_id()
-            .map_err(Error::ImageIDCalculationFailure)?;
 
         info!("Risc0 program compiled OK - {} bytes", elf.len());
-        info!("Image ID - {image_id}");
 
-        Ok(Risc0Program {
-            elf: program.encode(),
-            image_id,
-        })
+        Ok(Elf(program.encode()))
     }
 }
 
@@ -72,15 +63,15 @@ mod tests {
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("risc0", "stock_nightly_no_std");
-        let program = RustRv32ima.compile(&guest_directory).unwrap();
-        assert!(!program.elf.is_empty(), "ELF bytes should not be empty.");
+        let elf = RustRv32ima.compile(guest_directory).unwrap();
+        assert!(!elf.is_empty(), "ELF bytes should not be empty.");
     }
 
     #[test]
     fn test_execute() {
         let guest_directory = testing_guest_directory("risc0", "stock_nightly_no_std");
-        let program = RustRv32ima.compile(&guest_directory).unwrap();
-        let zkvm = EreRisc0::new(program, ProverResource::Cpu).unwrap();
+        let elf = RustRv32ima.compile(guest_directory).unwrap();
+        let zkvm = EreRisc0::new(elf, ProverResource::Cpu).unwrap();
 
         zkvm.execute(&Input::new()).unwrap();
     }

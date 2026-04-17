@@ -3656,7 +3656,6 @@ dependencies = [
  "ere-test-utils",
  "ere-zkvm-interface",
  "execution_utils",
- "serde",
  "serde_json",
  "tempfile",
  "thiserror 2.0.18",
@@ -3693,7 +3692,6 @@ name = "ere-compiler"
 version = "0.7.0"
 dependencies = [
  "anyhow",
- "bincode 2.0.1",
  "clap",
  "ere-airbender",
  "ere-common",
@@ -3702,7 +3700,6 @@ dependencies = [
  "ere-sp1",
  "ere-zisk",
  "ere-zkvm-interface",
- "serde",
  "tracing",
  "tracing-subscriber 0.3.23",
 ]
@@ -3717,7 +3714,6 @@ dependencies = [
  "ere-test-utils",
  "ere-zkvm-interface",
  "paste",
- "serde",
  "tempfile",
  "thiserror 2.0.18",
  "tokio",
@@ -3751,10 +3747,7 @@ dependencies = [
  "openvm-continuations",
  "openvm-sdk",
  "openvm-stark-sdk",
- "openvm-transpiler",
- "serde",
  "thiserror 2.0.18",
- "toml",
 ]
 
 [[package]]
@@ -3821,7 +3814,6 @@ dependencies = [
  "risc0-build",
  "risc0-zkp",
  "risc0-zkvm",
- "serde",
  "thiserror 2.0.18",
  "tracing",
 ]
@@ -3867,7 +3859,6 @@ dependencies = [
  "ere-test-utils",
  "ere-zkvm-interface",
  "p3-field 0.3.2-succinct",
- "serde",
  "sp1-cuda",
  "sp1-hypercube",
  "sp1-recursion-executor",
@@ -3912,7 +3903,6 @@ dependencies = [
  "proofman-util",
  "proofman-verifier",
  "rom-setup",
- "serde",
  "tempfile",
  "thiserror 2.0.18",
  "tonic 0.14.5",

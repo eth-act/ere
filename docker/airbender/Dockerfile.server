@@ -22,6 +22,11 @@ FROM $RUNTIME_IMAGE AS runtime
 FROM $RUNTIME_CUDA_IMAGE AS runtime_cuda
 FROM runtime${CUDA:+_cuda} AS runtime_stage
 
+# Install binutils for objcopy
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    binutils \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Copy airbender-cli
 COPY --from=build_stage /usr/local/cargo/bin/airbender-cli /usr/local/cargo/bin/airbender-cli
 

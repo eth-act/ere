@@ -8,9 +8,7 @@ license.workspace = true
 [dependencies]
 anyhow.workspace = true
 eyre.workspace = true
-serde = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
-toml.workspace = true
 
 # OpenVM dependencies
 openvm-build.workspace = true
@@ -18,7 +16,6 @@ openvm-circuit = { workspace = true, optional = true }
 openvm-continuations = { workspace = true, optional = true }
 openvm-sdk = { workspace = true, features = ["nightly-features"], optional = true }
 openvm-stark-sdk = { workspace = true, optional = true }
-openvm-transpiler = { workspace = true, optional = true }
 
 # Local dependencies
 ere-compile-utils = { workspace = true, optional = true }
@@ -41,7 +38,6 @@ zkvm = [
     "dep:openvm-continuations",
     "dep:openvm-sdk",
     "dep:openvm-stark-sdk",
-    "dep:openvm-transpiler",
 ]
 cuda = ["openvm-sdk/cuda"]
 

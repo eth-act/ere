@@ -8,18 +8,12 @@
 //! To install `airbender-cli` with GPU proving support, make sure CUDA 12.9 is
 //! installed, and run [`install_airbender_sdk.sh`] with env `CUDA=1` set.
 //!
-//! ## `Compiler` requirements
-//!
-//! The `Compiler` implementation requires external tools installed and
-//! available in `PATH`:
-//!
-//! - `rust-objcopy` - Used by compiler to convert ELF to binary
-//!
 //! ## `zkVM` requirements
 //!
 //! The `zkVM` implementation requires external tools installed and available in
 //! `PATH`:
 //!
+//! - `objcopy` (from `binutils`) - Used to convert ELF to binary at zkVM construction time
 //! - Installation via [`install_airbender_sdk.sh`] - `airbender-cli` used by
 //!   `zkVM::execute` and `zkVM::prove`
 //!
@@ -48,8 +42,6 @@
     all(not(test), feature = "compiler", feature = "zkvm"),
     warn(unused_crate_dependencies)
 )]
-
-pub mod program;
 
 #[cfg(feature = "compiler")]
 pub mod compiler;

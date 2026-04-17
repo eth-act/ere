@@ -1,8 +1,6 @@
-use crate::{
-    program::ZiskProgram,
-    zkvm::sdk::{ProgramVk, ZiskSdk},
-};
+use crate::zkvm::sdk::{ProgramVk, ZiskSdk};
 use anyhow::bail;
+use ere_zkvm_interface::compiler::Elf;
 use ere_zkvm_interface::zkvm::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
     ProverResource, PublicValues, zkVM, zkVMProgramDigest,
@@ -22,8 +20,8 @@ pub struct EreZisk {
 }
 
 impl EreZisk {
-    pub fn new(program: ZiskProgram, resource: ProverResource) -> Result<Self, Error> {
-        let sdk = ZiskSdk::new(program.elf, resource)?;
+    pub fn new(elf: Elf, resource: ProverResource) -> Result<Self, Error> {
+        let sdk = ZiskSdk::new(elf.0, resource)?;
         Ok(Self { sdk })
     }
 }
@@ -106,7 +104,7 @@ impl zkVMProgramDigest for EreZisk {
 
 #[cfg(test)]
 mod tests {
-    use crate::{compiler::RustRv64imaCustomized, program::ZiskProgram, zkvm::EreZisk};
+    use crate::{compiler::RustRv64imaCustomized, zkvm::EreZisk};
     use ere_test_utils::{
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
         io::serde::bincode::BincodeLegacy,
@@ -114,28 +112,27 @@ mod tests {
     };
     use ere_zkvm_interface::{
         RemoteProverConfig,
-        compiler::Compiler,
+        compiler::{Compiler, Elf},
         zkvm::{Input, ProofKind, ProverResource, zkVM},
     };
     use std::sync::{Mutex, OnceLock};
 
     static PROVE_LOCK: Mutex<()> = Mutex::new(());
 
-    fn basic_program() -> ZiskProgram {
-        static PROGRAM: OnceLock<ZiskProgram> = OnceLock::new();
-        PROGRAM
-            .get_or_init(|| {
-                RustRv64imaCustomized
-                    .compile(&testing_guest_directory("zisk", "basic_rust"))
-                    .unwrap()
-            })
-            .clone()
+    fn basic_elf() -> Elf {
+        static ELF: OnceLock<Elf> = OnceLock::new();
+        ELF.get_or_init(|| {
+            RustRv64imaCustomized
+                .compile(testing_guest_directory("zisk", "basic_rust"))
+                .unwrap()
+        })
+        .clone()
     }
 
     #[test]
     fn test_execute() {
-        let program = basic_program();
-        let zkvm = EreZisk::new(program, ProverResource::Cpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreZisk::new(elf, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_execute(&zkvm, &test_case);
@@ -143,8 +140,8 @@ mod tests {
 
     #[test]
     fn test_execute_invalid_test_case() {
-        let program = basic_program();
-        let zkvm = EreZisk::new(program, ProverResource::Cpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreZisk::new(elf, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -159,8 +156,8 @@ mod tests {
     fn test_prove() {
         let _guard = PROVE_LOCK.lock().unwrap();
 
-        let program = basic_program();
-        let zkvm = EreZisk::new(program, ProverResource::Cpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreZisk::new(elf, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
@@ -171,8 +168,8 @@ mod tests {
     fn test_prove_invalid_test_case() {
         let _guard = PROVE_LOCK.lock().unwrap();
 
-        let program = basic_program();
-        let zkvm = EreZisk::new(program, ProverResource::Cpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreZisk::new(elf, ProverResource::Cpu).unwrap();
 
         for input in [
             Input::new(),
@@ -191,8 +188,8 @@ mod tests {
     fn test_prove_gpu() {
         let _guard = PROVE_LOCK.lock().unwrap();
 
-        let program = basic_program();
-        let zkvm = EreZisk::new(program, ProverResource::Gpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreZisk::new(elf, ProverResource::Gpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
@@ -203,8 +200,8 @@ mod tests {
     fn test_prove_invalid_test_case_gpu() {
         let _guard = PROVE_LOCK.lock().unwrap();
 
-        let program = basic_program();
-        let zkvm = EreZisk::new(program, ProverResource::Gpu).unwrap();
+        let elf = basic_elf();
+        let zkvm = EreZisk::new(elf, ProverResource::Gpu).unwrap();
 
         for input in [
             Input::new(),
@@ -221,9 +218,9 @@ mod tests {
     #[test]
     #[ignore = "Requires ZisK cluster running"]
     fn test_cluster_prove() {
-        let program = basic_program();
+        let elf = basic_elf();
         let zkvm = EreZisk::new(
-            program,
+            elf,
             ProverResource::Cluster(RemoteProverConfig {
                 endpoint: "http://127.0.0.1:50051".to_string(),
                 ..Default::default()
