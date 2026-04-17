@@ -1,7 +1,9 @@
-use crate::{Error, ZiskProgramVk};
 use core::mem::ManuallyDrop;
+
 use proofman_util::VadcopFinalProof;
 use serde::{Deserialize, Serialize};
+
+use crate::{Error, ZiskProgramVk};
 
 /// Size of the public values in bytes (64 slots * 4 bytes each).
 pub const PUBLIC_VALUES_SIZE: usize = 256;

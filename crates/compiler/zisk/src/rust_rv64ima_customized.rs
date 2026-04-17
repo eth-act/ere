@@ -1,8 +1,10 @@
-use crate::Error;
+use std::{fs, path::Path, process::Command};
+
 use ere_compiler_core::{Compiler, Elf};
 use ere_util_compile::{CommonError, cargo_metadata, rustc_path};
-use std::{fs, path::Path, process::Command};
 use tracing::info;
+
+use crate::Error;
 
 const ZISK_TOOLCHAIN: &str = "zisk";
 const ZISK_TARGET: &str = "riscv64ima-zisk-zkvm-elf";
@@ -54,9 +56,10 @@ impl Compiler for ZiskRustRv64imaCustomized {
 
 #[cfg(test)]
 mod tests {
-    use crate::ZiskRustRv64imaCustomized;
     use ere_compiler_core::Compiler;
     use ere_util_test::host::testing_guest_directory;
+
+    use crate::ZiskRustRv64imaCustomized;
 
     #[test]
     fn test_compile() {

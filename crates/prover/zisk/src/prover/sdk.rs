@@ -1,5 +1,6 @@
-use crate::prover::{Error, sdk::local::LocalProver};
 use core::{any::Any, panic::AssertUnwindSafe, time::Duration};
+use std::{env, panic, path::PathBuf, sync::Arc};
+
 use ere_cluster_client_zisk::ZiskClusterClient;
 use ere_prover_core::{
     CommonError, Input, ProverResource, ProverResourceKind, PublicValues, block_on,
@@ -10,12 +11,13 @@ use proofman_common::{
 };
 use proofman_fields::Goldilocks;
 use proofman_starks_lib_c::free_device_buffers_c;
-use std::{env, panic, path::PathBuf, sync::Arc};
 use tempfile::tempdir;
 use zisk_core::{Riscv2zisk, ZiskRom};
 use zisk_rom_setup::rom_merkle_setup;
 use zisk_sdk::{ElfBinaryFromFile, ZiskProofWithPublicValues};
 use ziskemu::{Emu, EmuOptions};
+
+use crate::prover::{Error, sdk::local::LocalProver};
 
 mod local;
 

@@ -1,11 +1,13 @@
-use crate::prover::sdk::AirbenderSdk;
+use std::time::Instant;
+
 use ere_compiler_core::Elf;
 use ere_prover_core::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource,
     ProverResourceKind, PublicValues, zkVMProver,
 };
 use ere_verifier_airbender::{AirbenderProof, AirbenderVerifier};
-use std::time::Instant;
+
+use crate::prover::sdk::AirbenderSdk;
 
 mod error;
 mod sdk;
@@ -79,7 +81,8 @@ impl zkVMProver for AirbenderProver {
 
 #[cfg(test)]
 mod tests {
-    use crate::prover::AirbenderProver;
+    use std::sync::OnceLock;
+
     use ere_compiler_airbender::AirbenderRustRv32ima;
     use ere_compiler_core::{Compiler, Elf};
     use ere_prover_core::{Input, ProverResource, zkVMProver};
@@ -88,7 +91,8 @@ mod tests {
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
         program::basic::BasicProgram,
     };
-    use std::sync::OnceLock;
+
+    use crate::prover::AirbenderProver;
 
     fn basic_elf() -> Elf {
         static ELF: OnceLock<Elf> = OnceLock::new();

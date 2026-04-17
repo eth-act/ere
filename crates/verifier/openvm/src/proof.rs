@@ -1,7 +1,8 @@
-use crate::Error;
 use ere_verifier_core::codec::{Decode, Encode};
 use openvm_continuations::verifier::internal::types::VmStarkProof;
 use openvm_sdk::SC;
+
+use crate::Error;
 
 /// A proof produced by the host prover that bundles everything needed for
 /// verification.

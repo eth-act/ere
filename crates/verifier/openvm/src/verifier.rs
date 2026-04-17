@@ -1,7 +1,8 @@
-use crate::{Error, OpenVMProgramVk, OpenVMProof};
 use ere_verifier_core::{PublicValues, zkVMVerifier};
 use openvm_sdk::{CpuSdk, F, keygen::AggVerifyingKey};
 use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+
+use crate::{Error, OpenVMProgramVk, OpenVMProof};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
@@ -64,8 +65,9 @@ fn extract_public_values(user_public_values: &[F]) -> Result<PublicValues, Error
 
 #[cfg(test)]
 mod tests {
-    use crate::verifier::AGG_VK_BYTES;
     use openvm_sdk::{Sdk, keygen::AggVerifyingKey};
+
+    use crate::verifier::AGG_VK_BYTES;
 
     #[test]
     fn test_agg_vk_correstness() {

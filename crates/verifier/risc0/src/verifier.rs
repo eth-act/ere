@@ -1,6 +1,7 @@
-use crate::{Error, Risc0ProgramVk, Risc0Proof};
 use ere_verifier_core::{PublicValues, zkVMVerifier};
 use risc0_zkvm::InnerReceipt;
+
+use crate::{Error, Risc0ProgramVk, Risc0Proof};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 

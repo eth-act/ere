@@ -2,16 +2,15 @@
 
 extern crate alloc;
 
-use core::{cell::UnsafeCell, hash::Hasher, ops::Deref};
-use ere_platform_core::LengthPrefixedStdin;
-use fnv::FnvHasher;
-use ziskos::ziskos_definitions::ziskos_config::UART_ADDR;
-
 #[cfg(feature = "check-cycle-scope")]
 use alloc::string::String;
+use core::{cell::UnsafeCell, hash::Hasher, ops::Deref};
 
+use ere_platform_core::LengthPrefixedStdin;
 pub use ere_platform_core::{Digest, OutputHashedPlatform, Platform};
+use fnv::FnvHasher;
 pub use ziskos;
+use ziskos::ziskos_definitions::ziskos_config::UART_ADDR;
 
 /// Hashes a scope name to a `u64` for use as a lookup key in the scope registry.
 #[inline]
@@ -183,7 +182,8 @@ impl Platform for ZiskPlatform {
     }
 }
 
-/// Check explicitly exported names match cycle scope entries, panics with expected output on mismatch.
+/// Check explicitly exported names match cycle scope entries, panics with expected output on
+/// mismatch.
 #[doc(hidden)]
 pub fn check_cycle_scope_names(_names: &[&str]) {
     #[cfg(feature = "check-cycle-scope")]

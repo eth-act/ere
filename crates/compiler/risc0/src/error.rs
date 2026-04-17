@@ -1,5 +1,6 @@
-use ere_util_compile::CommonError;
 use std::path::PathBuf;
+
+use ere_util_compile::CommonError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]

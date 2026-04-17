@@ -1,3 +1,20 @@
+use core::{future::Future, iter, pin::Pin, time::Duration};
+use std::time::Instant;
+
+use ere_compiler_core::Elf;
+use ere_prover_core::{
+    Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues, block_on,
+};
+use ere_server_client::{
+    api::twirp::reqwest::Client,
+    client::{self, EncodedProof, Url, zkVMClient},
+};
+use tokio::{
+    sync::{RwLock, RwLockReadGuard},
+    time::{sleep, timeout},
+};
+use tracing::{error, info, warn};
+
 use crate::{
     image::{base_image, base_zkvm_image, server_zkvm_image},
     util::{
@@ -11,21 +28,6 @@ use crate::{
     },
     zkVMKind,
 };
-use core::{future::Future, iter, pin::Pin, time::Duration};
-use ere_compiler_core::Elf;
-use ere_prover_core::{
-    Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues, block_on,
-};
-use ere_server_client::{
-    api::twirp::reqwest::Client,
-    client::{self, EncodedProof, Url, zkVMClient},
-};
-use std::time::Instant;
-use tokio::{
-    sync::{RwLock, RwLockReadGuard},
-    time::{sleep, timeout},
-};
-use tracing::{error, info, warn};
 
 mod error;
 
@@ -90,8 +92,8 @@ fn apply_cuda_build_args(
 /// This method builds 3 Docker images in sequence:
 /// 1. `ere-base:{version}` - Base image with common dependencies
 /// 2. `ere-base-{zkvm}:{version}` - zkVMProver-specific base image with the zkVMProver SDK
-/// 3. `ere-server-{zkvm}:{version}` - Server image with the `ere-server` binary
-///    built with the selected zkVMProver feature
+/// 3. `ere-server-{zkvm}:{version}` - Server image with the `ere-server` binary built with the
+///    selected zkVMProver feature
 ///
 /// When [`ProverResource::Gpu`] is selected, the image with GPU support
 /// will be built and tagged with specific suffix.
@@ -489,15 +491,17 @@ async fn wait_until_healthy(endpoint: &Url, http_client: Client) -> Result<(), E
 
 #[cfg(test)]
 mod tests {
+    use core::time::Duration;
+
+    use ere_prover_core::{Input, ProverResource};
+    use ere_util_test::{codec::BincodeLegacy, host::TestCase, program::basic::BasicProgram};
+
     use crate::{
         CompilerKind, DockerizedzkVMConfig,
         compiler::tests::compile,
         prover::{DockerizedzkVM, Error},
         zkVMKind,
     };
-    use core::time::Duration;
-    use ere_prover_core::{Input, ProverResource};
-    use ere_util_test::{codec::BincodeLegacy, host::TestCase, program::basic::BasicProgram};
 
     fn zkvm(
         zkvm_kind: zkVMKind,

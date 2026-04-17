@@ -1,4 +1,5 @@
-use crate::prover::sdk::SP1Sdk;
+use std::time::Instant;
+
 use ere_compiler_core::Elf;
 use ere_prover_core::{
     Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues, block_on,
@@ -6,8 +7,9 @@ use ere_prover_core::{
 };
 use ere_verifier_sp1::{SP1ProgramVk, SP1Proof, SP1Verifier};
 use sp1_sdk::{SP1ProofMode, SP1Stdin};
-use std::time::Instant;
 use tracing::info;
+
+use crate::prover::sdk::SP1Sdk;
 
 mod error;
 mod sdk;
@@ -88,7 +90,8 @@ fn input_to_stdin(input: &Input) -> Result<SP1Stdin, Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::prover::SP1Prover;
+    use std::sync::OnceLock;
+
     use ere_compiler_core::{Compiler, Elf};
     use ere_compiler_sp1::SP1RustRv64imaCustomized;
     use ere_prover_core::{Input, ProverResource, RemoteProverConfig, zkVMProver};
@@ -97,7 +100,8 @@ mod tests {
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
         program::basic::BasicProgram,
     };
-    use std::sync::OnceLock;
+
+    use crate::prover::SP1Prover;
 
     fn basic_elf() -> Elf {
         static ELF: OnceLock<Elf> = OnceLock::new();

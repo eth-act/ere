@@ -1,3 +1,5 @@
+use std::{path::PathBuf, sync::Arc, time::Instant};
+
 use ere_compiler_core::Elf;
 use ere_prover_core::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource,
@@ -12,7 +14,6 @@ use openvm_sdk::{
     fs::read_object_from_file,
     keygen::{AggProvingKey, AppProvingKey},
 };
-use std::{path::PathBuf, sync::Arc, time::Instant};
 
 mod error;
 
@@ -162,7 +163,8 @@ fn agg_pk_path() -> PathBuf {
 
 #[cfg(test)]
 mod tests {
-    use crate::prover::OpenVMProver;
+    use std::sync::OnceLock;
+
     use ere_compiler_core::{Compiler, Elf};
     use ere_compiler_openvm::OpenVMRustRv32imaCustomized;
     use ere_prover_core::{Input, ProverResource, zkVMProver};
@@ -171,7 +173,8 @@ mod tests {
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
         program::basic::BasicProgram,
     };
-    use std::sync::OnceLock;
+
+    use crate::prover::OpenVMProver;
 
     fn basic_elf() -> Elf {
         static ELF: OnceLock<Elf> = OnceLock::new();

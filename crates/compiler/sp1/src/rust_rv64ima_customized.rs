@@ -1,9 +1,11 @@
-use crate::Error;
+use std::{fs, path::Path, process::Command};
+
 use ere_compiler_core::{Compiler, Elf};
 use ere_util_compile::{CommonError, cargo_metadata};
-use std::{fs, path::Path, process::Command};
 use tempfile::tempdir;
 use tracing::info;
+
+use crate::Error;
 
 /// Compiler for Rust guest program to RV64IMA architecture, using customized
 /// Rust toolchain of Succinct.
@@ -55,9 +57,10 @@ impl Compiler for SP1RustRv64imaCustomized {
 
 #[cfg(test)]
 mod tests {
-    use crate::SP1RustRv64imaCustomized;
     use ere_compiler_core::Compiler;
     use ere_util_test::host::testing_guest_directory;
+
+    use crate::SP1RustRv64imaCustomized;
 
     #[test]
     fn test_compile() {

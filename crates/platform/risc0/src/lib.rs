@@ -4,10 +4,10 @@ extern crate alloc;
 
 use alloc::vec;
 use core::ops::Deref;
-use risc0_zkvm::guest::env::Write;
 
 pub use ere_platform_core::{Digest, OutputHashedPlatform, Platform};
 pub use risc0_zkvm;
+use risc0_zkvm::guest::env::Write;
 
 /// Risc0 [`Platform`] implementation.
 pub struct Risc0Platform;

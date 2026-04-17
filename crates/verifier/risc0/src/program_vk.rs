@@ -1,8 +1,10 @@
-use crate::Error;
 use core::{array::from_fn, convert::Infallible};
+
 use ere_verifier_core::codec::{Decode, Encode};
 use risc0_zkvm::Digest;
 use serde::{Deserialize, Serialize};
+
+use crate::Error;
 
 const PROGRAM_VK_SIZE: usize = 32;
 

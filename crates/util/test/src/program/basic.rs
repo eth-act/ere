@@ -1,11 +1,13 @@
+use alloc::vec::Vec;
+use core::{fmt::Debug, marker::PhantomData};
+
+use ere_codec::{Decode, Encode, impl_codec_by_bincode_legacy, impl_codec_by_ciborium};
+use serde::{Deserialize, Serialize};
+
 use crate::{
     codec::{BincodeLegacy, Cbor},
     program::Program,
 };
-use alloc::vec::Vec;
-use core::{fmt::Debug, marker::PhantomData};
-use ere_codec::{Decode, Encode, impl_codec_by_bincode_legacy, impl_codec_by_ciborium};
-use serde::{Deserialize, Serialize};
 
 /// The basic program takes `BasicProgramInput` as input, and computes
 /// `BasicProgramOutput` as output.
@@ -67,6 +69,10 @@ impl_codec_by_ciborium!(BasicProgramOutput<Cbor>);
 
 #[cfg(feature = "host")]
 mod host {
+    use core::marker::PhantomData;
+
+    use rand::{Rng, rng};
+
     use crate::{
         host::ProgramTestCase,
         program::{
@@ -74,8 +80,6 @@ mod host {
             basic::{BasicProgram, BasicProgramInput},
         },
     };
-    use core::marker::PhantomData;
-    use rand::{Rng, rng};
 
     impl<C> BasicProgram<C>
     where

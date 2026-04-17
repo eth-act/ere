@@ -1,4 +1,5 @@
-use crate::prover::Error;
+use std::{borrow::Borrow, env, sync::Arc};
+
 use ere_prover_core::{CommonError, ProverResource, ProverResourceKind, RemoteProverConfig};
 use sp1_cuda::CudaProvingKey;
 use sp1_hypercube::air::{PublicValues, SP1_PROOF_NUM_PV_ELTS};
@@ -10,7 +11,8 @@ use sp1_sdk::{
     SP1ProofWithPublicValues, SP1ProvingKey as CpuProvingKey, SP1PublicValues, SP1Stdin,
     SP1VerifyingKey, StatusCode,
 };
-use std::{borrow::Borrow, env, sync::Arc};
+
+use crate::prover::Error;
 
 pub enum SP1Sdk {
     Cpu {

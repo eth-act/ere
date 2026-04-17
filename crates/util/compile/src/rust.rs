@@ -1,5 +1,3 @@
-use crate::CommonError;
-use cargo_metadata::{Metadata, MetadataCommand};
 use core::iter;
 use std::{
     fs, io,
@@ -7,7 +5,11 @@ use std::{
     process::Command,
     sync::Mutex,
 };
+
+use cargo_metadata::{Metadata, MetadataCommand};
 use tempfile::tempdir;
+
+use crate::CommonError;
 
 const CARGO_ENCODED_RUSTFLAGS_SEPARATOR: &str = "\x1f";
 

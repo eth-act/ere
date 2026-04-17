@@ -1,6 +1,9 @@
-use crate::PublicValues;
-use crate::codec::{Decode, Encode};
 use core::error::Error;
+
+use crate::{
+    PublicValues,
+    codec::{Decode, Encode},
+};
 
 /// zkVMProver verifier trait.
 ///

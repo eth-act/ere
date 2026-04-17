@@ -1,5 +1,6 @@
-use crate::{Input, ProgramExecutionReport, ProgramProvingReport, PublicValues, zkVMVerifier};
 use core::error::Error;
+
+use crate::{Input, ProgramExecutionReport, ProgramProvingReport, PublicValues, zkVMVerifier};
 
 /// zkVMProver trait to abstract away the differences between each zkVMProver.
 ///

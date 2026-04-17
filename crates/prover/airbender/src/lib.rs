@@ -14,8 +14,8 @@
 //! `PATH`:
 //!
 //! - `objcopy` (from `binutils`) - Used to convert ELF to binary at zkVMProver construction time
-//! - Installation via [`install_airbender_sdk.sh`] - `airbender-cli` used by
-//!   `zkVMProver::execute` and `zkVMProver::prove`
+//! - Installation via [`install_airbender_sdk.sh`] - `airbender-cli` used by `zkVMProver::execute`
+//!   and `zkVMProver::prove`
 //!
 //! # `Compiler` implementation
 //!

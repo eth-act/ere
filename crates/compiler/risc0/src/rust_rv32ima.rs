@@ -1,9 +1,11 @@
-use crate::Error;
+use std::{env, path::Path};
+
 use ere_compiler_core::{Compiler, Elf};
 use ere_util_compile::CargoBuildCmd;
 use risc0_binfmt::ProgramBinary;
-use std::{env, path::Path};
 use tracing::info;
+
+use crate::Error;
 
 // TODO: Make this with `zkos` package building to avoid binary file storing in repo.
 // File taken from https://github.com/risc0/risc0/blob/v3.0.5/risc0/zkos/v1compat/elfs/v1compat.elf
@@ -52,9 +54,10 @@ impl Compiler for Risc0RustRv32ima {
 
 #[cfg(test)]
 mod tests {
-    use crate::Risc0RustRv32ima;
     use ere_compiler_core::Compiler;
     use ere_util_test::host::testing_guest_directory;
+
+    use crate::Risc0RustRv32ima;
 
     #[test]
     fn test_compile() {

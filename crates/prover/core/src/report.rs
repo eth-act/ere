@@ -1,4 +1,5 @@
 use core::time::Duration;
+
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
@@ -8,7 +9,8 @@ use serde::{Deserialize, Serialize};
 pub struct ProgramExecutionReport {
     /// Total number of cycles for the entire workload execution.
     pub total_num_cycles: u64,
-    /// Region-specific cycles, mapping region names (e.g., "setup", "compute") to their cycle counts.
+    /// Region-specific cycles, mapping region names (e.g., "setup", "compute") to their cycle
+    /// counts.
     pub region_cycles: IndexMap<String, u64>,
     /// Execution duration.
     pub execution_duration: Duration,

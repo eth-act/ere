@@ -1,4 +1,6 @@
 use core::ops::RangeInclusive;
+use std::{env, rc::Rc, time::Instant};
+
 use ere_compiler_core::Elf;
 use ere_prover_core::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource,
@@ -9,7 +11,6 @@ use risc0_zkvm::{
     AssumptionReceipt, DEFAULT_MAX_PO2, DefaultProver, ExecutorEnv, ExternalProver, ProverOpts,
     default_executor, default_prover,
 };
-use std::{env, rc::Rc, time::Instant};
 
 mod error;
 
@@ -186,7 +187,8 @@ impl Risc0Prover {
 
 #[cfg(test)]
 mod tests {
-    use crate::prover::Risc0Prover;
+    use std::sync::OnceLock;
+
     use ere_compiler_core::{Compiler, Elf};
     use ere_compiler_risc0::Risc0RustRv32imaCustomized;
     use ere_prover_core::{Input, ProverResource, zkVMProver};
@@ -195,7 +197,8 @@ mod tests {
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
         program::basic::BasicProgram,
     };
-    use std::sync::OnceLock;
+
+    use crate::prover::Risc0Prover;
 
     fn basic_elf() -> Elf {
         static ELF: OnceLock<Elf> = OnceLock::new();

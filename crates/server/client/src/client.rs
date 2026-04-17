@@ -1,20 +1,20 @@
-use crate::api::{
-    ExecuteRequest, ProveRequest, VerifyRequest, ZkvmService,
-    execute_response::Result as ExecuteResult, prove_response::Result as ProveResult,
-    verify_response::Result as VerifyResult,
-};
 use core::time::Duration;
+
 use ere_prover_core::{Input, ProgramExecutionReport, ProgramProvingReport, PublicValues};
+#[cfg(feature = "otel")]
+pub use otel_propagation::OtelPropagation;
 use thiserror::Error;
 use twirp::{Client, Middleware, Request, reqwest};
-
 pub use twirp::{
     TwirpErrorResponse,
     url::{ParseError, Url},
 };
 
-#[cfg(feature = "otel")]
-pub use otel_propagation::OtelPropagation;
+use crate::api::{
+    ExecuteRequest, ProveRequest, VerifyRequest, ZkvmService,
+    execute_response::Result as ExecuteResult, prove_response::Result as ProveResult,
+    verify_response::Result as VerifyResult,
+};
 
 const HEALTH_CHECK_TIMEOUT: Duration = Duration::from_secs(3);
 

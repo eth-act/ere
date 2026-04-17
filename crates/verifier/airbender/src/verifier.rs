@@ -1,7 +1,9 @@
-use crate::{AirbenderProgramVk, AirbenderProof, Error};
-use airbender_execution_utils::{ProgramProof, verify_recursion_log_23_layer};
 use core::array::from_fn;
+
+use airbender_execution_utils::{ProgramProof, verify_recursion_log_23_layer};
 use ere_verifier_core::{PublicValues, zkVMVerifier};
+
+use crate::{AirbenderProgramVk, AirbenderProof, Error};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 

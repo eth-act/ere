@@ -1,10 +1,11 @@
 use std::{env, fs, path::Path, process::Command};
 
-use crate::Error;
 use ere_compiler_core::{Compiler, Elf};
 use ere_util_compile::CommonError;
 use tempfile::tempdir;
 use tracing::info;
+
+use crate::Error;
 
 pub struct ZiskGoCustomized;
 
@@ -60,9 +61,10 @@ impl Compiler for ZiskGoCustomized {
 
 #[cfg(test)]
 mod tests {
-    use crate::ZiskGoCustomized;
     use ere_compiler_core::Compiler;
     use ere_util_test::host::testing_guest_directory;
+
+    use crate::ZiskGoCustomized;
 
     #[test]
     fn test_compile() {

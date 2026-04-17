@@ -1,4 +1,5 @@
-use crate::prover::sdk::ZiskSdk;
+use std::time::Instant;
+
 use ere_compiler_core::Elf;
 use ere_prover_core::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues,
@@ -6,7 +7,8 @@ use ere_prover_core::{
 };
 use ere_verifier_zisk::{ZiskProof, ZiskVerifier};
 use mpi as _; // Import symbols referenced by starks_api.cpp
-use std::time::Instant;
+
+use crate::prover::sdk::ZiskSdk;
 
 mod error;
 mod sdk;
@@ -73,7 +75,8 @@ impl zkVMProver for ZiskProver {
 
 #[cfg(test)]
 mod tests {
-    use crate::prover::ZiskProver;
+    use std::sync::{Mutex, OnceLock};
+
     use ere_compiler_core::{Compiler, Elf};
     use ere_compiler_zisk::ZiskRustRv64imaCustomized;
     use ere_prover_core::{Input, ProverResource, RemoteProverConfig, zkVMProver};
@@ -82,7 +85,8 @@ mod tests {
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
         program::basic::BasicProgram,
     };
-    use std::sync::{Mutex, OnceLock};
+
+    use crate::prover::ZiskProver;
 
     static PROVE_LOCK: Mutex<()> = Mutex::new(());
 

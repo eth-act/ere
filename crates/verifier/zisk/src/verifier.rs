@@ -1,7 +1,8 @@
-use crate::{Error, ZiskProgramVk, ZiskProof};
 use bytemuck::cast_slice;
 use ere_verifier_core::{PublicValues, zkVMVerifier};
 use proofman_verifier::verify_vadcop_final;
+
+use crate::{Error, ZiskProgramVk, ZiskProof};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 

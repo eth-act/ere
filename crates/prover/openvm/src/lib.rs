@@ -11,8 +11,7 @@
 //! ## `zkVMProver` requirements
 //!
 //! - `cargo-openvm`
-//! - Setup via `cargo openvm setup` - Setup aggregation keys used by
-//!   `zkVMProver::prove`
+//! - Setup via `cargo openvm setup` - Setup aggregation keys used by `zkVMProver::prove`
 //!
 //! # `Compiler` implementation
 //!

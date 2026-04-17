@@ -1,8 +1,10 @@
-use crate::Error;
 use core::convert::Infallible;
+
 use ere_verifier_core::codec::{Decode, Encode};
 use openvm_sdk::commit::{AppExecutionCommit, CommitBytes};
 use serde::{Deserialize, Serialize};
+
+use crate::Error;
 
 const PROGRAM_VK_SIZE: usize = 64;
 

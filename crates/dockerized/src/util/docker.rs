@@ -1,5 +1,3 @@
-use crate::util::env::gpu_devices;
-use ere_prover_core::CommonError;
 use std::{
     env,
     fmt::{self, Display, Formatter},
@@ -8,7 +6,11 @@ use std::{
     process::{Child, Command, Stdio},
     time::Duration,
 };
+
+use ere_prover_core::CommonError;
 use tracing::debug;
+
+use crate::util::env::gpu_devices;
 
 #[derive(Clone)]
 struct CmdOption(String, Option<String>);

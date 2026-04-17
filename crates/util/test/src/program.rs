@@ -1,4 +1,5 @@
 use core::fmt::Debug;
+
 use ere_codec::{Decode, Encode};
 use ere_platform_core::{OutputHashedPlatform, Platform};
 use sha2::Sha256;

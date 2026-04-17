@@ -1,5 +1,6 @@
-use ere_util_build::{cargo_lock_path, detect_sdk_version, get_docker_image_tag, workspace};
 use std::{env, fs, path::Path};
+
+use ere_util_build::{cargo_lock_path, detect_sdk_version, get_docker_image_tag, workspace};
 
 fn main() {
     generate_docker_image_tag();

@@ -1,8 +1,9 @@
+use std::path::PathBuf;
+
 use anyhow::{Context, Error};
 use clap::Parser;
 use ere_catalog::CompilerKind;
 use ere_compiler_core::{Compiler, Elf};
-use std::path::PathBuf;
 use tracing_subscriber::EnvFilter;
 
 // Compile-time check to ensure exactly one zkVMProver feature is enabled for `ere-compiler`

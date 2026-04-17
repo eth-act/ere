@@ -1,18 +1,20 @@
-use crate::prover::{
-    Error,
-    sdk::{dot_zisk_dir, panic_msg},
-};
+use std::{env, fs, panic, path::PathBuf, process::Command, thread::sleep, time::Duration};
+
 use blake3::Hash;
 use ere_prover_core::CommonError;
 use parking_lot::{Mutex, MutexGuard};
 use proofman_common::ParamsGPU;
-use std::{env, fs, panic, path::PathBuf, process::Command, thread::sleep, time::Duration};
 use tempfile::tempdir;
 use tracing::info;
 use zisk_rom_setup::generate_assembly;
 use zisk_sdk::{
     Asm, ElfBinaryFromFile, ProofOpts, ProverClientBuilder, ZiskProgramPK,
     ZiskProofWithPublicValues, ZiskProver, ZiskStdin,
+};
+
+use crate::prover::{
+    Error,
+    sdk::{dot_zisk_dir, panic_msg},
 };
 
 const ELF_NAME: &str = "elf";

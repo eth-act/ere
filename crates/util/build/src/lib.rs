@@ -1,10 +1,11 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use cargo_metadata::MetadataCommand;
 use std::{
     env, fs,
     path::{Path, PathBuf},
 };
+
+use cargo_metadata::MetadataCommand;
 
 /// Returns path to the closest workspace that contains `Cargo.lock` from `CARGO_MANIFEST_DIR`,
 /// returns `None` if not found.

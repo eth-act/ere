@@ -1,11 +1,10 @@
-use crate::{Error, SP1ProgramVk, SP1Proof};
-
 use ere_verifier_core::{PublicValues, zkVMVerifier};
-
 use sp1_sdk::{
     SP1Proof as SP1SdkProof,
     blocking::{CpuProver, Prover},
 };
+
+use crate::{Error, SP1ProgramVk, SP1Proof};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 

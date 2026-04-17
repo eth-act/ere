@@ -1,9 +1,11 @@
-use crate::Error;
+use std::path::Path;
+
 use ere_compiler_core::{Compiler, Elf};
 use ere_util_compile::cargo_metadata;
 use risc0_build::GuestOptions;
-use std::path::Path;
 use tracing::info;
+
+use crate::Error;
 
 /// Compiler for Rust guest program to RV32IMA architecture, using customized
 /// Rust toolchain of Risc0.
@@ -44,9 +46,10 @@ impl Compiler for Risc0RustRv32imaCustomized {
 
 #[cfg(test)]
 mod tests {
-    use crate::Risc0RustRv32imaCustomized;
     use ere_compiler_core::Compiler;
     use ere_util_test::host::testing_guest_directory;
+
+    use crate::Risc0RustRv32imaCustomized;
 
     #[test]
     fn test_compile() {

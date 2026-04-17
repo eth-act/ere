@@ -17,6 +17,5 @@ pub use input::Input;
 pub use prover::{ProgramVk, Proof, zkVMProver};
 pub use report::{ProgramExecutionReport, ProgramProvingReport};
 pub use resource::{ProverResource, ProverResourceKind, RemoteProverConfig};
-
 #[cfg(feature = "tokio")]
 pub use tokio::block_on;

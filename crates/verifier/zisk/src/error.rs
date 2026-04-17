@@ -1,5 +1,6 @@
-use crate::ZiskProgramVk;
 use thiserror::Error;
+
+use crate::ZiskProgramVk;
 
 #[derive(Debug, Error)]
 pub enum Error {

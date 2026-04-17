@@ -1,7 +1,9 @@
-use crate::Error;
+use std::{env, path::Path};
+
 use ere_compiler_core::{Compiler, Elf};
 use ere_util_compile::CargoBuildCmd;
-use std::{env, path::Path};
+
+use crate::Error;
 
 const TARGET_TRIPLE: &str = "riscv32ima-unknown-none-elf";
 // Rust flags according to https://github.com/openvm-org/openvm/blob/v1.4.3/crates/toolchain/build/src/lib.rs#L291
@@ -50,9 +52,10 @@ impl Compiler for OpenVMRustRv32ima {
 
 #[cfg(test)]
 mod tests {
-    use crate::OpenVMRustRv32ima;
     use ere_compiler_core::Compiler;
     use ere_util_test::host::testing_guest_directory;
+
+    use crate::OpenVMRustRv32ima;
 
     #[test]
     fn test_compile() {

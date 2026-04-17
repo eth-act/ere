@@ -1,8 +1,10 @@
-use crate::Error;
+use std::{fs, path::Path};
+
 use ere_compiler_core::{Compiler, Elf};
 use ere_util_compile::{CommonError, rustup_add_rust_src};
 use openvm_build::{GuestOptions, get_rustup_toolchain_name};
-use std::{fs, path::Path};
+
+use crate::Error;
 
 /// Compiler for Rust guest program to RV32IMA architecture, using customized
 /// target `riscv32im-risc0-zkvm-elf`.
@@ -35,9 +37,10 @@ impl Compiler for OpenVMRustRv32imaCustomized {
 
 #[cfg(test)]
 mod tests {
-    use crate::OpenVMRustRv32imaCustomized;
     use ere_compiler_core::Compiler;
     use ere_util_test::host::testing_guest_directory;
+
+    use crate::OpenVMRustRv32imaCustomized;
 
     #[test]
     fn test_compile() {

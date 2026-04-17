@@ -1,7 +1,9 @@
-use crate::Error;
+use std::{env, path::Path};
+
 use ere_compiler_core::{Compiler, Elf};
 use ere_util_compile::{CargoBuildCmd, RustTarget};
-use std::{env, path::Path};
+
+use crate::Error;
 
 /// Target spec modified from `riscv64im-unknown-none-elf` with patch `atomic-cas = true`.
 ///
@@ -57,9 +59,10 @@ impl Compiler for ZiskRustRv64ima {
 
 #[cfg(test)]
 mod tests {
-    use crate::ZiskRustRv64ima;
     use ere_compiler_core::Compiler;
     use ere_util_test::host::testing_guest_directory;
+
+    use crate::ZiskRustRv64ima;
 
     #[test]
     fn test_compile() {

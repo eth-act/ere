@@ -1,6 +1,5 @@
-use sp1_hypercube::SP1VerifyingKey;
-
 use serde::{Deserialize, Serialize};
+use sp1_hypercube::SP1VerifyingKey;
 
 /// Verifying key that identifies a specific compiled guest program.
 ///

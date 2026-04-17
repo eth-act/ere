@@ -1,3 +1,8 @@
+use std::{
+    net::{Ipv4Addr, SocketAddr},
+    sync::Arc,
+};
+
 use anyhow::{Context, Error};
 use ere_compiler_core::Elf;
 use ere_prover_core::{
@@ -9,11 +14,6 @@ use ere_server_client::api::{
     ExecuteOk, ExecuteRequest, ExecuteResponse, ProveOk, ProveRequest, ProveResponse, VerifyOk,
     VerifyRequest, VerifyResponse, ZkvmService, execute_response::Result as ExecuteResult,
     prove_response::Result as ProveResult, router, verify_response::Result as VerifyResult,
-};
-
-use std::{
-    net::{Ipv4Addr, SocketAddr},
-    sync::Arc,
 };
 use tokio::{net::TcpListener, signal};
 use tower_http::catch_panic::CatchPanicLayer;

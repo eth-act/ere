@@ -1,10 +1,12 @@
-use crate::resource::ProverResourceKind;
 use std::{
     io,
     path::Path,
     process::{Command, ExitStatus, Output},
 };
+
 use thiserror::Error;
+
+use crate::resource::ProverResourceKind;
 
 #[derive(Debug, Error)]
 pub enum CommonError {

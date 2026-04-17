@@ -1,6 +1,5 @@
-use sp1_sdk::SP1ProofWithPublicValues;
-
 use serde::{Deserialize, Serialize};
+use sp1_sdk::SP1ProofWithPublicValues;
 
 /// A proof produced by the host prover that bundles everything needed for
 /// verification.

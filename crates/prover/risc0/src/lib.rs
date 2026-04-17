@@ -12,8 +12,7 @@
 //!
 //! - [`rzup`]
 //! - Installation via `rzup install`
-//! - `r0vm-cuda` - Used by `zkVMProver::prove` if `ProverResource::Gpu` is
-//!   selected
+//! - `r0vm-cuda` - Used by `zkVMProver::prove` if `ProverResource::Gpu` is selected
 //!
 //! # `Compiler` implementation
 //!

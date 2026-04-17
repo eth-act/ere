@@ -69,9 +69,11 @@ impl ProverResource {
 
 #[cfg(test)]
 mod tests {
-    use crate::resource::ProverResource;
     use core::fmt::Debug;
+
     use serde::{Deserialize, Serialize};
+
+    use crate::resource::ProverResource;
 
     #[derive(Serialize, Deserialize)]
     struct Config {
