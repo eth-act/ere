@@ -20,9 +20,6 @@ pub enum Error {
     #[error("Initialize prover failed: {0}")]
     ProverInit(SdkError),
 
-    #[error("Invalid public value")]
-    InvalidPublicValue,
-
     // Execute
     #[error("OpenVM execution failed: {0}")]
     Execute(#[source] SdkError),
@@ -37,7 +34,6 @@ pub enum Error {
         proved: Box<AppExecutionCommit>,
     },
 
-    // Verify
-    #[error("OpenVM verification failed: {0}")]
-    Verify(#[source] SdkError),
+    #[error(transparent)]
+    Verifier(#[from] ere_verifier_openvm::Error),
 }

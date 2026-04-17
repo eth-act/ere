@@ -1,0 +1,23 @@
+[package]
+name = "ere-verifier-openvm"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+bitcode.workspace = true
+serde = { workspace = true, features = ["derive"] }
+thiserror.workspace = true
+
+openvm-continuations.workspace = true
+openvm-sdk.workspace = true
+openvm-stark-sdk.workspace = true
+
+ere-verifier-core.workspace = true
+
+[build-dependencies]
+ere-build-utils.workspace = true
+
+[lints]
+workspace = true
