@@ -1,0 +1,30 @@
+[package]
+name = "ere-platform-zisk"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+# ZisK dependencies
+ziskos.workspace = true
+
+# Hashing
+fnv.workspace = true
+
+# Local dependencies
+ere-platform-core.workspace = true
+
+[features]
+default = ["user-hints", "inputcpy"]
+user-hints = ["ziskos/user-hints"]
+inputcpy = ["ziskos/inputcpy"]
+zisk-custom-alloc = ["ziskos/zisk-custom-alloc"]
+zisk-embedded-alloc = ["ziskos/zisk-embedded-alloc"]
+zisk-embedded-dlmalloc-alloc = ["ziskos/zisk-embedded-dlmalloc-alloc"]
+zisk-embedded-talc-alloc = ["ziskos/zisk-embedded-talc-alloc"]
+zisk-embedded-tlfs-alloc = ["ziskos/zisk-embedded-tlfs-alloc"]
+check-cycle-scope = []
+
+[lints]
+workspace = true

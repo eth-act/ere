@@ -6,5 +6,5 @@ edition = "2021"
 [workspace]
 
 [dependencies]
-ere-platform-openvm = { path = "../../../crates/zkvm/openvm/platform", features = ["std"] }
-ere-test-utils = { path = "../../../crates/test-utils" }
+ere-platform-openvm = { path = "../../../crates/platform/openvm", features = ["std"] }
+ere-util-test = { path = "../../../crates/util/test" }

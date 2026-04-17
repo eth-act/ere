@@ -1,0 +1,39 @@
+[package]
+name = "ere-prover-openvm"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+eyre.workspace = true
+thiserror.workspace = true
+
+# OpenVM dependencies
+openvm-build.workspace = true
+openvm-circuit = { workspace = true, optional = true }
+openvm-sdk = { workspace = true, features = ["nightly-features"], default-features = true, optional = true }
+
+# Local dependencies
+ere-util-compile = { workspace = true, optional = true }
+ere-verifier-openvm = { workspace = true, optional = true }
+ere-prover-core.workspace = true
+
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+openvm-sdk = { workspace = true, features = ["aot", "nightly-features"], optional = true }
+
+[dev-dependencies]
+ere-util-test = { workspace = true, features = ["host"] }
+
+[features]
+default = ["compiler", "zkvm"]
+compiler = ["dep:ere-util-compile"]
+zkvm = [
+    "dep:openvm-circuit",
+    "dep:openvm-sdk",
+    "dep:ere-verifier-openvm",
+]
+cuda = ["openvm-sdk/cuda"]
+
+[lints]
+workspace = true

@@ -6,5 +6,5 @@ edition = "2021"
 [workspace]
 
 [dependencies]
-ere-platform-sp1 = { path = "../../../crates/zkvm/sp1/platform" }
-ere-test-utils = { path = "../../../crates/test-utils" }
+ere-platform-sp1 = { path = "../../../crates/platform/sp1" }
+ere-util-test = { path = "../../../crates/util/test" }

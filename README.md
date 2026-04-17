@@ -45,64 +45,83 @@ The current MSRV (minimum supported rust version) is 1.88.
 This repository contains the following crates:
 
 - Traits
-  - [`ere-zkvm-interface`] - `Compiler` and `zkVM` traits for zkVM host operations
-  - [`ere-platform-trait`] - `Platform` trait for guest program
-- Per-zkVM implementations for [`ere-zkvm-interface`] (host)
-  - [`ere-airbender`]
-  - [`ere-openvm`]
-  - [`ere-risc0`]
-  - [`ere-sp1`]
-  - [`ere-zisk`]
-- Per-zkVM implementations for [`ere-platform-trait`] (guest)
+  - [`ere-prover-core`] - `Compiler` and `zkVMProver` traits for zkVM host operations
+  - [`ere-platform-core`] - `Platform` trait for guest program
+  - [`ere-verifier-core`] - `zkVMVerifier` trait, `PublicValues`, and the `Encode`/`Decode` codec for proofs and verifying keys
+- Per-zkVM implementations for [`ere-prover-core`] (host)
+  - [`ere-prover-airbender`]
+  - [`ere-prover-openvm`]
+  - [`ere-prover-risc0`]
+  - [`ere-prover-sp1`]
+  - [`ere-prover-zisk`]
+- Per-zkVM implementations for [`ere-platform-core`] (guest)
   - [`ere-platform-airbender`]
   - [`ere-platform-openvm`]
   - [`ere-platform-risc0`]
   - [`ere-platform-sp1`]
   - [`ere-platform-zisk`]
-- [`ere-dockerized`] - Docker wrapper implementation for [`ere-zkvm-interface`] of all zkVMs
+- Per-zkVM implementations for [`ere-verifier-core`] (lightweight host verifier)
+  - [`ere-verifier-airbender`]
+  - [`ere-verifier-openvm`]
+  - [`ere-verifier-risc0`]
+  - [`ere-verifier-sp1`]
+  - [`ere-verifier-zisk`]
+- [`ere-dockerized`] - Docker wrapper implementation for [`ere-prover-core`] of all zkVMs
 - [`ere-io`] - Serialization utilities for host/guest IO communication
+- [`ere-codec`] - Canonical byte codec shared across verifier crates
+- [`ere-catalog`] - Catalog of supported zkVMs and compilers (`zkVMKind`, `CompilerKind`, SDK versions, Docker image tag)
 - Internal crates
   - [`ere-compiler`] - Cli to run `Compiler` used by [`ere-dockerized`]
-  - [`ere-server`] - Server and client for `zkVM` operations used by [`ere-dockerized`]
-  - [`ere-build-utils`] - Build-time utilities
-  - [`ere-compile-utils`] - Compilation utilities
-  - [`ere-test-utils`] - Testing utilities
+  - [`ere-server`] - Server binary that exposes `zkVMProver` operations over gRPC, used by [`ere-dockerized`]
+  - [`ere-server-client`] - Client library and shared API types for [`ere-server`], used by [`ere-dockerized`]
+  - [`ere-util-build`] - Build-time utilities
+  - [`ere-util-compile`] - Compilation utilities
+  - [`ere-util-test`] - Testing utilities
 
-[`ere-zkvm-interface`]: https://github.com/eth-act/ere/tree/master/crates/zkvm-interface
-[`ere-platform-trait`]: https://github.com/eth-act/ere/tree/master/crates/zkvm-interface/platform
-[`ere-airbender`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/airbender
-[`ere-platform-airbender`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/airbender/platform
-[`ere-openvm`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/openvm
-[`ere-platform-openvm`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/openvm/platform
-[`ere-risc0`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/risc0
-[`ere-platform-risc0`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/risc0/platform
-[`ere-sp1`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/sp1
-[`ere-platform-sp1`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/sp1/platform
-[`ere-zisk`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/zisk
-[`ere-platform-zisk`]: https://github.com/eth-act/ere/tree/master/crates/zkvm/zisk/platform
+[`ere-prover-core`]: https://github.com/eth-act/ere/tree/master/crates/prover/core
+[`ere-platform-core`]: https://github.com/eth-act/ere/tree/master/crates/platform/core
+[`ere-verifier-core`]: https://github.com/eth-act/ere/tree/master/crates/verifier/core
+[`ere-prover-airbender`]: https://github.com/eth-act/ere/tree/master/crates/prover/airbender
+[`ere-platform-airbender`]: https://github.com/eth-act/ere/tree/master/crates/platform/airbender
+[`ere-verifier-airbender`]: https://github.com/eth-act/ere/tree/master/crates/verifier/airbender
+[`ere-prover-openvm`]: https://github.com/eth-act/ere/tree/master/crates/prover/openvm
+[`ere-platform-openvm`]: https://github.com/eth-act/ere/tree/master/crates/platform/openvm
+[`ere-verifier-openvm`]: https://github.com/eth-act/ere/tree/master/crates/verifier/openvm
+[`ere-prover-risc0`]: https://github.com/eth-act/ere/tree/master/crates/prover/risc0
+[`ere-platform-risc0`]: https://github.com/eth-act/ere/tree/master/crates/platform/risc0
+[`ere-verifier-risc0`]: https://github.com/eth-act/ere/tree/master/crates/verifier/risc0
+[`ere-prover-sp1`]: https://github.com/eth-act/ere/tree/master/crates/prover/sp1
+[`ere-platform-sp1`]: https://github.com/eth-act/ere/tree/master/crates/platform/sp1
+[`ere-verifier-sp1`]: https://github.com/eth-act/ere/tree/master/crates/verifier/sp1
+[`ere-prover-zisk`]: https://github.com/eth-act/ere/tree/master/crates/prover/zisk
+[`ere-platform-zisk`]: https://github.com/eth-act/ere/tree/master/crates/platform/zisk
+[`ere-verifier-zisk`]: https://github.com/eth-act/ere/tree/master/crates/verifier/zisk
 [`ere-dockerized`]: https://github.com/eth-act/ere/tree/master/crates/dockerized
-[`ere-compiler`]: https://github.com/eth-act/ere/tree/master/crates/dockerized/compiler
-[`ere-server`]: https://github.com/eth-act/ere/tree/master/crates/dockerized/server
+[`ere-compiler`]: https://github.com/eth-act/ere/tree/master/crates/compiler/cli
+[`ere-server`]: https://github.com/eth-act/ere/tree/master/crates/server/cli
+[`ere-server-client`]: https://github.com/eth-act/ere/tree/master/crates/server/client
 [`ere-io`]: https://github.com/eth-act/ere/tree/master/crates/io
-[`ere-build-utils`]: https://github.com/eth-act/ere/tree/master/crates/build-utils
-[`ere-compile-utils`]: https://github.com/eth-act/ere/tree/master/crates/compile-utils
-[`ere-test-utils`]: https://github.com/eth-act/ere/tree/master/crates/test-utils
+[`ere-codec`]: https://github.com/eth-act/ere/tree/master/crates/codec
+[`ere-catalog`]: https://github.com/eth-act/ere/tree/master/crates/catalog
+[`ere-util-build`]: https://github.com/eth-act/ere/tree/master/crates/util/build
+[`ere-util-compile`]: https://github.com/eth-act/ere/tree/master/crates/util/compile
+[`ere-util-test`]: https://github.com/eth-act/ere/tree/master/crates/util/test
 
 ## Architecture
 
 ### The Interface
 
-`ere-zkvm-interface` provides traits for host:
+`ere-prover-core` provides traits for host:
 
 - `Compiler`
 
   Compile a guest program into an `Elf`.
 
-- `zkVM`
+- `zkVMProver`
 
   Execute, prove and verify. A zkVM instance is created for an `Elf` that comes from the `Compiler`.
 
-`ere-platform-trait` provides traits for guest program:
+`ere-platform-core` provides traits for guest program:
 
 - `Platform`
 
@@ -130,7 +149,7 @@ The `Input` structure holds stdin as raw bytes. There are 2 ways to use it:
 
 #### Writing Public Values to Host
 
-Public values written in the guest program (via `Platform::write_whole_output()` or zkVM-specific output APIs) are returned as raw bytes to the host after `zkVM::execute`, `zkVM::prove` and `zkVM::verify` methods.
+Public values written in the guest program (via `Platform::write_whole_output()` or zkVM-specific output APIs) are returned as raw bytes to the host after `zkVMProver::execute`, `zkVMProver::prove` and `zkVMProver::verify` methods.
 
 Different zkVMs handles public values in different approaches:
 
@@ -235,17 +254,17 @@ name = "host"
 edition = "2024"
 
 [dependencies]
-ere-zkvm-interface = { git = "https://github.com/eth-act/ere.git" }
-ere-sp1 = { git = "https://github.com/eth-act/ere.git" }
+ere-prover-core = { git = "https://github.com/eth-act/ere.git" }
+ere-prover-sp1 = { git = "https://github.com/eth-act/ere.git" }
 ```
 
 ```rust
 // host/src/main.rs
 
-use ere_sp1::{compiler::RustRv64imaCustomized, zkvm::EreSP1};
-use ere_zkvm_interface::{
+use ere_prover_sp1::{compiler::RustRv64imaCustomized, prover::SP1Prover};
+use ere_prover_core::{
     compiler::Compiler,
-    zkvm::{Input, ProofKind, ProverResource, zkVM},
+    prover::{Input, ProverResource, zkVMProver},
 };
 use std::path::Path;
 
@@ -257,7 +276,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let elf = compiler.compile(guest_directory)?;
 
     // Create zkVM instance (setup/preprocessing happens here)
-    let zkvm = EreSP1::new(elf, ProverResource::Cpu)?;
+    let zkvm = SP1Prover::new(elf, ProverResource::Cpu)?;
 
     // Prepare input
     // Use `with_prefixed_stdin` when guest uses `Platform::read_whole_input()`
@@ -270,7 +289,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Execution cycles: {}", report.total_num_cycles);
 
     // Prove
-    let (public_values, proof, report) = zkvm.prove(&input, ProofKind::default())?;
+    let (public_values, proof, report) = zkvm.prove(&input)?;
     assert_eq!(public_values, expected_output);
     println!("Proving time: {:?}", report.proving_time);
 
@@ -303,7 +322,7 @@ name = "host"
 edition = "2024"
 
 [dependencies]
-ere-zkvm-interface = { git = "https://github.com/eth-act/ere.git" }
+ere-prover-core = { git = "https://github.com/eth-act/ere.git" }
 ere-dockerized = { git = "https://github.com/eth-act/ere.git" }
 ```
 
@@ -313,9 +332,9 @@ ere-dockerized = { git = "https://github.com/eth-act/ere.git" }
 use ere_dockerized::{
     CompilerKind, DockerizedCompiler, DockerizedzkVM, DockerizedzkVMConfig, zkVMKind,
 };
-use ere_zkvm_interface::{
+use ere_prover_core::{
     compiler::Compiler,
-    zkvm::{Input, ProofKind, ProverResource, zkVM},
+    prover::{Input, ProverResource, zkVMProver},
 };
 use std::path::Path;
 
@@ -347,7 +366,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Execution cycles: {}", report.total_num_cycles);
 
     // Prove
-    let (public_values, proof, report) = zkvm.prove(&input, ProofKind::default())?;
+    let (public_values, proof, report) = zkvm.prove(&input)?;
     assert_eq!(public_values, expected_output);
     println!("Proving time: {:?}", report.proving_time);
 
@@ -390,18 +409,28 @@ ERE_GPU_DEVICES="4" ere prove ...
 ```
 ere/
 ├── crates/                        # Rust crates
-│   ├── zkvm-interface/            # ere-zkvm-interface
-│   │   └── platform/              # ere-platform-trait
-│   ├── zkvm/
-│   │   └── {zkvm}/                # ere-{zkvm}
-│   │       └── platform/          # ere-platform-{zkvm}
+│   ├── prover/
+│   │   ├── core/                  # ere-prover-core
+│   │   └── {zkvm}/                # ere-prover-{zkvm}
+│   ├── platform/
+│   │   ├── core/                  # ere-platform-core
+│   │   └── {zkvm}/                # ere-platform-{zkvm}
+│   ├── verifier/
+│   │   ├── core/                  # ere-verifier-core
+│   │   └── {zkvm}/                # ere-verifier-{zkvm}
 │   ├── dockerized/                # ere-dockerized
-│   │   ├── compiler/              # ere-compiler
-│   │   └── server/                # ere-server
+│   ├── compiler/
+│   │   └── cli/                   # ere-compiler
+│   ├── server/
+│   │   ├── cli/                   # ere-server
+│   │   └── client/                # ere-server-client
+│   ├── core/                      # ere-catalog
+│   ├── codec/                     # ere-codec
 │   ├── io/                        # ere-io
-│   ├── build-utils/               # ere-build-utils
-│   ├── compile-utils/             # ere-compile-utils
-│   └── test-utils/                # ere-test-utils
+│   └── util/
+│       ├── build/                 # ere-util-build
+│       ├── compile/               # ere-util-compile
+│       └── test/                  # ere-util-test
 │
 ├── docker/                        # Dockerfile used by ere-dockerized
 │   ├── Dockerfile.base            # ere-base

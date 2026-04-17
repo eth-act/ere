@@ -3646,24 +3646,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "ere-airbender"
+name = "ere-catalog"
 version = "0.7.0"
 dependencies = [
- "ere-compile-utils",
- "ere-test-utils",
- "ere-verifier-airbender",
- "ere-zkvm-interface",
- "execution_utils",
- "serde_json",
- "tempfile",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "ere-build-utils"
-version = "0.7.0"
-dependencies = [
- "cargo_metadata 0.19.2",
+ "ere-util-build",
+ "serde",
+ "strum 0.27.2",
 ]
 
 [[package]]
@@ -3671,37 +3659,18 @@ name = "ere-codec"
 version = "0.7.0"
 
 [[package]]
-name = "ere-common"
-version = "0.7.0"
-dependencies = [
- "ere-build-utils",
- "serde",
- "strum 0.27.2",
-]
-
-[[package]]
-name = "ere-compile-utils"
-version = "0.7.0"
-dependencies = [
- "anyhow",
- "cargo_metadata 0.19.2",
- "tempfile",
- "thiserror 2.0.18",
-]
-
-[[package]]
 name = "ere-compiler"
 version = "0.7.0"
 dependencies = [
  "anyhow",
  "clap",
- "ere-airbender",
- "ere-common",
- "ere-openvm",
- "ere-risc0",
- "ere-sp1",
- "ere-zisk",
- "ere-zkvm-interface",
+ "ere-catalog",
+ "ere-prover-airbender",
+ "ere-prover-core",
+ "ere-prover-openvm",
+ "ere-prover-risc0",
+ "ere-prover-sp1",
+ "ere-prover-zisk",
  "tracing",
  "tracing-subscriber 0.3.23",
 ]
@@ -3711,10 +3680,10 @@ name = "ere-dockerized"
 version = "0.7.0"
 dependencies = [
  "anyhow",
- "ere-common",
- "ere-server",
- "ere-test-utils",
- "ere-zkvm-interface",
+ "ere-catalog",
+ "ere-prover-core",
+ "ere-server-client",
+ "ere-util-test",
  "paste",
  "tempfile",
  "thiserror 2.0.18",
@@ -3735,33 +3704,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "ere-openvm"
-version = "0.7.0"
-dependencies = [
- "ere-compile-utils",
- "ere-test-utils",
- "ere-verifier-openvm",
- "ere-zkvm-interface",
- "eyre",
- "openvm-build",
- "openvm-circuit",
- "openvm-sdk",
- "thiserror 2.0.18",
-]
-
-[[package]]
 name = "ere-platform-airbender"
 version = "0.7.0"
 dependencies = [
- "ere-platform-trait",
+ "ere-platform-core",
  "riscv_common",
+]
+
+[[package]]
+name = "ere-platform-core"
+version = "0.7.0"
+dependencies = [
+ "digest 0.10.7",
 ]
 
 [[package]]
 name = "ere-platform-openvm"
 version = "0.7.0"
 dependencies = [
- "ere-platform-trait",
+ "ere-platform-core",
  "openvm",
 ]
 
@@ -3769,7 +3730,7 @@ dependencies = [
 name = "ere-platform-risc0"
 version = "0.7.0"
 dependencies = [
- "ere-platform-trait",
+ "ere-platform-core",
  "risc0-zkvm",
  "risc0-zkvm-platform",
 ]
@@ -3778,37 +3739,78 @@ dependencies = [
 name = "ere-platform-sp1"
 version = "0.7.0"
 dependencies = [
- "ere-platform-trait",
+ "ere-platform-core",
  "sp1-zkvm",
-]
-
-[[package]]
-name = "ere-platform-trait"
-version = "0.7.0"
-dependencies = [
- "digest 0.10.7",
 ]
 
 [[package]]
 name = "ere-platform-zisk"
 version = "0.7.0"
 dependencies = [
- "ere-platform-trait",
+ "ere-platform-core",
  "fnv",
  "ziskos",
 ]
 
 [[package]]
-name = "ere-risc0"
+name = "ere-prover-airbender"
+version = "0.7.0"
+dependencies = [
+ "ere-prover-core",
+ "ere-util-compile",
+ "ere-util-test",
+ "ere-verifier-airbender",
+ "execution_utils",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "ere-prover-core"
+version = "0.7.0"
+dependencies = [
+ "anyhow",
+ "auto_impl",
+ "bincode 2.0.1",
+ "clap",
+ "ere-verifier-core",
+ "indexmap 2.13.0",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "strum 0.27.2",
+ "thiserror 2.0.18",
+ "tokio",
+ "toml",
+]
+
+[[package]]
+name = "ere-prover-openvm"
+version = "0.7.0"
+dependencies = [
+ "ere-prover-core",
+ "ere-util-compile",
+ "ere-util-test",
+ "ere-verifier-openvm",
+ "eyre",
+ "openvm-build",
+ "openvm-circuit",
+ "openvm-sdk",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "ere-prover-risc0"
 version = "0.7.0"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
- "ere-compile-utils",
  "ere-io",
- "ere-test-utils",
+ "ere-prover-core",
+ "ere-util-compile",
+ "ere-util-test",
  "ere-verifier-risc0",
- "ere-zkvm-interface",
  "risc0-binfmt",
  "risc0-build",
  "risc0-zkvm",
@@ -3817,46 +3819,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "ere-server"
+name = "ere-prover-sp1"
 version = "0.7.0"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
- "clap",
- "ere-airbender",
- "ere-openvm",
- "ere-risc0",
- "ere-sp1",
- "ere-verifier-core",
- "ere-zisk",
- "ere-zkvm-interface",
- "opentelemetry 0.31.0",
- "opentelemetry-otlp",
- "opentelemetry_sdk",
- "prost 0.14.3",
- "prost-build 0.14.3",
- "serde",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
- "tower-http",
- "tracing",
- "tracing-opentelemetry",
- "tracing-subscriber 0.3.23",
- "twirp",
- "twirp-build",
-]
-
-[[package]]
-name = "ere-sp1"
-version = "0.7.0"
-dependencies = [
- "anyhow",
- "bincode 2.0.1",
- "ere-compile-utils",
- "ere-test-utils",
+ "ere-prover-core",
+ "ere-util-compile",
+ "ere-util-test",
  "ere-verifier-sp1",
- "ere-zkvm-interface",
  "p3-field 0.3.2-succinct",
  "sp1-cuda",
  "sp1-hypercube",
@@ -3868,104 +3839,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "ere-test-utils"
-version = "0.7.0"
-dependencies = [
- "ere-io",
- "ere-platform-trait",
- "ere-zkvm-interface",
- "rand 0.9.2",
- "serde",
- "serde_bytes",
- "sha2",
-]
-
-[[package]]
-name = "ere-verifier-airbender"
-version = "0.7.0"
-dependencies = [
- "bincode 2.0.1",
- "ere-build-utils",
- "ere-verifier-core",
- "execution_utils",
- "serde",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "ere-verifier-core"
-version = "0.7.0"
-dependencies = [
- "auto_impl",
- "ere-codec",
- "serde",
-]
-
-[[package]]
-name = "ere-verifier-openvm"
-version = "0.7.0"
-dependencies = [
- "bitcode",
- "ere-build-utils",
- "ere-verifier-core",
- "openvm-continuations",
- "openvm-sdk",
- "openvm-stark-sdk",
- "serde",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "ere-verifier-risc0"
-version = "0.7.0"
-dependencies = [
- "bincode 2.0.1",
- "ere-build-utils",
- "ere-verifier-core",
- "risc0-zkp",
- "risc0-zkvm",
- "serde",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "ere-verifier-sp1"
-version = "0.7.0"
-dependencies = [
- "bincode 2.0.1",
- "ere-build-utils",
- "ere-verifier-core",
- "serde",
- "sp1-hypercube",
- "sp1-sdk",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "ere-verifier-zisk"
-version = "0.7.0"
-dependencies = [
- "bincode 2.0.1",
- "bytemuck",
- "ere-build-utils",
- "ere-verifier-core",
- "proofman-util",
- "proofman-verifier",
- "serde",
- "serde-big-array",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "ere-zisk"
+name = "ere-prover-zisk"
 version = "0.7.0"
 dependencies = [
  "anyhow",
  "blake3",
- "ere-compile-utils",
- "ere-test-utils",
+ "ere-prover-core",
+ "ere-util-compile",
+ "ere-util-test",
  "ere-verifier-zisk",
- "ere-zkvm-interface",
  "fields",
  "futures-util",
  "http 1.4.0",
@@ -3986,22 +3868,154 @@ dependencies = [
 ]
 
 [[package]]
-name = "ere-zkvm-interface"
+name = "ere-server"
 version = "0.7.0"
 dependencies = [
  "anyhow",
- "auto_impl",
  "bincode 2.0.1",
  "clap",
+ "ere-prover-airbender",
+ "ere-prover-core",
+ "ere-prover-openvm",
+ "ere-prover-risc0",
+ "ere-prover-sp1",
+ "ere-prover-zisk",
+ "ere-server-client",
  "ere-verifier-core",
- "indexmap 2.13.0",
+ "opentelemetry 0.31.0",
+ "opentelemetry-otlp",
+ "opentelemetry_sdk",
+ "tokio",
+ "tower-http",
+ "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber 0.3.23",
+ "twirp",
+]
+
+[[package]]
+name = "ere-server-client"
+version = "0.7.0"
+dependencies = [
+ "bincode 2.0.1",
+ "ere-prover-core",
+ "opentelemetry 0.31.0",
+ "prost 0.14.3",
+ "prost-build 0.14.3",
  "serde",
- "serde_json",
- "serde_yaml",
- "strum 0.27.2",
+ "tempfile",
  "thiserror 2.0.18",
  "tokio",
- "toml",
+ "tracing",
+ "tracing-opentelemetry",
+ "twirp",
+ "twirp-build",
+]
+
+[[package]]
+name = "ere-util-build"
+version = "0.7.0"
+dependencies = [
+ "cargo_metadata 0.19.2",
+]
+
+[[package]]
+name = "ere-util-compile"
+version = "0.7.0"
+dependencies = [
+ "anyhow",
+ "cargo_metadata 0.19.2",
+ "tempfile",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "ere-util-test"
+version = "0.7.0"
+dependencies = [
+ "ere-io",
+ "ere-platform-core",
+ "ere-prover-core",
+ "rand 0.9.2",
+ "serde",
+ "serde_bytes",
+ "sha2",
+]
+
+[[package]]
+name = "ere-verifier-airbender"
+version = "0.7.0"
+dependencies = [
+ "bincode 2.0.1",
+ "ere-util-build",
+ "ere-verifier-core",
+ "execution_utils",
+ "serde",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "ere-verifier-core"
+version = "0.7.0"
+dependencies = [
+ "auto_impl",
+ "ere-codec",
+ "serde",
+]
+
+[[package]]
+name = "ere-verifier-openvm"
+version = "0.7.0"
+dependencies = [
+ "bitcode",
+ "ere-util-build",
+ "ere-verifier-core",
+ "openvm-continuations",
+ "openvm-sdk",
+ "openvm-stark-sdk",
+ "serde",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "ere-verifier-risc0"
+version = "0.7.0"
+dependencies = [
+ "bincode 2.0.1",
+ "ere-util-build",
+ "ere-verifier-core",
+ "risc0-zkp",
+ "risc0-zkvm",
+ "serde",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "ere-verifier-sp1"
+version = "0.7.0"
+dependencies = [
+ "bincode 2.0.1",
+ "ere-util-build",
+ "ere-verifier-core",
+ "serde",
+ "sp1-hypercube",
+ "sp1-sdk",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "ere-verifier-zisk"
+version = "0.7.0"
+dependencies = [
+ "bincode 2.0.1",
+ "bytemuck",
+ "ere-util-build",
+ "ere-verifier-core",
+ "proofman-util",
+ "proofman-verifier",
+ "serde",
+ "serde-big-array",
+ "thiserror 2.0.18",
 ]
 
 [[package]]

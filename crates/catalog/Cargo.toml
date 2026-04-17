@@ -1,0 +1,16 @@
+[package]
+name = "ere-catalog"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+serde = { workspace = true, features = ["alloc", "derive"] }
+strum = { workspace = true, features = ["derive"] }
+
+[build-dependencies]
+ere-util-build.workspace = true
+
+[lints]
+workspace = true

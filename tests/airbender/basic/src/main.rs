@@ -6,7 +6,7 @@
 #![feature(generic_const_exprs)]
 
 use ere_platform_airbender::AirbenderPlatform;
-use ere_test_utils::{
+use ere_util_test::{
     io::serde::bincode::BincodeLegacy,
     program::{basic::BasicProgram, Program},
 };

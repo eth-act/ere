@@ -1,0 +1,24 @@
+[package]
+name = "ere-util-test"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+rand = { workspace = true, optional = true }
+serde = { workspace = true, features = ["derive"] }
+serde_bytes = { workspace = true, features = ["alloc"] }
+sha2.workspace = true
+
+# Local dependencies
+ere-prover-core = { workspace = true, optional = true }
+ere-platform-core.workspace = true
+ere-io = { workspace = true, features = ["bincode", "cbor"] }
+
+[lints]
+workspace = true
+
+[features]
+default = []
+host = ["dep:rand", "dep:ere-prover-core"]

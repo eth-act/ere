@@ -8,7 +8,7 @@ use crate::{
     },
     zkVMKind,
 };
-use ere_zkvm_interface::{
+use ere_prover_core::{
     CommonError,
     compiler::{Compiler, Elf},
 };
@@ -25,9 +25,9 @@ pub use error::Error;
 
 /// This method builds 3 Docker images in sequence:
 /// 1. `ere-base:{version}` - Base image with common dependencies
-/// 2. `ere-base-{zkvm}:{version}` - zkVM-specific base image with the zkVM SDK
+/// 2. `ere-base-{zkvm}:{version}` - zkVMProver-specific base image with the zkVMProver SDK
 /// 3. `ere-compiler-{zkvm}:{version}` - Compiler image with the `ere-compiler`
-///    binary built with the selected zkVM feature
+///    binary built with the selected zkVMProver feature
 ///
 /// Images are cached and only rebuilt if they don't exist or if the
 /// `ERE_FORCE_REBUILD_DOCKER_IMAGE` environment variable is set.
@@ -171,8 +171,8 @@ impl Compiler for DockerizedCompiler {
 #[cfg(test)]
 pub(crate) mod tests {
     use crate::{CompilerKind, compiler::DockerizedCompiler, util::workspace_dir, zkVMKind};
-    use ere_test_utils::host::testing_guest_directory;
-    use ere_zkvm_interface::compiler::{Compiler, Elf};
+    use ere_prover_core::compiler::{Compiler, Elf};
+    use ere_util_test::host::testing_guest_directory;
     use tracing_subscriber::EnvFilter;
 
     pub fn compile(zkvm_kind: zkVMKind, compiler_kind: CompilerKind, program: &'static str) -> Elf {

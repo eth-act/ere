@@ -1,0 +1,24 @@
+[package]
+name = "ere-verifier-zisk"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+bincode = { workspace = true, features = ["alloc", "serde"] }
+bytemuck.workspace = true
+serde = { workspace = true, features = ["derive"] }
+serde-big-array.workspace = true
+thiserror.workspace = true
+
+proofman-util.workspace = true
+proofman-verifier.workspace = true
+
+ere-verifier-core.workspace = true
+
+[build-dependencies]
+ere-util-build.workspace = true
+
+[lints]
+workspace = true

@@ -13,9 +13,9 @@ tokio = { workspace = true, features = ["process", "time"] }
 tracing.workspace = true
 
 # Local dependencies
-ere-zkvm-interface = { workspace = true, features = ["clap", "tokio"] }
-ere-common.workspace = true
-ere-server.workspace = true
+ere-prover-core = { workspace = true, features = ["clap", "tokio"] }
+ere-catalog.workspace = true
+ere-server-client.workspace = true
 
 [dev-dependencies]
 paste.workspace = true
@@ -23,7 +23,7 @@ tokio = { workspace = true, features = ["rt-multi-thread"] }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 # Local dependencies
-ere-test-utils = { workspace = true, features = ["host"] }
+ere-util-test = { workspace = true, features = ["host"] }
 
 [lints]
 workspace = true

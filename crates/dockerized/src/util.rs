@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use ere_zkvm_interface::CommonError;
+use ere_prover_core::CommonError;
 
 pub mod cuda;
 pub mod docker;

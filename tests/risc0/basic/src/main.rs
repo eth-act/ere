@@ -1,5 +1,5 @@
 use ere_platform_risc0::Risc0Platform;
-use ere_test_utils::{
+use ere_util_test::{
     io::serde::bincode::BincodeLegacy,
     program::{basic::BasicProgram, Program},
 };

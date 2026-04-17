@@ -1,36 +1,40 @@
 [workspace]
 members = [
-    # zkVM interface
-    "crates/zkvm-interface",
-    "crates/zkvm-interface/platform",
-    "crates/zkvm-interface/verifier",
-    # zkVMs
-    "crates/zkvm/airbender",
-    "crates/zkvm/airbender/platform",
-    "crates/zkvm/airbender/verifier",
-    "crates/zkvm/openvm",
-    "crates/zkvm/openvm/platform",
-    "crates/zkvm/openvm/verifier",
-    "crates/zkvm/risc0",
-    "crates/zkvm/risc0/platform",
-    "crates/zkvm/risc0/verifier",
-    "crates/zkvm/sp1",
-    "crates/zkvm/sp1/platform",
-    "crates/zkvm/sp1/verifier",
-    "crates/zkvm/zisk",
-    "crates/zkvm/zisk/platform",
-    "crates/zkvm/zisk/verifier",
-    # Dockerized zkVM
+    # Compiler
+    "crates/compiler/cli",
+    # Platform
+    "crates/platform/core",
+    "crates/platform/airbender",
+    "crates/platform/openvm",
+    "crates/platform/risc0",
+    "crates/platform/sp1",
+    "crates/platform/zisk",
+    # Prover
+    "crates/prover/core",
+    "crates/prover/airbender",
+    "crates/prover/openvm",
+    "crates/prover/risc0",
+    "crates/prover/sp1",
+    "crates/prover/zisk",
+    # Verifier
+    "crates/verifier/core",
+    "crates/verifier/airbender",
+    "crates/verifier/openvm",
+    "crates/verifier/risc0",
+    "crates/verifier/sp1",
+    "crates/verifier/zisk",
+    # Server
+    "crates/server/cli",
+    "crates/server/client",
+    # Dockerized wrapper
     "crates/dockerized",
-    "crates/dockerized/common",
-    "crates/dockerized/compiler",
-    "crates/dockerized/server",
-    # Utils
+    # Util
+    "crates/catalog",
     "crates/codec",
     "crates/io",
-    "crates/build-utils",
-    "crates/compile-utils",
-    "crates/test-utils",
+    "crates/util/build",
+    "crates/util/compile",
+    "crates/util/test",
 ]
 resolver = "2"
 
@@ -95,12 +99,12 @@ airbender_execution_utils = { git = "https://github.com/matter-labs/zksync-airbe
 airbender_riscv_common = { git = "https://github.com/matter-labs/zksync-airbender", package = "riscv_common", tag = "v0.5.2", default-features = false }
 
 # OpenVM dependencies
+openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.3", default-features = false }
 openvm-build = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.3" }
 openvm-circuit = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.3" }
 openvm-continuations = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.3" }
 openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.3", default-features = false }
 openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v1.2.3" }
-openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.3", default-features = false }
 
 # Risc0 dependencies
 risc0-binfmt = { version = "3.0.4", default-features = false }
@@ -112,55 +116,50 @@ risc0-zkvm-platform = { version = "2.2.2", default-features = false }
 # SP1 dependencies
 sp1-cuda = "6.0.1"
 sp1-hypercube = "6.0.1"
+sp1-p3-field = { version = "0.3.2-succinct", package = "p3-field" }
 sp1-recursion-executor = "6.0.1"
 sp1-sdk = "6.0.1"
-sp1-p3-field = { version = "0.3.2-succinct", package = "p3-field" }
 sp1-zkvm = { version = "6.0.1", default-features = false }
 
 # ZisK dependencies
-ziskos = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1", default-features = false }
-zisk-rom-setup = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1", package = "rom-setup" }
-zisk-sdk = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1" }
-zisk-core = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1" }
-ziskemu = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1" }
-zisk-distributed-grpc-api = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1" }
 proofman-common = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.16.1" }
-proofman-util = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.16.1" }
 proofman-fields = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.16.1", package = "fields" }
 proofman-starks-lib-c = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.16.1" }
+proofman-util = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.16.1" }
 proofman-verifier = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.16.1" }
+zisk-core = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1" }
+zisk-distributed-grpc-api = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1" }
+zisk-rom-setup = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1", package = "rom-setup" }
+zisk-sdk = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1" }
+ziskemu = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1" }
+ziskos = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1", default-features = false }
 
 # Local dependencies
-ere-zkvm-interface = { path = "crates/zkvm-interface" }
-ere-platform-trait = { path = "crates/zkvm-interface/platform" }
-ere-verifier-core = { path = "crates/zkvm-interface/verifier" }
-
-ere-airbender = { path = "crates/zkvm/airbender", default-features = false }
-ere-openvm = { path = "crates/zkvm/openvm", default-features = false }
-ere-risc0 = { path = "crates/zkvm/risc0", default-features = false }
-ere-sp1 = { path = "crates/zkvm/sp1", default-features = false }
-ere-zisk = { path = "crates/zkvm/zisk", default-features = false }
-
-ere-platform-airbender = { path = "crates/zkvm/airbender/platform" }
-ere-platform-openvm = { path = "crates/zkvm/openvm/platform" }
-ere-platform-risc0 = { path = "crates/zkvm/risc0/platform" }
-ere-platform-sp1 = { path = "crates/zkvm/sp1/platform" }
-ere-platform-zisk = { path = "crates/zkvm/zisk/platform" }
-
-ere-verifier-airbender = { path = "crates/zkvm/airbender/verifier" }
-ere-verifier-openvm = { path = "crates/zkvm/openvm/verifier" }
-ere-verifier-risc0 = { path = "crates/zkvm/risc0/verifier" }
-ere-verifier-sp1 = { path = "crates/zkvm/sp1/verifier" }
-ere-verifier-zisk = { path = "crates/zkvm/zisk/verifier" }
-
+ere-compiler = { path = "crates/compiler/cli" }
+ere-platform-core = { path = "crates/platform/core" }
+ere-platform-airbender = { path = "crates/platform/airbender" }
+ere-platform-openvm = { path = "crates/platform/openvm" }
+ere-platform-risc0 = { path = "crates/platform/risc0" }
+ere-platform-sp1 = { path = "crates/platform/sp1" }
+ere-platform-zisk = { path = "crates/platform/zisk" }
+ere-prover-core = { path = "crates/prover/core" }
+ere-prover-airbender = { path = "crates/prover/airbender", default-features = false }
+ere-prover-openvm = { path = "crates/prover/openvm", default-features = false }
+ere-prover-risc0 = { path = "crates/prover/risc0", default-features = false }
+ere-prover-sp1 = { path = "crates/prover/sp1", default-features = false }
+ere-prover-zisk = { path = "crates/prover/zisk", default-features = false }
+ere-verifier-core = { path = "crates/verifier/core" }
+ere-verifier-airbender = { path = "crates/verifier/airbender" }
+ere-verifier-openvm = { path = "crates/verifier/openvm" }
+ere-verifier-risc0 = { path = "crates/verifier/risc0" }
+ere-verifier-sp1 = { path = "crates/verifier/sp1" }
+ere-verifier-zisk = { path = "crates/verifier/zisk" }
+ere-server = { path = "crates/server/cli" }
+ere-server-client = { path = "crates/server/client" }
 ere-dockerized = { path = "crates/dockerized" }
-ere-common = { path = "crates/dockerized/common" }
-ere-compiler = { path = "crates/dockerized/compiler" }
-ere-server = { path = "crates/dockerized/server" }
-
+ere-catalog = { path = "crates/catalog" }
 ere-codec = { path = "crates/codec" }
 ere-io = { path = "crates/io" }
-ere-build-utils = { path = "crates/build-utils" }
-ere-compile-utils = { path = "crates/compile-utils" }
-ere-test-utils = { path = "crates/test-utils" }
-
+ere-util-build = { path = "crates/util/build" }
+ere-util-compile = { path = "crates/util/compile" }
+ere-util-test = { path = "crates/util/test" }

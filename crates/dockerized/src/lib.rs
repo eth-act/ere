@@ -1,20 +1,20 @@
 //! # Ere Dockerized
 //!
-//! A Docker-based wrapper for other zkVM crates `ere-{zkvm}`.
+//! A Docker-based wrapper for other zkVMProver crates `ere-{zkvm}`.
 //!
 //! This crate provides a unified interface to dockerize the `Compiler` and
-//! `zkVM` implementation of other zkVM crates `ere-{zkvm}`, it requires only
-//! `docker` to be installed, but no zkVM specific SDK.
+//! `zkVMProver` implementation of other zkVMProver crates `ere-{zkvm}`, it requires only
+//! `docker` to be installed, but no zkVMProver specific SDK.
 //!
 //! ## Docker image building
 //!
 //! It builds 4 Docker images in sequence if they don't exist:
 //! 1. `ere-base:{version}` - Base image with common dependencies
-//! 2. `ere-base-{zkvm}:{version}` - zkVM-specific base image with the zkVM SDK
+//! 2. `ere-base-{zkvm}:{version}` - zkVMProver-specific base image with the zkVMProver SDK
 //! 3. `ere-compiler-{zkvm}:{version}` - Compiler image with the `ere-compiler`
-//!    binary built with the selected zkVM feature
+//!    binary built with the selected zkVMProver feature
 //! 4. `ere-server-{zkvm}:{version}` - Server image with the `ere-server` binary
-//!    built with the selected zkVM feature
+//!    built with the selected zkVMProver feature
 //!
 //! When [`ProverResource::Gpu`] is selected, the image with GPU support
 //! will be built and tagged with specific suffix.
@@ -29,13 +29,13 @@
 //! use ere_dockerized::{
 //!     CompilerKind, DockerizedCompiler, DockerizedzkVM, DockerizedzkVMConfig, zkVMKind,
 //! };
-//! use ere_zkvm_interface::{
+//! use ere_prover_core::{
 //!     compiler::Compiler,
-//!     zkvm::{Input, ProverResource, zkVM},
+//!     prover::{Input, ProverResource, zkVMProver},
 //! };
 //! use std::path::Path;
 //!
-//! // The zkVM we plan to use
+//! // The zkVMProver we plan to use
 //! let zkvm_kind = zkVMKind::SP1;
 //!
 //! // The compiler we plan to use
@@ -46,7 +46,7 @@
 //! let guest_path = Path::new("relative/path/to/guest/program");
 //! let elf = compiler.compile(&guest_path)?;
 //!
-//! // Create zkVM instance
+//! // Create zkVMProver instance
 //! let resource = ProverResource::Cpu;
 //! let zkvm = DockerizedzkVM::new(
 //!     zkvm_kind,
@@ -79,10 +79,10 @@ mod util;
 
 pub mod compiler;
 pub mod image;
-pub mod zkvm;
+pub mod prover;
 
 pub use crate::{
     compiler::DockerizedCompiler,
-    zkvm::{DockerizedzkVM, DockerizedzkVMConfig},
+    prover::{DockerizedzkVM, DockerizedzkVMConfig},
 };
-pub use ere_common::{CompilerKind, DOCKER_IMAGE_TAG, zkVMKind};
+pub use ere_catalog::{CompilerKind, DOCKER_IMAGE_TAG, zkVMKind};

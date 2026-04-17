@@ -1,0 +1,31 @@
+[package]
+name = "ere-prover-airbender"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+serde_json.workspace = true
+tempfile.workspace = true
+thiserror.workspace = true
+
+# Airbender dependencies
+airbender_execution_utils = { workspace = true, optional = true }
+
+# Local dependencies
+ere-util-compile = { workspace = true, optional = true }
+ere-verifier-airbender = { workspace = true, optional = true }
+ere-prover-core.workspace = true
+
+[dev-dependencies]
+ere-util-test = { workspace = true, features = ["host"] }
+
+[features]
+default = ["compiler", "zkvm"]
+compiler = ["dep:ere-util-compile"]
+zkvm = ["dep:airbender_execution_utils", "dep:ere-verifier-airbender"]
+cuda = []
+
+[lints]
+workspace = true

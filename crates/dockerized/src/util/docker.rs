@@ -1,5 +1,5 @@
 use crate::util::env::gpu_devices;
-use ere_zkvm_interface::CommonError;
+use ere_prover_core::CommonError;
 use std::{
     env,
     fmt::{self, Display, Formatter},

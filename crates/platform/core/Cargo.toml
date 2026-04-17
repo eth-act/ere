@@ -1,0 +1,15 @@
+[package]
+name = "ere-platform-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+digest.workspace = true
+
+[features]
+default = []
+
+[lints]
+workspace = true

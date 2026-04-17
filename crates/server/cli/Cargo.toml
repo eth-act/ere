@@ -1,0 +1,51 @@
+[package]
+name = "ere-server"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+bincode = { workspace = true, features = ["alloc", "serde"] }
+clap = { workspace = true, features = ["derive"] }
+opentelemetry = { workspace = true }
+opentelemetry-otlp = { workspace = true, features = ["grpc-tonic"] }
+opentelemetry_sdk = { workspace = true, features = ["rt-tokio"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal"]}
+tower-http = { workspace = true, features = ["catch-panic", "trace"] }
+tracing = { workspace = true }
+tracing-opentelemetry = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+twirp = { workspace = true }
+
+# Local dependencies
+ere-prover-core = { workspace = true, features = ["clap"] }
+ere-server-client = { workspace = true, features = ["otel"] }
+ere-verifier-core = { workspace = true }
+
+ere-prover-airbender = { workspace = true, features = ["zkvm"], optional = true }
+ere-prover-openvm = { workspace = true, features = ["zkvm"], optional = true }
+ere-prover-risc0 = { workspace = true, features = ["zkvm"], optional = true }
+ere-prover-sp1 = { workspace = true, features = ["zkvm"], optional = true }
+ere-prover-zisk = { workspace = true, features = ["zkvm"], optional = true }
+
+[features]
+default = []
+
+# zkVM
+airbender = ["dep:ere-prover-airbender"]
+openvm = ["dep:ere-prover-openvm"]
+risc0 = ["dep:ere-prover-risc0"]
+sp1 = ["dep:ere-prover-sp1"]
+zisk = ["dep:ere-prover-zisk"]
+
+# Cuda
+cuda = ["ere-prover-openvm?/cuda", "ere-prover-zisk?/cuda"]
+
+[[bin]]
+name = "ere-server"
+path = "src/main.rs"
+
+[lints]
+workspace = true
