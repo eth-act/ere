@@ -20,15 +20,16 @@ tracing-subscriber = { workspace = true, features = ["env-filter"] }
 twirp = { workspace = true }
 
 # Local dependencies
+ere-compiler-core = { workspace = true }
 ere-prover-core = { workspace = true, features = ["clap"] }
 ere-server-client = { workspace = true, features = ["otel"] }
 ere-verifier-core = { workspace = true }
 
-ere-prover-airbender = { workspace = true, features = ["zkvm"], optional = true }
-ere-prover-openvm = { workspace = true, features = ["zkvm"], optional = true }
-ere-prover-risc0 = { workspace = true, features = ["zkvm"], optional = true }
-ere-prover-sp1 = { workspace = true, features = ["zkvm"], optional = true }
-ere-prover-zisk = { workspace = true, features = ["zkvm"], optional = true }
+ere-prover-airbender = { workspace = true, optional = true }
+ere-prover-openvm = { workspace = true, optional = true }
+ere-prover-risc0 = { workspace = true, optional = true }
+ere-prover-sp1 = { workspace = true, optional = true }
+ere-prover-zisk = { workspace = true, optional = true }
 
 [features]
 default = []

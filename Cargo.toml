@@ -2,6 +2,12 @@
 members = [
     # Compiler
     "crates/compiler/cli",
+    "crates/compiler/core",
+    "crates/compiler/airbender",
+    "crates/compiler/openvm",
+    "crates/compiler/risc0",
+    "crates/compiler/sp1",
+    "crates/compiler/zisk",
     # Platform
     "crates/platform/core",
     "crates/platform/airbender",
@@ -136,6 +142,12 @@ ziskos = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1"
 
 # Local dependencies
 ere-compiler = { path = "crates/compiler/cli" }
+ere-compiler-core = { path = "crates/compiler/core" }
+ere-compiler-airbender = { path = "crates/compiler/airbender" }
+ere-compiler-openvm = { path = "crates/compiler/openvm" }
+ere-compiler-risc0 = { path = "crates/compiler/risc0" }
+ere-compiler-sp1 = { path = "crates/compiler/sp1" }
+ere-compiler-zisk = { path = "crates/compiler/zisk" }
 ere-platform-core = { path = "crates/platform/core" }
 ere-platform-airbender = { path = "crates/platform/airbender" }
 ere-platform-openvm = { path = "crates/platform/openvm" }
@@ -143,11 +155,11 @@ ere-platform-risc0 = { path = "crates/platform/risc0" }
 ere-platform-sp1 = { path = "crates/platform/sp1" }
 ere-platform-zisk = { path = "crates/platform/zisk" }
 ere-prover-core = { path = "crates/prover/core" }
-ere-prover-airbender = { path = "crates/prover/airbender", default-features = false }
-ere-prover-openvm = { path = "crates/prover/openvm", default-features = false }
-ere-prover-risc0 = { path = "crates/prover/risc0", default-features = false }
-ere-prover-sp1 = { path = "crates/prover/sp1", default-features = false }
-ere-prover-zisk = { path = "crates/prover/zisk", default-features = false }
+ere-prover-airbender = { path = "crates/prover/airbender" }
+ere-prover-openvm = { path = "crates/prover/openvm" }
+ere-prover-risc0 = { path = "crates/prover/risc0" }
+ere-prover-sp1 = { path = "crates/prover/sp1" }
+ere-prover-zisk = { path = "crates/prover/zisk" }
 ere-verifier-core = { path = "crates/verifier/core" }
 ere-verifier-airbender = { path = "crates/verifier/airbender" }
 ere-verifier-openvm = { path = "crates/verifier/openvm" }

@@ -1,4 +1,4 @@
-//! Airbender [`Compiler`] and [`zkVMProver`] implementation.
+//! Airbender [`zkVMProver`] implementation.
 //!
 //! # Requirements
 //!
@@ -19,11 +19,7 @@
 //!
 //! # `Compiler` implementation
 //!
-//! ## Available compilers
-//!
-//! | Compiler      | Language | Target                        |
-//! | ------------- | :------: | ----------------------------- |
-//! | `RustRv32ima` |   Rust   | `riscv32ima-unknown-none-elf` |
+//! See the separate [`ere-compiler-airbender`](https://github.com/eth-act/ere/tree/master/crates/compiler/airbender) crate.
 //!
 //! # `zkVMProver` implementation
 //!
@@ -38,16 +34,8 @@
 //!
 //! [`install_airbender_sdk.sh`]: https://github.com/eth-act/ere/blob/master/scripts/sdk_installers/install_airbender_sdk.sh
 
-#![cfg_attr(
-    all(not(test), feature = "compiler", feature = "zkvm"),
-    warn(unused_crate_dependencies)
-)]
+#![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-#[cfg(feature = "compiler")]
-pub mod compiler;
-
-#[cfg(feature = "zkvm")]
 pub mod prover;
 
-#[cfg(feature = "zkvm")]
 pub use prover::*;

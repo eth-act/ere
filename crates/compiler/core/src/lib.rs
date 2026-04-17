@@ -1,3 +1,5 @@
+#![cfg_attr(not(test), warn(unused_crate_dependencies))]
+
 use serde::{Deserialize, Serialize};
 use std::{error::Error, ops::Deref, path::Path};
 

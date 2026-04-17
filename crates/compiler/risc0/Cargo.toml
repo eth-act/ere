@@ -1,0 +1,22 @@
+[package]
+name = "ere-compiler-risc0"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+risc0-binfmt.workspace = true
+risc0-build = { workspace = true, features = ["unstable"] }
+thiserror.workspace = true
+tracing.workspace = true
+
+ere-compiler-core.workspace = true
+ere-util-compile.workspace = true
+
+[dev-dependencies]
+ere-util-test = { workspace = true, features = ["host"] }
+
+[lints]
+workspace = true

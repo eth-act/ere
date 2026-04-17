@@ -1,0 +1,20 @@
+[package]
+name = "ere-compiler-openvm"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+eyre.workspace = true
+openvm-build.workspace = true
+thiserror.workspace = true
+
+ere-compiler-core.workspace = true
+ere-util-compile.workspace = true
+
+[dev-dependencies]
+ere-util-test = { workspace = true, features = ["host"] }
+
+[lints]
+workspace = true

@@ -1,0 +1,12 @@
+[package]
+name = "ere-compiler-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+serde = { workspace = true, features = ["alloc", "derive"] }
+
+[lints]
+workspace = true

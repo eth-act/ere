@@ -1,5 +1,5 @@
-use crate::compiler::Error;
-use ere_prover_core::compiler::{Compiler, Elf};
+use crate::Error;
+use ere_compiler_core::{Compiler, Elf};
 use ere_util_compile::{CommonError, cargo_metadata};
 use std::{fs, path::Path, process::Command};
 use tempfile::tempdir;
@@ -7,9 +7,9 @@ use tracing::info;
 
 /// Compiler for Rust guest program to RV64IMA architecture, using customized
 /// Rust toolchain of Succinct.
-pub struct RustRv64imaCustomized;
+pub struct SP1RustRv64imaCustomized;
 
-impl Compiler for RustRv64imaCustomized {
+impl Compiler for SP1RustRv64imaCustomized {
     type Error = Error;
 
     fn compile(&self, guest_directory: impl AsRef<Path>) -> Result<Elf, Self::Error> {
@@ -55,14 +55,14 @@ impl Compiler for RustRv64imaCustomized {
 
 #[cfg(test)]
 mod tests {
-    use crate::compiler::RustRv64imaCustomized;
-    use ere_prover_core::compiler::Compiler;
+    use crate::SP1RustRv64imaCustomized;
+    use ere_compiler_core::Compiler;
     use ere_util_test::host::testing_guest_directory;
 
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("sp1", "basic");
-        let elf = RustRv64imaCustomized.compile(guest_directory).unwrap();
+        let elf = SP1RustRv64imaCustomized.compile(guest_directory).unwrap();
         assert!(!elf.is_empty(), "ELF bytes should not be empty.");
     }
 }

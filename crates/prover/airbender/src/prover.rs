@@ -1,7 +1,7 @@
 use crate::prover::sdk::AirbenderSdk;
+use ere_compiler_core::Elf;
 use ere_prover_core::{
     ProverResourceKind,
-    compiler::Elf,
     prover::{
         CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource,
         PublicValues, zkVMProver,
@@ -82,11 +82,10 @@ impl zkVMProver for AirbenderProver {
 
 #[cfg(test)]
 mod tests {
-    use crate::{compiler::RustRv32ima, prover::AirbenderProver};
-    use ere_prover_core::{
-        compiler::{Compiler, Elf},
-        prover::{Input, ProverResource, zkVMProver},
-    };
+    use crate::prover::AirbenderProver;
+    use ere_compiler_airbender::AirbenderRustRv32ima;
+    use ere_compiler_core::{Compiler, Elf};
+    use ere_prover_core::prover::{Input, ProverResource, zkVMProver};
     use ere_util_test::{
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
         io::serde::bincode::BincodeLegacy,
@@ -97,7 +96,7 @@ mod tests {
     fn basic_elf() -> Elf {
         static ELF: OnceLock<Elf> = OnceLock::new();
         ELF.get_or_init(|| {
-            RustRv32ima
+            AirbenderRustRv32ima
                 .compile(testing_guest_directory("airbender", "basic"))
                 .unwrap()
         })

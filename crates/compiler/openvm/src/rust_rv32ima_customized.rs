@@ -1,14 +1,14 @@
-use crate::compiler::Error;
-use ere_prover_core::compiler::{Compiler, Elf};
+use crate::Error;
+use ere_compiler_core::{Compiler, Elf};
 use ere_util_compile::{CommonError, rustup_add_rust_src};
 use openvm_build::{GuestOptions, get_rustup_toolchain_name};
 use std::{fs, path::Path};
 
 /// Compiler for Rust guest program to RV32IMA architecture, using customized
 /// target `riscv32im-risc0-zkvm-elf`.
-pub struct RustRv32imaCustomized;
+pub struct OpenVMRustRv32imaCustomized;
 
-impl Compiler for RustRv32imaCustomized {
+impl Compiler for OpenVMRustRv32imaCustomized {
     type Error = Error;
 
     fn compile(&self, guest_directory: impl AsRef<Path>) -> Result<Elf, Self::Error> {
@@ -35,14 +35,16 @@ impl Compiler for RustRv32imaCustomized {
 
 #[cfg(test)]
 mod tests {
-    use crate::compiler::RustRv32imaCustomized;
-    use ere_prover_core::compiler::Compiler;
+    use crate::OpenVMRustRv32imaCustomized;
+    use ere_compiler_core::Compiler;
     use ere_util_test::host::testing_guest_directory;
 
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("openvm", "basic");
-        let elf = RustRv32imaCustomized.compile(guest_directory).unwrap();
+        let elf = OpenVMRustRv32imaCustomized
+            .compile(guest_directory)
+            .unwrap();
         assert!(!elf.is_empty(), "ELF bytes should not be empty.");
     }
 }

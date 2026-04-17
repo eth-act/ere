@@ -10,29 +10,22 @@ eyre.workspace = true
 thiserror.workspace = true
 
 # OpenVM dependencies
-openvm-build.workspace = true
-openvm-circuit = { workspace = true, optional = true }
-openvm-sdk = { workspace = true, features = ["nightly-features"], default-features = true, optional = true }
+openvm-circuit.workspace = true
+openvm-sdk = { workspace = true, features = ["nightly-features"], default-features = true }
 
 # Local dependencies
-ere-util-compile = { workspace = true, optional = true }
-ere-verifier-openvm = { workspace = true, optional = true }
+ere-compiler-core.workspace = true
+ere-verifier-openvm.workspace = true
 ere-prover-core.workspace = true
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
-openvm-sdk = { workspace = true, features = ["aot", "nightly-features"], optional = true }
+openvm-sdk = { workspace = true, features = ["aot", "nightly-features"] }
 
 [dev-dependencies]
+ere-compiler-openvm.workspace = true
 ere-util-test = { workspace = true, features = ["host"] }
 
 [features]
-default = ["compiler", "zkvm"]
-compiler = ["dep:ere-util-compile"]
-zkvm = [
-    "dep:openvm-circuit",
-    "dep:openvm-sdk",
-    "dep:ere-verifier-openvm",
-]
 cuda = ["openvm-sdk/cuda"]
 
 [lints]

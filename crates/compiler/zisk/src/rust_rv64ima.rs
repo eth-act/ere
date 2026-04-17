@@ -1,5 +1,5 @@
-use crate::compiler::Error;
-use ere_prover_core::compiler::{Compiler, Elf};
+use crate::Error;
+use ere_compiler_core::{Compiler, Elf};
 use ere_util_compile::{CargoBuildCmd, RustTarget};
 use std::{env, path::Path};
 
@@ -10,28 +10,20 @@ use std::{env, path::Path};
 /// ```bash
 /// rustc +nightly -Z unstable-options --print target-spec-json --target riscv64im-unknown-none-elf \
 ///     | jq '.["atomic-cas"] = true' \
-///     > ./crates/prover/sp1/src/compiler/rust_rv64ima/riscv64ima-unknown-none-elf.json
+///     > ./crates/compiler/zisk/src/rust_rv64ima/riscv64ima-unknown-none-elf.json
 /// ```
 const TARGET: RustTarget = RustTarget::SpecJson {
     name: "riscv64ima-unknown-none-elf",
     json: include_str!("./rust_rv64ima/riscv64ima-unknown-none-elf.json"),
 };
 
-/// According to https://github.com/succinctlabs/sp1/blob/v6.0.1/crates/build/src/command/utils.rs#L49.
 const RUSTFLAGS: &[&str] = &[
     "-C",
-    "passes=lower-atomic", // Only for rustc > 1.81
-    // The lowest memory location that will be used when your program is loaded
-    "-C",
-    "link-arg=--image-base=0x78000000",
+    "passes=lower-atomic",
     "-C",
     "panic=abort",
     "--cfg",
     "getrandom_backend=\"custom\"",
-    "-C",
-    "llvm-args=-misched-prera-direction=bottomup",
-    "-C",
-    "llvm-args=-misched-postra-direction=bottomup",
 ];
 
 const CARGO_BUILD_OPTIONS: &[&str] = &[
@@ -41,15 +33,20 @@ const CARGO_BUILD_OPTIONS: &[&str] = &[
     "-Zjson-target-spec",
 ];
 
-/// Compiler for Rust guest program to RV64IMA architecture.
-pub struct RustRv64ima;
+/// Copied from https://github.com/0xPolygonHermez/rust/blob/c03068e/compiler/rustc_target/src/spec/targets/riscv64ima_zisk_zkvm_elf_linker_script.ld.
+const LINKER_SCRIPT: &str = include_str!("rust_rv64ima/link.x");
 
-impl Compiler for RustRv64ima {
+/// Compiler for Rust guest program to RV64IMA architecture, using a stock
+/// nightly Rust toolchain with ZisK's target specification.
+pub struct ZiskRustRv64ima;
+
+impl Compiler for ZiskRustRv64ima {
     type Error = Error;
 
     fn compile(&self, guest_directory: impl AsRef<Path>) -> Result<Elf, Self::Error> {
         let toolchain = env::var("ERE_RUST_TOOLCHAIN").unwrap_or_else(|_| "nightly".into());
         let elf = CargoBuildCmd::new()
+            .linker_script(Some(LINKER_SCRIPT))
             .toolchain(toolchain)
             .build_options(CARGO_BUILD_OPTIONS)
             .rustflags(RUSTFLAGS)
@@ -60,27 +57,14 @@ impl Compiler for RustRv64ima {
 
 #[cfg(test)]
 mod tests {
-    use crate::{compiler::RustRv64ima, prover::SP1Prover};
-    use ere_prover_core::{
-        Input,
-        compiler::Compiler,
-        prover::{ProverResource, zkVMProver},
-    };
+    use crate::ZiskRustRv64ima;
+    use ere_compiler_core::Compiler;
     use ere_util_test::host::testing_guest_directory;
 
     #[test]
     fn test_compile() {
-        let guest_directory = testing_guest_directory("sp1", "stock_nightly_no_std");
-        let elf = RustRv64ima.compile(guest_directory).unwrap();
+        let guest_directory = testing_guest_directory("zisk", "stock_nightly_no_std");
+        let elf = ZiskRustRv64ima.compile(guest_directory).unwrap();
         assert!(!elf.is_empty(), "ELF bytes should not be empty.");
-    }
-
-    #[test]
-    fn test_execute() {
-        let guest_directory = testing_guest_directory("sp1", "stock_nightly_no_std");
-        let elf = RustRv64ima.compile(guest_directory).unwrap();
-        let zkvm = SP1Prover::new(elf, ProverResource::Cpu).unwrap();
-
-        zkvm.execute(&Input::new()).unwrap();
     }
 }

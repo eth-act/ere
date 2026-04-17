@@ -12,12 +12,12 @@ tracing.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 # Local dependencies
-ere-prover-airbender = { workspace = true, features = ["compiler"], optional = true }
-ere-prover-openvm = { workspace = true, features = ["compiler"], optional = true }
-ere-prover-risc0 = { workspace = true, features = ["compiler"], optional = true }
-ere-prover-sp1 = { workspace = true, features = ["compiler"], optional = true }
-ere-prover-zisk = { workspace = true, features = ["compiler"], optional = true }
-ere-prover-core.workspace = true
+ere-compiler-airbender = { workspace = true, optional = true }
+ere-compiler-openvm = { workspace = true, optional = true }
+ere-compiler-risc0 = { workspace = true, optional = true }
+ere-compiler-sp1 = { workspace = true, optional = true }
+ere-compiler-zisk = { workspace = true, optional = true }
+ere-compiler-core.workspace = true
 ere-catalog.workspace = true
 
 [dev-dependencies]
@@ -26,11 +26,11 @@ ere-catalog.workspace = true
 default = []
 
 # zkVM
-airbender = ["dep:ere-prover-airbender"]
-openvm = ["dep:ere-prover-openvm"]
-risc0 = ["dep:ere-prover-risc0"]
-sp1 = ["dep:ere-prover-sp1"]
-zisk = ["dep:ere-prover-zisk"]
+airbender = ["dep:ere-compiler-airbender"]
+openvm = ["dep:ere-compiler-openvm"]
+risc0 = ["dep:ere-compiler-risc0"]
+sp1 = ["dep:ere-compiler-sp1"]
+zisk = ["dep:ere-compiler-zisk"]
 
 [[bin]]
 name = "ere-compiler"

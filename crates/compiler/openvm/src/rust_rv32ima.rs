@@ -1,5 +1,5 @@
-use crate::compiler::Error;
-use ere_prover_core::compiler::{Compiler, Elf};
+use crate::Error;
+use ere_compiler_core::{Compiler, Elf};
 use ere_util_compile::CargoBuildCmd;
 use std::{env, path::Path};
 
@@ -32,9 +32,9 @@ const CARGO_BUILD_OPTIONS: &[&str] = &[
 ];
 
 /// Compiler for Rust guest program to RV32IMA architecture.
-pub struct RustRv32ima;
+pub struct OpenVMRustRv32ima;
 
-impl Compiler for RustRv32ima {
+impl Compiler for OpenVMRustRv32ima {
     type Error = Error;
 
     fn compile(&self, guest_directory: impl AsRef<Path>) -> Result<Elf, Self::Error> {
@@ -50,27 +50,14 @@ impl Compiler for RustRv32ima {
 
 #[cfg(test)]
 mod tests {
-    use crate::{compiler::RustRv32ima, prover::OpenVMProver};
-    use ere_prover_core::{
-        Input,
-        compiler::Compiler,
-        prover::{ProverResource, zkVMProver},
-    };
+    use crate::OpenVMRustRv32ima;
+    use ere_compiler_core::Compiler;
     use ere_util_test::host::testing_guest_directory;
 
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("openvm", "stock_nightly_no_std");
-        let elf = RustRv32ima.compile(guest_directory).unwrap();
+        let elf = OpenVMRustRv32ima.compile(guest_directory).unwrap();
         assert!(!elf.is_empty(), "ELF bytes should not be empty.");
-    }
-
-    #[test]
-    fn test_execute() {
-        let guest_directory = testing_guest_directory("openvm", "stock_nightly_no_std");
-        let elf = RustRv32ima.compile(guest_directory).unwrap();
-        let zkvm = OpenVMProver::new(elf, ProverResource::Cpu).unwrap();
-
-        zkvm.execute(&Input::new()).unwrap();
     }
 }

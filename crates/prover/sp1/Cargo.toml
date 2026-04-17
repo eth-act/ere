@@ -8,37 +8,26 @@ license.workspace = true
 [dependencies]
 anyhow.workspace = true
 bincode = { workspace = true, features = ["alloc", "serde"] }
-tempfile.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 
 # SP1 dependencies
-sp1-cuda = { workspace = true, optional = true }
-sp1-hypercube = { workspace = true, optional = true }
-sp1-p3-field = { workspace = true, optional = true }
-sp1-recursion-executor = { workspace = true, optional = true }
-sp1-sdk = { workspace = true, features = ["network"], optional = true }
+sp1-cuda.workspace = true
+sp1-hypercube.workspace = true
+sp1-p3-field.workspace = true
+sp1-recursion-executor.workspace = true
+sp1-sdk = { workspace = true, features = ["network"] }
 
 # Local dependencies
-ere-util-compile = { workspace = true, optional = true }
-ere-verifier-sp1 = { workspace = true, optional = true }
-ere-prover-core.workspace = true
+ere-compiler-core.workspace = true
+ere-verifier-sp1.workspace = true
+ere-prover-core = { workspace = true, features = ["tokio"] }
 
 [dev-dependencies]
+ere-compiler-sp1.workspace = true
 ere-util-test = { workspace = true, features = ["host"] }
 
 [features]
-default = ["compiler", "zkvm"]
-compiler = ["dep:ere-util-compile"]
-zkvm = [
-    "dep:sp1-cuda",
-    "dep:sp1-hypercube",
-    "dep:sp1-p3-field",
-    "dep:sp1-recursion-executor",
-    "dep:sp1-sdk",
-    "dep:ere-verifier-sp1",
-    "ere-prover-core/tokio",
-]
 cuda = []
 
 [lints]

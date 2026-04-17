@@ -13,8 +13,9 @@ tokio = { workspace = true, features = ["process", "time"] }
 tracing.workspace = true
 
 # Local dependencies
-ere-prover-core = { workspace = true, features = ["clap", "tokio"] }
 ere-catalog.workspace = true
+ere-compiler-core.workspace = true
+ere-prover-core = { workspace = true, features = ["clap", "tokio"] }
 ere-server-client.workspace = true
 
 [dev-dependencies]

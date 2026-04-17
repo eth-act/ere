@@ -18,6 +18,7 @@ env:
   # test-zkvm.yml.
   PACKAGE_FLAGS: >-
     -p ere-prover-core
+    -p ere-compiler-core
     -p ere-platform-core
     -p ere-verifier-core
     -p ere-codec

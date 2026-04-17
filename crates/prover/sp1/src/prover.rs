@@ -1,5 +1,5 @@
 use crate::prover::sdk::SP1Sdk;
-use ere_prover_core::compiler::Elf;
+use ere_compiler_core::Elf;
 use ere_prover_core::prover::{
     Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues, block_on,
     zkVMProver,
@@ -88,10 +88,11 @@ fn input_to_stdin(input: &Input) -> Result<SP1Stdin, Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{compiler::RustRv64imaCustomized, prover::SP1Prover};
+    use crate::prover::SP1Prover;
+    use ere_compiler_core::{Compiler, Elf};
+    use ere_compiler_sp1::SP1RustRv64imaCustomized;
     use ere_prover_core::{
         Input,
-        compiler::{Compiler, Elf},
         prover::{ProverResource, RemoteProverConfig, zkVMProver},
     };
     use ere_util_test::{
@@ -104,11 +105,27 @@ mod tests {
     fn basic_elf() -> Elf {
         static ELF: OnceLock<Elf> = OnceLock::new();
         ELF.get_or_init(|| {
-            RustRv64imaCustomized
+            SP1RustRv64imaCustomized
                 .compile(testing_guest_directory("sp1", "basic"))
                 .unwrap()
         })
         .clone()
+    }
+
+    #[test]
+    fn test_execute_rust_rv64ima() {
+        use ere_compiler_core::Compiler;
+        use ere_compiler_sp1::SP1RustRv64ima;
+        use ere_prover_core::{
+            Input,
+            prover::{ProverResource, zkVMProver},
+        };
+        use ere_util_test::host::testing_guest_directory;
+
+        let guest_directory = testing_guest_directory("sp1", "stock_nightly_no_std");
+        let elf = SP1RustRv64ima.compile(guest_directory).unwrap();
+        let zkvm = crate::prover::SP1Prover::new(elf, ProverResource::Cpu).unwrap();
+        zkvm.execute(&Input::new()).unwrap();
     }
 
     #[test]

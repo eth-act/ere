@@ -11,11 +11,9 @@ use crate::{
     },
     zkVMKind,
 };
-use ere_prover_core::{
-    compiler::Elf,
-    prover::{
-        Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues, block_on,
-    },
+use ere_compiler_core::Elf;
+use ere_prover_core::prover::{
+    Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues, block_on,
 };
 use ere_server_client::{
     api::twirp::reqwest::Client,

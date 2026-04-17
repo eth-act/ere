@@ -261,7 +261,8 @@ ere-prover-sp1 = { git = "https://github.com/eth-act/ere.git" }
 ```rust
 // host/src/main.rs
 
-use ere_prover_sp1::{compiler::RustRv64imaCustomized, prover::SP1Prover};
+use ere_compiler_sp1::SP1RustRv64imaCustomized;
+use ere_prover_sp1::prover::SP1Prover;
 use ere_prover_core::{
     compiler::Compiler,
     prover::{Input, ProverResource, zkVMProver},
@@ -272,7 +273,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let guest_directory = Path::new("path/to/guest");
 
     // Compile guest program with SP1 customized toolchain
-    let compiler = RustRv64imaCustomized;
+    let compiler = SP1RustRv64imaCustomized;
     let elf = compiler.compile(guest_directory)?;
 
     // Create zkVM instance (setup/preprocessing happens here)
@@ -420,7 +421,9 @@ ere/
 │   │   └── {zkvm}/                # ere-verifier-{zkvm}
 │   ├── dockerized/                # ere-dockerized
 │   ├── compiler/
-│   │   └── cli/                   # ere-compiler
+│   │   ├── cli/                   # ere-compiler
+│   │   ├── core/                  # ere-compiler-core
+│   │   └── {zkvm}/                # ere-compiler-{zkvm}
 │   ├── server/
 │   │   ├── cli/                   # ere-server
 │   │   └── client/                # ere-server-client

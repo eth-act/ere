@@ -1,9 +1,7 @@
 use anyhow::{Context, Error};
 use clap::Parser;
-use ere_prover_core::{
-    compiler::Elf,
-    prover::{ProverResource, zkVMProver},
-};
+use ere_compiler_core::Elf;
+use ere_prover_core::prover::{ProverResource, zkVMProver};
 use ere_server_client::api::router;
 use std::{
     io::{self, Read},

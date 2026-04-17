@@ -1,9 +1,7 @@
-use ere_prover_core::{
-    compiler::Elf,
-    prover::{
-        CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource,
-        ProverResourceKind, PublicValues, zkVMProver,
-    },
+use ere_compiler_core::Elf;
+use ere_prover_core::prover::{
+    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource,
+    ProverResourceKind, PublicValues, zkVMProver,
 };
 use ere_verifier_risc0::{Risc0ProgramVk, Risc0Proof, Risc0Verifier};
 use risc0_zkvm::{
@@ -187,11 +185,12 @@ impl Risc0Prover {
 
 #[cfg(test)]
 mod tests {
-    use crate::{compiler::RustRv32imaCustomized, prover::Risc0Prover};
+    use crate::prover::Risc0Prover;
+    use ere_compiler_core::{Compiler, Elf};
+    use ere_compiler_risc0::Risc0RustRv32imaCustomized;
     use ere_io::serde::bincode::BincodeLegacy;
     use ere_prover_core::{
         Input,
-        compiler::{Compiler, Elf},
         prover::{ProverResource, zkVMProver},
     };
     use ere_util_test::{
@@ -203,11 +202,27 @@ mod tests {
     fn basic_elf() -> Elf {
         static ELF: OnceLock<Elf> = OnceLock::new();
         ELF.get_or_init(|| {
-            RustRv32imaCustomized
+            Risc0RustRv32imaCustomized
                 .compile(testing_guest_directory("risc0", "basic"))
                 .unwrap()
         })
         .clone()
+    }
+
+    #[test]
+    fn test_execute_rust_rv32ima() {
+        use ere_compiler_core::Compiler;
+        use ere_compiler_risc0::Risc0RustRv32ima;
+        use ere_prover_core::{
+            Input,
+            prover::{ProverResource, zkVMProver},
+        };
+        use ere_util_test::host::testing_guest_directory;
+
+        let guest_directory = testing_guest_directory("risc0", "stock_nightly_no_std");
+        let elf = Risc0RustRv32ima.compile(guest_directory).unwrap();
+        let zkvm = crate::prover::Risc0Prover::new(elf, ProverResource::Cpu).unwrap();
+        zkvm.execute(&Input::new()).unwrap();
     }
 
     #[test]
@@ -260,7 +275,7 @@ mod tests {
 
     #[test]
     fn test_aligned_allocs() {
-        let elf = RustRv32imaCustomized
+        let elf = Risc0RustRv32imaCustomized
             .compile(testing_guest_directory("risc0", "allocs_alignment"))
             .unwrap();
 

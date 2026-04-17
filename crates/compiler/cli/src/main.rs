@@ -1,7 +1,7 @@
 use anyhow::{Context, Error};
 use clap::Parser;
 use ere_catalog::CompilerKind;
-use ere_prover_core::compiler::{Compiler, Elf};
+use ere_compiler_core::{Compiler, Elf};
 use std::path::PathBuf;
 use tracing_subscriber::EnvFilter;
 
@@ -61,9 +61,11 @@ fn main() -> Result<(), Error> {
 fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> Result<Elf, Error> {
     #[cfg(feature = "airbender")]
     let elf = {
-        use ere_prover_airbender::compiler::*;
+        use ere_compiler_airbender::*;
         match compiler_kind {
-            CompilerKind::Rust | CompilerKind::RustCustomized => RustRv32ima.compile(guest_dir)?,
+            CompilerKind::Rust | CompilerKind::RustCustomized => {
+                AirbenderRustRv32ima.compile(guest_dir)?
+            }
             _ => anyhow::bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
@@ -73,10 +75,10 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> Result<Elf, Error
 
     #[cfg(feature = "openvm")]
     let elf = {
-        use ere_prover_openvm::compiler::*;
+        use ere_compiler_openvm::*;
         match compiler_kind {
-            CompilerKind::Rust => RustRv32ima.compile(guest_dir)?,
-            CompilerKind::RustCustomized => RustRv32imaCustomized.compile(guest_dir)?,
+            CompilerKind::Rust => OpenVMRustRv32ima.compile(guest_dir)?,
+            CompilerKind::RustCustomized => OpenVMRustRv32imaCustomized.compile(guest_dir)?,
             _ => anyhow::bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
@@ -86,10 +88,10 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> Result<Elf, Error
 
     #[cfg(feature = "risc0")]
     let elf = {
-        use ere_prover_risc0::compiler::*;
+        use ere_compiler_risc0::*;
         match compiler_kind {
-            CompilerKind::Rust => RustRv32ima.compile(guest_dir)?,
-            CompilerKind::RustCustomized => RustRv32imaCustomized.compile(guest_dir)?,
+            CompilerKind::Rust => Risc0RustRv32ima.compile(guest_dir)?,
+            CompilerKind::RustCustomized => Risc0RustRv32imaCustomized.compile(guest_dir)?,
             _ => anyhow::bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
@@ -99,10 +101,10 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> Result<Elf, Error
 
     #[cfg(feature = "sp1")]
     let elf = {
-        use ere_prover_sp1::compiler::*;
+        use ere_compiler_sp1::*;
         match compiler_kind {
-            CompilerKind::Rust => RustRv64ima.compile(guest_dir)?,
-            CompilerKind::RustCustomized => RustRv64imaCustomized.compile(guest_dir)?,
+            CompilerKind::Rust => SP1RustRv64ima.compile(guest_dir)?,
+            CompilerKind::RustCustomized => SP1RustRv64imaCustomized.compile(guest_dir)?,
             _ => anyhow::bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
@@ -112,11 +114,11 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> Result<Elf, Error
 
     #[cfg(feature = "zisk")]
     let elf = {
-        use ere_prover_zisk::compiler::*;
+        use ere_compiler_zisk::*;
         match compiler_kind {
-            CompilerKind::Rust => RustRv64ima.compile(guest_dir)?,
-            CompilerKind::RustCustomized => RustRv64imaCustomized.compile(guest_dir)?,
-            CompilerKind::GoCustomized => GoCustomized.compile(guest_dir)?,
+            CompilerKind::Rust => ZiskRustRv64ima.compile(guest_dir)?,
+            CompilerKind::RustCustomized => ZiskRustRv64imaCustomized.compile(guest_dir)?,
+            CompilerKind::GoCustomized => ZiskGoCustomized.compile(guest_dir)?,
         }
     };
 

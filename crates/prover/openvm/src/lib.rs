@@ -1,4 +1,4 @@
-//! OpenVM [`Compiler`] and [`zkVMProver`] implementation.
+//! OpenVM [`zkVMProver`] implementation.
 //!
 //! # Requirements
 //!
@@ -16,12 +16,7 @@
 //!
 //! # `Compiler` implementation
 //!
-//! ## Available compilers
-//!
-//! | Compiler                | Language | Target                        | Note               |
-//! | ----------------------- | :------: | ----------------------------- | ------------------ |
-//! | `RustRv32imaCustomized` |   Rust   | `riscv32im-risc0-zkvm-elf`    | With `std` support |
-//! | `RustRv32ima`           |   Rust   | `riscv32ima-unknown-none-elf` |                    |
+//! See the separate [`ere-compiler-openvm`](https://github.com/eth-act/ere/tree/master/crates/compiler/openvm) crate.
 //!
 //! # `zkVMProver` implementation
 //!
@@ -36,16 +31,8 @@
 //!
 //! [`install_openvm_sdk.sh`]: https://github.com/eth-act/ere/blob/master/scripts/sdk_installers/install_openvm_sdk.sh
 
-#![cfg_attr(
-    all(not(test), feature = "compiler", feature = "zkvm"),
-    warn(unused_crate_dependencies)
-)]
+#![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-#[cfg(feature = "compiler")]
-pub mod compiler;
-
-#[cfg(feature = "zkvm")]
 pub mod prover;
 
-#[cfg(feature = "zkvm")]
 pub use prover::*;

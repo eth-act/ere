@@ -3665,14 +3665,81 @@ dependencies = [
  "anyhow",
  "clap",
  "ere-catalog",
- "ere-prover-airbender",
- "ere-prover-core",
- "ere-prover-openvm",
- "ere-prover-risc0",
- "ere-prover-sp1",
- "ere-prover-zisk",
+ "ere-compiler-airbender",
+ "ere-compiler-core",
+ "ere-compiler-openvm",
+ "ere-compiler-risc0",
+ "ere-compiler-sp1",
+ "ere-compiler-zisk",
  "tracing",
  "tracing-subscriber 0.3.23",
+]
+
+[[package]]
+name = "ere-compiler-airbender"
+version = "0.7.0"
+dependencies = [
+ "ere-compiler-core",
+ "ere-util-compile",
+ "ere-util-test",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "ere-compiler-core"
+version = "0.7.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "ere-compiler-openvm"
+version = "0.7.0"
+dependencies = [
+ "ere-compiler-core",
+ "ere-util-compile",
+ "ere-util-test",
+ "eyre",
+ "openvm-build",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "ere-compiler-risc0"
+version = "0.7.0"
+dependencies = [
+ "anyhow",
+ "ere-compiler-core",
+ "ere-util-compile",
+ "ere-util-test",
+ "risc0-binfmt",
+ "risc0-build",
+ "thiserror 2.0.18",
+ "tracing",
+]
+
+[[package]]
+name = "ere-compiler-sp1"
+version = "0.7.0"
+dependencies = [
+ "ere-compiler-core",
+ "ere-util-compile",
+ "ere-util-test",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tracing",
+]
+
+[[package]]
+name = "ere-compiler-zisk"
+version = "0.7.0"
+dependencies = [
+ "ere-compiler-core",
+ "ere-util-compile",
+ "ere-util-test",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tracing",
 ]
 
 [[package]]
@@ -3681,6 +3748,7 @@ version = "0.7.0"
 dependencies = [
  "anyhow",
  "ere-catalog",
+ "ere-compiler-core",
  "ere-prover-core",
  "ere-server-client",
  "ere-util-test",
@@ -3756,8 +3824,9 @@ dependencies = [
 name = "ere-prover-airbender"
 version = "0.7.0"
 dependencies = [
+ "ere-compiler-airbender",
+ "ere-compiler-core",
  "ere-prover-core",
- "ere-util-compile",
  "ere-util-test",
  "ere-verifier-airbender",
  "execution_utils",
@@ -3789,12 +3858,12 @@ dependencies = [
 name = "ere-prover-openvm"
 version = "0.7.0"
 dependencies = [
+ "ere-compiler-core",
+ "ere-compiler-openvm",
  "ere-prover-core",
- "ere-util-compile",
  "ere-util-test",
  "ere-verifier-openvm",
  "eyre",
- "openvm-build",
  "openvm-circuit",
  "openvm-sdk",
  "thiserror 2.0.18",
@@ -3806,16 +3875,15 @@ version = "0.7.0"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
+ "ere-compiler-core",
+ "ere-compiler-risc0",
  "ere-io",
  "ere-prover-core",
- "ere-util-compile",
  "ere-util-test",
  "ere-verifier-risc0",
  "risc0-binfmt",
- "risc0-build",
  "risc0-zkvm",
  "thiserror 2.0.18",
- "tracing",
 ]
 
 [[package]]
@@ -3824,8 +3892,9 @@ version = "0.7.0"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
+ "ere-compiler-core",
+ "ere-compiler-sp1",
  "ere-prover-core",
- "ere-util-compile",
  "ere-util-test",
  "ere-verifier-sp1",
  "p3-field 0.3.2-succinct",
@@ -3833,7 +3902,6 @@ dependencies = [
  "sp1-hypercube",
  "sp1-recursion-executor",
  "sp1-sdk",
- "tempfile",
  "thiserror 2.0.18",
  "tracing",
 ]
@@ -3844,8 +3912,9 @@ version = "0.7.0"
 dependencies = [
  "anyhow",
  "blake3",
+ "ere-compiler-core",
+ "ere-compiler-zisk",
  "ere-prover-core",
- "ere-util-compile",
  "ere-util-test",
  "ere-verifier-zisk",
  "fields",
@@ -3874,6 +3943,7 @@ dependencies = [
  "anyhow",
  "bincode 2.0.1",
  "clap",
+ "ere-compiler-core",
  "ere-prover-airbender",
  "ere-prover-core",
  "ere-prover-openvm",

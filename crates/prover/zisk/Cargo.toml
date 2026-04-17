@@ -7,53 +7,37 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
-blake3 = { workspace = true, optional = true }
+blake3.workspace = true
 futures-util.workspace = true
 http.workspace = true
-mpi = { workspace = true, optional = true }
+mpi.workspace = true
 parking_lot.workspace = true
 tempfile.workspace = true
 thiserror.workspace = true
-tonic = { workspace = true, optional = true }
+tonic.workspace = true
 tracing.workspace = true
 uuid = { workspace = true, features = ["v4"] }
 
 # Local dependencies
-ere-util-compile = { workspace = true, optional = true }
-ere-verifier-zisk = { workspace = true, optional = true }
-ere-prover-core.workspace = true
+ere-compiler-core.workspace = true
+ere-verifier-zisk.workspace = true
+ere-prover-core = { workspace = true, features = ["tokio"] }
 
 # Zisk dependencies
-proofman-common = { workspace = true, optional = true }
-proofman-fields = { workspace = true, optional = true }
-proofman-starks-lib-c = { workspace = true, optional = true }
-zisk-core = { workspace = true, optional = true }
-zisk-rom-setup = { workspace = true, optional = true }
-zisk-sdk = { workspace = true, optional = true, features = ["disable_distributed"] }
-ziskemu = { workspace = true, optional = true }
-zisk-distributed-grpc-api = { workspace = true, optional = true }
+proofman-common.workspace = true
+proofman-fields.workspace = true
+proofman-starks-lib-c.workspace = true
+zisk-core.workspace = true
+zisk-rom-setup.workspace = true
+zisk-sdk = { workspace = true, features = ["disable_distributed"] }
+ziskemu.workspace = true
+zisk-distributed-grpc-api.workspace = true
 
 [dev-dependencies]
+ere-compiler-zisk.workspace = true
 ere-util-test = { workspace = true, features = ["host"] }
 
 [features]
-default = ["compiler", "zkvm"]
-compiler = ["dep:ere-util-compile"]
-zkvm = [
-    "dep:blake3",
-    "dep:mpi",
-    "dep:tonic",
-    "dep:ere-verifier-zisk",
-    "dep:proofman-common",
-    "dep:proofman-fields",
-    "dep:proofman-starks-lib-c",
-    "dep:zisk-rom-setup",
-    "dep:zisk-core",
-    "dep:zisk-sdk",
-    "dep:ziskemu",
-    "dep:zisk-distributed-grpc-api",
-    "ere-prover-core/tokio",
-]
 cuda = ["zisk-sdk/gpu"]
 
 [lints]
