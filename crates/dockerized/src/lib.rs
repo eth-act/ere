@@ -80,6 +80,7 @@ pub mod image;
 pub mod prover;
 
 pub use ere_catalog::{CompilerKind, DOCKER_IMAGE_TAG, zkVMKind};
+pub use ere_prover_core::*;
 
 pub use crate::{
     compiler::DockerizedCompiler,

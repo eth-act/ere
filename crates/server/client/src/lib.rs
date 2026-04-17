@@ -7,3 +7,4 @@ pub mod client;
 mod test;
 
 pub use client::*;
+pub use ere_prover_core::*;
