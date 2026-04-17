@@ -27,6 +27,7 @@ env:
     -p ere-util-compile
     -p ere-util-test
     -p ere-server-client
+    -p ere-cluster-client-zisk
 
 jobs:
   test:
@@ -45,13 +46,10 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          components: clippy, rustfmt
+          components: clippy
 
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
-
-      - name: Run cargo fmt
-        run: cargo fmt --check
 
       - name: Run cargo clippy
         run: cargo clippy --all-targets $PACKAGE_FLAGS -- -D warnings

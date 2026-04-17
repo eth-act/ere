@@ -18,7 +18,6 @@ use ere_server_client::api::{
 use tokio::{net::TcpListener, signal};
 use tower_http::catch_panic::CatchPanicLayer;
 use tracing::info;
-use tracing_subscriber::{EnvFilter, Layer, layer::SubscriberExt, util::SubscriberInitExt};
 use twirp::{
     Request, Response, Router, TwirpErrorResponse,
     async_trait::async_trait,
@@ -152,17 +151,6 @@ fn serialize_report_err(err: bincode::error::EncodeError) -> TwirpErrorResponse 
 }
 
 pub async fn run(port: u16, elf: Elf, resource: ProverResource) -> Result<(), Error> {
-    let (tracer_provider, otel_layer) = crate::otel::init();
-
-    tracing_subscriber::registry()
-        .with(otel_layer)
-        .with(
-            tracing_subscriber::fmt::layer()
-                .compact()
-                .with_filter(EnvFilter::from_default_env()),
-        )
-        .init();
-
     let resource_kind = resource.kind().to_string();
     let zkvm = crate::construct_zkvm(elf, resource)?;
     info!("initialized zkVMProver with {resource_kind} prover");
@@ -184,10 +172,6 @@ pub async fn run(port: u16, elf: Elf, resource: ProverResource) -> Result<(), Er
         .await?;
 
     info!("shutdown gracefully");
-
-    if let Some(provider) = tracer_provider {
-        provider.shutdown().ok();
-    }
 
     Ok(())
 }

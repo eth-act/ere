@@ -421,7 +421,9 @@ ere/
 │   ├── server/
 │   │   ├── cli/                   # ere-server
 │   │   └── client/                # ere-server-client
-│   ├── core/                      # ere-catalog
+│   ├── cluster-client/
+│   │   └── zisk/                  # ere-cluster-client-zisk
+│   ├── catalog/                   # ere-catalog
 │   ├── codec/                     # ere-codec
 │   └── util/
 │       ├── build/                 # ere-util-build

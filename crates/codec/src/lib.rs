@@ -151,3 +151,29 @@ macro_rules! impl_codec_by_ciborium {
         }
     };
 }
+
+/// Implements [`Encode`] and [`Decode`] for `$ty` via `rkyv`.
+///
+/// Requires the caller's `Cargo.toml` to depend on `rkyv` (with the `alloc`
+/// feature) and the type to implement the necessary `rkyv::Archive`,
+/// `rkyv::Serialize`, and `rkyv::Deserialize` traits.
+#[macro_export]
+macro_rules! impl_codec_by_rkyv {
+    ($ty:ty) => {
+        impl $crate::Encode for $ty {
+            type Error = rkyv::rancor::Error;
+
+            fn encode_to_vec(&self) -> Result<Vec<u8>, Self::Error> {
+                rkyv::to_bytes::<rkyv::rancor::Error>(self).map(|v| v.to_vec())
+            }
+        }
+
+        impl $crate::Decode for $ty {
+            type Error = rkyv::rancor::Error;
+
+            fn decode_from_slice(slice: &[u8]) -> Result<Self, Self::Error> {
+                rkyv::from_bytes::<Self, rkyv::rancor::Error>(slice)
+            }
+        }
+    };
+}

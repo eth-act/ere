@@ -8,6 +8,7 @@ use clap::Parser;
 use ere_compiler_core::Elf;
 use ere_prover_core::{ProverResource, zkVMProver};
 use tracing::info;
+use tracing_subscriber::{EnvFilter, Layer, layer::SubscriberExt, util::SubscriberInitExt};
 
 mod commands;
 mod otel;
@@ -54,6 +55,22 @@ enum Command {
 async fn main() -> Result<(), Error> {
     let args = Args::parse();
 
+    // OpenTelemetry is only wired up for the long-running server; `keygen` is a
+    // one-shot that just needs stderr logs.
+    let (tracer_provider, otel_layer) = match &args.command {
+        Command::Server(_) => crate::otel::init(),
+        Command::Keygen { .. } => (None, None),
+    };
+
+    tracing_subscriber::registry()
+        .with(otel_layer)
+        .with(
+            tracing_subscriber::fmt::layer()
+                .compact()
+                .with_filter(EnvFilter::from_default_env()),
+        )
+        .init();
+
     // Read ELF from file or stdin.
     let elf = if let Some(path) = args.elf_path {
         let bytes = fs::read(&path).with_context(|| format!("failed to read ELF from {path}"))?;
@@ -71,6 +88,10 @@ async fn main() -> Result<(), Error> {
     match args.command {
         Command::Server(resource) => commands::server::run(args.port, elf, resource).await?,
         Command::Keygen { program_vk } => commands::keygen::run(elf, &program_vk)?,
+    }
+
+    if let Some(provider) = tracer_provider {
+        provider.shutdown().ok();
     }
 
     Ok(())
