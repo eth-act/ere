@@ -7,9 +7,7 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
-bincode = { workspace = true, features = ["alloc"] }
 blake3 = { workspace = true, optional = true }
-bytemuck.workspace = true
 futures-util.workspace = true
 http.workspace = true
 mpi = { workspace = true, optional = true }
@@ -22,14 +20,13 @@ uuid = { workspace = true, features = ["v4"] }
 
 # Local dependencies
 ere-compile-utils = { workspace = true, optional = true }
+ere-verifier-zisk = { workspace = true, optional = true }
 ere-zkvm-interface.workspace = true
 
 # Zisk dependencies
 proofman-common = { workspace = true, optional = true }
 proofman-fields = { workspace = true, optional = true }
 proofman-starks-lib-c = { workspace = true, optional = true }
-proofman-util = { workspace = true, optional = true }
-proofman-verifier = { workspace = true, optional = true }
 zisk-core = { workspace = true, optional = true }
 zisk-rom-setup = { workspace = true, optional = true }
 zisk-sdk = { workspace = true, optional = true, features = ["disable_distributed"] }
@@ -39,9 +36,6 @@ zisk-distributed-grpc-api = { workspace = true, optional = true }
 [dev-dependencies]
 ere-test-utils = { workspace = true, features = ["host"] }
 
-[build-dependencies]
-ere-build-utils.workspace = true
-
 [features]
 default = ["compiler", "zkvm"]
 compiler = ["dep:ere-compile-utils"]
@@ -49,11 +43,10 @@ zkvm = [
     "dep:blake3",
     "dep:mpi",
     "dep:tonic",
+    "dep:ere-verifier-zisk",
     "dep:proofman-common",
     "dep:proofman-fields",
     "dep:proofman-starks-lib-c",
-    "dep:proofman-util",
-    "dep:proofman-verifier",
     "dep:zisk-rom-setup",
     "dep:zisk-core",
     "dep:zisk-sdk",

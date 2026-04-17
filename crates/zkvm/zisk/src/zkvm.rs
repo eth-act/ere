@@ -1,9 +1,9 @@
-use crate::zkvm::sdk::{ProgramVk, ZiskSdk};
-use anyhow::bail;
+use crate::zkvm::sdk::ZiskSdk;
+use ere_verifier_zisk::{ZiskProof, ZiskVerifier};
 use ere_zkvm_interface::compiler::Elf;
 use ere_zkvm_interface::zkvm::{
-    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProofKind,
-    ProverResource, PublicValues, zkVM, zkVMProgramDigest,
+    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues,
+    zkVM,
 };
 use mpi as _; // Import symbols referenced by starks_api.cpp
 use std::time::Instant;
@@ -13,25 +13,30 @@ mod sdk;
 
 pub use error::Error;
 
-include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
-
 pub struct EreZisk {
     sdk: ZiskSdk,
+    verifier: ZiskVerifier,
 }
 
 impl EreZisk {
     pub fn new(elf: Elf, resource: ProverResource) -> Result<Self, Error> {
         let sdk = ZiskSdk::new(elf.0, resource)?;
-        Ok(Self { sdk })
+        let verifier = ZiskVerifier::new(sdk.program_vk());
+        Ok(Self { sdk, verifier })
     }
 }
 
 impl zkVM for EreZisk {
-    fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+    type Verifier = ZiskVerifier;
+    type Error = Error;
+
+    fn verifier(&self) -> &ZiskVerifier {
+        &self.verifier
+    }
+
+    fn execute(&self, input: &Input) -> Result<(PublicValues, ProgramExecutionReport), Error> {
         if input.proofs.is_some() {
-            bail!(Error::from(CommonError::unsupported_input(
-                "no dedicated proofs stream"
-            )))
+            return Err(CommonError::unsupported_input("no dedicated proofs stream"))?;
         }
 
         let start = Instant::now();
@@ -51,54 +56,18 @@ impl zkVM for EreZisk {
     fn prove(
         &self,
         input: &Input,
-        proof_kind: ProofKind,
-    ) -> anyhow::Result<(PublicValues, Proof, ProgramProvingReport)> {
+    ) -> Result<(PublicValues, ZiskProof, ProgramProvingReport), Error> {
         if input.proofs.is_some() {
-            bail!(Error::from(CommonError::unsupported_input(
-                "no dedicated proofs stream"
-            )))
-        }
-        if proof_kind != ProofKind::Compressed {
-            bail!(Error::from(CommonError::unsupported_proof_kind(
-                proof_kind,
-                [ProofKind::Compressed]
-            )))
+            return Err(CommonError::unsupported_input("no dedicated proofs stream"))?;
         }
 
         let (public_values, proof, proving_time) = self.sdk.prove(input.stdin())?;
 
         Ok((
             public_values,
-            Proof::Compressed(proof),
+            proof,
             ProgramProvingReport::new(proving_time),
         ))
-    }
-
-    fn verify(&self, proof: &Proof) -> anyhow::Result<PublicValues> {
-        let Proof::Compressed(proof) = proof else {
-            bail!(Error::from(CommonError::unsupported_proof_kind(
-                proof.kind(),
-                [ProofKind::Compressed]
-            )))
-        };
-
-        Ok(self.sdk.verify(proof)?)
-    }
-
-    fn name(&self) -> &'static str {
-        NAME
-    }
-
-    fn sdk_version(&self) -> &'static str {
-        SDK_VERSION
-    }
-}
-
-impl zkVMProgramDigest for EreZisk {
-    type ProgramDigest = ProgramVk;
-
-    fn program_digest(&self) -> anyhow::Result<Self::ProgramDigest> {
-        Ok(self.sdk.program_vk())
     }
 }
 
@@ -113,7 +82,7 @@ mod tests {
     use ere_zkvm_interface::{
         RemoteProverConfig,
         compiler::{Compiler, Elf},
-        zkvm::{Input, ProofKind, ProverResource, zkVM},
+        zkvm::{Input, ProverResource, zkVM},
     };
     use std::sync::{Mutex, OnceLock};
 
@@ -175,7 +144,7 @@ mod tests {
             Input::new(),
             BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
-            zkvm.prove(&input, ProofKind::default()).unwrap_err();
+            assert!(zkvm.prove(&input).is_err());
         }
 
         // Should be able to recover
@@ -207,7 +176,7 @@ mod tests {
             Input::new(),
             BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
         ] {
-            zkvm.prove(&input, ProofKind::default()).unwrap_err();
+            assert!(zkvm.prove(&input).is_err());
         }
 
         // Should be able to recover

@@ -2,19 +2,16 @@ use crate::zkvm::{
     Error,
     sdk::{cluster::ClusterClient, local::LocalProver},
 };
-use bytemuck::cast_slice;
+use ere_verifier_zisk::{PUBLIC_VALUES_SIZE, ZiskProgramVk, ZiskProof};
 use ere_zkvm_interface::zkvm::{CommonError, ProverResource, ProverResourceKind, PublicValues};
 use proofman_common::{
     MpiCtx, ParamsGPU, ProofCtx, ProofType, SetupCtx, SetupsVadcop, VerboseMode,
 };
 use proofman_fields::Goldilocks;
 use proofman_starks_lib_c::free_device_buffers_c;
-use proofman_util::VadcopFinalProof;
-use proofman_verifier::verify_vadcop_final;
 use std::{
     any::Any,
     env,
-    mem::ManuallyDrop,
     panic::{self, AssertUnwindSafe},
     path::PathBuf,
     sync::Arc,
@@ -23,22 +20,11 @@ use std::{
 use tempfile::tempdir;
 use zisk_core::{Riscv2zisk, ZiskRom};
 use zisk_rom_setup::rom_merkle_setup;
-use zisk_sdk::{ElfBinaryFromFile, ZISK_PUBLICS, ZiskProofWithPublicValues};
+use zisk_sdk::{ElfBinaryFromFile, ZiskProofWithPublicValues};
 use ziskemu::{Emu, EmuOptions};
 
 mod cluster;
 mod local;
-
-/// Merkle root of ROM trace.
-pub type ProgramVk = [u8; 32];
-
-/// Verifying key of the aggregation proof.
-pub const VADCOP_FINAL_VK: [u64; 4] = [
-    9211010158316595036,
-    7055235338110277438,
-    2391371252028311145,
-    10691781997660262077,
-];
 
 /// Prover backend - either local or cluster.
 #[allow(clippy::large_enum_variant)]
@@ -50,7 +36,7 @@ pub enum ZiskProver {
 pub struct ZiskSdk {
     resource: ProverResource,
     rom: ZiskRom,
-    program_vk: ProgramVk,
+    program_vk: ZiskProgramVk,
     prover: ZiskProver,
 }
 
@@ -87,7 +73,7 @@ impl ZiskSdk {
         })
     }
 
-    pub fn program_vk(&self) -> ProgramVk {
+    pub fn program_vk(&self) -> ZiskProgramVk {
         self.program_vk
     }
 
@@ -108,16 +94,13 @@ impl ZiskSdk {
             return Err(Error::EmulatorError);
         }
 
-        let public_values = emu.get_output_8();
+        let public_values = emu.get_output_8().into();
         let total_num_cycles = emu.number_of_steps();
 
         Ok((public_values, total_num_cycles))
     }
 
-    /// Prove the ELF with the given stdin.
-    ///
-    /// Returns the public values, proof, and proving time.
-    pub fn prove(&self, stdin: &[u8]) -> Result<(PublicValues, Vec<u8>, Duration), Error> {
+    pub fn prove(&self, stdin: &[u8]) -> Result<(PublicValues, ZiskProof, Duration), Error> {
         match &self.resource {
             ProverResource::Cpu if cfg!(feature = "cuda") => Err(Error::CudaFeatureEnabled)?,
             ProverResource::Gpu if cfg!(not(feature = "cuda")) => Err(Error::CudaFeatureDisabled)?,
@@ -135,48 +118,35 @@ impl ZiskSdk {
 
         // The proved program VK should match the preprocessed
         if proved_program_vk != self.program_vk {
-            return Err(Error::UnexpectedProgramVk {
-                preprocessed: self.program_vk,
-                proved: proved_program_vk,
-            });
+            return Err(ere_verifier_zisk::Error::UnexpectedProgramVk {
+                expected: self.program_vk,
+                got: proved_program_vk,
+            })?;
         }
 
-        Ok((
+        let proof = if let zisk_sdk::ZiskProof::VadcopFinal(proof) = proof.proof {
+            proof
+        } else {
+            return Err(Error::UnexpectedProofKind(match &proof.proof {
+                zisk_sdk::ZiskProof::Null() => "Null",
+                zisk_sdk::ZiskProof::VadcopFinalCompressed(_) => "VadcopFinalCompressed",
+                zisk_sdk::ZiskProof::Plonk(_) => "Plonk",
+                zisk_sdk::ZiskProof::Fflonk(_) => "Fflonk",
+                _ => "Unknown",
+            }));
+        };
+
+        let zisk_proof = ZiskProof {
+            proof,
             public_values,
-            bincode::serde::encode_to_vec(&proof, bincode::config::legacy())
-                .map_err(|err| CommonError::serialize("proof", "bincode", err))?,
-            proving_time,
-        ))
-    }
+            program_vk: self.program_vk,
+        };
 
-    /// Verify the proof of the ELF, and returns public values.
-    pub fn verify(&self, proof: &[u8]) -> Result<PublicValues, Error> {
-        let proof: ZiskProofWithPublicValues =
-            bincode::serde::decode_from_slice(proof, bincode::config::legacy())
-                .map_err(|err| CommonError::deserialize("proof", "bincode", err))?
-                .0;
-
-        let vadcop_final_proof = vadcop_final_proof_aligned(&proof)?;
-        if !verify_vadcop_final(&vadcop_final_proof, cast_slice(&VADCOP_FINAL_VK)) {
-            return Err(Error::InvalidProof);
-        }
-
-        // Extract public values and program_vk
-        let (public_values, proved_program_vk) = extract_public_values_and_program_vk(&proof)?;
-
-        // The proved program VK should match the preprocessed
-        if proved_program_vk != self.program_vk {
-            return Err(Error::UnexpectedProgramVk {
-                preprocessed: self.program_vk,
-                proved: proved_program_vk,
-            });
-        }
-
-        Ok(public_values)
+        Ok((public_values.into(), zisk_proof, proving_time))
     }
 }
 
-fn compute_program_vk(elf: &[u8]) -> Result<ProgramVk, Error> {
+fn compute_program_vk(elf: &[u8]) -> Result<ZiskProgramVk, Error> {
     let mpi_ctx = Arc::new(MpiCtx::new());
     let mut pctx = ProofCtx::create_ctx(proving_key_dir(), false, VerboseMode::Info, mpi_ctx)
         .map_err(Error::ProofCtx)?;
@@ -207,56 +177,19 @@ fn compute_program_vk(elf: &[u8]) -> Result<ProgramVk, Error> {
 
     free_device_buffers_c(pctx.get_device_buffers_ptr());
 
-    result.and_then(|program_vk| program_vk_from_slice(&program_vk))
+    result.and_then(|program_vk| Ok(program_vk.try_into()?))
 }
 
 fn extract_public_values_and_program_vk(
     proof: &ZiskProofWithPublicValues,
-) -> Result<(PublicValues, ProgramVk), Error> {
-    let program_vk = program_vk_from_slice(&proof.get_program_vk().vk)?;
+) -> Result<([u8; PUBLIC_VALUES_SIZE], ZiskProgramVk), Error> {
+    let program_vk = ZiskProgramVk::try_from(&proof.get_program_vk().vk)?;
 
-    let mut public_values = vec![0; ZISK_PUBLICS * 4];
+    let mut public_values = [0; PUBLIC_VALUES_SIZE];
     proof.get_publics().read_slice(&mut public_values);
     proof.get_publics().head();
 
     Ok((public_values, program_vk))
-}
-
-fn program_vk_from_slice(program_vk: &[u8]) -> Result<ProgramVk, Error> {
-    (program_vk.len() == 32)
-        .then(|| program_vk.try_into().unwrap())
-        .ok_or_else(|| Error::InvalidProgramVkLength(program_vk.len()))
-}
-
-fn vadcop_final_proof_aligned(
-    proof: &ZiskProofWithPublicValues,
-) -> Result<VadcopFinalProof, Error> {
-    let mut vadcop_final_proof = proof
-        .get_vadcop_final_proof()
-        .map_err(Error::InvalidProofFormat)?;
-    vadcop_final_proof.proof = align_to_u64(vadcop_final_proof.proof)?;
-    vadcop_final_proof.public_values = align_to_u64(vadcop_final_proof.public_values)?;
-    Ok(vadcop_final_proof)
-}
-
-/// Returns u64-aligned bytes.
-///
-/// Returns an error if `data.len()` is not a multiple of 8.
-fn align_to_u64(data: Vec<u8>) -> Result<Vec<u8>, Error> {
-    if !data.len().is_multiple_of(8) {
-        return Err(Error::InvalidProofSize(data.len()));
-    }
-    Ok(if data.as_ptr().cast::<u64>().is_aligned() {
-        data
-    } else {
-        let mut aligned = ManuallyDrop::new(vec![0u64; data.len() / 8]);
-        bytemuck::cast_slice_mut(&mut aligned).copy_from_slice(&data);
-        let ptr = aligned.as_mut_ptr().cast::<u8>();
-        let len = aligned.len() * size_of::<u64>();
-        let cap = aligned.capacity() * size_of::<u64>();
-        // SAFETY: `ptr` came from a `Vec<u64>` allocation.
-        unsafe { Vec::from_raw_parts(ptr, len, cap) }
-    })
 }
 
 /// Returns `data` with a LE u64 length prefix and padding to multiple of 8.

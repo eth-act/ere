@@ -1,4 +1,3 @@
-use crate::zkvm::sdk::ProgramVk;
 use ere_zkvm_interface::zkvm::CommonError;
 use proofman_common::ProofmanError;
 use thiserror::Error;
@@ -72,16 +71,10 @@ pub enum Error {
     #[error("Invalid proof format: {0}")]
     InvalidProofFormat(anyhow::Error),
 
+    #[error("Expected VadcopFinal but got {0}")]
+    UnexpectedProofKind(&'static str),
+
     // Verify
-    #[error("Invalid proof")]
-    InvalidProof,
-
-    #[error("Invalid proof size {0}, expected a multiple of 8")]
-    InvalidProofSize(usize),
-
-    #[error("Unexpected program VK - preprocessed: {preprocessed:?}, proved: {proved:?}")]
-    UnexpectedProgramVk {
-        preprocessed: ProgramVk,
-        proved: ProgramVk,
-    },
+    #[error(transparent)]
+    Verifier(#[from] ere_verifier_zisk::Error),
 }
