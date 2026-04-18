@@ -62,7 +62,13 @@ impl Compiler for ZiskGoCustomized {
 #[cfg(test)]
 mod tests {
     use ere_compiler_core::Compiler;
-    use ere_util_test::host::testing_guest_directory;
+    use ere_prover_core::ProverResource;
+    use ere_prover_zisk::ZiskProver;
+    use ere_util_test::{
+        codec::Cbor,
+        host::{run_zkvm_execute, testing_guest_directory},
+        program::basic::BasicProgram,
+    };
 
     use crate::ZiskGoCustomized;
 
@@ -71,5 +77,15 @@ mod tests {
         let guest_directory = testing_guest_directory("zisk", "basic_go");
         let elf = ZiskGoCustomized.compile(guest_directory).unwrap();
         assert!(!elf.is_empty(), "ELF bytes should not be empty.");
+    }
+
+    #[test]
+    fn test_execute() {
+        let guest_directory = testing_guest_directory("zisk", "basic_go");
+        let elf = ZiskGoCustomized.compile(guest_directory).unwrap();
+        let zkvm = ZiskProver::new(elf, ProverResource::Cpu).unwrap();
+
+        let test_case = BasicProgram::<Cbor>::valid_test_case();
+        run_zkvm_execute(&zkvm, &test_case);
     }
 }

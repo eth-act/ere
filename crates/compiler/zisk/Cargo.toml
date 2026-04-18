@@ -15,6 +15,8 @@ ere-compiler-core.workspace = true
 ere-util-compile.workspace = true
 
 [dev-dependencies]
+ere-prover-core.workspace = true
+ere-prover-zisk.workspace = true
 ere-util-test = { workspace = true, features = ["host"] }
 
 [lints]

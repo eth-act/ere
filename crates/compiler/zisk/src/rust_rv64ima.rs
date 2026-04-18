@@ -60,6 +60,8 @@ impl Compiler for ZiskRustRv64ima {
 #[cfg(test)]
 mod tests {
     use ere_compiler_core::Compiler;
+    use ere_prover_core::{Input, ProverResource, zkVMProver};
+    use ere_prover_zisk::ZiskProver;
     use ere_util_test::host::testing_guest_directory;
 
     use crate::ZiskRustRv64ima;
@@ -69,5 +71,13 @@ mod tests {
         let guest_directory = testing_guest_directory("zisk", "stock_nightly_no_std");
         let elf = ZiskRustRv64ima.compile(guest_directory).unwrap();
         assert!(!elf.is_empty(), "ELF bytes should not be empty.");
+    }
+
+    #[test]
+    fn test_execute() {
+        let guest_directory = testing_guest_directory("zisk", "stock_nightly_no_std");
+        let elf = ZiskRustRv64ima.compile(guest_directory).unwrap();
+        let zkvm = ZiskProver::new(elf, ProverResource::Cpu).unwrap();
+        zkvm.execute(&Input::new()).unwrap();
     }
 }

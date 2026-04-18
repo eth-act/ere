@@ -211,19 +211,6 @@ mod tests {
     }
 
     #[test]
-    fn test_execute_rust_rv32ima() {
-        use ere_compiler_core::Compiler;
-        use ere_compiler_risc0::Risc0RustRv32ima;
-        use ere_prover_core::{Input, ProverResource, zkVMProver};
-        use ere_util_test::host::testing_guest_directory;
-
-        let guest_directory = testing_guest_directory("risc0", "stock_nightly_no_std");
-        let elf = Risc0RustRv32ima.compile(guest_directory).unwrap();
-        let zkvm = crate::prover::Risc0Prover::new(elf, ProverResource::Cpu).unwrap();
-        zkvm.execute(&Input::new()).unwrap();
-    }
-
-    #[test]
     fn test_execute() {
         let elf = basic_elf();
         let zkvm = Risc0Prover::new(elf, ProverResource::Cpu).unwrap();

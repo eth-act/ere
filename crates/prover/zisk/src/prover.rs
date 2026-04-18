@@ -101,38 +101,6 @@ mod tests {
     }
 
     #[test]
-    fn test_execute_rust_rv64ima() {
-        use ere_compiler_core::Compiler;
-        use ere_compiler_zisk::ZiskRustRv64ima;
-        use ere_prover_core::{Input, ProverResource, zkVMProver};
-        use ere_util_test::host::testing_guest_directory;
-
-        let guest_directory = testing_guest_directory("zisk", "stock_nightly_no_std");
-        let elf = ZiskRustRv64ima.compile(guest_directory).unwrap();
-        let zkvm = crate::prover::ZiskProver::new(elf, ProverResource::Cpu).unwrap();
-        zkvm.execute(&Input::new()).unwrap();
-    }
-
-    #[test]
-    fn test_execute_go_customized() {
-        use ere_compiler_core::Compiler;
-        use ere_compiler_zisk::ZiskGoCustomized;
-        use ere_prover_core::ProverResource;
-        use ere_util_test::{
-            codec::Cbor,
-            host::{run_zkvm_execute, testing_guest_directory},
-            program::basic::BasicProgram,
-        };
-
-        let guest_directory = testing_guest_directory("zisk", "basic_go");
-        let elf = ZiskGoCustomized.compile(guest_directory).unwrap();
-        let zkvm = crate::prover::ZiskProver::new(elf, ProverResource::Cpu).unwrap();
-
-        let test_case = BasicProgram::<Cbor>::valid_test_case();
-        run_zkvm_execute(&zkvm, &test_case);
-    }
-
-    #[test]
     fn test_execute() {
         let elf = basic_elf();
         let zkvm = ZiskProver::new(elf, ProverResource::Cpu).unwrap();

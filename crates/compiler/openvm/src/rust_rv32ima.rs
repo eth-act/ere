@@ -53,6 +53,8 @@ impl Compiler for OpenVMRustRv32ima {
 #[cfg(test)]
 mod tests {
     use ere_compiler_core::Compiler;
+    use ere_prover_core::{Input, ProverResource, zkVMProver};
+    use ere_prover_openvm::OpenVMProver;
     use ere_util_test::host::testing_guest_directory;
 
     use crate::OpenVMRustRv32ima;
@@ -62,5 +64,13 @@ mod tests {
         let guest_directory = testing_guest_directory("openvm", "stock_nightly_no_std");
         let elf = OpenVMRustRv32ima.compile(guest_directory).unwrap();
         assert!(!elf.is_empty(), "ELF bytes should not be empty.");
+    }
+
+    #[test]
+    fn test_execute() {
+        let guest_directory = testing_guest_directory("openvm", "stock_nightly_no_std");
+        let elf = OpenVMRustRv32ima.compile(guest_directory).unwrap();
+        let zkvm = OpenVMProver::new(elf, ProverResource::Cpu).unwrap();
+        zkvm.execute(&Input::new()).unwrap();
     }
 }

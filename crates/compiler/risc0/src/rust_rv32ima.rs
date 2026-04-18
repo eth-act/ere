@@ -55,6 +55,8 @@ impl Compiler for Risc0RustRv32ima {
 #[cfg(test)]
 mod tests {
     use ere_compiler_core::Compiler;
+    use ere_prover_core::{Input, ProverResource, zkVMProver};
+    use ere_prover_risc0::Risc0Prover;
     use ere_util_test::host::testing_guest_directory;
 
     use crate::Risc0RustRv32ima;
@@ -64,5 +66,13 @@ mod tests {
         let guest_directory = testing_guest_directory("risc0", "stock_nightly_no_std");
         let elf = Risc0RustRv32ima.compile(guest_directory).unwrap();
         assert!(!elf.is_empty(), "ELF bytes should not be empty.");
+    }
+
+    #[test]
+    fn test_execute() {
+        let guest_directory = testing_guest_directory("risc0", "stock_nightly_no_std");
+        let elf = Risc0RustRv32ima.compile(guest_directory).unwrap();
+        let zkvm = Risc0Prover::new(elf, ProverResource::Cpu).unwrap();
+        zkvm.execute(&Input::new()).unwrap();
     }
 }

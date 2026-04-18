@@ -187,19 +187,6 @@ mod tests {
     }
 
     #[test]
-    fn test_execute_rust_rv32ima() {
-        use ere_compiler_core::Compiler;
-        use ere_compiler_openvm::OpenVMRustRv32ima;
-        use ere_prover_core::{Input, ProverResource, zkVMProver};
-        use ere_util_test::host::testing_guest_directory;
-
-        let guest_directory = testing_guest_directory("openvm", "stock_nightly_no_std");
-        let elf = OpenVMRustRv32ima.compile(guest_directory).unwrap();
-        let zkvm = crate::prover::OpenVMProver::new(elf, ProverResource::Cpu).unwrap();
-        zkvm.execute(&Input::new()).unwrap();
-    }
-
-    #[test]
     fn test_execute() {
         let elf = basic_elf();
         let zkvm = OpenVMProver::new(elf, ProverResource::Cpu).unwrap();

@@ -3690,6 +3690,8 @@ name = "ere-compiler-openvm"
 version = "0.7.0"
 dependencies = [
  "ere-compiler-core",
+ "ere-prover-core",
+ "ere-prover-openvm",
  "ere-util-compile",
  "ere-util-test",
  "eyre",
@@ -3703,6 +3705,8 @@ version = "0.7.0"
 dependencies = [
  "anyhow",
  "ere-compiler-core",
+ "ere-prover-core",
+ "ere-prover-risc0",
  "ere-util-compile",
  "ere-util-test",
  "risc0-binfmt",
@@ -3716,6 +3720,8 @@ name = "ere-compiler-sp1"
 version = "0.7.0"
 dependencies = [
  "ere-compiler-core",
+ "ere-prover-core",
+ "ere-prover-sp1",
  "ere-util-compile",
  "ere-util-test",
  "tempfile",
@@ -3728,6 +3734,8 @@ name = "ere-compiler-zisk"
 version = "0.7.0"
 dependencies = [
  "ere-compiler-core",
+ "ere-prover-core",
+ "ere-prover-zisk",
  "ere-util-compile",
  "ere-util-test",
  "tempfile",

@@ -114,19 +114,6 @@ mod tests {
     }
 
     #[test]
-    fn test_execute_rust_rv64ima() {
-        use ere_compiler_core::Compiler;
-        use ere_compiler_sp1::SP1RustRv64ima;
-        use ere_prover_core::{Input, ProverResource, zkVMProver};
-        use ere_util_test::host::testing_guest_directory;
-
-        let guest_directory = testing_guest_directory("sp1", "stock_nightly_no_std");
-        let elf = SP1RustRv64ima.compile(guest_directory).unwrap();
-        let zkvm = crate::prover::SP1Prover::new(elf, ProverResource::Cpu).unwrap();
-        zkvm.execute(&Input::new()).unwrap();
-    }
-
-    #[test]
     fn test_execute() {
         let elf = basic_elf();
         let zkvm = SP1Prover::new(elf, ProverResource::Cpu).unwrap();
