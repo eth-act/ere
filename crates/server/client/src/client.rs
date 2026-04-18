@@ -23,8 +23,8 @@ const HEALTH_CHECK_TIMEOUT: Duration = Duration::from_secs(3);
 pub enum Error {
     #[error("Invalid URL: {0}")]
     ParseUrl(#[from] ParseError),
-    #[error("zkVMProver method error: {0}")]
-    zkVMProver(String),
+    #[error("zkVM method error: {0}")]
+    zkVM(String),
     #[error("RPC error: {0}")]
     Rpc(#[from] TwirpErrorResponse),
 }
@@ -32,7 +32,7 @@ pub enum Error {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EncodedProof(pub Vec<u8>);
 
-/// zkVMProver client of the `zkVMServer`.
+/// zkVM client of the `zkVMServer`.
 #[allow(non_camel_case_types)]
 #[derive(Clone, Debug)]
 pub struct zkVMClient {
@@ -94,7 +94,7 @@ impl zkVMClient {
                     .map_err(deserialize_report_err)?
                     .0,
             )),
-            ExecuteResult::Err(err) => Err(Error::zkVMProver(err)),
+            ExecuteResult::Err(err) => Err(Error::zkVM(err)),
         }
     }
 
@@ -117,7 +117,7 @@ impl zkVMClient {
                     .map_err(deserialize_report_err)?
                     .0,
             )),
-            ProveResult::Err(err) => Err(Error::zkVMProver(err)),
+            ProveResult::Err(err) => Err(Error::zkVM(err)),
         }
     }
 
@@ -128,7 +128,7 @@ impl zkVMClient {
 
         match response.into_body().result.ok_or_else(result_none_err)? {
             VerifyResult::Ok(result) => Ok(result.public_values.into()),
-            VerifyResult::Err(err) => Err(Error::zkVMProver(err)),
+            VerifyResult::Err(err) => Err(Error::zkVM(err)),
         }
     }
 }

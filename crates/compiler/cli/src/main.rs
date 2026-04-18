@@ -6,7 +6,7 @@ use ere_catalog::CompilerKind;
 use ere_compiler_core::{Compiler, Elf};
 use tracing_subscriber::EnvFilter;
 
-// Compile-time check to ensure exactly one zkVMProver feature is enabled for `ere-compiler`
+// Compile-time check to ensure exactly one zkVM feature is enabled for `ere-compiler`
 const _: () = {
     assert!(
         (cfg!(feature = "airbender") as u8
@@ -15,7 +15,7 @@ const _: () = {
             + cfg!(feature = "sp1") as u8
             + cfg!(feature = "zisk") as u8)
             == 1,
-        "Exactly one zkVMProver feature must be enabled for `ere-compiler`"
+        "Exactly one zkVM feature must be enabled for `ere-compiler`"
     );
 };
 

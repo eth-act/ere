@@ -33,9 +33,9 @@ mod error;
 
 pub use error::Error;
 
-/// Applies per-zkVMProver CUDA architecture build args to a Docker build command.
+/// Applies per-zkVM CUDA architecture build args to a Docker build command.
 ///
-/// Each zkVMProver expects a different format for specifying CUDA architectures:
+/// Each zkVM expects a different format for specifying CUDA architectures:
 /// - Airbender: `CUDAARCHS` (semicolon-separated, e.g. "89;120")
 /// - OpenVM: `CUDA_ARCH` (comma-separated, e.g. "89,120")
 /// - Risc0: `NVCC_APPEND_FLAGS` (nvcc --generate-code flags)
@@ -91,9 +91,9 @@ fn apply_cuda_build_args(
 
 /// This method builds 3 Docker images in sequence:
 /// 1. `ere-base:{version}` - Base image with common dependencies
-/// 2. `ere-base-{zkvm}:{version}` - zkVMProver-specific base image with the zkVMProver SDK
+/// 2. `ere-base-{zkvm}:{version}` - zkVM-specific base image with the zkVM SDK
 /// 3. `ere-server-{zkvm}:{version}` - Server image with the `ere-server` binary built with the
-///    selected zkVMProver feature
+///    selected zkVM feature
 ///
 /// When [`ProverResource::Gpu`] is selected, the image with GPU support
 /// will be built and tagged with specific suffix.
@@ -218,7 +218,7 @@ impl ServerContainer {
             "127.0.0.1"
         };
 
-        // zkVMProver specific options
+        // zkVM specific options
         cmd = match zkvm_kind {
             zkVMKind::Risc0 => cmd
                 .inherit_env("ERE_RISC0_SEGMENT_PO2")
@@ -239,7 +239,7 @@ impl ServerContainer {
             _ => cmd,
         };
 
-        // zkVMProver specific options when using GPU
+        // zkVM specific options when using GPU
         if gpu {
             cmd = match zkvm_kind {
                 zkVMKind::Airbender => cmd.gpus(),
@@ -536,8 +536,8 @@ mod tests {
                 for input in $invalid_test_cases {
                     let err = zkvm.execute(&input).unwrap_err();
                     assert!(
-                        matches!(err.downcast_ref::<Error>().unwrap(), Error::zkVMProver(_)),
-                        "Expect error variant `Error::zkVMProver`, got {err:?}",
+                        matches!(err.downcast_ref::<Error>().unwrap(), Error::zkVM(_)),
+                        "Expect error variant `Error::zkVM`, got {err:?}",
                     );
                 }
             }
@@ -562,8 +562,8 @@ mod tests {
                 for input in $invalid_test_cases {
                     let err = zkvm.prove(&input).unwrap_err();
                     assert!(
-                        matches!(err.downcast_ref::<Error>().unwrap(), Error::zkVMProver(_)),
-                        "Expect error variant `Error::zkVMProver`, got {err:?}",
+                        matches!(err.downcast_ref::<Error>().unwrap(), Error::zkVM(_)),
+                        "Expect error variant `Error::zkVM`, got {err:?}",
                     );
                 }
 

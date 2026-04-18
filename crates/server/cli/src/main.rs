@@ -13,7 +13,7 @@ use tracing_subscriber::{EnvFilter, Layer, layer::SubscriberExt, util::Subscribe
 mod commands;
 mod otel;
 
-// Compile-time check to ensure exactly one zkVMProver feature is enabled for `ere-server`
+// Compile-time check to ensure exactly one zkVM feature is enabled for `ere-server`
 const _: () = {
     assert!(
         (cfg!(feature = "airbender") as u8
@@ -22,7 +22,7 @@ const _: () = {
             + cfg!(feature = "sp1") as u8
             + cfg!(feature = "zisk") as u8)
             == 1,
-        "Exactly one zkVMProver feature must be enabled for `ere-server`"
+        "Exactly one zkVM feature must be enabled for `ere-server`"
     );
 };
 
@@ -55,8 +55,6 @@ enum Command {
 async fn main() -> Result<(), Error> {
     let args = Args::parse();
 
-    // OpenTelemetry is only wired up for the long-running server; `keygen` is a
-    // one-shot that just needs stderr logs.
     let (tracer_provider, otel_layer) = match &args.command {
         Command::Server(_) => crate::otel::init(),
         Command::Keygen { .. } => (None, None),

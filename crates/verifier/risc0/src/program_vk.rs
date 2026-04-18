@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use core::{array::from_fn, convert::Infallible};
 
 use ere_verifier_core::codec::{Decode, Encode};
@@ -10,10 +11,9 @@ const PROGRAM_VK_SIZE: usize = 32;
 
 /// Verifying key that identifies a specific compiled guest program.
 ///
-/// Produced during setup and consumed by [`Risc0Verifier`] together with a
-/// [`Risc0Proof`] to authenticate that the proof was generated from the same
-/// program. Wraps a 32-byte `Digest` produced by
-/// `risc0_binfmt::compute_image_id`; encoded as 8 little-endian u32 words.
+/// Produced during setup and consumed by [`Risc0Verifier`] together with a [`Risc0Proof`] to
+/// authenticate that the proof was generated from the same program. Wraps a 32-byte `Digest`
+/// produced by `risc0_binfmt::compute_image_id`; encoded as 8 little-endian u32 words.
 ///
 /// [`Risc0Verifier`]: crate::Risc0Verifier
 /// [`Risc0Proof`]: crate::Risc0Proof

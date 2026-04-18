@@ -1,20 +1,20 @@
 //! # Ere Dockerized
 //!
-//! A Docker-based wrapper for other zkVMProver crates `ere-{zkvm}`.
+//! A Docker-based wrapper for other zkVM crates `ere-compiler-{zkvm}` and `ere-prover-{zkvm}`.
 //!
-//! This crate provides a unified interface to dockerize the `Compiler` and
-//! `zkVMProver` implementation of other zkVMProver crates `ere-{zkvm}`, it requires only
-//! `docker` to be installed, but no zkVMProver specific SDK.
+//! This crate provides a unified interface to dockerize the `Compiler` and `zkVMProver`
+//! implementation of other zkVM crates `ere-compiler-{zkvm}` and `ere-prover-{zkvm}`, it requires
+//! only `docker` to be installed, but no zkVM specific SDK.
 //!
 //! ## Docker image building
 //!
 //! It builds 4 Docker images in sequence if they don't exist:
 //! 1. `ere-base:{version}` - Base image with common dependencies
-//! 2. `ere-base-{zkvm}:{version}` - zkVMProver-specific base image with the zkVMProver SDK
+//! 2. `ere-base-{zkvm}:{version}` - zkVM-specific base image with the zkVM SDK
 //! 3. `ere-compiler-{zkvm}:{version}` - Compiler image with the `ere-compiler` binary built with
-//!    the selected zkVMProver feature
+//!    the selected zkVM feature
 //! 4. `ere-server-{zkvm}:{version}` - Server image with the `ere-server` binary built with the
-//!    selected zkVMProver feature
+//!    selected zkVM feature
 //!
 //! When [`ProverResource::Gpu`] is selected, the image with GPU support
 //! will be built and tagged with specific suffix.
@@ -30,10 +30,10 @@
 //!     CompilerKind, DockerizedCompiler, DockerizedzkVM, DockerizedzkVMConfig, zkVMKind,
 //! };
 //! use ere_compiler_core::Compiler;
-//! use ere_prover_core::{Input, ProverResource, zkVMProver};
+//! use ere_prover_core::{Input, ProverResource, zkVM};
 //! use std::path::Path;
 //!
-//! // The zkVMProver we plan to use
+//! // The zkVM we plan to use
 //! let zkvm_kind = zkVMKind::SP1;
 //!
 //! // The compiler we plan to use
@@ -44,7 +44,7 @@
 //! let guest_path = Path::new("relative/path/to/guest/program");
 //! let elf = compiler.compile(&guest_path)?;
 //!
-//! // Create zkVMProver instance
+//! // Create zkVM instance
 //! let resource = ProverResource::Cpu;
 //! let zkvm = DockerizedzkVM::new(
 //!     zkvm_kind,

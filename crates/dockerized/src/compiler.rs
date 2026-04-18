@@ -25,9 +25,9 @@ pub use error::Error;
 
 /// This method builds 3 Docker images in sequence:
 /// 1. `ere-base:{version}` - Base image with common dependencies
-/// 2. `ere-base-{zkvm}:{version}` - zkVMProver-specific base image with the zkVMProver SDK
+/// 2. `ere-base-{zkvm}:{version}` - zkVM-specific base image with the zkVM SDK
 /// 3. `ere-compiler-{zkvm}:{version}` - Compiler image with the `ere-compiler` binary built with
-///    the selected zkVMProver feature
+///    the selected zkVM feature
 ///
 /// Images are cached and only rebuilt if they don't exist or if the
 /// `ERE_FORCE_REBUILD_DOCKER_IMAGE` environment variable is set.

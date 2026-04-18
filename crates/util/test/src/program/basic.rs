@@ -15,9 +15,9 @@ pub struct BasicProgram<C>(PhantomData<C>);
 
 impl<C> Program for BasicProgram<C>
 where
-    C: Send + Sync,
-    BasicProgramInput<C>: Encode + Decode + Clone + Debug + Send + Sync,
-    BasicProgramOutput<C>: Encode + Decode + Clone + Debug + Send + Sync + PartialEq,
+    C: Clone + Debug + Send + Sync + PartialEq,
+    BasicProgramInput<C>: Encode + Decode,
+    BasicProgramOutput<C>: Encode + Decode,
 {
     type Input = BasicProgramInput<C>;
     type Output = BasicProgramOutput<C>;
@@ -84,7 +84,7 @@ mod host {
     impl<C> BasicProgram<C>
     where
         C: Default,
-        BasicProgram<C>: Program<Input = BasicProgramInput<C>>,
+        Self: Program<Input = BasicProgramInput<C>>,
     {
         pub fn valid_test_case() -> ProgramTestCase<Self> {
             let mut rng = rng();

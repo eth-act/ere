@@ -46,7 +46,7 @@ impl<T: 'static + zkVMProver + Send + Sync> zkVMServer<T> {
         input: Input,
     ) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
         let zkvm = Arc::clone(&self.zkvm);
-        tokio::task::spawn_blocking(move || zkvm.execute(&input).map_err(anyhow::Error::from))
+        tokio::task::spawn_blocking(move || Ok(zkvm.execute(&input)?))
             .await
             .context("execute panicked")?
     }
@@ -56,14 +56,14 @@ impl<T: 'static + zkVMProver + Send + Sync> zkVMServer<T> {
         input: Input,
     ) -> anyhow::Result<(PublicValues, Proof<T>, ProgramProvingReport)> {
         let zkvm = Arc::clone(&self.zkvm);
-        tokio::task::spawn_blocking(move || zkvm.prove(&input).map_err(anyhow::Error::from))
+        tokio::task::spawn_blocking(move || Ok(zkvm.prove(&input)?))
             .await
             .context("prove panicked")?
     }
 
     async fn verify(&self, proof: Proof<T>) -> anyhow::Result<PublicValues> {
         let zkvm = Arc::clone(&self.zkvm);
-        tokio::task::spawn_blocking(move || zkvm.verify(&proof).map_err(anyhow::Error::from))
+        tokio::task::spawn_blocking(move || Ok(zkvm.verify(&proof)?))
             .await
             .context("verify panicked")?
     }

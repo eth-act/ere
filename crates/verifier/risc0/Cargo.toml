@@ -11,8 +11,8 @@ serde = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
 
 # Risc0 dependencies
-risc0-zkp = { workspace = true, features = ["std"] }
-risc0-zkvm = { workspace = true, features = ["std"] }
+risc0-zkp.workspace = true
+risc0-zkvm.workspace = true
 
 # Local dependencies
 ere-verifier-core.workspace = true

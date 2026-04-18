@@ -11,7 +11,7 @@ impl From<client::Error> for Error {
     fn from(value: client::Error) -> Self {
         match value {
             client::Error::ParseUrl(err) => Self::ParseUrl(err),
-            client::Error::zkVMProver(err) => Self::zkVMProver(err),
+            client::Error::zkVM(err) => Self::zkVM(err),
             client::Error::Rpc(err) => Self::Rpc(err),
         }
     }
@@ -28,11 +28,11 @@ pub enum Error {
         "Multiple CUDA architectures are not supported for {0:?}, CUDA_ARCHS set or detected: {1:?}"
     )]
     UnsupportedMultiCudaArchs(zkVMKind, Vec<u32>),
-    #[error("zkVMProver method error: {0}")]
-    zkVMProver(String),
-    #[error("Connection to zkVMProver server timeout after 5 minutes")]
+    #[error("zkVM method error: {0}")]
+    zkVM(String),
+    #[error("Connection to zkVM server timeout after 5 minutes")]
     ConnectionTimeout,
-    #[error("RPC to zkVMProver server error: {0}")]
+    #[error("RPC to zkVM server error: {0}")]
     Rpc(TwirpErrorResponse),
     #[error("Server container '{container_id}' exited during request: {exit_info}")]
     ContainerExited {

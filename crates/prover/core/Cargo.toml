@@ -15,7 +15,6 @@ serde = { workspace = true, features = ["derive"] }
 strum = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
 
-
 # Local dependencies
 ere-codec.workspace = true
 ere-verifier-core.workspace = true

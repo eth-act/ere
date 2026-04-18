@@ -1,3 +1,5 @@
+use alloc::string::ToString;
+
 use ere_verifier_core::{PublicValues, zkVMVerifier};
 use risc0_zkvm::InnerReceipt;
 
@@ -7,8 +9,8 @@ include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 /// Verifier bound to a specific compiled guest program.
 ///
-/// Implements [`zkVMVerifier`]. Holds the pre-computed [`Risc0ProgramVk`]
-/// needed to authenticate proofs.
+/// Implements [`zkVMVerifier`]. Holds the pre-computed [`Risc0ProgramVk`] needed to authenticate
+/// proofs.
 pub struct Risc0Verifier {
     program_vk: Risc0ProgramVk,
 }
@@ -43,7 +45,7 @@ impl zkVMVerifier for Risc0Verifier {
             return Err(Error::UnexpectedProofKind(got.to_string()));
         }
 
-        receipt.verify(self.program_vk.0)?;
+        receipt.verify(self.program_vk.0).map_err(Error::Verify)?;
 
         Ok(receipt.journal.bytes.as_slice().into())
     }

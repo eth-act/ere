@@ -31,7 +31,7 @@ struct ScopeRegistry {
     names: UnsafeCell<[String; 256]>,
 }
 
-// SAFETY: ZiskPlatform runs in a single-threaded zkVMProver environment.
+// SAFETY: ZiskPlatform runs in a single-threaded zkVM environment.
 unsafe impl Sync for ScopeRegistry {}
 
 impl ScopeRegistry {
@@ -47,7 +47,7 @@ impl ScopeRegistry {
     /// Looks up or assigns a tag ID for the given scope name.
     fn get_or_assign_tag(&self, name: &str) -> u8 {
         let name_hash = hash_name(name);
-        // SAFETY: Single-threaded zkVMProver - no concurrent access.
+        // SAFETY: Single-threaded zkVM - no concurrent access.
         unsafe {
             let entries = &mut *self.entries.get();
             let count = &mut *self.count.get();
@@ -78,7 +78,7 @@ impl ScopeRegistry {
 
     #[cfg(feature = "check-cycle-scope")]
     fn names(&self) -> &[String] {
-        // SAFETY: Single-threaded zkVMProver - no concurrent access.
+        // SAFETY: Single-threaded zkVM - no concurrent access.
         unsafe {
             let names = &*self.names.get();
             let count = *self.count.get();

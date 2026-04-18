@@ -1,3 +1,5 @@
+use alloc::string::String;
+
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -16,5 +18,5 @@ pub enum Error {
 
     /// Upstream `risc0-zkp` rejected the proof.
     #[error("Failed to verify: {0}")]
-    Verify(#[from] risc0_zkp::verify::VerificationError),
+    Verify(risc0_zkp::verify::VerificationError),
 }

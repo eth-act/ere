@@ -6,7 +6,7 @@ use core::{
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumIter, EnumString, IntoEnumIterator, IntoStaticStr};
 
-/// zkVMProver kind supported in Ere.
+/// zkVM kind supported in Ere.
 #[allow(non_camel_case_types)]
 #[derive(
     Clone,
@@ -72,7 +72,7 @@ impl Display for ParseError {
         let supported = Vec::from_iter(zkVMKind::iter().map(|k| k.as_str())).join(", ");
         write!(
             f,
-            "Unsupported zkVMProver kind `{unsupported}`, expect one of [{supported}]",
+            "Unsupported zkVM kind `{unsupported}`, expect one of [{supported}]",
         )
     }
 }
@@ -101,7 +101,7 @@ mod tests {
         assert_eq!("xxx".parse::<zkVMKind>(), Err(ParseError::from("xxx")));
         assert_eq!(
             ParseError::from("xxx").to_string(),
-            "Unsupported zkVMProver kind `xxx`, expect one of \
+            "Unsupported zkVM kind `xxx`, expect one of \
                         [airbender, openvm, risc0, sp1, zisk]"
                 .to_string()
         );

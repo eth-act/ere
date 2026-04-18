@@ -2,14 +2,14 @@ use core::error::Error;
 
 use crate::{Input, ProgramExecutionReport, ProgramProvingReport, PublicValues, zkVMVerifier};
 
-/// zkVMProver trait to abstract away the differences between each zkVMProver.
+/// zkVM prover trait to abstract away the differences between each zkVM.
 ///
 /// This trait provides a unified interface, the workflow is:
 /// 1. Compile a guest program using the corresponding `Compiler`.
-/// 2. Create a zkVMProver instance with the compiled program and prover resource.
-/// 3. Execute, prove, and verify using the zkVMProver instance methods.
+/// 2. Create a zkVM prover instance with the compiled ELF and prover resource.
+/// 3. Execute, prove, and verify using the zkVM instance methods.
 ///
-/// Note that a zkVMProver instance is created for specific program, each zkVMProver
+/// Note that a zkVM prover instance is created for specific program, each zkVM prover
 /// implementation will have their own construction function.
 #[auto_impl::auto_impl(&, Arc, Box)]
 pub trait zkVMProver {
@@ -29,7 +29,7 @@ pub trait zkVMProver {
         input: &Input,
     ) -> Result<(PublicValues, Proof<Self>, ProgramProvingReport), Self::Error>;
 
-    /// Verifies a proof of the program used to create this zkVMProver instance, then
+    /// Verifies a proof of the program used to create this zkVM prover instance, then
     /// returns the public values extracted from the proof.
     #[must_use = "Public values must be used"]
     fn verify(&self, proof: &Proof<Self>) -> Result<PublicValues, Self::Error> {
@@ -41,12 +41,12 @@ pub trait zkVMProver {
         self.verifier().program_vk()
     }
 
-    /// Returns the name of the zkVMProver.
+    /// Returns the name of the zkVM.
     fn name(&self) -> &'static str {
         self.verifier().name()
     }
 
-    /// Returns the version of the zkVMProver SDK (e.g. 0.1.0).
+    /// Returns the version of the zkVM SDK (e.g. 0.1.0).
     fn sdk_version(&self) -> &'static str {
         self.verifier().sdk_version()
     }
