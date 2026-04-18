@@ -1,8 +1,7 @@
 use core::fmt::Debug;
 
 use ere_codec::{Decode, Encode};
-use ere_platform_core::{OutputHashedPlatform, Platform};
-use sha2::Sha256;
+use ere_platform_core::Platform;
 
 pub mod basic;
 
@@ -19,9 +18,5 @@ pub trait Program {
         let output = Self::compute(input);
         let output_bytes = output.encode_to_vec().unwrap();
         P::write_whole_output(&output_bytes);
-    }
-
-    fn run_output_sha256<P: Platform>() {
-        Self::run::<OutputHashedPlatform<P, Sha256>>()
     }
 }

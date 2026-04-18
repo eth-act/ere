@@ -1,8 +1,5 @@
-use ere_verifier_core::{PublicValues, zkVMVerifier};
-use sp1_sdk::{
-    SP1Proof as SP1SdkProof,
-    blocking::{CpuProver, Prover},
-};
+use ere_verifier_core::{PublicValues, block_on, zkVMVerifier};
+use sp1_sdk::{CpuProver, Prover, SP1Proof as SP1SdkProof};
 
 use crate::{Error, SP1ProgramVk, SP1Proof};
 
@@ -22,7 +19,7 @@ impl SP1Verifier {
     /// Creates a new verifier bound to `program_vk`.
     pub fn new(program_vk: SP1ProgramVk) -> Self {
         Self {
-            prover: CpuProver::new(),
+            prover: block_on(CpuProver::new()),
             program_vk,
         }
     }

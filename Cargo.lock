@@ -3830,7 +3830,6 @@ dependencies = [
  "serde_yaml",
  "strum 0.27.2",
  "thiserror 2.0.18",
- "tokio",
  "toml",
 ]
 
@@ -4008,6 +4007,7 @@ dependencies = [
  "auto_impl",
  "ere-codec",
  "serde",
+ "tokio",
 ]
 
 [[package]]

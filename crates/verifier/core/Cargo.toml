@@ -9,6 +9,11 @@ license.workspace = true
 auto_impl.workspace = true
 ere-codec.workspace = true
 serde = { workspace = true, features = ["alloc", "derive"] }
+tokio = { workspace = true, features = ["rt-multi-thread"], optional = true }
 
 [lints]
 workspace = true
+
+[features]
+default = []
+tokio = ["dep:tokio"]

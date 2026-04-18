@@ -9,14 +9,12 @@ license.workspace = true
 anyhow.workspace = true
 auto_impl.workspace = true
 bincode = { workspace = true, features = ["alloc", "serde"] }
+clap = { workspace = true, features = ["derive"], optional = true }
 indexmap = { workspace = true, features = ["serde"] }
 serde = { workspace = true, features = ["derive"] }
 strum = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
 
-# Optional dependencies
-clap = { workspace = true, features = ["derive"], optional = true }
-tokio = { workspace = true, features = ["rt-multi-thread"], optional = true }
 
 # Local dependencies
 ere-codec.workspace = true
@@ -34,4 +32,4 @@ workspace = true
 [features]
 default = []
 clap = ["dep:clap"]
-tokio = ["dep:tokio"]
+tokio = ["ere-verifier-core/tokio"]

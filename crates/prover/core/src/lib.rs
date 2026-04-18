@@ -7,15 +7,12 @@ pub mod prover;
 pub mod report;
 pub mod resource;
 
-#[cfg(feature = "tokio")]
-pub mod tokio;
-
 pub use ere_codec as codec;
+#[cfg(feature = "tokio")]
+pub use ere_verifier_core::block_on;
 pub use ere_verifier_core::{PublicValues, zkVMVerifier};
 pub use error::CommonError;
 pub use input::Input;
 pub use prover::{ProgramVk, Proof, zkVMProver};
 pub use report::{ProgramExecutionReport, ProgramProvingReport};
 pub use resource::{ProverResource, ProverResourceKind, RemoteProverConfig};
-#[cfg(feature = "tokio")]
-pub use tokio::block_on;

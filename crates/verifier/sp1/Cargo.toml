@@ -12,10 +12,10 @@ thiserror.workspace = true
 
 # SP1 dependencies
 sp1-hypercube.workspace = true
-sp1-sdk = { workspace = true, features = ["blocking"] }
+sp1-sdk.workspace = true
 
 # Local dependencies
-ere-verifier-core.workspace = true
+ere-verifier-core = { workspace = true, features = ["tokio"] }
 
 [build-dependencies]
 ere-util-build.workspace = true

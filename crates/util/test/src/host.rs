@@ -11,6 +11,7 @@ fn workspace() -> PathBuf {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.pop();
     path.pop();
+    path.pop();
     path
 }
 
