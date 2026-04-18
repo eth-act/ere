@@ -30,6 +30,7 @@ members = [
     "crates/verifier/sp1",
     "crates/verifier/zisk",
     # Server
+    "crates/server/api",
     "crates/server/cli",
     "crates/server/client",
     # Cluster client
@@ -167,6 +168,7 @@ ere-verifier-risc0 = { path = "crates/verifier/risc0" }
 ere-verifier-sp1 = { path = "crates/verifier/sp1" }
 ere-verifier-zisk = { path = "crates/verifier/zisk" }
 ere-server = { path = "crates/server/cli" }
+ere-server-api = { path = "crates/server/api" }
 ere-server-client = { path = "crates/server/client" }
 ere-cluster-client-zisk = { path = "crates/cluster-client/zisk" }
 ere-dockerized = { path = "crates/dockerized" }

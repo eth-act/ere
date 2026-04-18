@@ -2,17 +2,17 @@ use core::time::Duration;
 
 use ere_catalog::zkVMKind;
 use ere_prover_core::CommonError;
-use ere_server_client::client::{self, ParseError, TwirpErrorResponse};
+use ere_server_client::{TwirpErrorResponse, url};
 use thiserror::Error;
 
 use crate::util::docker::ContainerExitInfo;
 
-impl From<client::Error> for Error {
-    fn from(value: client::Error) -> Self {
+impl From<ere_server_client::Error> for Error {
+    fn from(value: ere_server_client::Error) -> Self {
         match value {
-            client::Error::ParseUrl(err) => Self::ParseUrl(err),
-            client::Error::zkVM(err) => Self::zkVM(err),
-            client::Error::Rpc(err) => Self::Rpc(err),
+            ere_server_client::Error::ParseUrl(err) => Self::ParseUrl(err),
+            ere_server_client::Error::zkVM(err) => Self::zkVM(err),
+            ere_server_client::Error::Rpc(err) => Self::Rpc(err),
         }
     }
 }
@@ -23,7 +23,7 @@ pub enum Error {
     #[error(transparent)]
     CommonError(#[from] CommonError),
     #[error(transparent)]
-    ParseUrl(#[from] ParseError),
+    ParseUrl(#[from] url::ParseError),
     #[error(
         "Multiple CUDA architectures are not supported for {0:?}, CUDA_ARCHS set or detected: {1:?}"
     )]

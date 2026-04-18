@@ -47,7 +47,7 @@ This repository contains the following crates:
 - Traits
   - [`ere-compiler-core`] - `Compiler` trait and `Elf` type for compiling guest programs
   - [`ere-prover-core`] - `zkVMProver` trait, `Input`, `ProverResource`, and execution/proving reports
-  - [`ere-platform-core`] - `Platform` trait for guest program (plus `OutputHashedPlatform` wrapper)
+  - [`ere-platform-core`] - `Platform` trait for guest program
   - [`ere-verifier-core`] - `zkVMVerifier` trait and `PublicValues`
 - Per-zkVM implementations for [`ere-compiler-core`] (host)
   - [`ere-compiler-airbender`]
@@ -80,7 +80,8 @@ This repository contains the following crates:
 - Internal crates
   - [`ere-compiler`] - CLI binary to run `Compiler` used by [`ere-dockerized`]
   - [`ere-server`] - Server binary that exposes `zkVMProver` operations over gRPC (also provides a `keygen` subcommand)
-  - [`ere-server-client`] - Client library and shared API types for [`ere-server`], used by [`ere-dockerized`]
+  - [`ere-server-api`] - gRPC wire contract (`proto/api.proto` and generated prost/twirp types) shared by [`ere-server`] and [`ere-server-client`]
+  - [`ere-server-client`] - Client library for [`ere-server`], used by [`ere-dockerized`]
   - [`ere-util-build`] - Build-time utilities (SDK version + Docker image tag detection)
   - [`ere-util-compile`] - Cross-compilation utilities (`CargoBuildCmd`, `RustTarget`, toolchain management)
   - [`ere-util-test`] - Testing utilities (`Program`, `TestCase`, `BasicProgram`, codec markers)
@@ -113,6 +114,7 @@ This repository contains the following crates:
 [`ere-dockerized`]: https://github.com/eth-act/ere/tree/master/crates/dockerized
 [`ere-compiler`]: https://github.com/eth-act/ere/tree/master/crates/compiler/cli
 [`ere-server`]: https://github.com/eth-act/ere/tree/master/crates/server/cli
+[`ere-server-api`]: https://github.com/eth-act/ere/tree/master/crates/server/api
 [`ere-server-client`]: https://github.com/eth-act/ere/tree/master/crates/server/client
 [`ere-codec`]: https://github.com/eth-act/ere/tree/master/crates/codec
 [`ere-catalog`]: https://github.com/eth-act/ere/tree/master/crates/catalog
@@ -177,12 +179,6 @@ Different zkVMs handles public values in different approaches:
 | Risc0     | unlimited  | Hashed internally             |
 | SP1       | unlimited  | Hashed internally             |
 | Zisk      | 256 bytes  |                               |
-
-For zkVMs with size limits on public values, `OutputHashedPlatform<P, D>` serves as a wrapper that hashes outputs before calling the inner `P::write_whole_output`. This enables the same guest program to run across all zkVMs regardless of their size constraints:
-
-```rust
-OutputHashedPlatform::<OpenVMPlatform, Sha256>::write_whole_output(&large_output);
-```
 
 ## Supported zkVMs
 
@@ -438,6 +434,7 @@ ere/
 │   │   ├── core/                  # ere-compiler-core
 │   │   └── {zkvm}/                # ere-compiler-{zkvm}
 │   ├── server/
+│   │   ├── api/                   # ere-server-api
 │   │   ├── cli/                   # ere-server
 │   │   └── client/                # ere-server-client
 │   ├── cluster-client/

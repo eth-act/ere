@@ -5,10 +5,7 @@ use ere_compiler_core::Elf;
 use ere_prover_core::{
     Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues, block_on,
 };
-use ere_server_client::{
-    api::twirp::reqwest::Client,
-    client::{self, EncodedProof, Url, zkVMClient},
-};
+use ere_server_client::{EncodedProof, reqwest::Client, url::Url, zkVMClient};
 use tokio::{
     sync::{RwLock, RwLockReadGuard},
     time::{sleep, timeout},
@@ -371,7 +368,9 @@ impl DockerizedzkVM {
 
     async fn with_retry<T, F>(&self, f: F, timeout_duration: Option<Duration>) -> anyhow::Result<T>
     where
-        F: Fn(zkVMClient) -> Pin<Box<dyn Future<Output = Result<T, client::Error>> + Send>>,
+        F: Fn(
+            zkVMClient,
+        ) -> Pin<Box<dyn Future<Output = Result<T, ere_server_client::Error>> + Send>>,
     {
         const MAX_RETRY: usize = 3;
 

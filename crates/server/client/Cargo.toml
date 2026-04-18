@@ -8,8 +8,6 @@ license.workspace = true
 [dependencies]
 bincode = { workspace = true, features = ["alloc", "serde"] }
 opentelemetry = { workspace = true, optional = true }
-prost.workspace = true
-serde = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
 tokio.workspace = true
 tracing = { workspace = true, optional = true }
@@ -18,11 +16,7 @@ twirp.workspace = true
 
 # Local dependencies
 ere-prover-core.workspace = true
-
-[dev-dependencies]
-prost-build.workspace = true
-tempfile.workspace = true
-twirp-build.workspace = true
+ere-server-api.workspace = true
 
 [features]
 default = []

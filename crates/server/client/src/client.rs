@@ -1,20 +1,16 @@
 use core::time::Duration;
 
 use ere_prover_core::{Input, ProgramExecutionReport, ProgramProvingReport, PublicValues};
-#[cfg(feature = "otel")]
-pub use otel_propagation::OtelPropagation;
-use thiserror::Error;
-use twirp::{Client, Middleware, Request, reqwest};
-pub use twirp::{
-    TwirpErrorResponse,
-    url::{ParseError, Url},
-};
-
-use crate::api::{
+use ere_server_api::{
     ExecuteRequest, ProveRequest, VerifyRequest, ZkvmService,
     execute_response::Result as ExecuteResult, prove_response::Result as ProveResult,
     verify_response::Result as VerifyResult,
 };
+#[cfg(feature = "otel")]
+pub use otel_propagation::OtelPropagation;
+use thiserror::Error;
+use twirp::{Client, Middleware, Request, url::Url};
+pub use twirp::{TwirpErrorResponse, reqwest, url};
 
 const HEALTH_CHECK_TIMEOUT: Duration = Duration::from_secs(3);
 
@@ -22,7 +18,7 @@ const HEALTH_CHECK_TIMEOUT: Duration = Duration::from_secs(3);
 #[allow(non_camel_case_types)]
 pub enum Error {
     #[error("Invalid URL: {0}")]
-    ParseUrl(#[from] ParseError),
+    ParseUrl(#[from] url::ParseError),
     #[error("zkVM method error: {0}")]
     zkVM(String),
     #[error("RPC error: {0}")]

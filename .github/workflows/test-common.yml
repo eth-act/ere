@@ -12,10 +12,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  # Crates tested in this workflow (all non-zkVM-specific crates).
-  # zkVM-specific crates (ere-prover-{zkvm}, ere-platform-{zkvm}, ere-verifier-{zkvm}) and the
-  # binary crates that depend on them # (ere-dockerized, ere-compiler, ere-server) are covered by
-  # test-zkvm.yml.
+  # Common crates to test in this workflow 
   PACKAGE_FLAGS: >-
     -p ere-prover-core
     -p ere-compiler-core
@@ -26,6 +23,7 @@ env:
     -p ere-util-build
     -p ere-util-compile
     -p ere-util-test
+    -p ere-server-api
     -p ere-server-client
     -p ere-cluster-client-zisk
 
@@ -37,7 +35,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Needed to run test of ere-server-client (proto generation test)
+      # Needed to run test of ere-server-api (proto generation test)
       - name: Install protoc
         run: |
           sudo apt-get update
@@ -51,8 +49,11 @@ jobs:
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
 
-      - name: Run cargo clippy
+      - name: Run cargo clippy ere-dockerized
+        run: cargo clippy --all-targets --package ere-dockerized -- -D warnings
+
+      - name: Run cargo clippy common crates
         run: cargo clippy --all-targets $PACKAGE_FLAGS -- -D warnings
 
-      - name: Run cargo test
+      - name: Run cargo test common crates
         run: cargo test --release $PACKAGE_FLAGS

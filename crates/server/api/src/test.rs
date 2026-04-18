@@ -3,7 +3,7 @@ use std::{env, fs, path::PathBuf};
 /// To sync generated `api.rs`, run:
 ///
 /// ```
-/// cargo test --package ere-server-client --lib -- test::api_generation --exact
+/// cargo test --package ere-server-api --lib -- test::api_generation --exact
 /// ```
 #[test]
 fn api_generation() {

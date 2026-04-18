@@ -10,7 +10,7 @@ use ere_prover_core::{
     codec::{Decode, Encode},
     zkVMProver,
 };
-use ere_server_client::api::{
+use ere_server_api::{
     ExecuteOk, ExecuteRequest, ExecuteResponse, ProveOk, ProveRequest, ProveResponse, VerifyOk,
     VerifyRequest, VerifyResponse, ZkvmService, execute_response::Result as ExecuteResult,
     prove_response::Result as ProveResult, router, verify_response::Result as VerifyResult,

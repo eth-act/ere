@@ -27,7 +27,7 @@ ere-prover-openvm = { workspace = true, optional = true }
 ere-prover-risc0 = { workspace = true, optional = true }
 ere-prover-sp1 = { workspace = true, optional = true }
 ere-prover-zisk = { workspace = true, optional = true }
-ere-server-client = { workspace = true, features = ["otel"] }
+ere-server-api.workspace = true
 
 [features]
 default = []

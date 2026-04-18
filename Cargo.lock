@@ -3932,7 +3932,7 @@ dependencies = [
  "ere-prover-risc0",
  "ere-prover-sp1",
  "ere-prover-zisk",
- "ere-server-client",
+ "ere-server-api",
  "opentelemetry 0.31.0",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
@@ -3945,22 +3945,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "ere-server-api"
+version = "0.7.0"
+dependencies = [
+ "prost 0.14.3",
+ "prost-build 0.14.3",
+ "serde",
+ "tempfile",
+ "twirp",
+ "twirp-build",
+]
+
+[[package]]
 name = "ere-server-client"
 version = "0.7.0"
 dependencies = [
  "bincode 2.0.1",
  "ere-prover-core",
+ "ere-server-api",
  "opentelemetry 0.31.0",
- "prost 0.14.3",
- "prost-build 0.14.3",
- "serde",
- "tempfile",
  "thiserror 2.0.18",
  "tokio",
  "tracing",
  "tracing-opentelemetry",
  "twirp",
- "twirp-build",
 ]
 
 [[package]]
