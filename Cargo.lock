@@ -3635,8 +3635,8 @@ dependencies = [
 name = "ere-cluster-client-zisk"
 version = "0.7.0"
 dependencies = [
- "anyhow",
  "ere-prover-core",
+ "ere-verifier-zisk",
  "futures-util",
  "http 1.4.0",
  "thiserror 2.0.18",
@@ -3644,7 +3644,6 @@ dependencies = [
  "tracing",
  "uuid",
  "zisk-distributed-grpc-api",
- "zisk-sdk",
 ]
 
 [[package]]
@@ -3898,6 +3897,7 @@ version = "0.7.0"
 dependencies = [
  "anyhow",
  "blake3",
+ "bytemuck",
  "ere-cluster-client-zisk",
  "ere-compiler-core",
  "ere-compiler-zisk",
@@ -3965,7 +3965,6 @@ dependencies = [
  "ere-server-api",
  "opentelemetry 0.31.0",
  "thiserror 2.0.18",
- "tokio",
  "tracing",
  "tracing-opentelemetry",
  "twirp",

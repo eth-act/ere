@@ -1,7 +1,9 @@
 use std::{env, fs, panic, path::PathBuf, process::Command, thread::sleep, time::Duration};
 
 use blake3::Hash;
+use bytemuck::checked::try_cast_slice;
 use ere_prover_core::CommonError;
+use ere_verifier_zisk::{PUBLIC_VALUES_SIZE, ZiskProgramVk, ZiskProof};
 use parking_lot::{Mutex, MutexGuard};
 use proofman_common::ParamsGPU;
 use tempfile::tempdir;
@@ -84,7 +86,7 @@ impl LocalProver {
         })
     }
 
-    pub fn prove(&self, stdin: &[u8]) -> Result<(ZiskProofWithPublicValues, Duration), Error> {
+    pub fn prove(&self, stdin: &[u8]) -> Result<(ZiskProof, Duration), Error> {
         let mut guard = self.prover_and_pk.lock();
 
         if guard.is_none() {
@@ -112,7 +114,7 @@ impl LocalProver {
                 Err(Error::Prove(err))
             }
             Ok(Ok(result)) => Ok((
-                result.get_proof_with_publics().clone(),
+                extract_proof(result.get_proof_with_publics())?,
                 result.get_duration(),
             )),
         }
@@ -184,6 +186,35 @@ fn uninitialize(mut prover_and_pk: MutexGuard<Option<(ZiskProver<Asm>, ZiskProgr
     drop(prover_and_pk.take());
 
     info!("ZisK prover uninitialized");
+}
+
+/// Extracts a typed [`ZiskProof`] from the SDK's [`ZiskProofWithPublicValues`].
+fn extract_proof(proof_with_publics: &ZiskProofWithPublicValues) -> Result<ZiskProof, Error> {
+    let proof = if let zisk_sdk::ZiskProof::VadcopFinal(proof) = &proof_with_publics.proof {
+        try_cast_slice(proof)
+            .map_err(|_| Error::InvalidProofFormat("failed to cast proof".to_string()))?
+            .to_vec()
+    } else {
+        return Err(Error::UnexpectedProofKind(
+            match &proof_with_publics.proof {
+                zisk_sdk::ZiskProof::Null() => "Null",
+                zisk_sdk::ZiskProof::VadcopFinalCompressed(_) => "VadcopFinalCompressed",
+                zisk_sdk::ZiskProof::Plonk(_) => "Plonk",
+                zisk_sdk::ZiskProof::Fflonk(_) => "Fflonk",
+                _ => "Unknown",
+            },
+        ));
+    };
+
+    let program_vk = ZiskProgramVk::try_from(&proof_with_publics.program_vk.vk)?;
+    let mut public_values = [0u8; PUBLIC_VALUES_SIZE];
+    proof_with_publics.publics.read_slice(&mut public_values);
+
+    Ok(ZiskProof {
+        proof,
+        program_vk,
+        public_values,
+    })
 }
 
 /// Returns path to `~/.zisk/cache` directory.

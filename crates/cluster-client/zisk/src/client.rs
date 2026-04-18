@@ -3,6 +3,7 @@
 use std::time::Duration;
 
 use ere_prover_core::{Input, RemoteProverConfig, block_on};
+use ere_verifier_zisk::{PUBLIC_VALUES_SIZE, ZiskProgramVk, ZiskProof};
 use futures_util::StreamExt;
 use tonic::transport::Channel;
 use tracing::debug;
@@ -11,7 +12,6 @@ use zisk_distributed_grpc_api::{
     SubscribeToProofRequest, SystemStatusRequest, launch_proof_response, system_status_response,
     zisk_distributed_api_client::ZiskDistributedApiClient,
 };
-use zisk_sdk::ZiskProofWithPublicValues;
 
 use crate::error::Error;
 
@@ -32,10 +32,7 @@ impl ZiskClusterClient {
     /// Send proof request to cluster and wait for completion.
     ///
     /// Returns the proof with public values and proving time reported by the cluster.
-    pub async fn prove(
-        &self,
-        input: &Input,
-    ) -> Result<(ZiskProofWithPublicValues, Duration), Error> {
+    pub async fn prove(&self, input: &Input) -> Result<(ZiskProof, Duration), Error> {
         let mut client = self.client.clone();
 
         // Check system status to get available compute capacity
@@ -124,11 +121,7 @@ impl ZiskClusterClient {
             match ProofStatusType::try_from(update.status) {
                 Ok(ProofStatusType::ProofStatusCompleted) => match update.final_proof {
                     Some(final_proof) => {
-                        let proof_with_publics = ZiskProofWithPublicValues::new_from_vadcop_proof(
-                            &final_proof.values,
-                            false,
-                        )
-                        .map_err(Error::InvalidProofFormat)?;
+                        let zisk_proof = parse_zisk_proof(&final_proof.values)?;
                         let proving_time = Duration::from_millis(update.duration_ms);
 
                         debug!(
@@ -136,7 +129,7 @@ impl ZiskClusterClient {
                             "Proof generated successfully"
                         );
 
-                        Ok((proof_with_publics, proving_time))
+                        Ok((zisk_proof, proving_time))
                     }
                     None => Err(cluster_error("Missing final proof")),
                 },
@@ -160,6 +153,60 @@ async fn connect(endpoint: &str) -> Result<ZiskDistributedApiClient<Channel>, Er
     Ok(ZiskDistributedApiClient::new(channel))
 }
 
+/// Returns `data` with a LE u64 length prefix and padding to multiple of 8.
+///
+/// The length prefix and padding is expected by ZisK emulator/prover runtime.
+fn framed_stdin(data: &[u8]) -> Vec<u8> {
+    let len = (8 + data.len()).next_multiple_of(8);
+    let mut buf = Vec::with_capacity(len);
+    buf.extend_from_slice(&(data.len() as u64).to_le_bytes());
+    buf.extend_from_slice(data);
+    buf.resize(len, 0);
+    buf
+}
+
+fn parse_zisk_proof(values: &[u64]) -> Result<ZiskProof, Error> {
+    const PROGRAM_VK_WORDS: usize = 4;
+    const PUBLIC_VALUES_WORDS: usize = PUBLIC_VALUES_SIZE / 4;
+    const N_PUBLICS: usize = PROGRAM_VK_WORDS + PUBLIC_VALUES_WORDS;
+
+    let n_publics = values
+        .first()
+        .copied()
+        .ok_or_else(|| Error::InvalidProofFormat("proof values are empty".to_string()))?
+        as usize;
+    if n_publics != N_PUBLICS {
+        return Err(Error::InvalidProofFormat(format!(
+            "unexpected publics word count: expected {N_PUBLICS}, got {n_publics}"
+        )));
+    }
+    if values.len() < 1 + n_publics {
+        return Err(Error::InvalidProofFormat(format!(
+            "proof values too short: {} words",
+            values.len()
+        )));
+    }
+
+    let (program_vk, public_values_words) = values[1..1 + N_PUBLICS].split_at(PROGRAM_VK_WORDS);
+    let proof = values[1 + N_PUBLICS..].to_vec();
+
+    let program_vk = ZiskProgramVk(program_vk.try_into().unwrap());
+
+    let mut public_values = [0u8; PUBLIC_VALUES_SIZE];
+    for (chunk, word) in public_values.chunks_exact_mut(4).zip(public_values_words) {
+        let word = u32::try_from(*word).map_err(|_| {
+            Error::InvalidProofFormat(format!("public value word does not fit in u32: {word}"))
+        })?;
+        chunk.copy_from_slice(&word.to_le_bytes());
+    }
+
+    Ok(ZiskProof {
+        proof,
+        program_vk,
+        public_values,
+    })
+}
+
 /// Returns `Error::Cluster`.
 fn cluster_error(s: impl ToString) -> Error {
     Error::Cluster(s.to_string())
@@ -173,16 +220,4 @@ fn cluster_error_from_response(s: impl ToString, res: ErrorResponse) -> Error {
         res.code,
         res.message
     ))
-}
-
-/// Returns `data` with a LE u64 length prefix and padding to multiple of 8.
-///
-/// The length prefix and padding is expected by ZisK emulator/prover runtime.
-fn framed_stdin(data: &[u8]) -> Vec<u8> {
-    let len = (8 + data.len()).next_multiple_of(8);
-    let mut buf = Vec::with_capacity(len);
-    buf.extend_from_slice(&(data.len() as u64).to_le_bytes());
-    buf.extend_from_slice(data);
-    buf.resize(len, 0);
-    buf
 }

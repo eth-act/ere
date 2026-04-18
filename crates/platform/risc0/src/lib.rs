@@ -1,4 +1,5 @@
 #![no_std]
+#![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 extern crate alloc;
 
@@ -8,6 +9,7 @@ use core::ops::Deref;
 pub use ere_platform_core::Platform;
 pub use risc0_zkvm;
 use risc0_zkvm::guest::env::Write;
+use risc0_zkvm_platform as _;
 
 /// Risc0 [`Platform`] implementation.
 pub struct Risc0Platform;

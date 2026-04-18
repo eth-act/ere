@@ -6,7 +6,6 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-anyhow.workspace = true
 futures-util.workspace = true
 http.workspace = true
 thiserror.workspace = true
@@ -16,10 +15,10 @@ uuid = { workspace = true, features = ["v4"] }
 
 # Zisk dependencies
 zisk-distributed-grpc-api.workspace = true
-zisk-sdk = { workspace = true, features = ["disable_distributed"] }
 
 # Local dependencies
 ere-prover-core = { workspace = true, features = ["tokio"] }
+ere-verifier-zisk.workspace = true
 
 [lints]
 workspace = true

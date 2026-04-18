@@ -250,6 +250,7 @@ jobs:
           cat <<EOF | $DOCKER_CMD
           set -e -o pipefail
 
+          ${{ inputs.test_min_stack && format('RUST_MIN_STACK={0}', inputs.test_min_stack) || '' }} \
           cargo test --release --package ere-compiler-${{ inputs.zkvm }}
 
           ${{ inputs.test_min_stack && format('RUST_MIN_STACK={0}', inputs.test_min_stack) || '' }} \

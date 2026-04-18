@@ -62,6 +62,9 @@ pub enum Error {
     #[error("Expected VadcopFinal but got {0}")]
     UnexpectedProofKind(&'static str),
 
+    #[error("Invalid proof format: {0}")]
+    InvalidProofFormat(String),
+
     // Verify
     #[error(transparent)]
     Verifier(#[from] ere_verifier_zisk::Error),

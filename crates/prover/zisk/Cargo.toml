@@ -8,6 +8,7 @@ license.workspace = true
 [dependencies]
 anyhow.workspace = true
 blake3.workspace = true
+bytemuck.workspace = true
 mpi.workspace = true
 parking_lot.workspace = true
 tempfile.workspace = true

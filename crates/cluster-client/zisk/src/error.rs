@@ -15,5 +15,5 @@ pub enum Error {
     Cluster(String),
 
     #[error("Invalid proof format: {0}")]
-    InvalidProofFormat(anyhow::Error),
+    InvalidProofFormat(String),
 }

@@ -5,7 +5,7 @@ use ere_cluster_client_zisk::ZiskClusterClient;
 use ere_prover_core::{
     CommonError, Input, ProverResource, ProverResourceKind, PublicValues, block_on,
 };
-use ere_verifier_zisk::{PUBLIC_VALUES_SIZE, ZiskProgramVk, ZiskProof};
+use ere_verifier_zisk::{ZiskProgramVk, ZiskProof};
 use proofman_common::{
     MpiCtx, ParamsGPU, ProofCtx, ProofType, SetupCtx, SetupsVadcop, VerboseMode,
 };
@@ -14,7 +14,7 @@ use proofman_starks_lib_c::free_device_buffers_c;
 use tempfile::tempdir;
 use zisk_core::{Riscv2zisk, ZiskRom};
 use zisk_rom_setup::rom_merkle_setup;
-use zisk_sdk::{ElfBinaryFromFile, ZiskProofWithPublicValues};
+use zisk_sdk::ElfBinaryFromFile;
 use ziskemu::{Emu, EmuOptions};
 
 use crate::{error::Error, sdk::local::LocalProver};
@@ -107,36 +107,15 @@ impl ZiskSdk {
             ZiskProver::Cluster(client) => block_on(client.prove(input))?,
         };
 
-        // Extract public values and program_vk
-        let (public_values, proved_program_vk) = extract_public_values_and_program_vk(&proof)?;
-
         // The proved program VK should match the preprocessed
-        if proved_program_vk != self.program_vk {
+        if self.program_vk != proof.program_vk {
             return Err(ere_verifier_zisk::Error::UnexpectedProgramVk {
                 expected: self.program_vk,
-                got: proved_program_vk,
+                got: proof.program_vk,
             })?;
         }
 
-        let proof = if let zisk_sdk::ZiskProof::VadcopFinal(proof) = proof.proof {
-            proof
-        } else {
-            return Err(Error::UnexpectedProofKind(match &proof.proof {
-                zisk_sdk::ZiskProof::Null() => "Null",
-                zisk_sdk::ZiskProof::VadcopFinalCompressed(_) => "VadcopFinalCompressed",
-                zisk_sdk::ZiskProof::Plonk(_) => "Plonk",
-                zisk_sdk::ZiskProof::Fflonk(_) => "Fflonk",
-                _ => "Unknown",
-            }));
-        };
-
-        let zisk_proof = ZiskProof {
-            proof,
-            public_values,
-            program_vk: self.program_vk,
-        };
-
-        Ok((public_values.into(), zisk_proof, proving_time))
+        Ok((proof.public_values.into(), proof, proving_time))
     }
 }
 
@@ -172,18 +151,6 @@ fn compute_program_vk(elf: &[u8]) -> Result<ZiskProgramVk, Error> {
     free_device_buffers_c(pctx.get_device_buffers_ptr());
 
     result.and_then(|program_vk| Ok(program_vk.try_into()?))
-}
-
-fn extract_public_values_and_program_vk(
-    proof: &ZiskProofWithPublicValues,
-) -> Result<([u8; PUBLIC_VALUES_SIZE], ZiskProgramVk), Error> {
-    let program_vk = ZiskProgramVk::try_from(&proof.get_program_vk().vk)?;
-
-    let mut public_values = [0; PUBLIC_VALUES_SIZE];
-    proof.get_publics().read_slice(&mut public_values);
-    proof.get_publics().head();
-
-    Ok((public_values, program_vk))
 }
 
 /// Returns `data` with a LE u64 length prefix and padding to multiple of 8.
