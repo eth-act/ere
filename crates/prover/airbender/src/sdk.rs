@@ -12,7 +12,7 @@ use ere_prover_core::{CommonError, PublicValues};
 use ere_verifier_airbender::{AirbenderProgramVk, extract_public_values_and_program_vk};
 use tempfile::tempdir;
 
-use crate::prover::error::Error;
+use crate::error::Error;
 
 pub struct AirbenderSdk {
     bin: Vec<u8>,

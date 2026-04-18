@@ -34,6 +34,8 @@
 
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-pub mod prover;
+mod error;
+mod prover;
 
-pub use prover::*;
+pub use error::Error;
+pub use prover::Risc0Prover;

@@ -8,12 +8,7 @@ use ere_prover_core::{
 use ere_verifier_zisk::{ZiskProof, ZiskVerifier};
 use mpi as _; // Import symbols referenced by starks_api.cpp
 
-use crate::prover::sdk::ZiskSdk;
-
-mod error;
-mod sdk;
-
-pub use error::Error;
+use crate::{error::Error, sdk::ZiskSdk};
 
 pub struct ZiskProver {
     sdk: ZiskSdk,

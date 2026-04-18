@@ -12,8 +12,8 @@ use zisk_sdk::{
     ZiskProofWithPublicValues, ZiskProver, ZiskStdin,
 };
 
-use crate::prover::{
-    Error,
+use crate::{
+    error::Error,
     sdk::{dot_zisk_dir, panic_msg},
 };
 

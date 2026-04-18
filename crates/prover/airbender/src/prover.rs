@@ -7,12 +7,7 @@ use ere_prover_core::{
 };
 use ere_verifier_airbender::{AirbenderProof, AirbenderVerifier};
 
-use crate::prover::sdk::AirbenderSdk;
-
-mod error;
-mod sdk;
-
-pub use error::Error;
+use crate::{error::Error, sdk::AirbenderSdk};
 
 pub struct AirbenderProver {
     sdk: AirbenderSdk,

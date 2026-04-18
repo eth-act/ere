@@ -281,7 +281,7 @@ ere-prover-sp1 = { git = "https://github.com/eth-act/ere.git" }
 use ere_compiler_core::Compiler;
 use ere_compiler_sp1::SP1RustRv64imaCustomized;
 use ere_prover_core::{Input, ProverResource, zkVMProver};
-use ere_prover_sp1::prover::SP1Prover;
+use ere_prover_sp1::SP1Prover;
 use std::path::Path;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

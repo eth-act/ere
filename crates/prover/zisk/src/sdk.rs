@@ -17,7 +17,7 @@ use zisk_rom_setup::rom_merkle_setup;
 use zisk_sdk::{ElfBinaryFromFile, ZiskProofWithPublicValues};
 use ziskemu::{Emu, EmuOptions};
 
-use crate::prover::{Error, sdk::local::LocalProver};
+use crate::{error::Error, sdk::local::LocalProver};
 
 mod local;
 

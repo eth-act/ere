@@ -28,6 +28,9 @@
 
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-pub mod prover;
+mod error;
+mod prover;
+mod sdk;
 
-pub use prover::*;
+pub use error::Error;
+pub use prover::SP1Prover;

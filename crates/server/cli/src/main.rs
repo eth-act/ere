@@ -99,19 +99,19 @@ async fn main() -> Result<(), Error> {
 
 pub(crate) fn construct_zkvm(elf: Elf, resource: ProverResource) -> Result<impl zkVMProver, Error> {
     #[cfg(feature = "airbender")]
-    let zkvm = ere_prover_airbender::prover::AirbenderProver::new(elf, resource);
+    let zkvm = ere_prover_airbender::AirbenderProver::new(elf, resource);
 
     #[cfg(feature = "openvm")]
-    let zkvm = ere_prover_openvm::prover::OpenVMProver::new(elf, resource);
+    let zkvm = ere_prover_openvm::OpenVMProver::new(elf, resource);
 
     #[cfg(feature = "risc0")]
-    let zkvm = ere_prover_risc0::prover::Risc0Prover::new(elf, resource);
+    let zkvm = ere_prover_risc0::Risc0Prover::new(elf, resource);
 
     #[cfg(feature = "sp1")]
-    let zkvm = ere_prover_sp1::prover::SP1Prover::new(elf, resource);
+    let zkvm = ere_prover_sp1::SP1Prover::new(elf, resource);
 
     #[cfg(feature = "zisk")]
-    let zkvm = ere_prover_zisk::prover::ZiskProver::new(elf, resource);
+    let zkvm = ere_prover_zisk::ZiskProver::new(elf, resource);
 
     zkvm.with_context(|| "failed to instantiate zkVMProver")
 }

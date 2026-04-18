@@ -12,7 +12,7 @@ use sp1_sdk::{
     SP1VerifyingKey, StatusCode,
 };
 
-use crate::prover::Error;
+use crate::error::Error;
 
 pub enum SP1Sdk {
     Cpu {

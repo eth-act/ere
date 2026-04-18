@@ -9,12 +9,7 @@ use ere_verifier_sp1::{SP1ProgramVk, SP1Proof, SP1Verifier};
 use sp1_sdk::{SP1ProofMode, SP1Stdin};
 use tracing::info;
 
-use crate::prover::sdk::SP1Sdk;
-
-mod error;
-mod sdk;
-
-pub use error::Error;
+use crate::{error::Error, sdk::SP1Sdk};
 
 pub struct SP1Prover {
     sdk: SP1Sdk,

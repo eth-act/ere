@@ -15,9 +15,7 @@ use openvm_sdk::{
     keygen::{AggProvingKey, AppProvingKey},
 };
 
-mod error;
-
-pub use error::Error;
+use crate::error::Error;
 
 pub struct OpenVMProver {
     app_exe: Arc<VmExe<F>>,

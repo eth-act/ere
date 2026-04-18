@@ -12,9 +12,7 @@ use risc0_zkvm::{
     default_executor, default_prover,
 };
 
-mod error;
-
-pub use error::Error;
+use crate::error::Error;
 
 /// Default logarithmic segment size from [`DEFAULT_SEGMENT_LIMIT_PO2`].
 ///
