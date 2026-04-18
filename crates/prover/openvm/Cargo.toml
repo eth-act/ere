@@ -11,7 +11,7 @@ thiserror.workspace = true
 
 # OpenVM dependencies
 openvm-circuit.workspace = true
-openvm-sdk = { workspace = true, features = ["nightly-features"], default-features = true }
+openvm-sdk = { workspace = true, features = ["nightly-features"] }
 
 # Local dependencies
 ere-compiler-core.workspace = true
