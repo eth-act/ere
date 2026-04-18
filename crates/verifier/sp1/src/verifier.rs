@@ -1,5 +1,5 @@
 use ere_verifier_core::{PublicValues, block_on, zkVMVerifier};
-use sp1_sdk::{CpuProver, Prover, SP1Proof as SP1SdkProof};
+use sp1_sdk::{LightProver, Prover, SP1Proof as SP1SdkProof};
 
 use crate::{Error, SP1ProgramVk, SP1Proof};
 
@@ -8,10 +8,10 @@ include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 /// Verifier bound to a specific compiled guest program.
 ///
 /// Implements [`zkVMVerifier`]. Holds the pre-computed [`SP1ProgramVk`]
-/// and a [`CpuProver`] used to perform verification via the `sp1-sdk`
+/// and a [`LightProver`] used to perform verification via the `sp1-sdk`
 /// verification routine.
 pub struct SP1Verifier {
-    prover: CpuProver,
+    prover: LightProver,
     program_vk: SP1ProgramVk,
 }
 
@@ -19,7 +19,7 @@ impl SP1Verifier {
     /// Creates a new verifier bound to `program_vk`.
     pub fn new(program_vk: SP1ProgramVk) -> Self {
         Self {
-            prover: block_on(CpuProver::new()),
+            prover: block_on(LightProver::new()),
             program_vk,
         }
     }
