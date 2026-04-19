@@ -180,7 +180,10 @@ jobs:
           set -e -o pipefail
 
           OPTIONS="--all-targets -- -D warnings"
-          cargo clippy --package ere-compiler-${{ inputs.zkvm }} --package ere-prover-${{ inputs.zkvm }} --package ere-verifier-${{ inputs.zkvm }} \$OPTIONS
+          cargo clippy \
+            --package ere-compiler-${{ inputs.zkvm }} \
+            --package ere-prover-${{ inputs.zkvm }} \
+            --package ere-verifier-${{ inputs.zkvm }} \$OPTIONS
           cargo clippy --package ere-compiler --features ${{ inputs.zkvm }} \$OPTIONS
           cargo clippy --package ere-server --features ${{ inputs.zkvm }} \$OPTIONS
 
@@ -251,13 +254,13 @@ jobs:
           set -e -o pipefail
 
           ${{ inputs.test_min_stack && format('RUST_MIN_STACK={0}', inputs.test_min_stack) || '' }} \
-          cargo test --release --package ere-compiler-${{ inputs.zkvm }}
-
-          ${{ inputs.test_min_stack && format('RUST_MIN_STACK={0}', inputs.test_min_stack) || '' }} \
-          cargo test --release --package ere-prover-${{ inputs.zkvm }} \
-            -- ${{ inputs.skip_prove_test && '--skip prove' || '' }} ${{ inputs.test_threads && format('--test-threads={0}', inputs.test_threads) || '' }}
-
-          cargo test --release --package ere-verifier-${{ inputs.zkvm }}
+          cargo test --release \
+            --package ere-compiler-${{ inputs.zkvm }} \
+            --package ere-prover-${{ inputs.zkvm }} \
+            --package ere-verifier-${{ inputs.zkvm }} \
+            -- \
+            ${{ inputs.skip_prove_test && '--skip prove' || '' }} \
+            ${{ inputs.test_threads && format('--test-threads={0}', inputs.test_threads) || '' }}
 
           time chown -R $(id -u):$(id -g) /usr/local/cargo/registry
           time chown -R $(id -u):$(id -g) /usr/local/cargo/git

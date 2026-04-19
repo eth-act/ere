@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use anyhow::{Context, Error};
 use clap::Parser;
 use ere_catalog::CompilerKind;
-use ere_compiler_core::{Compiler, Elf};
+use ere_compiler_core::Elf;
 use tracing_subscriber::EnvFilter;
 
 // Compile-time check to ensure exactly one zkVM feature is enabled for `ere-compiler`
