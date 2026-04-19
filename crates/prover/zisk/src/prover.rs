@@ -69,7 +69,7 @@ impl zkVMProver for ZiskProver {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use std::sync::{Mutex, OnceLock};
 
     use ere_compiler_core::{Compiler, Elf};
@@ -85,7 +85,7 @@ mod tests {
 
     static PROVE_LOCK: Mutex<()> = Mutex::new(());
 
-    fn basic_elf() -> Elf {
+    pub(crate) fn basic_elf() -> Elf {
         static ELF: OnceLock<Elf> = OnceLock::new();
         ELF.get_or_init(|| {
             ZiskRustRv64imaCustomized

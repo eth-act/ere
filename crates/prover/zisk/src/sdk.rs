@@ -180,3 +180,54 @@ fn dot_zisk_dir() -> PathBuf {
 fn proving_key_dir() -> PathBuf {
     dot_zisk_dir().join("provingKey")
 }
+
+#[cfg(test)]
+mod tests {
+    use std::{fs, process::Command};
+
+    use ere_verifier_zisk::ZiskProgramVk;
+    use tempfile::tempdir;
+
+    use crate::{
+        prover::tests::basic_elf,
+        sdk::{compute_program_vk, dot_zisk_dir},
+    };
+
+    #[test]
+    fn compute_program_vk_matches_cargo_zisk_rom_setup() {
+        let elf = basic_elf();
+
+        let program_vk = {
+            let tempdir = tempdir().unwrap();
+            let elf_path = tempdir.path().join("guest.elf");
+            fs::write(&elf_path, &elf.0).unwrap();
+
+            let cargo_zisk = dot_zisk_dir().join("bin").join("cargo-zisk");
+            let status = Command::new(&cargo_zisk)
+                .arg("rom-setup")
+                .arg("-e")
+                .arg(&elf_path)
+                .arg("-o")
+                .arg(tempdir.path())
+                .status()
+                .unwrap();
+            assert!(status.success());
+
+            let verkey_paths = fs::read_dir(tempdir.path())
+                .unwrap()
+                .flatten()
+                .map(|entry| entry.path())
+                .filter(|path| {
+                    path.file_name()
+                        .and_then(|name| name.to_str())
+                        .is_some_and(|name| name.ends_with(".verkey.bin"))
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(verkey_paths.len(), 1);
+
+            ZiskProgramVk::try_from(fs::read(&verkey_paths[0]).unwrap().as_slice()).unwrap()
+        };
+
+        assert_eq!(compute_program_vk(&elf).unwrap(), program_vk);
+    }
+}
