@@ -3639,11 +3639,15 @@ dependencies = [
  "ere-verifier-zisk",
  "futures-util",
  "http 1.4.0",
+ "prost 0.14.3",
+ "prost-types 0.14.3",
+ "tempfile",
  "thiserror 2.0.18",
  "tonic 0.14.5",
+ "tonic-prost",
+ "tonic-prost-build",
  "tracing",
  "uuid",
- "zisk-distributed-grpc-api",
 ]
 
 [[package]]
@@ -13509,7 +13513,6 @@ dependencies = [
  "getrandom 0.4.2",
  "js-sys",
  "md-5",
- "serde_core",
  "sha1_smol",
  "wasm-bindgen",
 ]
@@ -14802,25 +14805,6 @@ dependencies = [
  "tracing-subscriber 0.3.23",
  "uuid",
  "zisk-common",
-]
-
-[[package]]
-name = "zisk-distributed-grpc-api"
-version = "0.16.1"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1#75957ca082715ca9655f178630a2a4e90fe0b466"
-dependencies = [
- "anyhow",
- "chrono",
- "prost 0.14.3",
- "prost-types 0.14.3",
- "serde",
- "serde_json",
- "tonic 0.14.5",
- "tonic-prost",
- "tonic-prost-build",
- "tracing",
- "uuid",
- "zisk-distributed-common",
 ]
 
 [[package]]

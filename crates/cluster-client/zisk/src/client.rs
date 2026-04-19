@@ -7,13 +7,15 @@ use ere_verifier_zisk::{PUBLIC_VALUES_SIZE, ZiskProgramVk, ZiskProof};
 use futures_util::StreamExt;
 use tonic::transport::Channel;
 use tracing::debug;
-use zisk_distributed_grpc_api::{
-    ErrorResponse, HintsMode, InputMode, LaunchProofRequest, ProofStatusType,
-    SubscribeToProofRequest, SystemStatusRequest, launch_proof_response, system_status_response,
-    zisk_distributed_api_client::ZiskDistributedApiClient,
-};
 
-use crate::error::Error;
+use crate::{
+    api::{
+        ErrorResponse, HintsMode, InputMode, LaunchProofRequest, ProofStatusType,
+        SubscribeToProofRequest, SystemStatusRequest, launch_proof_response,
+        system_status_response, zisk_distributed_api_client::ZiskDistributedApiClient,
+    },
+    error::Error,
+};
 
 /// Wrapper for the ZisK cluster client.
 ///
