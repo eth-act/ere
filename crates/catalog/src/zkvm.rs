@@ -41,6 +41,10 @@ impl zkVMKind {
     pub fn as_str(&self) -> &'static str {
         self.into()
     }
+
+    pub fn name(&self) -> &'static str {
+        self.as_str()
+    }
 }
 
 impl From<zkVMKind> for String {

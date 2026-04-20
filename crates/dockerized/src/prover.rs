@@ -304,6 +304,14 @@ impl DockerizedzkVM {
         self.zkvm_kind
     }
 
+    pub fn name(&self) -> &'static str {
+        self.zkvm_kind.name()
+    }
+
+    pub fn sdk_version(&self) -> &'static str {
+        self.zkvm_kind.sdk_version()
+    }
+
     pub fn elf(&self) -> &Elf {
         &self.elf
     }

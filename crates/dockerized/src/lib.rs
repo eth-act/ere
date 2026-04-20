@@ -82,6 +82,7 @@ pub mod prover;
 pub use ere_catalog::{CompilerKind, DOCKER_IMAGE_TAG, zkVMKind};
 pub use ere_compiler_core::{Compiler, Elf};
 pub use ere_prover_core::*;
+pub use ere_server_client::EncodedProof;
 
 pub use crate::{
     compiler::DockerizedCompiler,

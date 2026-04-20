@@ -1,4 +1,4 @@
-use core::time::Duration;
+use core::{ops::Deref, time::Duration};
 
 use ere_prover_core::{Input, ProgramExecutionReport, ProgramProvingReport, PublicValues};
 use ere_server_api::{
@@ -27,6 +27,20 @@ pub enum Error {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EncodedProof(pub Vec<u8>);
+
+impl Deref for EncodedProof {
+    type Target = Vec<u8>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl AsRef<[u8]> for EncodedProof {
+    fn as_ref(&self) -> &[u8] {
+        self.0.as_ref()
+    }
+}
 
 /// zkVM client of the `zkVMServer`.
 #[allow(non_camel_case_types)]
