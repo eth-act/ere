@@ -142,7 +142,7 @@ zisk-core = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16
 zisk-rom-setup = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1", package = "rom-setup" }
 zisk-sdk = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1" }
 ziskemu = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1" }
-ziskos = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.16.1", default-features = false }
+ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.16.1", default-features = false }
 
 # Local dependencies
 ere-compiler = { path = "crates/compiler/cli" }
