@@ -1,0 +1,24 @@
+[package]
+name = "ere-verifier-risc0"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+bincode = { workspace = true, features = ["alloc", "serde"] }
+serde = { workspace = true, features = ["derive"] }
+thiserror.workspace = true
+
+# Risc0 dependencies
+risc0-zkp.workspace = true
+risc0-zkvm.workspace = true
+
+# Local dependencies
+ere-verifier-core.workspace = true
+
+[build-dependencies]
+ere-util-build.workspace = true
+
+[lints]
+workspace = true

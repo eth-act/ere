@@ -1,0 +1,23 @@
+[package]
+name = "ere-compiler-zisk"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+tempfile.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+# Local dependencies
+ere-compiler-core.workspace = true
+ere-util-compile.workspace = true
+
+[dev-dependencies]
+ere-prover-core.workspace = true
+ere-prover-zisk.workspace = true
+ere-util-test = { workspace = true, features = ["host"] }
+
+[lints]
+workspace = true

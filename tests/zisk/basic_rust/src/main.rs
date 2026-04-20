@@ -1,8 +1,8 @@
 #![no_main]
 
 use ere_platform_zisk::{ziskos, ZiskPlatform};
-use ere_test_utils::{
-    io::serde::bincode::BincodeLegacy,
+use ere_util_test::{
+    codec::BincodeLegacy,
     program::{basic::BasicProgram, Program},
 };
 

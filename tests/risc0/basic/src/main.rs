@@ -1,6 +1,6 @@
 use ere_platform_risc0::Risc0Platform;
-use ere_test_utils::{
-    io::serde::bincode::BincodeLegacy,
+use ere_util_test::{
+    codec::BincodeLegacy,
     program::{basic::BasicProgram, Program},
 };
 

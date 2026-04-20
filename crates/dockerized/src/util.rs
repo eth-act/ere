@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use ere_zkvm_interface::CommonError;
+use ere_prover_core::CommonError;
 
 pub mod cuda;
 pub mod docker;
@@ -12,8 +12,4 @@ pub fn workspace_dir() -> Result<PathBuf, CommonError> {
     dir.pop();
     dir.canonicalize()
         .map_err(|err| CommonError::io("Source code of Ere not found", err))
-}
-
-pub fn home_dir() -> PathBuf {
-    PathBuf::from(std::env::var("HOME").expect("env `$HOME` should be set"))
 }

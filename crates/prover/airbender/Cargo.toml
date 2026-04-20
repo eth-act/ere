@@ -1,0 +1,29 @@
+[package]
+name = "ere-prover-airbender"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+serde_json.workspace = true
+tempfile.workspace = true
+thiserror.workspace = true
+
+# Airbender dependencies
+airbender_execution_utils.workspace = true
+
+# Local dependencies
+ere-compiler-core.workspace = true
+ere-prover-core.workspace = true
+ere-verifier-airbender.workspace = true
+
+[dev-dependencies]
+ere-compiler-airbender.workspace = true
+ere-util-test = { workspace = true, features = ["host"] }
+
+[features]
+cuda = []
+
+[lints]
+workspace = true

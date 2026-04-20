@@ -1,0 +1,40 @@
+[package]
+name = "ere-compiler"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap = { workspace = true, features = ["derive"] }
+tracing.workspace = true
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+
+# Local dependencies
+ere-catalog.workspace = true
+ere-compiler-airbender = { workspace = true, optional = true }
+ere-compiler-core.workspace = true
+ere-compiler-openvm = { workspace = true, optional = true }
+ere-compiler-risc0 = { workspace = true, optional = true }
+ere-compiler-sp1 = { workspace = true, optional = true }
+ere-compiler-zisk = { workspace = true, optional = true }
+
+[dev-dependencies]
+
+[features]
+default = []
+
+# zkVM
+airbender = ["dep:ere-compiler-airbender"]
+openvm = ["dep:ere-compiler-openvm"]
+risc0 = ["dep:ere-compiler-risc0"]
+sp1 = ["dep:ere-compiler-sp1"]
+zisk = ["dep:ere-compiler-zisk"]
+
+[[bin]]
+name = "ere-compiler"
+path = "src/main.rs"
+
+[lints]
+workspace = true

@@ -1,5 +1,6 @@
-use ere_zkvm_interface::CommonError;
 use std::path::PathBuf;
+
+use ere_prover_core::CommonError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]

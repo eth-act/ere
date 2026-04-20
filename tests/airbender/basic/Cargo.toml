@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-ere-platform-airbender = { path = "../../../crates/zkvm/airbender/platform", features = ["custom_allocator"] }
-ere-test-utils = { path = "../../../crates/test-utils" }
+ere-platform-airbender = { path = "../../../crates/platform/airbender", features = ["custom_allocator"] }
+ere-util-test = { path = "../../../crates/util/test" }
 
 [workspace]

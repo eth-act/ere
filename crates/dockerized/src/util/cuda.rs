@@ -1,4 +1,5 @@
 use std::{env, process::Command};
+
 use tracing::{info, warn};
 
 /// Detects CUDA compute capabilities of all visible GPUs.

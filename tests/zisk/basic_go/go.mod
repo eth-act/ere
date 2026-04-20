@@ -14,4 +14,4 @@ require (
 
 // FIXME: Remove when it is upstreamed
 
-replace github.com/eth-act/skunkworks-tama => github.com/han0110/skunkworks-tama v0.0.0-20260317122225-91096817c56b
+replace github.com/eth-act/skunkworks-tama => github.com/han0110/skunkworks-tama v0.0.0-20260317152017-aac61ec75834

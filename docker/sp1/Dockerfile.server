@@ -22,9 +22,6 @@ FROM $RUNTIME_IMAGE AS runtime
 FROM $RUNTIME_CUDA_IMAGE AS runtime_cuda
 FROM runtime${CUDA:+_cuda} AS runtime_stage
 
-# Add Docker CLI
-COPY --from=docker:cli /usr/local/bin/docker /usr/local/bin/docker
-
 # Copy ere-server
 COPY --from=build_stage /ere/bin/ere-server /ere/bin/ere-server
 

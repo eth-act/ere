@@ -164,7 +164,7 @@ jobs:
             --tag ${{ needs.image_meta.outputs.image_tag }} \
             --cached-tag "${{ needs.image_meta.outputs.cached_image_tag }}"
 
-      - name: Run cargo clippy for ere-${{ inputs.zkvm }} via Docker
+      - name: Run cargo clippy for ere-prover-${{ inputs.zkvm }} via Docker
         run: |
           DOCKER_CMD="docker run \
             --rm \
@@ -180,7 +180,10 @@ jobs:
           set -e -o pipefail
 
           OPTIONS="--all-targets -- -D warnings"
-          cargo clippy --package ere-${{ inputs.zkvm }} \$OPTIONS
+          cargo clippy \
+            --package ere-compiler-${{ inputs.zkvm }} \
+            --package ere-prover-${{ inputs.zkvm }} \
+            --package ere-verifier-${{ inputs.zkvm }} \$OPTIONS
           cargo clippy --package ere-compiler --features ${{ inputs.zkvm }} \$OPTIONS
           cargo clippy --package ere-server --features ${{ inputs.zkvm }} \$OPTIONS
 
@@ -235,7 +238,7 @@ jobs:
 
           free -h && swapon --show
 
-      - name: Run cargo test for ere-${{ inputs.zkvm }} via Docker
+      - name: Run cargo test for ere-prover-${{ inputs.zkvm }} via Docker
         run: |
           DOCKER_CMD="docker run \
             --rm \
@@ -251,8 +254,13 @@ jobs:
           set -e -o pipefail
 
           ${{ inputs.test_min_stack && format('RUST_MIN_STACK={0}', inputs.test_min_stack) || '' }} \
-          cargo test --release --package ere-${{ inputs.zkvm }} \
-            -- ${{ inputs.skip_prove_test && '--skip prove' || '' }} ${{ inputs.test_threads && format('--test-threads={0}', inputs.test_threads) || '' }}
+          cargo test --release \
+            --package ere-compiler-${{ inputs.zkvm }} \
+            --package ere-prover-${{ inputs.zkvm }} \
+            --package ere-verifier-${{ inputs.zkvm }} \
+            -- \
+            ${{ inputs.skip_prove_test && '--skip prove' || '' }} \
+            ${{ inputs.test_threads && format('--test-threads={0}', inputs.test_threads) || '' }}
 
           time chown -R $(id -u):$(id -g) /usr/local/cargo/registry
           time chown -R $(id -u):$(id -g) /usr/local/cargo/git
@@ -325,7 +333,7 @@ jobs:
 
           free -h && swapon --show
 
-      - name: Run cargo test for ere-${{ inputs.zkvm }} via ere-dockerized
+      - name: Run cargo test for ere-prover-${{ inputs.zkvm }} via ere-dockerized
         env:
           RUST_LOG: info
           ERE_IMAGE_REGISTRY: ${{ needs.image_meta.outputs.image_registry }}

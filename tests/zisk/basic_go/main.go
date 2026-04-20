@@ -11,7 +11,7 @@ import (
 	"github.com/fxamacker/cbor/v2"
 )
 
-// According to crates/test-utils/src/program/basic.rs
+// According to crates/util/test/src/program/basic.rs
 type BasicProgramInput struct {
 	ShouldPanic bool   `cbor:"should_panic"`
 	A           uint8  `cbor:"a"`
@@ -21,7 +21,7 @@ type BasicProgramInput struct {
 	E           []byte `cbor:"e"`
 }
 
-// According to crates/test-utils/src/program/basic.rs
+// According to crates/util/test/src/program/basic.rs
 type BasicProgramOutput struct {
 	E []byte `cbor:"e"`
 	D uint64 `cbor:"d"`

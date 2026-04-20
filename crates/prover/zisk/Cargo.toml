@@ -1,0 +1,42 @@
+[package]
+name = "ere-prover-zisk"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+blake3.workspace = true
+bytemuck.workspace = true
+mpi.workspace = true
+parking_lot.workspace = true
+tempfile.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+# ZisK dependencies
+proofman-common.workspace = true
+proofman-fields.workspace = true
+proofman-starks-lib-c.workspace = true
+zisk-core.workspace = true
+zisk-rom-setup.workspace = true
+zisk-sdk = { workspace = true, features = ["disable_distributed"] }
+ziskemu.workspace = true
+
+# Local dependencies
+ere-cluster-client-zisk.workspace = true
+ere-compiler-core.workspace = true
+ere-prover-core.workspace = true
+ere-util-tokio.workspace = true
+ere-verifier-zisk.workspace = true
+
+[dev-dependencies]
+ere-compiler-zisk.workspace = true
+ere-util-test = { workspace = true, features = ["host"] }
+
+[features]
+cuda = ["zisk-sdk/gpu"]
+
+[lints]
+workspace = true

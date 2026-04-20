@@ -1,5 +1,3 @@
-use crate::util::env::gpu_devices;
-use ere_zkvm_interface::CommonError;
 use std::{
     env,
     fmt::{self, Display, Formatter},
@@ -8,9 +6,11 @@ use std::{
     process::{Child, Command, Stdio},
     time::Duration,
 };
+
+use ere_prover_core::CommonError;
 use tracing::debug;
 
-pub const DOCKER_SOCKET: &str = "/var/run/docker.sock";
+use crate::util::env::gpu_devices;
 
 #[derive(Clone)]
 struct CmdOption(String, Option<String>);
@@ -146,11 +146,6 @@ impl DockerRunCmd {
 
     pub fn env(self, key: impl AsRef<str>, value: impl AsRef<str>) -> Self {
         self.option("env", format!("{}={}", key.as_ref(), value.as_ref()))
-    }
-
-    /// Mounts `/var/run/docker.sock` to allow Docker-out-of-Docker (DooD).
-    pub fn mount_docker_socket(self) -> Self {
-        self.volume(DOCKER_SOCKET, DOCKER_SOCKET)
     }
 
     pub fn gpus(self) -> Self {

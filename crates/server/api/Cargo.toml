@@ -1,0 +1,19 @@
+[package]
+name = "ere-server-api"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+prost.workspace = true
+serde = { workspace = true, features = ["derive"] }
+twirp.workspace = true
+
+[dev-dependencies]
+prost-build.workspace = true
+tempfile.workspace = true
+twirp-build.workspace = true
+
+[lints]
+workspace = true

@@ -6,4 +6,4 @@ edition = "2021"
 [workspace]
 
 [dependencies]
-ere-platform-risc0 = { path = "../../../crates/zkvm/risc0/platform", default-features = false, features = ["std", "unstable"] }
+ere-platform-risc0 = { path = "../../../crates/platform/risc0", default-features = false, features = ["std", "unstable"] }

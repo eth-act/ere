@@ -1,3 +1,13 @@
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
+
+use ere_compiler_core::{Compiler, Elf};
+use ere_prover_core::CommonError;
+use tempfile::TempDir;
+use tracing::info;
+
 use crate::{
     CompilerKind,
     image::{base_image, base_zkvm_image, compiler_zkvm_image},
@@ -8,16 +18,6 @@ use crate::{
     },
     zkVMKind,
 };
-use ere_zkvm_interface::{
-    CommonError,
-    compiler::{Compiler, Elf},
-};
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
-use tempfile::TempDir;
-use tracing::info;
 
 mod error;
 
@@ -26,8 +26,8 @@ pub use error::Error;
 /// This method builds 3 Docker images in sequence:
 /// 1. `ere-base:{version}` - Base image with common dependencies
 /// 2. `ere-base-{zkvm}:{version}` - zkVM-specific base image with the zkVM SDK
-/// 3. `ere-compiler-{zkvm}:{version}` - Compiler image with the `ere-compiler`
-///    binary built with the selected zkVM feature
+/// 3. `ere-compiler-{zkvm}:{version}` - Compiler image with the `ere-compiler` binary built with
+///    the selected zkVM feature
 ///
 /// Images are cached and only rebuilt if they don't exist or if the
 /// `ERE_FORCE_REBUILD_DOCKER_IMAGE` environment variable is set.
@@ -169,11 +169,12 @@ impl Compiler for DockerizedCompiler {
 }
 
 #[cfg(test)]
-pub(crate) mod test {
-    use crate::{CompilerKind, compiler::DockerizedCompiler, util::workspace_dir, zkVMKind};
-    use ere_test_utils::host::testing_guest_directory;
-    use ere_zkvm_interface::compiler::{Compiler, Elf};
+pub(crate) mod tests {
+    use ere_compiler_core::{Compiler, Elf};
+    use ere_util_test::host::testing_guest_directory;
     use tracing_subscriber::EnvFilter;
+
+    use crate::{CompilerKind, compiler::DockerizedCompiler, util::workspace_dir, zkVMKind};
 
     pub fn compile(zkvm_kind: zkVMKind, compiler_kind: CompilerKind, program: &'static str) -> Elf {
         let _ = tracing_subscriber::fmt()
@@ -193,7 +194,7 @@ pub(crate) mod test {
                 fn [<test_compile_ $compiler_kind:snake>]() {
                     let zkvm_kind = crate::zkVMKind::$zkvm_kind;
                     let compiler_kind = crate::CompilerKind::$compiler_kind;
-                    let elf = crate::compiler::test::compile(zkvm_kind, compiler_kind, $program);
+                    let elf = crate::compiler::tests::compile(zkvm_kind, compiler_kind, $program);
 
                     assert!(!elf.is_empty(), "ELF should not be empty");
                 }
@@ -208,8 +209,8 @@ pub(crate) mod test {
                 fn [<test_reproducible_elf_ $compiler_kind:snake>]() {
                     let zkvm_kind = crate::zkVMKind::$zkvm_kind;
                     let compiler_kind = crate::CompilerKind::$compiler_kind;
-                    let elf_1 = crate::compiler::test::compile(zkvm_kind, compiler_kind, $program);
-                    let elf_2 = crate::compiler::test::compile(zkvm_kind, compiler_kind, $program);
+                    let elf_1 = crate::compiler::tests::compile(zkvm_kind, compiler_kind, $program);
+                    let elf_2 = crate::compiler::tests::compile(zkvm_kind, compiler_kind, $program);
 
                     assert!(elf_1 == elf_2, "ELF outputs should be equal");
                 }

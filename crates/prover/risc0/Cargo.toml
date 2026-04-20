@@ -1,0 +1,31 @@
+[package]
+name = "ere-prover-risc0"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+bincode.workspace = true
+thiserror.workspace = true
+
+# Risc0 dependencies
+risc0-binfmt.workspace = true
+risc0-zkvm = { workspace = true, features = ["client", "unstable"] }
+
+# Local dependencies
+ere-compiler-core.workspace = true
+ere-prover-core.workspace = true
+ere-verifier-risc0.workspace = true
+
+[dev-dependencies]
+ere-compiler-risc0.workspace = true
+ere-util-test = { workspace = true, features = ["host"] }
+
+[features]
+metal = ["risc0-zkvm/metal"]
+cuda = []
+
+[lints]
+workspace = true

@@ -1,0 +1,35 @@
+[package]
+name = "ere-prover-sp1"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+bincode = { workspace = true, features = ["alloc", "serde"] }
+thiserror.workspace = true
+tracing.workspace = true
+
+# SP1 dependencies
+sp1-cuda.workspace = true
+sp1-hypercube.workspace = true
+sp1-p3-field.workspace = true
+sp1-recursion-executor.workspace = true
+sp1-sdk = { workspace = true, features = ["network"] }
+
+# Local dependencies
+ere-compiler-core.workspace = true
+ere-prover-core.workspace = true
+ere-util-tokio.workspace = true
+ere-verifier-sp1.workspace = true
+
+[dev-dependencies]
+ere-compiler-sp1.workspace = true
+ere-util-test = { workspace = true, features = ["host"] }
+
+[features]
+cuda = []
+
+[lints]
+workspace = true
