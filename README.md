@@ -134,11 +134,11 @@ Host-side traits:
 
 - `zkVMProver` (from `ere-prover-core`)
 
-  Execute, prove and verify. A zkVM instance is created for an `Elf` produced by a `Compiler`; setup/preprocessing happens in the constructor.
+  Execute, prove and verify. A zkVM prover instance is created for an `Elf` produced by a `Compiler`; setup/preprocessing happens in the constructor.
 
 - `zkVMVerifier` (from `ere-verifier-core`)
 
-  Lightweight verifier that accepts a `{Name}ProgramVk` + `{Name}Proof` and returns `PublicValues`. Pulled in standalone by verify-only consumers without the prover deps.
+  zkVM verifier that is created by a succinct `ProgramVk` for specific `Elf` produced by `zkVMProver`. A zkVM verifier instance verifies a `Proof` and returns `PublicValues`. Pulled in standalone by verify-only consumers without the prover deps if upstream zkVM SDK provides verifier-only crate.
 
 Guest-side trait (`ere-platform-core`):
 
@@ -419,6 +419,8 @@ ERE_GPU_DEVICES="4" ere prove ...
 ```
 ere/
 ├── crates/                        # Rust crates
+│   ├── catalog/                   # ere-catalog
+│   ├── codec/                     # ere-codec
 │   ├── prover/
 │   │   ├── core/                  # ere-prover-core
 │   │   └── {zkvm}/                # ere-prover-{zkvm}
@@ -439,8 +441,6 @@ ere/
 │   │   └── client/                # ere-server-client
 │   ├── cluster-client/
 │   │   └── zisk/                  # ere-cluster-client-zisk
-│   ├── catalog/                   # ere-catalog
-│   ├── codec/                     # ere-codec
 │   └── util/
 │       ├── build/                 # ere-util-build
 │       ├── compile/               # ere-util-compile
