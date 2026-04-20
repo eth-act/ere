@@ -9,6 +9,7 @@ use ere_compiler_core::Elf;
 use ere_prover_core::{ProverResource, zkVMProver};
 use tracing::info;
 use tracing_subscriber::{EnvFilter, Layer, layer::SubscriberExt, util::SubscriberInitExt};
+use twirp::reqwest;
 
 mod commands;
 mod otel;
@@ -26,24 +27,42 @@ const _: () = {
     );
 };
 
+/// Ere server for zkVM program execution, proof generation and verification.
 #[derive(Parser)]
-#[command(author, version)]
+#[command(
+    author,
+    version,
+    override_usage = "ere-server [OPTIONS] [--elf-path <PATH> | --elf-url <URL>] <COMMAND>"
+)]
 struct Args {
     /// Port number for the server to listen on.
     #[arg(long, default_value = "3000")]
     port: u16,
-    /// Optional path to read the ELF from. If not specified, reads from stdin.
-    #[arg(long)]
-    elf_path: Option<String>,
+    #[command(
+        flatten,
+        next_help_heading = "ELF source (read from stdin if none set)"
+    )]
+    elf: ElfSource,
     #[command(subcommand)]
     command: Command,
+}
+
+#[derive(clap::Args)]
+#[group(multiple = false)]
+struct ElfSource {
+    /// Path to read the ELF from.
+    #[arg(long)]
+    elf_path: Option<String>,
+    /// URL to download the ELF from.
+    #[arg(long)]
+    elf_url: Option<String>,
 }
 
 #[derive(clap::Subcommand)]
 enum Command {
     #[command(flatten)]
     Server(ProverResource),
-    /// Initialize the zkVM from an ELF and write the encoded program_vk to disk.
+    /// Generate the ELF specific program verifying key and write to disk.
     Keygen {
         /// Path to write the encoded program verifying key.
         #[arg(long)]
@@ -69,19 +88,7 @@ async fn main() -> Result<(), Error> {
         )
         .init();
 
-    // Read ELF from file or stdin.
-    let elf = if let Some(path) = args.elf_path {
-        let bytes = fs::read(&path).with_context(|| format!("failed to read ELF from {path}"))?;
-        info!("loaded ELF from {path}");
-        Elf(bytes)
-    } else {
-        let mut bytes = Vec::new();
-        io::stdin()
-            .read_to_end(&mut bytes)
-            .context("failed to read ELF from stdin")?;
-        info!("read ELF from stdin");
-        Elf(bytes)
-    };
+    let elf = read_elf(args.elf).await?;
 
     match args.command {
         Command::Server(resource) => commands::server::run(args.port, elf, resource).await?,
@@ -93,6 +100,33 @@ async fn main() -> Result<(), Error> {
     }
 
     Ok(())
+}
+
+async fn read_elf(elf_source: ElfSource) -> Result<Elf, Error> {
+    if let Some(path) = elf_source.elf_path {
+        let bytes = fs::read(&path).with_context(|| format!("failed to read ELF from {path}"))?;
+        info!("loaded ELF from {path}");
+        Ok(Elf(bytes))
+    } else if let Some(url) = elf_source.elf_url {
+        let bytes = reqwest::get(&url)
+            .await
+            .with_context(|| format!("failed to GET ELF from {url}"))?
+            .error_for_status()
+            .with_context(|| format!("bad response fetching ELF from {url}"))?
+            .bytes()
+            .await
+            .with_context(|| format!("failed to read ELF body from {url}"))?
+            .to_vec();
+        info!("downloaded ELF from {url}");
+        Ok(Elf(bytes))
+    } else {
+        let mut bytes = Vec::new();
+        io::stdin()
+            .read_to_end(&mut bytes)
+            .context("failed to read ELF from stdin")?;
+        info!("read ELF from stdin");
+        Ok(Elf(bytes))
+    }
 }
 
 pub(crate) fn construct_zkvm(elf: Elf, resource: ProverResource) -> Result<impl zkVMProver, Error> {
