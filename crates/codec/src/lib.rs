@@ -4,7 +4,7 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
-use core::error::Error;
+use core::{convert::Infallible, error::Error};
 
 /// Serializes a value into the canonical byte representation for transport.
 pub trait Encode {
@@ -18,6 +18,22 @@ pub trait Decode: Sized {
     type Error: 'static + Send + Sync + Error;
 
     fn decode_from_slice(slice: &[u8]) -> Result<Self, Self::Error>;
+}
+
+impl Encode for () {
+    type Error = Infallible;
+
+    fn encode_to_vec(&self) -> Result<Vec<u8>, Self::Error> {
+        Ok(Vec::new())
+    }
+}
+
+impl Decode for () {
+    type Error = Infallible;
+
+    fn decode_from_slice(_: &[u8]) -> Result<Self, Self::Error> {
+        Ok(())
+    }
 }
 
 /// Implements `TryFrom<&[u8]>`, `TryFrom<&Vec<u8>>`, and `TryFrom<Vec<u8>>` for
