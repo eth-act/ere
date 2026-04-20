@@ -23,6 +23,7 @@ env:
     -p ere-util-build
     -p ere-util-compile
     -p ere-util-test
+    -p ere-util-tokio
     -p ere-server-api
     -p ere-server-client
     -p ere-cluster-client-zisk

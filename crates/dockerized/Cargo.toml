@@ -15,8 +15,9 @@ tracing.workspace = true
 # Local dependencies
 ere-catalog.workspace = true
 ere-compiler-core.workspace = true
-ere-prover-core = { workspace = true, features = ["clap", "tokio"] }
+ere-prover-core = { workspace = true, features = ["clap"] }
 ere-server-client.workspace = true
+ere-util-tokio.workspace = true
 
 [dev-dependencies]
 paste.workspace = true

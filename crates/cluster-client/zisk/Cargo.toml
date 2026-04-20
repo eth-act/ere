@@ -17,7 +17,8 @@ tracing.workspace = true
 uuid = { workspace = true, features = ["v4"] }
 
 # Local dependencies
-ere-prover-core = { workspace = true, features = ["tokio"] }
+ere-prover-core.workspace = true
+ere-util-tokio.workspace = true
 ere-verifier-zisk.workspace = true
 
 [dev-dependencies]

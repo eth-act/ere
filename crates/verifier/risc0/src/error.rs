@@ -9,8 +9,8 @@ pub enum Error {
     Deserialize(#[from] bincode::error::DecodeError),
 
     /// VK byte slice was not the expected 32 bytes.
-    #[error("Invalid VK length, expected: {expected}, got: {got}")]
-    InvalidLength { expected: usize, got: usize },
+    #[error("Invalid ProgramVk length, expected: {expected}, got: {got}")]
+    InvalidProgramVkLength { expected: usize, got: usize },
 
     /// Inner receipt was not `Succinct`.
     #[error("Unexpected proof kind, expected: Succinct, got: {0}")]

@@ -37,11 +37,8 @@ pub enum Error {
     #[error("Generate assembly failed: {0}")]
     GenerateAssembly(String),
 
-    #[error("Compute program VK failed: {0}")]
+    #[error("Compute ProgramVk failed: {0}")]
     ComputeProgramVk(#[source] anyhow::Error),
-
-    #[error("Invalid program VK length, expected 32, got {0}")]
-    InvalidProgramVkLength(usize),
 
     #[error("Initialize prover failed: {0}")]
     InitProver(#[source] anyhow::Error),

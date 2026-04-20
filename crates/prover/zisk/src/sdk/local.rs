@@ -191,9 +191,20 @@ fn uninitialize(mut prover_and_pk: MutexGuard<Option<(ZiskProver<Asm>, ZiskProgr
 /// Extracts a typed [`ZiskProof`] from the SDK's [`ZiskProofWithPublicValues`].
 fn extract_proof(proof_with_publics: &ZiskProofWithPublicValues) -> Result<ZiskProof, Error> {
     let proof = if let zisk_sdk::ZiskProof::VadcopFinal(proof) = &proof_with_publics.proof {
+        if !proof.len().is_multiple_of(8) {
+            return Err(Error::InvalidProofFormat(format!(
+                "proof byte length {} is not a multiple of 8",
+                proof.len()
+            )));
+        }
         try_cast_slice(proof)
-            .map_err(|_| Error::InvalidProofFormat("failed to cast proof".to_string()))?
-            .to_vec()
+            .map(<[u64]>::to_vec)
+            .unwrap_or_else(|_| {
+                proof
+                    .chunks_exact(8)
+                    .map(|bytes| u64::from_le_bytes(bytes.try_into().unwrap()))
+                    .collect()
+            })
     } else {
         return Err(Error::UnexpectedProofKind(
             match &proof_with_publics.proof {

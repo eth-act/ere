@@ -1,4 +1,5 @@
-use ere_verifier_core::{PublicValues, block_on, zkVMVerifier};
+use ere_util_tokio::block_on;
+use ere_verifier_core::{PublicValues, zkVMVerifier};
 use sp1_sdk::{LightProver, Prover, SP1Proof as SP1SdkProof};
 
 use crate::{Error, SP1ProgramVk, SP1Proof};

@@ -2,9 +2,8 @@ use core::{any::Any, panic::AssertUnwindSafe, time::Duration};
 use std::{env, panic, path::PathBuf, sync::Arc};
 
 use ere_cluster_client_zisk::ZiskClusterClient;
-use ere_prover_core::{
-    CommonError, Input, ProverResource, ProverResourceKind, PublicValues, block_on,
-};
+use ere_prover_core::{CommonError, Input, ProverResource, ProverResourceKind, PublicValues};
+use ere_util_tokio::block_on;
 use ere_verifier_zisk::{ZiskProgramVk, ZiskProof};
 use proofman_common::{
     MpiCtx, ParamsGPU, ProofCtx, ProofType, SetupCtx, SetupsVadcop, VerboseMode,
@@ -43,7 +42,7 @@ impl ZiskSdk {
             .run()
             .map_err(|e| Error::Riscv2zisk(e.to_string()))?;
 
-        // Compute program VK
+        // Compute ProgramVk
         let program_vk = compute_program_vk(&elf)?;
 
         // Initialize prover
@@ -107,7 +106,7 @@ impl ZiskSdk {
             ZiskProver::Cluster(client) => block_on(client.prove(input))?,
         };
 
-        // The proved program VK should match the preprocessed
+        // The proved ProgramVk should match the preprocessed
         if self.program_vk != proof.program_vk {
             return Err(ere_verifier_zisk::Error::UnexpectedProgramVk {
                 expected: self.program_vk,

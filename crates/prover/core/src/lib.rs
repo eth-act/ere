@@ -8,8 +8,6 @@ pub mod report;
 pub mod resource;
 
 pub use ere_codec as codec;
-#[cfg(feature = "tokio")]
-pub use ere_verifier_core::block_on;
 pub use ere_verifier_core::{PublicValues, zkVMVerifier};
 pub use error::CommonError;
 pub use input::Input;

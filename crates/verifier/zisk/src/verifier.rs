@@ -48,7 +48,7 @@ impl zkVMVerifier for ZiskVerifier {
         }
 
         if !verify_vadcop_final(&proof.vadcop_final_proof()?, cast_slice(&VADCOP_FINAL_VK)) {
-            return Err(Error::VerifyFailed);
+            return Err(Error::InvalidProof);
         }
 
         Ok(proof.public_values.as_slice().into())

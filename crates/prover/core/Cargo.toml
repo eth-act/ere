@@ -31,4 +31,3 @@ workspace = true
 [features]
 default = []
 clap = ["dep:clap"]
-tokio = ["ere-verifier-core/tokio"]

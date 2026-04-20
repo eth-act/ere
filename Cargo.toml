@@ -43,6 +43,7 @@ members = [
     "crates/util/build",
     "crates/util/compile",
     "crates/util/test",
+    "crates/util/tokio",
 ]
 resolver = "2"
 
@@ -179,3 +180,4 @@ ere-codec = { path = "crates/codec" }
 ere-util-build = { path = "crates/util/build" }
 ere-util-compile = { path = "crates/util/compile" }
 ere-util-test = { path = "crates/util/test" }
+ere-util-tokio = { path = "crates/util/tokio" }

@@ -75,7 +75,7 @@ This repository contains the following crates:
   - [`ere-verifier-zisk`]
 - [`ere-dockerized`] - Docker wrapper that spawns [`ere-server`] containers to run zkVM operations without local SDK installation
 - [`ere-cluster-client-zisk`] - ZisK distributed-cluster client used by [`ere-prover-zisk`] when `ProverResource::Cluster` is selected
-- [`ere-codec`] - Canonical byte codec (`Encode`/`Decode` + macros) shared across verifier crates
+- [`ere-codec`] - Canonical byte codec (`Encode`/`Decode` + macros) shared across crates
 - [`ere-catalog`] - Catalog of supported zkVMs and compilers (`zkVMKind`, `CompilerKind`, SDK versions, Docker image tag)
 - Internal crates
   - [`ere-compiler`] - CLI binary to run `Compiler` used by [`ere-dockerized`]
@@ -85,6 +85,7 @@ This repository contains the following crates:
   - [`ere-util-build`] - Build-time utilities (SDK version + Docker image tag detection)
   - [`ere-util-compile`] - Cross-compilation utilities (`CargoBuildCmd`, `RustTarget`, toolchain management)
   - [`ere-util-test`] - Testing utilities (`Program`, `TestCase`, `BasicProgram`, codec markers)
+  - [`ere-util-tokio`] - Tokio runtime bridge (`block_on`) used by sync constructors that call async SDK APIs
 
 [`ere-compiler-core`]: https://github.com/eth-act/ere/tree/master/crates/compiler/core
 [`ere-prover-core`]: https://github.com/eth-act/ere/tree/master/crates/prover/core
@@ -121,6 +122,7 @@ This repository contains the following crates:
 [`ere-util-build`]: https://github.com/eth-act/ere/tree/master/crates/util/build
 [`ere-util-compile`]: https://github.com/eth-act/ere/tree/master/crates/util/compile
 [`ere-util-test`]: https://github.com/eth-act/ere/tree/master/crates/util/test
+[`ere-util-tokio`]: https://github.com/eth-act/ere/tree/master/crates/util/tokio
 
 ## Architecture
 
@@ -134,7 +136,7 @@ Host-side traits:
 
 - `zkVMProver` (from `ere-prover-core`)
 
-  Execute, prove and verify. A zkVM prover instance is created for an `Elf` produced by a `Compiler`; setup/preprocessing happens in the constructor.
+  Execute, prove and verify. A zkVM prover instance is created for an `Elf` produced by a `Compiler`. `Elf` specific verifying key generation happens in the constructor.
 
 - `zkVMVerifier` (from `ere-verifier-core`)
 
@@ -444,7 +446,8 @@ ere/
 │   └── util/
 │       ├── build/                 # ere-util-build
 │       ├── compile/               # ere-util-compile
-│       └── test/                  # ere-util-test
+│       ├── test/                  # ere-util-test
+│       └── tokio/                 # ere-util-tokio
 │
 ├── docker/                        # Dockerfile used by ere-dockerized
 │   ├── Dockerfile.base            # ere-base

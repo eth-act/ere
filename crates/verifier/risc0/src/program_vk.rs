@@ -36,7 +36,7 @@ impl Decode for Risc0ProgramVk {
 
     fn decode_from_slice(slice: &[u8]) -> Result<Self, Self::Error> {
         if slice.len() != PROGRAM_VK_SIZE {
-            return Err(Error::InvalidLength {
+            return Err(Error::InvalidProgramVkLength {
                 expected: PROGRAM_VK_SIZE,
                 got: slice.len(),
             });

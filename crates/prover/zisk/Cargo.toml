@@ -27,7 +27,8 @@ ziskemu.workspace = true
 # Local dependencies
 ere-cluster-client-zisk.workspace = true
 ere-compiler-core.workspace = true
-ere-prover-core = { workspace = true, features = ["tokio"] }
+ere-prover-core.workspace = true
+ere-util-tokio.workspace = true
 ere-verifier-zisk.workspace = true
 
 [dev-dependencies]

@@ -2,9 +2,9 @@ use std::time::Instant;
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{
-    Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues, block_on,
-    zkVMProver,
+    Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues, zkVMProver,
 };
+use ere_util_tokio::block_on;
 use ere_verifier_sp1::{SP1ProgramVk, SP1Proof, SP1Verifier};
 use sp1_sdk::{SP1ProofMode, SP1Stdin};
 use tracing::info;

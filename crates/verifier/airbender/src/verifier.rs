@@ -33,7 +33,7 @@ impl zkVMVerifier for AirbenderVerifier {
 
     fn verify(&self, proof: &AirbenderProof) -> Result<PublicValues, Error> {
         if !verify_recursion_log_23_layer(&proof.0) {
-            return Err(Error::VerifyFailed);
+            return Err(Error::InvalidProof);
         }
 
         let (public_values, program_vk) = extract_public_values_and_program_vk(&proof.0)?;

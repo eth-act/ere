@@ -2,7 +2,8 @@
 
 use std::time::Duration;
 
-use ere_prover_core::{Input, RemoteProverConfig, block_on};
+use ere_prover_core::{Input, RemoteProverConfig};
+use ere_util_tokio::block_on;
 use ere_verifier_zisk::{PUBLIC_VALUES_SIZE, ZiskProgramVk, ZiskProof};
 use futures_util::StreamExt;
 use tonic::transport::Channel;

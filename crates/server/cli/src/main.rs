@@ -47,7 +47,7 @@ enum Command {
     Keygen {
         /// Path to write the encoded program verifying key.
         #[arg(long)]
-        program_vk: String,
+        program_vk_path: String,
     },
 }
 
@@ -85,7 +85,7 @@ async fn main() -> Result<(), Error> {
 
     match args.command {
         Command::Server(resource) => commands::server::run(args.port, elf, resource).await?,
-        Command::Keygen { program_vk } => commands::keygen::run(elf, &program_vk)?,
+        Command::Keygen { program_vk_path } => commands::keygen::run(elf, &program_vk_path)?,
     }
 
     if let Some(provider) = tracer_provider {

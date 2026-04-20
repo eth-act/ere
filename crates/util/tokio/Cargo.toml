@@ -1,14 +1,12 @@
 [package]
-name = "ere-verifier-core"
+name = "ere-util-tokio"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-auto_impl.workspace = true
-ere-codec.workspace = true
-serde = { workspace = true, features = ["alloc", "derive"] }
+tokio = { workspace = true, features = ["rt-multi-thread"] }
 
 [lints]
 workspace = true

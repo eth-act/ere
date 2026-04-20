@@ -3,9 +3,10 @@ use std::time::Instant;
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{
-    Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues, block_on,
+    Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues,
 };
 use ere_server_client::{EncodedProof, reqwest::Client, url::Url, zkVMClient};
+use ere_util_tokio::block_on;
 use tokio::{
     sync::{RwLock, RwLockReadGuard},
     time::{sleep, timeout},

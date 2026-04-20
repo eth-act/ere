@@ -11,8 +11,8 @@ pub enum Error {
     Decode(#[source] std::io::Error),
 
     /// VK byte slice was not the expected 64 bytes.
-    #[error("Invalid VK length, expected: {expected}, got: {got}")]
-    InvalidLength { expected: usize, got: usize },
+    #[error("Invalid ProgramVk length, expected: {expected}, got: {got}")]
+    InvalidProgramVkLength { expected: usize, got: usize },
 
     /// Upstream `openvm_sdk` rejected the proof.
     #[error("Failed to verify: {0}")]

@@ -30,8 +30,7 @@
 //!     CompilerKind, DockerizedCompiler, DockerizedzkVM, DockerizedzkVMConfig, zkVMKind,
 //! };
 //! use ere_compiler_core::Compiler;
-//! use ere_prover_core::{Input, ProverResource, zkVM};
-//! use std::path::Path;
+//! use ere_prover_core::{Input, ProverResource};
 //!
 //! // The zkVM we plan to use
 //! let zkvm_kind = zkVMKind::SP1;
@@ -41,8 +40,8 @@
 //!
 //! // Compile a guest program
 //! let compiler = DockerizedCompiler::new(zkvm_kind, compiler_kind, "mounting/directory")?;
-//! let guest_path = Path::new("relative/path/to/guest/program");
-//! let elf = compiler.compile(&guest_path)?;
+//! let guest_path = "relative/path/to/guest/program";
+//! let elf = compiler.compile(guest_path)?;
 //!
 //! // Create zkVM instance
 //! let resource = ProverResource::Cpu;
