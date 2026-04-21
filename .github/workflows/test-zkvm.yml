@@ -12,11 +12,6 @@ on:
         required: false
         type: boolean
         default: false
-      cuda_archs:
-        description: 'Comma-separated CUDA archs to gencode'
-        required: false
-        type: string
-        default: '89,120'
       cluster:
         description: 'Whether to build cluster image'
         required: false
@@ -39,6 +34,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  CUDA_ARCHS: '89,120'
 
 jobs:
   image_meta:
@@ -111,7 +107,7 @@ jobs:
             --registry ${{ needs.image_meta.outputs.image_registry }} \
             --tag ${{ needs.image_meta.outputs.image_tag }}-cuda \
             --cached-tag "$CACHED_TAG" \
-            --cuda-archs '${{ inputs.cuda_archs }}'
+            --cuda-archs '${{ env.CUDA_ARCHS }}'
 
       - name: Build ere-server-${{ inputs.zkvm }} image with CUDA enabled
         run: |
@@ -120,7 +116,7 @@ jobs:
             --registry ${{ needs.image_meta.outputs.image_registry }} \
             --tag ${{ needs.image_meta.outputs.image_tag }}-cuda \
             --server \
-            --cuda-archs '${{ inputs.cuda_archs }}'
+            --cuda-archs '${{ env.CUDA_ARCHS }}'
 
       - name: Build ere-cluster-${{ inputs.zkvm }} image with CUDA enabled
         if: ${{ inputs.cluster && needs.image_meta.outputs.dockerfile_changed == 'true' }}
@@ -130,7 +126,7 @@ jobs:
             --registry ${{ needs.image_meta.outputs.image_registry }} \
             --tag ${{ needs.image_meta.outputs.image_tag }}-cuda \
             --cluster \
-            --cuda-archs '${{ inputs.cuda_archs }}'
+            --cuda-archs '${{ env.CUDA_ARCHS }}'
 
   clippy_via_docker:
     name: Clippy via Docker
