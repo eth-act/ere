@@ -9,7 +9,6 @@ use ere_compiler_core::Elf;
 use ere_prover_core::{ProverResource, zkVMProver};
 use tracing::info;
 use tracing_subscriber::{EnvFilter, Layer, layer::SubscriberExt, util::SubscriberInitExt};
-use twirp::reqwest;
 
 mod commands;
 mod metrics;

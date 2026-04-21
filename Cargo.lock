@@ -3950,6 +3950,7 @@ dependencies = [
  "opentelemetry 0.31.0",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
+ "reqwest",
  "tokio",
  "tower 0.5.3",
  "tower-http",
