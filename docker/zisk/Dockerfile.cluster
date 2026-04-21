@@ -54,8 +54,8 @@ RUN git clone https://github.com/han0110/zisk.git --depth 1 --branch patch/v0.16
 # Whether to enable CUDA feature or not.
 ARG CUDA
 
-# Default to build for RTX 50 series
-ARG CUDA_ARCH=sm_120
+# Env variable read by ZisK crate `proofman-starks-lib-c`, comma-separated numeric arch IDs (e.g. "120" or "89,120")
+ARG CUDA_ARCHS=120
 
 # Build binaries
 RUN cargo build --release ${CUDA:+--features gpu}
