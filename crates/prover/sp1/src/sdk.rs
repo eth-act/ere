@@ -2,7 +2,6 @@ use std::{borrow::Borrow, env, sync::Arc};
 
 use ere_prover_core::{CommonError, ProverResource, ProverResourceKind, RemoteProverConfig};
 use sp1_cuda::CudaProvingKey;
-use sp1_hypercube::air::{PublicValues, SP1_PROOF_NUM_PV_ELTS};
 use sp1_p3_field::PrimeField32;
 use sp1_recursion_executor::{RECURSIVE_PROOF_NUM_PV_ELTS, RecursionPublicValues};
 use sp1_sdk::{
@@ -89,22 +88,18 @@ impl SP1Sdk {
         Ok((public_values, exec_report))
     }
 
-    pub async fn prove(
-        &self,
-        input: SP1Stdin,
-        mode: SP1ProofMode,
-    ) -> Result<SP1ProofWithPublicValues, Error> {
+    pub async fn prove(&self, input: SP1Stdin) -> Result<SP1ProofWithPublicValues, Error> {
         let proof = match self {
             Self::Cpu { prover, pk } => {
-                let req = prover.prove(pk, input).mode(mode);
+                let req = prover.prove(pk, input).compressed();
                 req.await.map_err(Error::prove)
             }
             Self::Gpu { prover, pk } => {
-                let req = prover.prove(pk, input).mode(mode);
+                let req = prover.prove(pk, input).compressed();
                 req.await.map_err(Error::prove)
             }
             Self::Network { prover, pk } => {
-                let req = prover.prove(pk, input).mode(mode);
+                let req = prover.prove(pk, input).compressed();
                 req.await.map_err(Error::prove)
             }
         }?;
@@ -143,28 +138,14 @@ async fn build_network_prover(config: &RemoteProverConfig) -> Result<NetworkProv
 /// The `exit_code` field is extracted from the public values struct of proof,
 /// mirroring the approach used in `verify_proof` of `sp1_sdk`.
 fn extract_exit_code(proof: &SP1ProofWithPublicValues) -> Result<u32, Error> {
-    match &proof.proof {
-        SP1Proof::Core(shard_proofs) => shard_proofs.last().and_then(|proof| {
-            (proof.public_values.len() == SP1_PROOF_NUM_PV_ELTS).then(|| {
-                let pv: &PublicValues<[_; 4], [_; 3], [_; 4], _> =
-                    proof.public_values.as_slice().borrow();
-                pv.exit_code.as_canonical_u32()
-            })
-        }),
-        SP1Proof::Compressed(proof) => {
-            (proof.proof.public_values.len() == RECURSIVE_PROOF_NUM_PV_ELTS).then(|| {
-                let pv: &RecursionPublicValues<_> = proof.proof.public_values.as_slice().borrow();
-                pv.exit_code.as_canonical_u32()
-            })
-        }
-        SP1Proof::Plonk(proof) => proof
-            .public_inputs
-            .get(2)
-            .and_then(|value| value.parse::<u32>().ok()),
-        SP1Proof::Groth16(proof) => proof
-            .public_inputs
-            .get(2)
-            .and_then(|value| value.parse::<u32>().ok()),
-    }
-    .ok_or(Error::ExitCodeExtractionFailed)
+    let SP1Proof::Compressed(proof) = &proof.proof else {
+        let proof_mode = SP1ProofMode::from(&proof.proof);
+        return Err(ere_verifier_sp1::Error::UnexpectedProofKind(proof_mode))?;
+    };
+    (proof.proof.public_values.len() == RECURSIVE_PROOF_NUM_PV_ELTS)
+        .then(|| {
+            let pv: &RecursionPublicValues<_> = proof.proof.public_values.as_slice().borrow();
+            pv.exit_code.as_canonical_u32()
+        })
+        .ok_or(Error::ExitCodeExtractionFailed)
 }

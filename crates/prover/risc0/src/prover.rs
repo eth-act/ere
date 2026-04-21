@@ -107,12 +107,13 @@ impl zkVMProver for Risc0Prover {
 
         let start = Instant::now();
         let session_info = executor.execute(env, &self.elf).map_err(Error::Execute)?;
+        let execution_duration = start.elapsed();
 
         Ok((
             session_info.journal.bytes.as_slice().into(),
             ProgramExecutionReport {
                 total_num_cycles: session_info.cycles() as u64,
-                execution_duration: start.elapsed(),
+                execution_duration,
                 ..Default::default()
             },
         ))
@@ -150,11 +151,11 @@ impl zkVMProver for Risc0Prover {
 
         let opts = ProverOpts::succinct();
 
-        let now = Instant::now();
+        let start = Instant::now();
         let prove_info = prover
             .prove_with_opts(env, &self.elf, &opts)
             .map_err(Error::Prove)?;
-        let proving_time = now.elapsed();
+        let proving_time = start.elapsed();
 
         let public_values = prove_info.receipt.journal.bytes.as_slice().into();
         let proof = Risc0Proof(prove_info.receipt);

@@ -3896,7 +3896,6 @@ dependencies = [
  "ere-verifier-sp1",
  "p3-field 0.3.2-succinct",
  "sp1-cuda",
- "sp1-hypercube",
  "sp1-recursion-executor",
  "sp1-sdk",
  "thiserror 2.0.18",

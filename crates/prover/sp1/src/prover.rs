@@ -6,7 +6,7 @@ use ere_prover_core::{
 };
 use ere_util_tokio::block_on;
 use ere_verifier_sp1::{SP1ProgramVk, SP1Proof, SP1Verifier};
-use sp1_sdk::{SP1ProofMode, SP1Stdin};
+use sp1_sdk::SP1Stdin;
 use tracing::info;
 
 use crate::{error::Error, sdk::SP1Sdk};
@@ -59,7 +59,7 @@ impl zkVMProver for SP1Prover {
         let stdin = input_to_stdin(input)?;
 
         let start = Instant::now();
-        let proof = block_on(self.sdk.prove(stdin, SP1ProofMode::Compressed))?;
+        let proof = block_on(self.sdk.prove(stdin))?;
         let proving_time = start.elapsed();
 
         let public_values = proof.public_values.as_slice().into();

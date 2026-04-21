@@ -13,7 +13,6 @@ tracing.workspace = true
 
 # SP1 dependencies
 sp1-cuda.workspace = true
-sp1-hypercube.workspace = true
 sp1-p3-field.workspace = true
 sp1-recursion-executor.workspace = true
 sp1-sdk = { workspace = true, features = ["network"] }

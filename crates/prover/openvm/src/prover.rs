@@ -100,11 +100,12 @@ impl zkVMProver for OpenVMProver {
             .cpu_sdk()?
             .execute(self.app_exe.clone(), stdin)
             .map_err(Error::Execute)?;
+        let execution_duration = start.elapsed();
 
         Ok((
             public_values.into(),
             ProgramExecutionReport {
-                execution_duration: start.elapsed(),
+                execution_duration,
                 ..Default::default()
             },
         ))
@@ -121,7 +122,7 @@ impl zkVMProver for OpenVMProver {
         let mut stdin = StdIn::default();
         stdin.write_bytes(input.stdin());
 
-        let now = std::time::Instant::now();
+        let start = Instant::now();
         let (proof, app_commit) = match self.resource {
             ProverResource::Cpu => self.cpu_sdk()?.prove(self.app_exe.clone(), stdin),
             #[cfg(feature = "cuda")]
@@ -136,7 +137,7 @@ impl zkVMProver for OpenVMProver {
             }
         }
         .map_err(Error::Prove)?;
-        let elapsed = now.elapsed();
+        let proving_time = start.elapsed();
 
         if app_commit != self.app_commit {
             return Err(Error::UnexpectedAppCommit {
@@ -150,7 +151,11 @@ impl zkVMProver for OpenVMProver {
         // FIXME: Remove this if the `sdk.prove()` above checks exit code.
         let public_values = self.verifier.verify(&proof)?;
 
-        Ok((public_values, proof, ProgramProvingReport::new(elapsed)))
+        Ok((
+            public_values,
+            proof,
+            ProgramProvingReport::new(proving_time),
+        ))
     }
 }
 
