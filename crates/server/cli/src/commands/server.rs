@@ -1,6 +1,7 @@
 use std::{
     net::{Ipv4Addr, SocketAddr},
     sync::Arc,
+    time::Instant,
 };
 
 use anyhow::{Context, Error};
@@ -15,17 +16,23 @@ use ere_server_api::{
     VerifyRequest, VerifyResponse, ZkvmService, execute_response::Result as ExecuteResult,
     prove_response::Result as ProveResult, router, verify_response::Result as VerifyResult,
 };
-use tokio::{net::TcpListener, signal};
-use tower_http::catch_panic::CatchPanicLayer;
+use tokio::{
+    net::TcpListener,
+    signal::unix::{SignalKind, signal},
+};
+use tower::ServiceBuilder;
+use tower_http::{catch_panic::CatchPanicLayer, trace::TraceLayer};
 use tracing::info;
 use twirp::{
     Request, Response, Router, TwirpErrorResponse,
     async_trait::async_trait,
-    axum::{self, routing::get},
-    internal,
+    axum::{self, middleware, routing::get},
+    internal, invalid_argument,
     reqwest::StatusCode,
     server::not_found_handler,
 };
+
+use crate::{metrics, otel};
 
 /// zkVMProver server that handles the request by forwarding to the underlying
 /// [`zkVMProver`] implementation methods.
@@ -82,7 +89,11 @@ impl<T: 'static + zkVMProver + Send + Sync> ZkvmService for zkVMServer<T> {
 
         let input = Input { stdin, proofs };
 
-        let result = match self.execute(input).await {
+        let start = Instant::now();
+        let result = self.execute(input).await;
+        metrics::record_execute(&result, start.elapsed());
+
+        let result = match result {
             Ok((public_values, report)) => ExecuteResult::Ok(ExecuteOk {
                 public_values: public_values.into(),
                 report: bincode::serde::encode_to_vec(&report, bincode::config::legacy())
@@ -107,15 +118,23 @@ impl<T: 'static + zkVMProver + Send + Sync> ZkvmService for zkVMServer<T> {
 
         let input = Input { stdin, proofs };
 
-        let result = match self.prove(input).await {
-            Ok((public_values, proof, report)) => ProveResult::Ok(ProveOk {
-                public_values: public_values.into(),
-                proof: proof
+        let start = Instant::now();
+        let result = self.prove(input).await;
+        metrics::record_prove(&result, start.elapsed());
+
+        let result = match result {
+            Ok((public_values, proof, report)) => {
+                let proof = proof
                     .encode_to_vec()
-                    .map_err(|err| internal(format!("failed to encode proof: {err:?}")))?,
-                report: bincode::serde::encode_to_vec(&report, bincode::config::legacy())
-                    .map_err(serialize_report_err)?,
-            }),
+                    .map_err(|err| internal(format!("failed to encode proof: {err:?}")))?;
+                metrics::record_prove_proof_bytes(proof.len());
+                ProveResult::Ok(ProveOk {
+                    public_values: public_values.into(),
+                    proof,
+                    report: bincode::serde::encode_to_vec(&report, bincode::config::legacy())
+                        .map_err(serialize_report_err)?,
+                })
+            }
             Err(err) => ProveResult::Err(err.to_string()),
         };
 
@@ -131,9 +150,13 @@ impl<T: 'static + zkVMProver + Send + Sync> ZkvmService for zkVMServer<T> {
         let request = request.into_body();
 
         let proof = Proof::<T>::decode_from_slice(&request.proof)
-            .map_err(|err| internal(format!("failed to decode proof: {err:?}")))?;
+            .map_err(|err| invalid_argument(format!("failed to decode proof: {err:?}")))?;
 
-        let result = match self.verify(proof).await {
+        let start = Instant::now();
+        let result = self.verify(proof).await;
+        metrics::record_verify(&result, start.elapsed());
+
+        let result = match result {
             Ok(public_values) => VerifyResult::Ok(VerifyOk {
                 public_values: public_values.into(),
             }),
@@ -151,16 +174,31 @@ fn serialize_report_err(err: bincode::error::EncodeError) -> TwirpErrorResponse 
 }
 
 pub async fn run(port: u16, elf: Elf, resource: ProverResource) -> Result<(), Error> {
-    let resource_kind = resource.kind().to_string();
+    let resource_kind = resource.kind();
     let zkvm = crate::construct_zkvm(elf, resource)?;
     info!("initialized zkVMProver with {resource_kind} prover");
 
-    let server = Arc::new(zkVMServer::new(zkvm));
-    let app = Router::new()
-        .nest("/twirp", router(server))
-        .fallback(not_found_handler)
+    let metrics_handle = metrics::init(zkvm.name(), zkvm.sdk_version())
+        .context("failed to install metrics recorder")?;
+    metrics::spawn_upkeep(metrics_handle.clone());
+
+    let api_middleware = ServiceBuilder::new()
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(otel::trace_layer_make_span)
+                .on_request(())
+                .on_response(otel::trace_layer_on_response)
+                .on_failure(otel::trace_layer_on_failure),
+        )
+        .layer(middleware::from_fn(metrics::middleware))
         .layer(CatchPanicLayer::new());
-    let app = crate::otel::layer(app).route("/health", get(StatusCode::OK));
+
+    let app = Router::new()
+        .nest("/twirp", router(Arc::new(zkVMServer::new(zkvm))))
+        .fallback(not_found_handler)
+        .layer(api_middleware)
+        .route("/metrics", get(metrics::handler).with_state(metrics_handle))
+        .route("/health", get(StatusCode::OK));
 
     let addr = SocketAddr::new(Ipv4Addr::UNSPECIFIED.into(), port);
     let tcp_listener = TcpListener::bind(addr).await?;
@@ -177,25 +215,10 @@ pub async fn run(port: u16, elf: Elf, resource: ProverResource) -> Result<(), Er
 }
 
 async fn shutdown_signal() {
-    let ctrl_c = async {
-        signal::ctrl_c()
-            .await
-            .expect("failed to install Ctrl+C handler");
-    };
-
-    let terminate = async {
-        signal::unix::signal(signal::unix::SignalKind::terminate())
-            .expect("failed to install signal handler")
-            .recv()
-            .await;
-    };
-
+    let mut sigint = signal(SignalKind::interrupt()).expect("SIGINT should be enabled");
+    let mut sigterm = signal(SignalKind::terminate()).expect("SIGTERM should be enabled");
     tokio::select! {
-        _ = ctrl_c => {
-            info!("received Ctrl+C, shutting down gracefully");
-        },
-        _ = terminate => {
-            info!("received SIGTERM, shutting down gracefully");
-        },
+        _ = sigint.recv() => info!("received SIGINT"),
+        _ = sigterm.recv() => info!("received SIGTERM"),
     }
 }

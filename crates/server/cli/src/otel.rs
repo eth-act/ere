@@ -8,11 +8,13 @@ use opentelemetry_sdk::{
     propagation::TraceContextPropagator,
     trace::{SdkTracer, SdkTracerProvider},
 };
-use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
+use tower_http::classify::ServerErrorsFailureClass;
 use tracing::{Span, error, info, info_span, warn};
 use tracing_opentelemetry::{OpenTelemetryLayer, OpenTelemetrySpanExt};
 use tracing_subscriber::Registry;
-use twirp::{Request, Response, Router, axum::http::HeaderMap};
+use twirp::axum::{extract::Request, http::HeaderMap, response::Response};
+
+use crate::metrics::path_to_method;
 
 pub type OtelLayer = OpenTelemetryLayer<Registry, SdkTracer>;
 
@@ -59,42 +61,30 @@ pub fn init() -> (Option<SdkTracerProvider>, Option<OtelLayer>) {
     (provider, otel_layer)
 }
 
-pub fn layer(app: Router) -> Router {
-    app.layer(
-        TraceLayer::new_for_http()
-            .make_span_with(|req: &Request<_>| {
-                let path = req.uri().path();
-                let method = match path {
-                    "/twirp/api.ZkvmService/Execute" => "execute",
-                    "/twirp/api.ZkvmService/Prove" => "prove",
-                    "/twirp/api.ZkvmService/Verify" => "verify",
-                    _ => path,
-                };
-                let span = info_span!("request", method, status = tracing::field::Empty);
-                let parent = opentelemetry::global::get_text_map_propagator(|propagator| {
-                    propagator.extract(&OtelExtractor(req.headers()))
-                });
-                let _ = span.set_parent(parent);
-                span
-            })
-            .on_request(())
-            .on_response(|res: &Response<_>, latency: Duration, span: &Span| {
-                let status = res.status().as_u16();
-                span.record("status", status);
-                match status {
-                    500.. => error!(?latency, "internal error"),
-                    400..500 => warn!(?latency, "client error"),
-                    _ => info!(?latency, "ok"),
-                }
-            })
-            .on_failure(
-                |error: ServerErrorsFailureClass, latency: Duration, _span: &Span| {
-                    if let ServerErrorsFailureClass::Error(ref error) = error {
-                        error!(?latency, %error, "connection error");
-                    }
-                },
-            ),
-    )
+pub fn trace_layer_make_span(req: &Request) -> Span {
+    let method = path_to_method(req.uri().path());
+    let span = info_span!("request", method, status = tracing::field::Empty);
+    let parent = opentelemetry::global::get_text_map_propagator(|propagator| {
+        propagator.extract(&OtelExtractor(req.headers()))
+    });
+    let _ = span.set_parent(parent);
+    span
+}
+
+pub fn trace_layer_on_response(res: &Response, latency: Duration, span: &Span) {
+    let status = res.status().as_u16();
+    span.record("status", status);
+    match status {
+        500.. => error!(?latency, "internal error"),
+        400..500 => warn!(?latency, "client error"),
+        _ => info!(?latency, "ok"),
+    }
+}
+
+pub fn trace_layer_on_failure(error: ServerErrorsFailureClass, latency: Duration, _span: &Span) {
+    if let ServerErrorsFailureClass::Error(ref error) = error {
+        error!(?latency, %error, "connection error");
+    }
 }
 
 struct OtelExtractor<'a>(&'a HeaderMap);
