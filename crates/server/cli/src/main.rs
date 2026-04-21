@@ -12,6 +12,7 @@ use tracing_subscriber::{EnvFilter, Layer, layer::SubscriberExt, util::Subscribe
 use twirp::reqwest;
 
 mod commands;
+mod metrics;
 mod otel;
 
 // Compile-time check to ensure exactly one zkVM feature is enabled for `ere-server`

@@ -140,7 +140,7 @@ async fn build_network_prover(config: &RemoteProverConfig) -> Result<NetworkProv
 fn extract_exit_code(proof: &SP1ProofWithPublicValues) -> Result<u32, Error> {
     let SP1Proof::Compressed(proof) = &proof.proof else {
         let proof_mode = SP1ProofMode::from(&proof.proof);
-        return Err(ere_verifier_sp1::Error::UnexpectedProofKind(proof_mode))?;
+        return Err(ere_verifier_sp1::Error::UnexpectedProofKind(proof_mode).into());
     };
     (proof.proof.public_values.len() == RECURSIVE_PROOF_NUM_PV_ELTS)
         .then(|| {
