@@ -57,8 +57,11 @@ ARG CUDA
 # Default to build for RTX 50 series
 ARG CUDA_ARCH=sm_120
 
-# Build binaries
-RUN cargo build --release ${CUDA:+--features gpu}
+# Strip the sm_ prefix and export as CUDA_ARCHS (plural, numeric) which is the
+# env var proofman-starks-lib-c/build.rs reads to generate nvcc -gencode flags.
+# See note in docker/zisk/Dockerfile.server for full rationale.
+RUN CUDA_ARCHS="${CUDA_ARCH#sm_}" \
+    cargo build --release ${CUDA:+--features gpu}
 
 FROM $RUNTIME_IMAGE AS runtime
 FROM $RUNTIME_CUDA_IMAGE AS runtime_cuda
