@@ -14,8 +14,8 @@ WORKDIR /ere
 ARG CUDA
 ARG RUSTFLAGS
 
-# Default to build for RTX 50 series
-ARG CUDA_ARCH=sm_120
+# Env variable read by ZisK crate `proofman-starks-lib-c`, comma-separated numeric arch IDs (e.g. "120" or "89,120")
+ARG CUDA_ARCHS=120
 
 RUN cargo build --release --package ere-server --bin ere-server --features zisk${CUDA:+,cuda} \
     && mkdir bin && mv target/release/ere-server bin/ere-server \

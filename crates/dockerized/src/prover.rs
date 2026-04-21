@@ -37,7 +37,7 @@ pub use error::Error;
 /// - Airbender: `CUDAARCHS` (semicolon-separated, e.g. "89;120")
 /// - OpenVM: `CUDA_ARCH` (comma-separated, e.g. "89,120")
 /// - Risc0: `NVCC_APPEND_FLAGS` (nvcc --generate-code flags)
-/// - Zisk: `CUDA_ARCH` (support only one CUDA architecture, e.g. "sm_120")
+/// - Zisk: `CUDA_ARCHS` (comma-separated, e.g. "89,120")
 fn apply_cuda_build_args(
     cmd: DockerBuildCmd,
     zkvm_kind: zkVMKind,
@@ -74,14 +74,12 @@ fn apply_cuda_build_args(
             cmd.build_arg("NVCC_APPEND_FLAGS", value)
         }
         zkVMKind::Zisk => {
-            if cuda_archs.len() != 1 {
-                return Err(Error::UnsupportedMultiCudaArchs(
-                    zkVMKind::Zisk,
-                    cuda_archs.to_vec(),
-                ));
-            }
-            let value = format!("sm_{}", cuda_archs[0]);
-            cmd.build_arg("CUDA_ARCH", value)
+            let value = cuda_archs
+                .iter()
+                .map(|arch| arch.to_string())
+                .collect::<Vec<_>>()
+                .join(",");
+            cmd.build_arg("CUDA_ARCHS", value)
         }
         _ => cmd,
     })
