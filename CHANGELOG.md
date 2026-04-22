@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.8.0](https://github.com/eth-act/ere/compare/v0.7.0...v0.8.0) (2026-04-22)
+
+
+### Features
+
+* add `--elf-url` support of `ere-server` ([#333](https://github.com/eth-act/ere/issues/333)) ([a225cde](https://github.com/eth-act/ere/commit/a225cded97173b2a17a56a5b560820712fbaed00))
+* add metrics support in `ere-server` ([#335](https://github.com/eth-act/ere/issues/335)) ([7871f1a](https://github.com/eth-act/ere/commit/7871f1a0436db44734e0aeadaa31a8cafbc9032b))
+* impl Encode and Decode for Vec&lt;u8&gt; and [u8; N] ([#339](https://github.com/eth-act/ere/issues/339)) ([8cf4e16](https://github.com/eth-act/ere/commit/8cf4e16b01fcc5f8a03e2dd06371efb3eae19f54))
+* remove `Compile::Program` ([#331](https://github.com/eth-act/ere/issues/331)) ([008abe1](https://github.com/eth-act/ere/commit/008abe141ec05bed8704564ab57c526c095a832e))
+* split zkVM trait into prover and verifier ([#332](https://github.com/eth-act/ere/issues/332)) ([e12e7ba](https://github.com/eth-act/ere/commit/e12e7baae009ec91331791c8400a82b39fdac0f3))
+* support multi cuda archs for zisk ([#337](https://github.com/eth-act/ere/issues/337)) ([8401f02](https://github.com/eth-act/ere/commit/8401f025325660ad6d30f0037c54860d897fc7eb))
+* update `risc0` to `v3.0.5` and use its latset rust release ([#329](https://github.com/eth-act/ere/issues/329)) ([be21c34](https://github.com/eth-act/ere/commit/be21c3407605aa86e6345a9f0be92dba75171a66))
+* use upstream `ziskos` ([#334](https://github.com/eth-act/ere/issues/334)) ([2480381](https://github.com/eth-act/ere/commit/24803815d26aeb276d56cba5313ddc9ecfd69815))
+
+
+### Bug Fixes
+
+* enable `rustls-tls` for `ere-server` ([#338](https://github.com/eth-act/ere/issues/338)) ([ae2a8b3](https://github.com/eth-act/ere/commit/ae2a8b371525fbee786f2a5cc63e401e2d1c1db9))
+
 ## [0.7.0](https://github.com/eth-act/ere/compare/v0.6.1...v0.7.0) (2026-04-07)
 
 
