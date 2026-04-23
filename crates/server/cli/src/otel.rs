@@ -1,4 +1,8 @@
-use core::time::Duration;
+use core::{
+    pin::Pin,
+    task::{Context, Poll, ready},
+    time::Duration,
+};
 use std::env;
 
 use opentelemetry::{propagation::Extractor, trace::TracerProvider};
@@ -8,8 +12,10 @@ use opentelemetry_sdk::{
     propagation::TraceContextPropagator,
     trace::{SdkTracer, SdkTracerProvider},
 };
+use pin_project_lite::pin_project;
+use tower::{Layer, Service};
 use tower_http::classify::ServerErrorsFailureClass;
-use tracing::{Span, error, info, info_span, warn};
+use tracing::{Span, error, field::Empty, info, info_span, warn};
 use tracing_opentelemetry::{OpenTelemetryLayer, OpenTelemetrySpanExt};
 use tracing_subscriber::Registry;
 use twirp::axum::{extract::Request, http::HeaderMap, response::Response};
@@ -62,8 +68,20 @@ pub fn init() -> (Option<SdkTracerProvider>, Option<OtelLayer>) {
 }
 
 pub fn trace_layer_make_span(req: &Request) -> Span {
+    struct OtelExtractor<'a>(&'a HeaderMap);
+
+    impl Extractor for OtelExtractor<'_> {
+        fn get(&self, key: &str) -> Option<&str> {
+            self.0.get(key).and_then(|value| value.to_str().ok())
+        }
+
+        fn keys(&self) -> Vec<&str> {
+            self.0.keys().map(|key| key.as_str()).collect()
+        }
+    }
+
     let method = path_to_method(req.uri().path());
-    let span = info_span!("request", method, status = tracing::field::Empty);
+    let span = info_span!("request", method, status = Empty, cancelled = Empty);
     let parent = opentelemetry::global::get_text_map_propagator(|propagator| {
         propagator.extract(&OtelExtractor(req.headers()))
     });
@@ -74,6 +92,7 @@ pub fn trace_layer_make_span(req: &Request) -> Span {
 pub fn trace_layer_on_response(res: &Response, latency: Duration, span: &Span) {
     let status = res.status().as_u16();
     span.record("status", status);
+    span.record("cancelled", false);
     match status {
         500.. => error!(?latency, "internal error"),
         400..500 => warn!(?latency, "client error"),
@@ -87,14 +106,82 @@ pub fn trace_layer_on_failure(error: ServerErrorsFailureClass, latency: Duration
     }
 }
 
-struct OtelExtractor<'a>(&'a HeaderMap);
+/// Layer that records the wall-clock duration and `cancelled=true` on the surrounding
+/// `TraceLayer` span when the request future is dropped before completing.
+///
+/// Works around a design choice in `tracing-opentelemetry`, `on_exit` unconditionally sets
+/// `end_time = now()` on every span exit, and `on_close` finalizes the exported OTel span using
+/// that last-recorded value. A handler that yields `Pending` once and is then cancelled (client
+/// disconnect, tokio timeout, etc.) is dropped without a second poll, so `end_time` stays frozen at
+/// the first-poll moment and the exported span reports microseconds of duration instead of
+/// wall-clock. On `Drop` this layer enters the captured span once more, firing a final `on_exit`
+/// that bumps `end_time` to now, and records `cancelled=true` so Tempo/Jaeger queries can
+/// distinguish cancellations from completed requests.
+///
+/// Must be installed inside the `TraceLayer`.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct RecordCancellationLayer;
 
-impl Extractor for OtelExtractor<'_> {
-    fn get(&self, key: &str) -> Option<&str> {
-        self.0.get(key).and_then(|v| v.to_str().ok())
+impl<S> Layer<S> for RecordCancellationLayer {
+    type Service = RecordCancellation<S>;
+
+    fn layer(&self, inner: S) -> Self::Service {
+        RecordCancellation { inner }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct RecordCancellation<S> {
+    inner: S,
+}
+
+impl<S, ReqBody> Service<Request<ReqBody>> for RecordCancellation<S>
+where
+    S: Service<Request<ReqBody>>,
+{
+    type Response = S::Response;
+    type Error = S::Error;
+    type Future = RecordCancellationFuture<S::Future>;
+
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.inner.poll_ready(cx)
     }
 
-    fn keys(&self) -> Vec<&str> {
-        self.0.keys().map(|k| k.as_str()).collect()
+    fn call(&mut self, req: Request<ReqBody>) -> Self::Future {
+        RecordCancellationFuture {
+            inner: self.inner.call(req),
+            span: Some(Span::current()),
+        }
+    }
+}
+
+pin_project! {
+    pub struct RecordCancellationFuture<F> {
+        #[pin]
+        inner: F,
+        // `Some` while the request is in flight; taken on successful completion so `Drop` is a
+        // no-op on the happy path (TraceLayer's own on_exit already set end_time correctly there).
+        span: Option<Span>,
+    }
+
+    impl<F> PinnedDrop for RecordCancellationFuture<F> {
+        fn drop(this: Pin<&mut Self>) {
+            let this = this.project();
+            if let Some(span) = this.span.take() {
+                span.record("cancelled", true);
+                let _entered = span.enter();
+            }
+        }
+    }
+}
+
+impl<F: Future> Future for RecordCancellationFuture<F> {
+    type Output = F::Output;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.project();
+        let output = ready!(this.inner.poll(cx));
+        *this.span = None;
+        Poll::Ready(output)
     }
 }

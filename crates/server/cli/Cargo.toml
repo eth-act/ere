@@ -14,6 +14,7 @@ metrics-exporter-prometheus = { workspace = true }
 opentelemetry = { workspace = true }
 opentelemetry-otlp = { workspace = true, features = ["grpc-tonic"] }
 opentelemetry_sdk = { workspace = true, features = ["rt-tokio"] }
+pin-project-lite = { workspace = true }
 reqwest = { workspace = true, features = ["rustls-tls"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal"] }
 tower = { workspace = true }

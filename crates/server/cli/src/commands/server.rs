@@ -190,6 +190,7 @@ pub async fn run(port: u16, elf: Elf, resource: ProverResource) -> Result<(), Er
                 .on_response(otel::trace_layer_on_response)
                 .on_failure(otel::trace_layer_on_failure),
         )
+        .layer(otel::RecordCancellationLayer)
         .layer(middleware::from_fn(metrics::middleware))
         .layer(CatchPanicLayer::new());
 
