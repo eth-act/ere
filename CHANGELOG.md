@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.8.1](https://github.com/eth-act/ere/compare/v0.8.0...v0.8.1) (2026-04-23)
+
+
+### Features
+
+* add `RecordCancellationLayer` layer to record `cancelled` when client drops ([#340](https://github.com/eth-act/ere/issues/340)) ([36f77bb](https://github.com/eth-act/ere/commit/36f77bb2660bdf08d9f650726217f2ab4a7c4371))
+
+
+### Bug Fixes
+
+* update deps with known issues ([#342](https://github.com/eth-act/ere/issues/342)) ([9237414](https://github.com/eth-act/ere/commit/9237414f1c9a765833ece7713a4d4d18e2025cc0))
+
+
+### Miscellaneous Chores
+
+* release 0.8.1 ([#343](https://github.com/eth-act/ere/issues/343)) ([3e5250d](https://github.com/eth-act/ere/commit/3e5250dc59205aa8201f9c3f001fc7b60ef327ad))
+
 ## [0.8.0](https://github.com/eth-act/ere/compare/v0.7.0...v0.8.0) (2026-04-22)
 
 
