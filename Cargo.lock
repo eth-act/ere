@@ -155,7 +155,7 @@ dependencies = [
  "either",
  "k256",
  "once_cell",
- "rand 0.8.5",
+ "rand 0.8.6",
  "secp256k1",
  "serde",
  "serde_json",
@@ -336,7 +336,7 @@ dependencies = [
  "keccak-asm",
  "paste",
  "proptest",
- "rand 0.9.2",
+ "rand 0.9.4",
  "rapidhash",
  "ruint",
  "rustc-hash 2.1.1",
@@ -455,7 +455,7 @@ dependencies = [
  "alloy-signer",
  "async-trait",
  "k256",
- "rand 0.8.5",
+ "rand 0.8.6",
  "thiserror 2.0.18",
 ]
 
@@ -989,7 +989,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1df2c09229cbc5a028b1d70e00fdb2acee28b1055dfb5ca73eea49c5a25c4e7c"
 dependencies = [
  "num-traits",
- "rand 0.8.5",
+ "rand 0.8.6",
 ]
 
 [[package]]
@@ -999,7 +999,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94893f1e0c6eeab764ade8dc4c0db24caf4fe7cbbaafc0eba0a9030f447b5185"
 dependencies = [
  "num-traits",
- "rand 0.8.5",
+ "rand 0.8.6",
 ]
 
 [[package]]
@@ -1009,7 +1009,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "246a225cc6131e9ee4f24619af0f19d67761fff15d7ccc22e42b80846e69449a"
 dependencies = [
  "num-traits",
- "rand 0.8.5",
+ "rand 0.8.6",
 ]
 
 [[package]]
@@ -1690,7 +1690,7 @@ dependencies = [
  "getrandom 0.2.17",
  "instant",
  "pin-project-lite",
- "rand 0.8.5",
+ "rand 0.8.6",
  "tokio",
 ]
 
@@ -2400,7 +2400,7 @@ version = "3.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "faf9468729b8cbcea668e36183cb69d317348c2e08e994829fb56ebfdfbaac34"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -3310,7 +3310,7 @@ dependencies = [
  "libc",
  "option-ext",
  "redox_users 0.5.2",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -3338,7 +3338,7 @@ checksum = "9f5b01c17f85ee988d832c40e549a64bd89ab2c9f8d8a613bdf5122ae507e294"
 dependencies = [
  "cfg-if",
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -3361,7 +3361,7 @@ checksum = "9ac1e888d6830712d565b2f3a974be3200be9296bc1b03db8251a4cbf18a4a34"
 dependencies = [
  "digest 0.10.7",
  "futures",
- "rand 0.8.5",
+ "rand 0.8.6",
  "reqwest",
  "thiserror 1.0.69",
  "tokio",
@@ -4014,7 +4014,7 @@ dependencies = [
  "ere-codec",
  "ere-platform-core",
  "ere-prover-core",
- "rand 0.9.2",
+ "rand 0.9.4",
  "serde",
  "serde_bytes",
  "sha2",
@@ -4111,7 +4111,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4205,7 +4205,7 @@ checksum = "4e7f34442dbe69c60fe8eaf58a8cafff81a1f278816d8ab4db255b3bef4ac3c4"
 dependencies = [
  "getrandom 0.3.4",
  "libm",
- "rand 0.9.2",
+ "rand 0.9.4",
  "siphasher",
 ]
 
@@ -4295,7 +4295,7 @@ name = "field"
 version = "0.1.0"
 source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285d292891f3c27a3cf0110be09cde30ac4f"
 dependencies = [
- "rand 0.9.2",
+ "rand 0.9.4",
  "seq-macro",
  "serde",
 ]
@@ -4336,7 +4336,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "835c052cb0c08c1acf6ffd71c022172e18723949c8282f2b9f27efbc51e64534"
 dependencies = [
  "byteorder",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rustc-hex",
  "static_assertions",
 ]
@@ -4706,7 +4706,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f0f9ef7462f7c099f518d754361858f86d8a07af53ba9af0fe635bbccb151a63"
 dependencies = [
  "ff 0.13.1",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rand_core 0.6.4",
  "rand_xorshift 0.3.0",
  "subtle",
@@ -4802,7 +4802,7 @@ dependencies = [
  "num-traits",
  "pairing 0.23.0",
  "paste",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rand_core 0.6.4",
  "rayon",
  "serde",
@@ -4829,7 +4829,7 @@ dependencies = [
  "pairing 0.23.0",
  "pasta_curves 0.5.1",
  "paste",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rand_core 0.6.4",
  "rayon",
  "serde",
@@ -6134,7 +6134,7 @@ dependencies = [
  "hashbrown 0.16.1",
  "metrics 0.24.3",
  "quanta",
- "rand 0.9.2",
+ "rand 0.9.4",
  "rand_xoshiro",
  "sketches-ddsketch 0.3.1",
 ]
@@ -6296,7 +6296,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -6332,7 +6332,7 @@ checksum = "a5e44f723f1133c9deac646763579fdb3ac745e418f2a7af9cd0c431da1f20b9"
 dependencies = [
  "num-integer",
  "num-traits",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
 ]
 
@@ -6347,7 +6347,7 @@ dependencies = [
  "num-integer",
  "num-iter",
  "num-traits",
- "rand 0.8.5",
+ "rand 0.8.6",
  "smallvec",
  "zeroize",
 ]
@@ -6447,7 +6447,7 @@ dependencies = [
  "num-integer",
  "num-modular 0.5.1",
  "num-traits",
- "rand 0.8.5",
+ "rand 0.8.6",
 ]
 
 [[package]]
@@ -6547,7 +6547,7 @@ dependencies = [
  "num-bigint 0.4.6",
  "num-integer",
  "num-traits",
- "rand 0.8.5",
+ "rand 0.8.6",
 ]
 
 [[package]]
@@ -6748,7 +6748,7 @@ dependencies = [
  "futures-util",
  "opentelemetry 0.31.0",
  "percent-encoding",
- "rand 0.9.2",
+ "rand 0.9.4",
  "thiserror 2.0.18",
  "tokio",
  "tokio-stream",
@@ -6796,7 +6796,7 @@ dependencies = [
  "openvm-rv32im-circuit",
  "openvm-stark-backend",
  "openvm-stark-sdk",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "serde_with",
  "strum 0.26.3",
@@ -6876,7 +6876,7 @@ dependencies = [
  "openvm-rv32im-transpiler",
  "openvm-stark-backend",
  "openvm-stark-sdk",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
 ]
 
@@ -6948,7 +6948,7 @@ dependencies = [
  "openvm-stark-sdk",
  "p3-baby-bear 0.1.0",
  "p3-field 0.1.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rustc-hash 2.1.1",
  "serde",
  "serde-big-array",
@@ -6983,7 +6983,7 @@ dependencies = [
  "openvm-cuda-builder",
  "openvm-cuda-common",
  "openvm-stark-backend",
- "rand 0.8.5",
+ "rand 0.8.6",
  "tracing",
 ]
 
@@ -7104,7 +7104,7 @@ dependencies = [
  "openvm-rv32-adapters",
  "openvm-stark-backend",
  "openvm-stark-sdk",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "serde_with",
  "strum 0.26.3",
@@ -7201,7 +7201,7 @@ dependencies = [
  "openvm-stark-backend",
  "openvm-stark-sdk",
  "p3-keccak-air 0.1.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "strum 0.26.3",
  "tiny-keccak",
@@ -7254,7 +7254,7 @@ dependencies = [
  "openvm-instructions",
  "openvm-stark-backend",
  "openvm-stark-sdk",
- "rand 0.8.5",
+ "rand 0.8.6",
  "tracing",
 ]
 
@@ -7283,7 +7283,7 @@ dependencies = [
  "openvm-stark-backend",
  "openvm-stark-sdk",
  "p3-field 0.1.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "static_assertions",
  "strum 0.26.3",
@@ -7338,7 +7338,7 @@ dependencies = [
  "p3-fri 0.1.0",
  "p3-merkle-tree 0.1.0",
  "p3-symmetric 0.1.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "serde_json",
  "tracing",
@@ -7380,7 +7380,7 @@ dependencies = [
  "openvm-rv32im-circuit",
  "openvm-stark-backend",
  "openvm-stark-sdk",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "strum 0.26.3",
 ]
@@ -7402,7 +7402,7 @@ dependencies = [
  "openvm-algebra-moduli-macros",
  "openvm-custom-insn",
  "openvm-ecc-guest",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "strum_macros 0.26.4",
 ]
@@ -7446,7 +7446,7 @@ dependencies = [
  "p3-poseidon2 0.1.0",
  "p3-poseidon2-air",
  "p3-symmetric 0.1.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "zkhash 0.2.0 (git+https://github.com/HorizenLabs/poseidon2.git?rev=bb476b9)",
 ]
 
@@ -7464,7 +7464,7 @@ dependencies = [
  "openvm-rv32im-circuit",
  "openvm-stark-backend",
  "openvm-stark-sdk",
- "rand 0.8.5",
+ "rand 0.8.6",
 ]
 
 [[package]]
@@ -7489,7 +7489,7 @@ dependencies = [
  "openvm-rv32im-transpiler",
  "openvm-stark-backend",
  "openvm-stark-sdk",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "strum 0.26.3",
 ]
@@ -7564,7 +7564,7 @@ dependencies = [
  "openvm-stark-sdk",
  "openvm-transpiler",
  "p3-fri 0.1.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rrs-lib",
  "serde",
  "serde_json",
@@ -7582,7 +7582,7 @@ source = "git+https://github.com/openvm-org/openvm.git?tag=v1.4.3#e8feb93717200e
 dependencies = [
  "openvm-circuit-primitives",
  "openvm-stark-backend",
- "rand 0.8.5",
+ "rand 0.8.6",
  "sha2",
 ]
 
@@ -7606,7 +7606,7 @@ dependencies = [
  "openvm-sha256-transpiler",
  "openvm-stark-backend",
  "openvm-stark-sdk",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "sha2",
  "strum 0.26.3",
@@ -7688,7 +7688,7 @@ dependencies = [
  "p3-poseidon",
  "p3-poseidon2 0.1.0",
  "p3-symmetric 0.1.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "serde_json",
  "static_assertions",
@@ -7776,7 +7776,7 @@ dependencies = [
  "p3-monty-31",
  "p3-poseidon2 0.1.0",
  "p3-symmetric 0.1.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
 ]
 
@@ -7791,7 +7791,7 @@ dependencies = [
  "p3-mds 0.3.2-succinct",
  "p3-poseidon2 0.3.2-succinct",
  "p3-symmetric 0.3.2-succinct",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
 ]
 
@@ -7816,7 +7816,7 @@ dependencies = [
  "p3-field 0.1.0",
  "p3-poseidon2 0.1.0",
  "p3-symmetric 0.1.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
 ]
 
@@ -7831,7 +7831,7 @@ dependencies = [
  "p3-field 0.3.2-succinct",
  "p3-poseidon2 0.3.2-succinct",
  "p3-symmetric 0.3.2-succinct",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
 ]
 
@@ -7927,7 +7927,7 @@ dependencies = [
  "nums",
  "p3-maybe-rayon 0.1.0",
  "p3-util 0.1.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "tracing",
 ]
@@ -7942,7 +7942,7 @@ dependencies = [
  "num-bigint 0.4.6",
  "num-traits",
  "p3-util 0.3.2-succinct",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
 ]
 
@@ -7960,7 +7960,7 @@ dependencies = [
  "p3-matrix 0.1.0",
  "p3-maybe-rayon 0.1.0",
  "p3-util 0.1.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "tracing",
 ]
@@ -7997,7 +7997,7 @@ dependencies = [
  "p3-poseidon2 0.1.0",
  "p3-symmetric 0.1.0",
  "p3-util 0.1.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
 ]
 
@@ -8045,7 +8045,7 @@ dependencies = [
  "p3-matrix 0.1.0",
  "p3-maybe-rayon 0.1.0",
  "p3-util 0.1.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "tracing",
 ]
 
@@ -8073,7 +8073,7 @@ dependencies = [
  "p3-monty-31",
  "p3-poseidon2 0.1.0",
  "p3-symmetric 0.1.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
 ]
 
@@ -8088,7 +8088,7 @@ dependencies = [
  "p3-mds 0.3.2-succinct",
  "p3-poseidon2 0.3.2-succinct",
  "p3-symmetric 0.3.2-succinct",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
 ]
 
@@ -8101,7 +8101,7 @@ dependencies = [
  "p3-field 0.1.0",
  "p3-maybe-rayon 0.1.0",
  "p3-util 0.1.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "tracing",
  "transpose",
@@ -8117,7 +8117,7 @@ dependencies = [
  "p3-field 0.3.2-succinct",
  "p3-maybe-rayon 0.3.2-succinct",
  "p3-util 0.3.2-succinct",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "tracing",
 ]
@@ -8150,7 +8150,7 @@ dependencies = [
  "p3-matrix 0.1.0",
  "p3-symmetric 0.1.0",
  "p3-util 0.1.0",
- "rand 0.8.5",
+ "rand 0.8.6",
 ]
 
 [[package]]
@@ -8165,7 +8165,7 @@ dependencies = [
  "p3-matrix 0.3.2-succinct",
  "p3-symmetric 0.3.2-succinct",
  "p3-util 0.3.2-succinct",
- "rand 0.8.5",
+ "rand 0.8.6",
 ]
 
 [[package]]
@@ -8180,7 +8180,7 @@ dependencies = [
  "p3-maybe-rayon 0.1.0",
  "p3-symmetric 0.1.0",
  "p3-util 0.1.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "tracing",
 ]
@@ -8217,7 +8217,7 @@ dependencies = [
  "p3-poseidon2 0.1.0",
  "p3-symmetric 0.1.0",
  "p3-util 0.1.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "tracing",
  "transpose",
@@ -8231,7 +8231,7 @@ dependencies = [
  "p3-field 0.1.0",
  "p3-mds 0.1.0",
  "p3-symmetric 0.1.0",
- "rand 0.8.5",
+ "rand 0.8.6",
 ]
 
 [[package]]
@@ -8243,7 +8243,7 @@ dependencies = [
  "p3-field 0.1.0",
  "p3-mds 0.1.0",
  "p3-symmetric 0.1.0",
- "rand 0.8.5",
+ "rand 0.8.6",
 ]
 
 [[package]]
@@ -8256,7 +8256,7 @@ dependencies = [
  "p3-field 0.3.2-succinct",
  "p3-mds 0.3.2-succinct",
  "p3-symmetric 0.3.2-succinct",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
 ]
 
@@ -8271,7 +8271,7 @@ dependencies = [
  "p3-maybe-rayon 0.1.0",
  "p3-poseidon2 0.1.0",
  "p3-util 0.1.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "tikv-jemallocator",
  "tracing",
 ]
@@ -8430,7 +8430,7 @@ dependencies = [
  "ff 0.12.1",
  "group 0.12.1",
  "lazy_static",
- "rand 0.8.5",
+ "rand 0.8.6",
  "static_assertions",
  "subtle",
 ]
@@ -8445,7 +8445,7 @@ dependencies = [
  "ff 0.13.1",
  "group 0.13.0",
  "lazy_static",
- "rand 0.8.5",
+ "rand 0.8.6",
  "static_assertions",
  "subtle",
 ]
@@ -8625,7 +8625,7 @@ source = "git+https://github.com/matter-labs/zksync-airbender?tag=v0.5.2#b93c285
 dependencies = [
  "field",
  "non_determinism_source",
- "rand 0.9.2",
+ "rand 0.9.4",
  "unroll",
 ]
 
@@ -9147,7 +9147,7 @@ dependencies = [
  "bit-vec",
  "bitflags 2.11.0",
  "num-traits",
- "rand 0.9.2",
+ "rand 0.9.4",
  "rand_chacha 0.9.0",
  "rand_xorshift 0.4.0",
  "regex-syntax",
@@ -9383,7 +9383,7 @@ dependencies = [
  "fastbloom",
  "getrandom 0.3.4",
  "lru-slab",
- "rand 0.9.2",
+ "rand 0.9.4",
  "ring",
  "rustc-hash 2.1.1",
  "rustls 0.23.37",
@@ -9449,9 +9449,9 @@ dependencies = [
 
 [[package]]
 name = "rand"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404"
+checksum = "5ca0ecfa931c29007047d1bc58e623ab12e5590e8c7cc53200d5202b69266d8a"
 dependencies = [
  "libc",
  "rand_chacha 0.3.1",
@@ -9461,9 +9461,9 @@ dependencies = [
 
 [[package]]
 name = "rand"
-version = "0.9.2"
+version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6db2770f06117d490610c7488547d543617b21bfa07796d7a12f6f1bd53850d1"
+checksum = "44c5af06bb1b7d3216d91932aed5265164bf384dc89cd6ba05cf59a35f5f76ea"
 dependencies = [
  "rand_chacha 0.9.0",
  "rand_core 0.9.5",
@@ -9877,7 +9877,7 @@ dependencies = [
  "elf",
  "lazy_static",
  "postcard",
- "rand 0.9.2",
+ "rand 0.9.4",
  "risc0-zkp",
  "risc0-zkvm-platform",
  "ruint",
@@ -9973,7 +9973,7 @@ dependencies = [
  "hex",
  "lazy-regex",
  "metal",
- "rand 0.9.2",
+ "rand 0.9.4",
  "rayon",
  "risc0-circuit-recursion-sys",
  "risc0-core",
@@ -10017,7 +10017,7 @@ dependencies = [
  "num-traits",
  "paste",
  "postcard",
- "rand 0.9.2",
+ "rand 0.9.4",
  "rayon",
  "ringbuffer 0.15.0",
  "risc0-binfmt",
@@ -10124,7 +10124,7 @@ dependencies = [
  "ndarray",
  "parking_lot",
  "paste",
- "rand 0.9.2",
+ "rand 0.9.4",
  "rand_core 0.9.5",
  "rayon",
  "risc0-core",
@@ -10161,7 +10161,7 @@ dependencies = [
  "num-traits",
  "object 0.36.7",
  "prost 0.13.5",
- "rand 0.9.2",
+ "rand 0.9.4",
  "rayon",
  "risc0-binfmt",
  "risc0-build",
@@ -10228,7 +10228,7 @@ dependencies = [
  "memmap2",
  "object 0.37.3",
  "poseidon2",
- "rand 0.9.2",
+ "rand 0.9.4",
  "ringbuffer 0.16.0",
  "ruint",
  "serde",
@@ -10353,8 +10353,8 @@ dependencies = [
  "parity-scale-codec",
  "primitive-types",
  "proptest",
- "rand 0.8.5",
- "rand 0.9.2",
+ "rand 0.8.6",
+ "rand 0.9.4",
  "rlp",
  "ruint-macro",
  "serde_core",
@@ -10442,7 +10442,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -10468,7 +10468,7 @@ dependencies = [
  "once_cell",
  "ring",
  "rustls-pki-types",
- "rustls-webpki 0.103.10",
+ "rustls-webpki 0.103.13",
  "subtle",
  "zeroize",
 ]
@@ -10518,11 +10518,11 @@ dependencies = [
  "rustls 0.23.37",
  "rustls-native-certs",
  "rustls-platform-verifier-android",
- "rustls-webpki 0.103.10",
+ "rustls-webpki 0.103.13",
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -10543,9 +10543,9 @@ dependencies = [
 
 [[package]]
 name = "rustls-webpki"
-version = "0.103.10"
+version = "0.103.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df33b2b81ac578cabaf06b89b0631153a3f416b0a886e8a7a1707fb51abbd1ef"
+checksum = "61c429a8649f110dddef65e2a5ad240f747e85f7758a6bccc7e5777bd33f756e"
 dependencies = [
  "aws-lc-rs",
  "ring",
@@ -10753,7 +10753,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b50c5943d326858130af85e049f2661ba3c78b26589b8ab98e65e80ae44a1252"
 dependencies = [
  "bitcoin_hashes",
- "rand 0.8.5",
+ "rand 0.8.6",
  "secp256k1-sys",
  "serde",
 ]
@@ -11234,7 +11234,7 @@ checksum = "b86eb8581b52f97860242fe5e8d6b49d2a37e1b38d4a647adf24acaa2965ee7d"
 dependencies = [
  "derive-where",
  "itertools 0.14.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "slop-algebra",
  "slop-alloc",
@@ -11341,7 +11341,7 @@ dependencies = [
  "futures",
  "itertools 0.14.0",
  "num_cpus",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rayon",
  "serde",
  "slop-algebra",
@@ -11443,7 +11443,7 @@ dependencies = [
  "derive-where",
  "futures",
  "num_cpus",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rayon",
  "serde",
  "slop-algebra",
@@ -11532,7 +11532,7 @@ dependencies = [
  "arrayvec",
  "derive-where",
  "itertools 0.14.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rayon",
  "serde",
  "slop-algebra",
@@ -11572,7 +11572,7 @@ dependencies = [
  "derive-where",
  "futures",
  "itertools 0.14.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rayon",
  "serde",
  "slop-algebra",
@@ -12035,7 +12035,7 @@ dependencies = [
  "num-bigint 0.4.6",
  "opentelemetry 0.23.0",
  "pin-project",
- "rand 0.8.5",
+ "rand 0.8.6",
  "reqwest",
  "serde",
  "serde_json",
@@ -12104,7 +12104,7 @@ checksum = "105531a782d66030eab608832e0829e4699053a6d41cd3c2c7931def9c9540fb"
 dependencies = [
  "bincode 1.3.3",
  "itertools 0.14.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rayon",
  "serde",
  "slop-air",
@@ -12213,7 +12213,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "228ec6719240b0933289332d730be328d3a3e4f9e6ff9ee2e20ec2b4a99aeed9"
 dependencies = [
  "itertools 0.14.0",
- "rand 0.8.5",
+ "rand 0.8.6",
  "slop-air",
  "slop-algebra",
  "slop-basefold",
@@ -12332,7 +12332,7 @@ dependencies = [
  "getrandom 0.3.4",
  "lazy_static",
  "libm",
- "rand 0.8.5",
+ "rand 0.8.6",
  "sha2",
  "slop-algebra",
  "sp1-lib",
@@ -12465,7 +12465,7 @@ dependencies = [
  "crunchy",
  "lazy_static",
  "num-bigint 0.4.6",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rustc-hex",
 ]
 
@@ -12646,14 +12646,14 @@ dependencies = [
  "getrandom 0.4.2",
  "once_cell",
  "rustix",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
 name = "thin-vec"
-version = "0.2.14"
+version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "144f754d318415ac792f9d69fc87abbbfc043ce2ef041c60f16ad828f638717d"
+checksum = "259cdf8ed4e4aca6f1e9d011e10bd53f524a2d0637d7b28450f6c64ac298c4c6"
 
 [[package]]
 name = "thiserror"
@@ -13100,7 +13100,7 @@ dependencies = [
  "indexmap 1.9.3",
  "pin-project",
  "pin-project-lite",
- "rand 0.8.5",
+ "rand 0.8.6",
  "slab",
  "tokio",
  "tokio-util",
@@ -13970,7 +13970,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -14997,7 +14997,7 @@ dependencies = [
  "once_cell",
  "paste",
  "precompiles-helpers 0.16.1 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.16.1)",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "sha2",
  "talc",
@@ -15025,7 +15025,7 @@ dependencies = [
  "num-traits",
  "paste",
  "precompiles-helpers 0.16.1 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.16.1)",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "sha2",
  "tiny-keccak",
@@ -15049,7 +15049,7 @@ dependencies = [
  "num-traits",
  "paste",
  "precompiles-helpers 0.16.1 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.16.1)",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "sha2",
  "tiny-keccak",
@@ -15076,7 +15076,7 @@ dependencies = [
  "jubjub",
  "lazy_static",
  "pasta_curves 0.5.1",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "sha2",
  "sha3",
@@ -15102,7 +15102,7 @@ dependencies = [
  "jubjub",
  "lazy_static",
  "pasta_curves 0.5.1",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "sha2",
  "sha3",
