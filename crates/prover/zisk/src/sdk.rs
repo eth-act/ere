@@ -47,8 +47,12 @@ impl ZiskSdk {
 
         // Initialize prover
         let prover = match &resource {
-            ProverResource::Cpu | ProverResource::Gpu => ZiskProver::Local(LocalProver::new(elf)?),
-            ProverResource::Cluster(config) => ZiskProver::Cluster(ZiskClusterClient::new(config)?),
+            ProverResource::Cpu | ProverResource::Gpu => {
+                ZiskProver::Local(LocalProver::new(elf, program_vk)?)
+            }
+            ProverResource::Cluster(config) => {
+                ZiskProver::Cluster(ZiskClusterClient::new(config, program_vk)?)
+            }
             ProverResource::Network(_) => Err(CommonError::unsupported_prover_resource_kind(
                 resource.kind(),
                 [
@@ -105,14 +109,6 @@ impl ZiskSdk {
             ZiskProver::Local(local) => local.prove(&framed_stdin(input.stdin()))?,
             ZiskProver::Cluster(client) => block_on(client.prove(input))?,
         };
-
-        // The proved ProgramVk should match the preprocessed
-        if self.program_vk != proof.program_vk {
-            return Err(ere_verifier_zisk::Error::UnexpectedProgramVk {
-                expected: self.program_vk,
-                got: proof.program_vk,
-            })?;
-        }
 
         Ok((proof.public_values.into(), proof, proving_time))
     }

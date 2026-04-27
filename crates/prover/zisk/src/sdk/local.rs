@@ -3,7 +3,7 @@ use std::{env, fs, panic, path::PathBuf, process::Command, thread::sleep, time::
 use blake3::Hash;
 use bytemuck::checked::try_cast_slice;
 use ere_prover_core::CommonError;
-use ere_verifier_zisk::{PUBLIC_VALUES_SIZE, ZiskProgramVk, ZiskProof};
+use ere_verifier_zisk::{PUBLIC_VALUES_SIZE, ZiskProgramVk, ZiskProof, ensure_program_vk_matches};
 use parking_lot::{Mutex, MutexGuard};
 use proofman_common::ParamsGPU;
 use tempfile::tempdir;
@@ -66,11 +66,12 @@ pub struct LocalProver {
     config: Config,
     elf: Vec<u8>,
     elf_hash: Hash,
+    program_vk: ZiskProgramVk,
     prover_and_pk: Mutex<Option<(ZiskProver<Asm>, ZiskProgramPK)>>,
 }
 
 impl LocalProver {
-    pub fn new(elf: Vec<u8>) -> Result<Self, Error> {
+    pub fn new(elf: Vec<u8>, program_vk: ZiskProgramVk) -> Result<Self, Error> {
         let config = Config::from_env()?;
         let elf_hash = blake3::hash(&elf);
 
@@ -82,6 +83,7 @@ impl LocalProver {
             config,
             elf,
             elf_hash,
+            program_vk,
             prover_and_pk: Mutex::new(prover_and_pk),
         })
     }
@@ -104,7 +106,7 @@ impl LocalProver {
 
         let result = panic::catch_unwind(|| prover.prove(pk, stdin).with_proof_options(opts).run());
 
-        match result {
+        let (proof, proving_time) = match result {
             Err(err) => {
                 uninitialize(guard);
                 Err(Error::ProvePanic(panic_msg(err)))
@@ -117,7 +119,11 @@ impl LocalProver {
                 extract_proof(result.get_proof_with_publics())?,
                 result.get_duration(),
             )),
-        }
+        }?;
+
+        ensure_program_vk_matches(self.program_vk, proof.program_vk)?;
+
+        Ok((proof, proving_time))
     }
 }
 

@@ -39,13 +39,7 @@ impl zkVMVerifier for ZiskVerifier {
     }
 
     fn verify(&self, proof: &ZiskProof) -> Result<PublicValues, Self::Error> {
-        let program_vk = proof.program_vk();
-        if program_vk != self.program_vk {
-            return Err(Error::UnexpectedProgramVk {
-                expected: self.program_vk,
-                got: program_vk,
-            });
-        }
+        ensure_program_vk_matches(self.program_vk, proof.program_vk())?;
 
         if !verify_vadcop_final(&proof.vadcop_final_proof()?, cast_slice(&VADCOP_FINAL_VK)) {
             return Err(Error::InvalidProof);
@@ -61,4 +55,13 @@ impl zkVMVerifier for ZiskVerifier {
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
     }
+}
+
+/// Returns [`Error::UnexpectedProgramVk`] when a proof's embedded `program_vk` does not match the
+/// one preprocessed at construction time.
+pub fn ensure_program_vk_matches(expected: ZiskProgramVk, got: ZiskProgramVk) -> Result<(), Error> {
+    if expected != got {
+        return Err(Error::UnexpectedProgramVk { expected, got });
+    }
+    Ok(())
 }

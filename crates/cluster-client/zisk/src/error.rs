@@ -16,4 +16,7 @@ pub enum Error {
 
     #[error("Invalid proof format: {0}")]
     InvalidProofFormat(String),
+
+    #[error(transparent)]
+    Verifier(#[from] ere_verifier_zisk::Error),
 }
