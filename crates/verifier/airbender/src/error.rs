@@ -4,6 +4,10 @@ use crate::AirbenderProgramVk;
 
 #[derive(Debug, Error)]
 pub enum Error {
+    /// Failed to deserialize a proof.
+    #[error("Failed to deserialize: {0}")]
+    Deserialize(#[from] bincode::error::DecodeError),
+
     /// VK byte slice was not the expected 32 bytes.
     #[error("Invalid ProgramVk length, expected: {expected}, got: {got}")]
     InvalidProgramVkLength { expected: usize, got: usize },
