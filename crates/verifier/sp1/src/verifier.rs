@@ -1,3 +1,5 @@
+use core::fmt;
+
 use ere_util_tokio::block_on;
 use ere_verifier_core::{PublicValues, zkVMVerifier};
 use sp1_sdk::{LightProver, Prover, SP1Proof as SP1SdkProof};
@@ -14,6 +16,14 @@ include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 pub struct SP1Verifier {
     prover: LightProver,
     program_vk: SP1ProgramVk,
+}
+
+impl fmt::Debug for SP1Verifier {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SP1Verifier")
+            .field("program_vk", &self.program_vk)
+            .finish_non_exhaustive()
+    }
 }
 
 impl SP1Verifier {

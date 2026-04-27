@@ -1,11 +1,17 @@
-use core::ops::Deref;
+use core::{fmt, ops::Deref};
 
 use serde::{Deserialize, Serialize};
 
 /// ELF binary of a compiled guest program.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct Elf(pub Vec<u8>);
+
+impl fmt::Debug for Elf {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Elf").field("len", &self.0.len()).finish()
+    }
+}
 
 impl Deref for Elf {
     type Target = [u8];

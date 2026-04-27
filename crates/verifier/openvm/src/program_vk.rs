@@ -18,7 +18,7 @@ const PROGRAM_VK_SIZE: usize = 64;
 ///
 /// [`OpenVMVerifier`]: crate::OpenVMVerifier
 /// [`OpenVMProof`]: crate::OpenVMProof
-#[derive(Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct OpenVMProgramVk(pub AppExecutionCommit);
 

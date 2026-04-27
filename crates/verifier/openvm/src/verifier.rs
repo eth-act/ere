@@ -1,3 +1,5 @@
+use core::fmt;
+
 use ere_verifier_core::{PublicValues, zkVMVerifier};
 use openvm_sdk::{CpuSdk, F, keygen::AggVerifyingKey};
 use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
@@ -16,6 +18,14 @@ const AGG_VK_BYTES: &[u8] = include_bytes!("../agg_stark.vk");
 pub struct OpenVMVerifier {
     agg_vk: AggVerifyingKey,
     program_vk: OpenVMProgramVk,
+}
+
+impl fmt::Debug for OpenVMVerifier {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("OpenVMVerifier")
+            .field("program_vk", &self.program_vk)
+            .finish_non_exhaustive()
+    }
 }
 
 impl OpenVMVerifier {
