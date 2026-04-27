@@ -1,6 +1,7 @@
 use std::{
     fs,
     io::{self, Read},
+    path::PathBuf,
 };
 
 use anyhow::{Context, Error};
@@ -52,7 +53,7 @@ struct Args {
 struct ElfSource {
     /// Path to read the ELF from.
     #[arg(long)]
-    elf_path: Option<String>,
+    elf_path: Option<PathBuf>,
     /// URL to download the ELF from.
     #[arg(long)]
     elf_url: Option<String>,
@@ -104,8 +105,9 @@ async fn main() -> Result<(), Error> {
 
 async fn read_elf(elf_source: ElfSource) -> Result<Elf, Error> {
     if let Some(path) = elf_source.elf_path {
-        let bytes = fs::read(&path).with_context(|| format!("failed to read ELF from {path}"))?;
-        info!("loaded ELF from {path}");
+        let bytes = fs::read(&path)
+            .with_context(|| format!("failed to read ELF from {}", path.display()))?;
+        info!("loaded ELF from {}", path.display());
         Ok(Elf(bytes))
     } else if let Some(url) = elf_source.elf_url {
         let bytes = reqwest::get(&url)

@@ -2,9 +2,11 @@
 
 use std::time::Duration;
 
-use ere_prover_core::{Input, RemoteProverConfig};
+use ere_prover_core::{Input, PublicValues, RemoteProverConfig, zkVMVerifier};
 use ere_util_tokio::block_on;
-use ere_verifier_zisk::{PUBLIC_VALUES_SIZE, ZiskProgramVk, ZiskProof};
+use ere_verifier_zisk::{
+    PUBLIC_VALUES_SIZE, ZiskProgramVk, ZiskProof, ZiskVerifier, ensure_program_vk_matches,
+};
 use futures_util::StreamExt;
 use tonic::transport::Channel;
 use tracing::debug;
@@ -23,13 +25,20 @@ use crate::{
 /// Connects to the ZisK cluster via gRPC and submits proof jobs.
 pub struct ZiskClusterClient {
     client: ZiskDistributedApiClient<Channel>,
+    verifier: ZiskVerifier,
 }
 
 impl ZiskClusterClient {
     /// Create a new `ZiskClusterClient` that connects to the cluster.
-    pub fn new(config: &RemoteProverConfig) -> Result<Self, Error> {
+    pub fn new(config: &RemoteProverConfig, program_vk: ZiskProgramVk) -> Result<Self, Error> {
         let client = block_on(connect(&config.endpoint))?;
-        Ok(Self { client })
+        let verifier = ZiskVerifier::new(program_vk);
+        Ok(Self { client, verifier })
+    }
+
+    /// Returns a reference to the verifier.
+    pub fn verifier(&self) -> &ZiskVerifier {
+        &self.verifier
     }
 
     /// Send proof request to cluster and wait for completion.
@@ -118,33 +127,37 @@ impl ZiskClusterClient {
 
         debug!("Waiting for proof status update (completion or failure)...");
 
-        if let Some(update) = stream.into_inner().next().await {
-            let update = update.map_err(cluster_error)?;
+        let Some(update) = stream.into_inner().next().await else {
+            return Err(cluster_error("Stream ended without completion status"));
+        };
 
-            match ProofStatusType::try_from(update.status) {
-                Ok(ProofStatusType::ProofStatusCompleted) => match update.final_proof {
-                    Some(final_proof) => {
-                        let zisk_proof = parse_zisk_proof(&final_proof.values)?;
-                        let proving_time = Duration::from_millis(update.duration_ms);
+        let update = update.map_err(cluster_error)?;
 
-                        debug!(
-                            proving_time = ?proving_time,
-                            "Proof generated successfully"
-                        );
+        let proof = match ProofStatusType::try_from(update.status) {
+            Ok(ProofStatusType::ProofStatusCompleted) => match update.final_proof {
+                Some(proof) => Ok(proof),
+                None => Err(cluster_error("Missing final proof")),
+            },
+            Ok(ProofStatusType::ProofStatusFailed) => Err(update
+                .error
+                .map(|res| cluster_error_from_response("Proof generation error", res))
+                .unwrap_or_else(|| cluster_error("Unknown error"))),
+            Err(err) => Err(cluster_error(err)),
+        }?;
 
-                        Ok((zisk_proof, proving_time))
-                    }
-                    None => Err(cluster_error("Missing final proof")),
-                },
-                Ok(ProofStatusType::ProofStatusFailed) => Err(update
-                    .error
-                    .map(|res| cluster_error_from_response("Proof generation error", res))
-                    .unwrap_or_else(|| cluster_error("Unknown error"))),
-                Err(err) => Err(cluster_error(err)),
-            }
-        } else {
-            Err(cluster_error("Stream ended without completion status"))
-        }
+        let proof = parse_proof(&proof.values)?;
+        let proving_time = Duration::from_millis(update.duration_ms);
+
+        debug!(?proving_time, "Proof generated successfully");
+
+        ensure_program_vk_matches(*self.verifier.program_vk(), proof.program_vk)?;
+
+        Ok((proof, proving_time))
+    }
+
+    /// Verify `proof` against the [`ZiskProgramVk`] this client was constructed with.
+    pub fn verify(&self, proof: &ZiskProof) -> Result<PublicValues, Error> {
+        Ok(self.verifier.verify(proof)?)
     }
 }
 
@@ -168,7 +181,7 @@ fn framed_stdin(data: &[u8]) -> Vec<u8> {
     buf
 }
 
-fn parse_zisk_proof(values: &[u64]) -> Result<ZiskProof, Error> {
+fn parse_proof(values: &[u64]) -> Result<ZiskProof, Error> {
     const PROGRAM_VK_WORDS: usize = 4;
     const PUBLIC_VALUES_WORDS: usize = PUBLIC_VALUES_SIZE / 4;
     const N_PUBLICS: usize = PROGRAM_VK_WORDS + PUBLIC_VALUES_WORDS;

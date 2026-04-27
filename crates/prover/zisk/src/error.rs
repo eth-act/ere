@@ -52,15 +52,15 @@ pub enum Error {
     #[error("Prove panicked: {0}")]
     ProvePanic(String),
 
-    // Cluster
-    #[error(transparent)]
-    Cluster(#[from] ere_cluster_client_zisk::Error),
-
     #[error("Expected VadcopFinal but got {0}")]
     UnexpectedProofKind(&'static str),
 
     #[error("Invalid proof format: {0}")]
     InvalidProofFormat(String),
+
+    // Cluster
+    #[error(transparent)]
+    Cluster(#[from] ere_cluster_client_zisk::Error),
 
     // Verify
     #[error(transparent)]

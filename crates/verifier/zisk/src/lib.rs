@@ -7,5 +7,5 @@ pub use crate::{
     error::Error,
     program_vk::ZiskProgramVk,
     proof::{PUBLIC_VALUES_SIZE, ZiskProof},
-    verifier::ZiskVerifier,
+    verifier::{ZiskVerifier, ensure_program_vk_matches},
 };
