@@ -23,6 +23,7 @@ use crate::{
 /// Wrapper for the ZisK cluster client.
 ///
 /// Connects to the ZisK cluster via gRPC and submits proof jobs.
+#[derive(Debug)]
 pub struct ZiskClusterClient {
     client: ZiskDistributedApiClient<Channel>,
     verifier: ZiskVerifier,

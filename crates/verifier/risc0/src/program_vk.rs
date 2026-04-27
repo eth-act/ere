@@ -17,7 +17,7 @@ const PROGRAM_VK_SIZE: usize = 32;
 ///
 /// [`Risc0Verifier`]: crate::Risc0Verifier
 /// [`Risc0Proof`]: crate::Risc0Proof
-#[derive(Copy, Clone, Eq, Ord, PartialOrd, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Eq, Ord, PartialOrd, PartialEq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
 #[repr(transparent)]
 pub struct Risc0ProgramVk(pub Digest);

@@ -40,5 +40,7 @@ mod error;
 mod prover;
 mod sdk;
 
-pub use error::Error;
-pub use prover::AirbenderProver;
+pub use ere_prover_core::*;
+pub use ere_verifier_airbender::*;
+
+pub use crate::{error::Error, prover::AirbenderProver};

@@ -176,6 +176,7 @@ fn build_server_image(zkvm_kind: zkVMKind, gpu: bool) -> Result<(), Error> {
     Ok(())
 }
 
+#[derive(Debug)]
 struct ServerContainer {
     id: String,
     client: zkVMClient,
@@ -271,6 +272,7 @@ pub struct DockerizedzkVMConfig {
     pub verify_timeout: Option<Duration>,
 }
 
+#[derive(Debug)]
 pub struct DockerizedzkVM {
     zkvm_kind: zkVMKind,
     elf: Elf,

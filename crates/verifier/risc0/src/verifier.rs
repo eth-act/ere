@@ -11,6 +11,7 @@ include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 ///
 /// Implements [`zkVMVerifier`]. Holds the pre-computed [`Risc0ProgramVk`] needed to authenticate
 /// proofs.
+#[derive(Debug)]
 pub struct Risc0Verifier {
     program_vk: Risc0ProgramVk,
 }

@@ -35,5 +35,7 @@
 mod error;
 mod prover;
 
-pub use error::Error;
-pub use prover::OpenVMProver;
+pub use ere_prover_core::*;
+pub use ere_verifier_openvm::*;
+
+pub use crate::{error::Error, prover::OpenVMProver};

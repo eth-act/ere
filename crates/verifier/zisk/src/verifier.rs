@@ -18,6 +18,7 @@ const VADCOP_FINAL_VK: [u64; 4] = [
 ///
 /// Implements [`zkVMVerifier`]. Holds the pre-computed [`ZiskProgramVk`]
 /// needed to authenticate proofs.
+#[derive(Debug)]
 pub struct ZiskVerifier {
     program_vk: ZiskProgramVk,
 }

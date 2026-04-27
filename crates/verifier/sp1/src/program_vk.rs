@@ -1,3 +1,5 @@
+use core::fmt;
+
 use serde::{Deserialize, Serialize};
 use sp1_hypercube::SP1VerifyingKey;
 
@@ -13,5 +15,11 @@ use sp1_hypercube::SP1VerifyingKey;
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct SP1ProgramVk(pub SP1VerifyingKey);
+
+impl fmt::Debug for SP1ProgramVk {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("SP1ProgramVk").field(&self.0.vk).finish()
+    }
+}
 
 ere_verifier_core::codec::impl_codec_by_bincode_legacy!(SP1ProgramVk);
