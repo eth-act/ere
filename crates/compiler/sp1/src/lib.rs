@@ -5,6 +5,7 @@ mod rust_rv64ima;
 mod rust_rv64ima_customized;
 
 pub use ere_compiler_core::*;
-pub use error::Error;
-pub use rust_rv64ima::SP1RustRv64ima;
-pub use rust_rv64ima_customized::SP1RustRv64imaCustomized;
+
+pub use crate::{
+    error::Error, rust_rv64ima::SP1RustRv64ima, rust_rv64ima_customized::SP1RustRv64imaCustomized,
+};

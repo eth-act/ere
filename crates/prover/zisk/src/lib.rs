@@ -48,5 +48,4 @@ mod error;
 mod prover;
 mod sdk;
 
-pub use error::Error;
-pub use prover::ZiskProver;
+pub use crate::{error::Error, prover::ZiskProver};

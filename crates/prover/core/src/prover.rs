@@ -11,6 +11,7 @@ use crate::{Input, ProgramExecutionReport, ProgramProvingReport, PublicValues, z
 ///
 /// Note that a zkVM prover instance is created for specific program, each zkVM prover
 /// implementation will have their own construction function.
+#[allow(non_camel_case_types)]
 #[auto_impl::auto_impl(&, Arc, Box)]
 pub trait zkVMProver {
     type Verifier: zkVMVerifier;

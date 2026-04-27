@@ -35,5 +35,4 @@
 mod error;
 mod prover;
 
-pub use error::Error;
-pub use prover::OpenVMProver;
+pub use crate::{error::Error, prover::OpenVMProver};

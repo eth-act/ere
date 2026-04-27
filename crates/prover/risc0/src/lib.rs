@@ -37,5 +37,4 @@
 mod error;
 mod prover;
 
-pub use error::Error;
-pub use prover::Risc0Prover;
+pub use crate::{error::Error, prover::Risc0Prover};

@@ -32,5 +32,4 @@ mod error;
 mod prover;
 mod sdk;
 
-pub use error::Error;
-pub use prover::SP1Prover;
+pub use crate::{error::Error, prover::SP1Prover};
