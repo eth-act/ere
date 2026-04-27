@@ -32,4 +32,7 @@ mod error;
 mod prover;
 mod sdk;
 
+pub use ere_prover_core::*;
+pub use ere_verifier_sp1::*;
+
 pub use crate::{error::Error, prover::SP1Prover};

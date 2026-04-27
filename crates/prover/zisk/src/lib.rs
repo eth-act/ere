@@ -48,4 +48,7 @@ mod error;
 mod prover;
 mod sdk;
 
+pub use ere_prover_core::*;
+pub use ere_verifier_zisk::*;
+
 pub use crate::{error::Error, prover::ZiskProver};

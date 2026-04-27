@@ -37,4 +37,7 @@
 mod error;
 mod prover;
 
+pub use ere_prover_core::*;
+pub use ere_verifier_risc0::*;
+
 pub use crate::{error::Error, prover::Risc0Prover};

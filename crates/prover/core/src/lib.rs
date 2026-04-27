@@ -1,10 +1,10 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-pub mod error;
-pub mod input;
-pub mod prover;
-pub mod report;
-pub mod resource;
+mod error;
+mod input;
+mod prover;
+mod report;
+mod resource;
 
 pub use ere_codec as codec;
 pub use ere_verifier_core::{PublicValues, zkVMVerifier};
