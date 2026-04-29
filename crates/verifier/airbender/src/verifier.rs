@@ -1,6 +1,4 @@
-use core::array::from_fn;
-
-use airbender_execution_utils::{ProgramProof, verify_recursion_log_23_layer};
+use airbender_host::verify_proof;
 use ere_verifier_core::{PublicValues, zkVMVerifier};
 
 use crate::{AirbenderProgramVk, AirbenderProof, Error};
@@ -33,20 +31,9 @@ impl zkVMVerifier for AirbenderVerifier {
     }
 
     fn verify(&self, proof: &AirbenderProof) -> Result<PublicValues, Error> {
-        if !verify_recursion_log_23_layer(&proof.0) {
-            return Err(Error::InvalidProof);
-        }
+        verify_proof(&proof.0, &self.program_vk.0, None, None)?;
 
-        let (public_values, program_vk) = extract_public_values_and_program_vk(&proof.0)?;
-
-        if self.program_vk != program_vk {
-            return Err(Error::UnexpectedProgramVk {
-                expected: self.program_vk,
-                got: program_vk,
-            });
-        }
-
-        Ok(public_values)
+        Ok(proof.public_values().into())
     }
 
     fn name(&self) -> &'static str {
@@ -56,24 +43,4 @@ impl zkVMVerifier for AirbenderVerifier {
     fn sdk_version(&self) -> &'static str {
         SDK_VERSION
     }
-}
-
-/// Extract public values and VK hash chain from register values.
-pub fn extract_public_values_and_program_vk(
-    proof: &ProgramProof,
-) -> Result<(PublicValues, AirbenderProgramVk), Error> {
-    if proof.register_final_values.len() != 32 {
-        return Err(Error::InvalidRegisterCount(
-            proof.register_final_values.len(),
-        ));
-    }
-
-    let public_values = proof.register_final_values[10..18]
-        .iter()
-        .flat_map(|value| value.value.to_le_bytes())
-        .collect::<Vec<u8>>();
-
-    let vk_hash_chain = from_fn(|i| proof.register_final_values[18 + i].value);
-
-    Ok((public_values.into(), AirbenderProgramVk(vk_hash_chain)))
 }

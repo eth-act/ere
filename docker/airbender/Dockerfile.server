@@ -14,6 +14,9 @@ WORKDIR /ere
 ARG CUDA
 ARG RUSTFLAGS
 
+# Env variable read by Airbender crate `gpu_prover`, semicolon-separated numeric arch IDs (e.g. "120" or "89;120")
+ARG CUDAARCHS=120
+
 RUN cargo build --release --package ere-server --bin ere-server --features airbender${CUDA:+,cuda} \
     && mkdir bin && mv target/release/ere-server bin/ere-server \
     && cargo clean && rm -rf $CARGO_HOME/registry/
@@ -26,12 +29,6 @@ FROM runtime${CUDA:+_cuda} AS runtime_stage
 RUN apt-get update && apt-get install -y --no-install-recommends \
     binutils \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Copy airbender-cli
-COPY --from=build_stage /usr/local/cargo/bin/airbender-cli /usr/local/cargo/bin/airbender-cli
-
-# Add airbender-cli to path
-ENV PATH=/usr/local/cargo/bin:$PATH
 
 # Copy ere-server
 COPY --from=build_stage /ere/bin/ere-server /ere/bin/ere-server

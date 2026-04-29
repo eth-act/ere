@@ -12,11 +12,7 @@ const RUSTFLAGS: &[&str] = &[
     "-C",
     "passes=lower-atomic",
     "-C",
-    "target-feature=-unaligned-scalar-mem,+relax",
-    "-C",
-    "link-arg=--save-temps",
-    "-C",
-    "force-frame-pointers",
+    "target-feature=-unaligned-scalar-mem",
 ];
 const CARGO_BUILD_OPTIONS: &[&str] = &[
     // For bare metal we have to build core and alloc
