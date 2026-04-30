@@ -614,7 +614,7 @@ mod tests {
             );
             assert!(zkvm.container.write().await.is_none());
         }};
-        ($zkvm_kind:ident, $compiler_kind:ident, $program:literal, $valid_test_cases:expr, $invalid_test_cases:expr) => {
+        ($zkvm_kind:ident, $compiler_kind:ident, $program:literal, Cpu, $valid_test_cases:expr, $invalid_test_cases:expr) => {
             #[tokio::test(flavor = "multi_thread")]
             async fn test_prove() {
                 test_prove!(
@@ -627,7 +627,8 @@ mod tests {
                     $invalid_test_cases
                 );
             }
-
+        };
+        ($zkvm_kind:ident, $compiler_kind:ident, $program:literal, Gpu, $valid_test_cases:expr, $invalid_test_cases:expr) => {
             #[tokio::test(flavor = "multi_thread")]
             #[ignore = "Requires GPU"]
             async fn test_prove_gpu() {
@@ -641,6 +642,18 @@ mod tests {
                     $invalid_test_cases
                 );
             }
+        };
+        ($zkvm_kind:ident, $compiler_kind:ident, $program:literal, [$($prover_resource:ident),*], $valid_test_cases:expr, $invalid_test_cases:expr) => {
+            $(
+                test_prove!(
+                    $zkvm_kind,
+                    $compiler_kind,
+                    $program,
+                    $prover_resource,
+                    $valid_test_cases,
+                    $invalid_test_cases
+                );
+            )*
         };
     }
 
@@ -660,6 +673,7 @@ mod tests {
             Airbender,
             RustCustomized,
             "basic",
+            [Gpu],
             [BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256()],
             [
                 Input::new(),
@@ -684,6 +698,7 @@ mod tests {
             OpenVM,
             RustCustomized,
             "basic",
+            [Cpu, Gpu],
             [BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256()],
             [
                 Input::new(),
@@ -708,6 +723,7 @@ mod tests {
             Risc0,
             RustCustomized,
             "basic",
+            [Cpu, Gpu],
             [BasicProgram::<BincodeLegacy>::valid_test_case()],
             [
                 Input::new(),
@@ -732,6 +748,7 @@ mod tests {
             SP1,
             RustCustomized,
             "basic",
+            [Cpu, Gpu],
             [BasicProgram::<BincodeLegacy>::valid_test_case()],
             [
                 Input::new(),
@@ -756,6 +773,7 @@ mod tests {
             Zisk,
             RustCustomized,
             "basic_rust",
+            [Cpu, Gpu],
             [BasicProgram::<BincodeLegacy>::valid_test_case()],
             [
                 Input::new(),
