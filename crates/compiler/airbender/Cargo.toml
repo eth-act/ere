@@ -6,13 +6,20 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
+cargo_metadata.workspace = true
+tempfile.workspace = true
 thiserror.workspace = true
+
+# Airbender dependencies
+airbender-build.workspace = true
 
 # Local dependencies
 ere-compiler-core.workspace = true
 ere-util-compile.workspace = true
 
 [dev-dependencies]
+ere-prover-core.workspace = true
+ere-prover-airbender = { workspace = true }
 ere-util-test = { workspace = true, features = ["host"] }
 
 [lints]
