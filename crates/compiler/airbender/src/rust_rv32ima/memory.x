@@ -1,9 +1,9 @@
-/* Copied from https://github.com/matter-labs/zksync-os/blob/main/zksync_os/src/lds/memory.x */
+/* Copied from https://github.com/matter-labs/zksync-airbender/blob/dev/riscv_common/src/lds/memory.x */
 
 MEMORY
 {
-  ROM (rx): ORIGIN = 0, LENGTH = 2M
-  RAM (rwa!x) : ORIGIN = 2M, LENGTH = 1022M
+  ROM (rx): ORIGIN = 0, LENGTH = 4M
+  RAM (rwa!x) : ORIGIN = 4M, LENGTH = 1020M
 }
 
 REGION_ALIAS("REGION_TEXT", ROM);

@@ -515,22 +515,28 @@ mod tests {
         zkvm_kind: zkVMKind,
         compiler_kind: CompilerKind,
         program: &'static str,
+        prover_resource: ProverResource,
     ) -> DockerizedzkVM {
         let elf = compile(zkvm_kind, compiler_kind, program).clone();
         DockerizedzkVM::new(
             zkvm_kind,
             elf,
-            ProverResource::Cpu,
+            prover_resource,
             DockerizedzkVMConfig::default(),
         )
         .unwrap()
     }
 
-    macro_rules! test {
+    macro_rules! test_execute {
         ($zkvm_kind:ident, $compiler_kind:ident, $program:literal, $valid_test_cases:expr, $invalid_test_cases:expr) => {
             #[tokio::test(flavor = "multi_thread")]
             async fn test_execute() {
-                let zkvm = zkvm(zkVMKind::$zkvm_kind, CompilerKind::$compiler_kind, $program);
+                let zkvm = zkvm(
+                    zkVMKind::$zkvm_kind,
+                    CompilerKind::$compiler_kind,
+                    $program,
+                    ProverResource::Cpu,
+                );
 
                 // Valid test cases
                 for test_case in $valid_test_cases {
@@ -549,67 +555,125 @@ mod tests {
                     );
                 }
             }
+        };
+    }
 
+    macro_rules! test_prove {
+        (@body $zkvm_kind:ident, $compiler_kind:ident, $program:literal, $resource:expr, $valid_test_cases:expr, $invalid_test_cases:expr) => {{
+            let zkvm = zkvm(
+                zkVMKind::$zkvm_kind,
+                CompilerKind::$compiler_kind,
+                $program,
+                $resource,
+            );
+
+            // Valid test cases
+            for test_case in $valid_test_cases {
+                let (prover_public_values, proof, _report) = zkvm
+                    .prove(&test_case.input())
+                    .expect("prove should not fail with valid input");
+                let verifier_public_values = zkvm
+                    .verify(&proof)
+                    .expect("verify should not fail with valid input");
+                assert_eq!(prover_public_values, verifier_public_values);
+                test_case.assert_output(&verifier_public_values);
+            }
+
+            // Invalid test cases
+            for input in $invalid_test_cases {
+                let err = zkvm.prove(&input).unwrap_err();
+                assert!(
+                    matches!(err.downcast_ref::<Error>().unwrap(), Error::zkVM(_)),
+                    "Expect error variant `Error::zkVM`, got {err:?}",
+                );
+            }
+
+            // Should be able to recover
+            for test_case in $valid_test_cases {
+                let (prover_public_values, proof, _report) = zkvm
+                    .prove(&test_case.input())
+                    .expect("prove should not fail with valid input");
+                let verifier_public_values = zkvm
+                    .verify(&proof)
+                    .expect("verify should not fail with valid input");
+                assert_eq!(prover_public_values, verifier_public_values);
+                test_case.assert_output(&verifier_public_values);
+            }
+
+            // Timeout
+            let mut zkvm = zkvm;
+            let prove_timeout = Duration::ZERO;
+            zkvm.config.prove_timeout = Some(prove_timeout);
+            let err = zkvm.prove(&Input::new()).unwrap_err();
+            assert!(
+                matches!(
+                    err.downcast_ref::<Error>().unwrap(),
+                    Error::Timeout { timeout } if *timeout == prove_timeout,
+                ),
+                "Expect error variant `Error::Timeout`, got {err:?}",
+            );
+            assert!(zkvm.container.write().await.is_none());
+        }};
+        ($zkvm_kind:ident, $compiler_kind:ident, $program:literal, Cpu, $valid_test_cases:expr, $invalid_test_cases:expr) => {
             #[tokio::test(flavor = "multi_thread")]
             async fn test_prove() {
-                let zkvm = zkvm(zkVMKind::$zkvm_kind, CompilerKind::$compiler_kind, $program);
-
-                // Valid test cases
-                for test_case in $valid_test_cases {
-                    let (prover_public_values, proof, _report) = zkvm
-                        .prove(&test_case.input())
-                        .expect("prove should not fail with valid input");
-                    let verifier_public_values = zkvm
-                        .verify(&proof)
-                        .expect("verify should not fail with valid input");
-                    assert_eq!(prover_public_values, verifier_public_values);
-                    test_case.assert_output(&verifier_public_values);
-                }
-
-                // Invalid test cases
-                for input in $invalid_test_cases {
-                    let err = zkvm.prove(&input).unwrap_err();
-                    assert!(
-                        matches!(err.downcast_ref::<Error>().unwrap(), Error::zkVM(_)),
-                        "Expect error variant `Error::zkVM`, got {err:?}",
-                    );
-                }
-
-                // Should be able to recover
-                for test_case in $valid_test_cases {
-                    let (prover_public_values, proof, _report) = zkvm
-                        .prove(&test_case.input())
-                        .expect("prove should not fail with valid input");
-                    let verifier_public_values = zkvm
-                        .verify(&proof)
-                        .expect("verify should not fail with valid input");
-                    assert_eq!(prover_public_values, verifier_public_values);
-                    test_case.assert_output(&verifier_public_values);
-                }
-
-                // Timeout
-                let mut zkvm = zkvm;
-                let prove_timeout = Duration::ZERO;
-                zkvm.config.prove_timeout = Some(prove_timeout);
-                let err = zkvm.prove(&Input::new()).unwrap_err();
-                assert!(
-                    matches!(
-                        err.downcast_ref::<Error>().unwrap(),
-                        Error::Timeout { timeout } if *timeout == prove_timeout,
-                    ),
-                    "Expect error variant `Error::Timeout`, got {err:?}",
+                test_prove!(
+                    @body
+                    $zkvm_kind,
+                    $compiler_kind,
+                    $program,
+                    ProverResource::Cpu,
+                    $valid_test_cases,
+                    $invalid_test_cases
                 );
-                assert!(zkvm.container.write().await.is_none());
             }
+        };
+        ($zkvm_kind:ident, $compiler_kind:ident, $program:literal, Gpu, $valid_test_cases:expr, $invalid_test_cases:expr) => {
+            #[tokio::test(flavor = "multi_thread")]
+            #[ignore = "Requires GPU"]
+            async fn test_prove_gpu() {
+                test_prove!(
+                    @body
+                    $zkvm_kind,
+                    $compiler_kind,
+                    $program,
+                    ProverResource::Gpu,
+                    $valid_test_cases,
+                    $invalid_test_cases
+                );
+            }
+        };
+        ($zkvm_kind:ident, $compiler_kind:ident, $program:literal, [$($prover_resource:ident),*], $valid_test_cases:expr, $invalid_test_cases:expr) => {
+            $(
+                test_prove!(
+                    $zkvm_kind,
+                    $compiler_kind,
+                    $program,
+                    $prover_resource,
+                    $valid_test_cases,
+                    $invalid_test_cases
+                );
+            )*
         };
     }
 
     mod airbender {
         use super::*;
-        test!(
+        test_execute!(
             Airbender,
-            Rust,
+            RustCustomized,
             "basic",
+            [BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256()],
+            [
+                Input::new(),
+                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
+            ]
+        );
+        test_prove!(
+            Airbender,
+            RustCustomized,
+            "basic",
+            [Gpu],
             [BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256()],
             [
                 Input::new(),
@@ -620,10 +684,21 @@ mod tests {
 
     mod openvm {
         use super::*;
-        test!(
+        test_execute!(
             OpenVM,
             RustCustomized,
             "basic",
+            [BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256()],
+            [
+                Input::new(),
+                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
+            ]
+        );
+        test_prove!(
+            OpenVM,
+            RustCustomized,
+            "basic",
+            [Cpu, Gpu],
             [BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256()],
             [
                 Input::new(),
@@ -634,10 +709,21 @@ mod tests {
 
     mod risc0 {
         use super::*;
-        test!(
+        test_execute!(
             Risc0,
             RustCustomized,
             "basic",
+            [BasicProgram::<BincodeLegacy>::valid_test_case()],
+            [
+                Input::new(),
+                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
+            ]
+        );
+        test_prove!(
+            Risc0,
+            RustCustomized,
+            "basic",
+            [Cpu, Gpu],
             [BasicProgram::<BincodeLegacy>::valid_test_case()],
             [
                 Input::new(),
@@ -648,10 +734,21 @@ mod tests {
 
     mod sp1 {
         use super::*;
-        test!(
+        test_execute!(
             SP1,
             RustCustomized,
             "basic",
+            [BasicProgram::<BincodeLegacy>::valid_test_case()],
+            [
+                Input::new(),
+                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
+            ]
+        );
+        test_prove!(
+            SP1,
+            RustCustomized,
+            "basic",
+            [Cpu, Gpu],
             [BasicProgram::<BincodeLegacy>::valid_test_case()],
             [
                 Input::new(),
@@ -662,10 +759,21 @@ mod tests {
 
     mod zisk {
         use super::*;
-        test!(
+        test_execute!(
             Zisk,
             RustCustomized,
             "basic_rust",
+            [BasicProgram::<BincodeLegacy>::valid_test_case()],
+            [
+                Input::new(),
+                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
+            ]
+        );
+        test_prove!(
+            Zisk,
+            RustCustomized,
+            "basic_rust",
+            [Cpu, Gpu],
             [BasicProgram::<BincodeLegacy>::valid_test_case()],
             [
                 Input::new(),

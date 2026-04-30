@@ -11,7 +11,7 @@ serde = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
 
 # Airbender dependencies
-airbender_execution_utils.workspace = true
+airbender-host.workspace = true
 
 # Local dependencies
 ere-verifier-core.workspace = true

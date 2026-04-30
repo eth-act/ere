@@ -2,23 +2,18 @@ ARG BASE_IMAGE=ere-base:latest
 
 FROM $BASE_IMAGE
 
-# Set default toolchain to nightly-2025-07-25
-RUN rustup default nightly-2025-07-25
+# Install binutils for objcopy
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    binutils \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Whether to enable CUDA feature or not.
-ARG CUDA
-
-# Env read by Airbender crate `gpu_prover`, numeric cuda arch IDs (e.g. "120" or "89;120")
-ARG CUDAARCHS=120
+# Set default toolchain to nightly-2026-02-10
+RUN rustup default nightly-2026-02-10
 
 # Copy the Airbender SDK installer script from the workspace context
 COPY --chmod=755 scripts/sdk_installers/install_airbender_sdk.sh /tmp/install_airbender_sdk.sh
 
 # Run the Airbender SDK installation script.
-# This script installs airbender-cli.
 RUN /tmp/install_airbender_sdk.sh && rm /tmp/install_airbender_sdk.sh
-
-# Verify airbender-cli is accessible with the correct toolchain
-RUN airbender-cli --version
 
 CMD ["/bin/bash"]

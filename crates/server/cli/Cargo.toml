@@ -45,7 +45,13 @@ sp1 = ["dep:ere-prover-sp1"]
 zisk = ["dep:ere-prover-zisk"]
 
 # Cuda
-cuda = ["ere-prover-openvm?/cuda", "ere-prover-zisk?/cuda"]
+cuda = [
+    "ere-prover-airbender?/cuda",
+    "ere-prover-openvm?/cuda",
+    "ere-prover-risc0?/cuda",
+    "ere-prover-sp1?/cuda",
+    "ere-prover-zisk?/cuda",
+]
 
 [[bin]]
 name = "ere-server"

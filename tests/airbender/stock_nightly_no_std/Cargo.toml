@@ -1,0 +1,9 @@
+[package]
+name = "addition_no_std"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+airbender = { package = "airbender-sdk", git = "https://github.com/matter-labs/airbender-platform", rev = "097f14891ae663fc51a2312da964780c3bdafbc7" }
+
+[workspace]

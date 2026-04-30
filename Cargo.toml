@@ -93,6 +93,7 @@ serde_bytes = { version = "0.11.19", default-features = false }
 serde_json = "1.0.142"
 serde_yaml = "0.9.34"
 sha2 = { version = "0.10.9", default-features = false }
+sha3 = { version = "0.10.8", default-features = false }
 strum = "0.27.2"
 tempfile = "3.20.0"
 thiserror = { version = "2.0.12", default-features = false }
@@ -111,8 +112,11 @@ twirp-build = "0.10"
 uuid = "1"
 
 # Airbender dependencies
-airbender_execution_utils = { git = "https://github.com/matter-labs/zksync-airbender", package = "execution_utils", tag = "v0.5.2" }
-airbender_riscv_common = { git = "https://github.com/matter-labs/zksync-airbender", package = "riscv_common", tag = "v0.5.2", default-features = false }
+airbender-build = { git = "https://github.com/matter-labs/airbender-platform", rev = "097f14891ae663fc51a2312da964780c3bdafbc7" }
+airbender-host = { git = "https://github.com/matter-labs/airbender-platform", rev = "097f14891ae663fc51a2312da964780c3bdafbc7", default-features = false }
+airbender-sdk = { git = "https://github.com/matter-labs/airbender-platform", rev = "097f14891ae663fc51a2312da964780c3bdafbc7", default-features = false }
+airbender-execution-utils = { git = "https://github.com/matter-labs/zksync-airbender", branch = "dev", default-features = false, package = "execution_utils" }
+airbender-riscv-transpiler = { git = "https://github.com/matter-labs/zksync-airbender", branch = "dev", default-features = false, package = "riscv_transpiler" }
 
 # OpenVM dependencies
 openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.3", default-features = false }
@@ -186,3 +190,12 @@ ere-util-build = { path = "crates/util/build" }
 ere-util-compile = { path = "crates/util/compile" }
 ere-util-test = { path = "crates/util/test" }
 ere-util-tokio = { path = "crates/util/tokio" }
+
+# FIXME: Remove the patches once https://github.com/matter-labs/airbender-platform has tagged release.
+[patch."https://github.com/matter-labs/zksync-airbender"]
+common_constants = { git = "https://github.com/matter-labs//zksync-airbender", rev = "d15b86db8a1683b5a641cb420fe6b009e1eb5acb" }
+blake2s_u32 = { git = "https://github.com/matter-labs//zksync-airbender", rev = "d15b86db8a1683b5a641cb420fe6b009e1eb5acb" }
+riscv_common = { git = "https://github.com/matter-labs//zksync-airbender", rev = "d15b86db8a1683b5a641cb420fe6b009e1eb5acb" }
+execution_utils = { git = "https://github.com/matter-labs//zksync-airbender", rev = "d15b86db8a1683b5a641cb420fe6b009e1eb5acb" }
+gpu_prover = { git = "https://github.com/matter-labs//zksync-airbender", rev = "d15b86db8a1683b5a641cb420fe6b009e1eb5acb" }
+riscv_transpiler = { git = "https://github.com/matter-labs//zksync-airbender", rev = "d15b86db8a1683b5a641cb420fe6b009e1eb5acb" }

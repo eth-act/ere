@@ -1,19 +1,13 @@
-#![no_std]
 #![no_main]
-#![no_builtins]
-#![allow(incomplete_features)]
-#![feature(allocator_api)]
-#![feature(generic_const_exprs)]
 
-use ere_platform_airbender::AirbenderPlatform;
+use ere_platform_airbender::{entrypoint, AirbenderPlatform};
 use ere_util_test::{
     codec::BincodeLegacy,
     program::{basic::BasicProgram, Program},
 };
 
-mod airbender_rt;
+entrypoint!(main);
 
-#[inline(never)]
 fn main() {
     BasicProgram::<BincodeLegacy>::run_output_sha256::<AirbenderPlatform>();
 }

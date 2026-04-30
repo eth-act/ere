@@ -12,11 +12,7 @@ const RUSTFLAGS: &[&str] = &[
     "-C",
     "passes=lower-atomic",
     "-C",
-    "target-feature=-unaligned-scalar-mem,+relax",
-    "-C",
-    "link-arg=--save-temps",
-    "-C",
-    "force-frame-pointers",
+    "target-feature=-unaligned-scalar-mem",
 ];
 const CARGO_BUILD_OPTIONS: &[&str] = &[
     // For bare metal we have to build core and alloc
@@ -49,14 +45,24 @@ impl Compiler for AirbenderRustRv32ima {
 #[cfg(test)]
 mod tests {
     use ere_compiler_core::Compiler;
+    use ere_prover_airbender::AirbenderProver;
+    use ere_prover_core::{Input, ProverResource, zkVMProver};
     use ere_util_test::host::testing_guest_directory;
 
     use crate::AirbenderRustRv32ima;
 
     #[test]
     fn test_compile() {
-        let guest_directory = testing_guest_directory("airbender", "basic");
+        let guest_directory = testing_guest_directory("airbender", "stock_nightly_no_std");
         let elf = AirbenderRustRv32ima.compile(guest_directory).unwrap();
         assert!(!elf.is_empty(), "ELF should not be empty.");
+    }
+
+    #[test]
+    fn test_execute() {
+        let guest_directory = testing_guest_directory("airbender", "stock_nightly_no_std");
+        let elf = AirbenderRustRv32ima.compile(guest_directory).unwrap();
+        let zkvm = AirbenderProver::new(elf, ProverResource::Cpu).unwrap();
+        zkvm.execute(&Input::new()).unwrap();
     }
 }

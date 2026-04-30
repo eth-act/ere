@@ -1,6 +1,7 @@
-/* Copied from https://github.com/matter-labs/zksync-os/blob/main/zksync_os/src/lds/link.x */
+/* Copied from https://github.com/matter-labs/zksync-airbender/blob/dev/riscv_common/src/lds/link.x */
 
 PROVIDE(_stext = ORIGIN(REGION_TEXT));
+PROVIDE(_rom_size = LENGTH(ROM));
 PROVIDE(_max_hart_id = 0);
 PROVIDE(_hart_stack_size = 64M);
 PROVIDE(_heap_size = 768M);
