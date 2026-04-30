@@ -36,7 +36,7 @@ fn generate_zkvm_sdk_version_impl() {
         sp1_version,
         zisk_version,
     ] = [
-        "execution_utils",
+        "airbender-sdk",
         "openvm-sdk",
         "risc0-zkvm",
         "sp1-sdk",
