@@ -273,7 +273,7 @@ mod tests {
 
     use ere_compiler_airbender::AirbenderRustRv32imaCustomized;
     use ere_compiler_core::{Compiler, Elf};
-    use ere_prover_core::{Input, ProverResource, codec::Encode, zkVMProver};
+    use ere_prover_core::{Input, ProverResource, zkVMProver};
     #[cfg(feature = "cuda")]
     use ere_util_test::host::run_zkvm_prove;
     use ere_util_test::{
@@ -281,9 +281,8 @@ mod tests {
         host::{TestCase, run_zkvm_execute, testing_guest_directory},
         program::basic::BasicProgram,
     };
-    use ere_verifier_airbender::AirbenderProgramVk;
 
-    use crate::prover::{AirbenderProver, compute_program_vk, elf_to_bin};
+    use crate::prover::AirbenderProver;
 
     fn basic_elf() -> Elf {
         static ELF: OnceLock<Elf> = OnceLock::new();
@@ -348,6 +347,11 @@ mod tests {
     #[cfg(feature = "cuda")]
     #[test]
     fn compute_program_vk_matches_sdk() {
+        use ere_prover_core::codec::Encode;
+        use ere_verifier_airbender::AirbenderProgramVk;
+
+        use crate::prover::{compute_program_vk, elf_to_bin};
+
         let elf = basic_elf();
         let (app_bin_hash, app_bin_path) = elf_to_bin(&elf).unwrap();
 
