@@ -268,12 +268,12 @@ fn panic_msg(err: Box<dyn Any + Send + 'static>) -> String {
 }
 
 #[cfg(test)]
-pub(crate) mod tests {
+mod tests {
     use std::sync::OnceLock;
 
     use ere_compiler_airbender::AirbenderRustRv32imaCustomized;
     use ere_compiler_core::{Compiler, Elf};
-    use ere_prover_core::{Input, ProverResource, zkVMProver};
+    use ere_prover_core::{Input, ProverResource, codec::Encode, zkVMProver};
     #[cfg(feature = "cuda")]
     use ere_util_test::host::run_zkvm_prove;
     use ere_util_test::{
@@ -281,10 +281,11 @@ pub(crate) mod tests {
         host::{TestCase, run_zkvm_execute, testing_guest_directory},
         program::basic::BasicProgram,
     };
+    use ere_verifier_airbender::AirbenderProgramVk;
 
-    use crate::prover::AirbenderProver;
+    use crate::prover::{AirbenderProver, compute_program_vk, elf_to_bin};
 
-    pub(crate) fn basic_elf() -> Elf {
+    fn basic_elf() -> Elf {
         static ELF: OnceLock<Elf> = OnceLock::new();
         ELF.get_or_init(|| {
             AirbenderRustRv32imaCustomized
@@ -342,5 +343,20 @@ pub(crate) mod tests {
         // Should be able to recover
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
         run_zkvm_prove(&zkvm, &test_case);
+    }
+
+    #[cfg(feature = "cuda")]
+    #[test]
+    fn compute_program_vk_matches_sdk() {
+        let elf = basic_elf();
+        let (app_bin_hash, app_bin_path) = elf_to_bin(&elf).unwrap();
+
+        let program_vk =
+            AirbenderProgramVk(airbender_host::compute_unified_vk(&app_bin_path).unwrap());
+
+        assert_eq!(
+            compute_program_vk(app_bin_hash).encode_to_vec().unwrap(),
+            program_vk.encode_to_vec().unwrap(),
+        );
     }
 }
