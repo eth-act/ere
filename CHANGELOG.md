@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.9.0](https://github.com/eth-act/ere/compare/v0.8.1...v0.9.0) (2026-04-30)
+
+
+### Features
+
+* finer modules ([#346](https://github.com/eth-act/ere/issues/346)) ([44e91ed](https://github.com/eth-act/ere/commit/44e91ed7c0bd5398d55eb4ce43594ac0f161dd2b))
+* update airbender to use sdk ([#347](https://github.com/eth-act/ere/issues/347)) ([ad57b1d](https://github.com/eth-act/ere/commit/ad57b1d74db3c56a7e1413ab29300f38d9a8c864))
+* zisk cluster verify ([#344](https://github.com/eth-act/ere/issues/344)) ([21b40df](https://github.com/eth-act/ere/commit/21b40dfeea610c430ede65be055041ea4117694b))
+
 ## [0.8.1](https://github.com/eth-act/ere/compare/v0.8.0...v0.8.1) (2026-04-23)
 
 
