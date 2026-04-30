@@ -17,8 +17,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - zkvm: airbender
-            crate: execution_utils
+          # - zkvm: airbender
+          #   crate: airbender-sdk
           - zkvm: openvm
             crate: openvm-sdk
           - zkvm: risc0
