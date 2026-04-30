@@ -17,7 +17,14 @@ ARG RUSTFLAGS
 # Env variable read by ZisK crate `proofman-starks-lib-c`, comma-separated numeric arch IDs (e.g. "120" or "89,120")
 ARG CUDA_ARCHS=120
 
-RUN cargo build --release --package ere-server --bin ere-server --features zisk${CUDA:+,cuda} \
+# Strip the sm_ prefix and export as CUDA_ARCHS (plural, numeric) which is the
+# env var proofman-starks-lib-c/build.rs reads to generate nvcc -gencode flags.
+# Without this export, CUDA_ARCH is declared-but-unused and the build silently
+# falls back to the committed sm_120 default in pil2-stark's CudaArch.mk,
+# producing an image that fails on any non-sm_120 GPU with CUDA error 209
+# (no kernel image is available for execution on the device).
+RUN CUDA_ARCHS="${CUDA_ARCH#sm_}" \
+    cargo build --release --package ere-server --bin ere-server --features zisk${CUDA:+,cuda} \
     && mkdir bin && mv target/release/ere-server bin/ere-server \
     && cargo clean && rm -rf $CARGO_HOME/registry/
 
