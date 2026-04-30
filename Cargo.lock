@@ -53,7 +53,7 @@ dependencies = [
 [[package]]
 name = "add_sub_lui_auipc_mop"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "common_constants",
  "prover",
@@ -65,7 +65,7 @@ dependencies = [
 [[package]]
 name = "add_sub_lui_auipc_mop_verifier"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "field",
  "unroll",
@@ -144,6 +144,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "airbender-build"
+version = "0.1.0"
+source = "git+https://github.com/matter-labs/airbender-platform?rev=097f14891ae663fc51a2312da964780c3bdafbc7#097f14891ae663fc51a2312da964780c3bdafbc7"
+dependencies = [
+ "airbender-codec",
+ "airbender-core",
+ "cargo_metadata 0.18.1",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "airbender-codec"
 version = "0.1.0"
 source = "git+https://github.com/matter-labs/airbender-platform?rev=097f14891ae663fc51a2312da964780c3bdafbc7#097f14891ae663fc51a2312da964780c3bdafbc7"
@@ -163,6 +177,47 @@ dependencies = [
 ]
 
 [[package]]
+name = "airbender-crypto"
+version = "0.1.0"
+source = "git+https://github.com/matter-labs/airbender-platform?rev=097f14891ae663fc51a2312da964780c3bdafbc7#097f14891ae663fc51a2312da964780c3bdafbc7"
+dependencies = [
+ "ark-bls12-381",
+ "ark-bn254",
+ "ark-ec",
+ "ark-ff 0.5.0",
+ "ark-serialize 0.5.0",
+ "ark-std 0.5.0",
+ "blake2",
+ "blake2s_u32",
+ "cfg-if",
+ "common_constants",
+ "const_for",
+ "educe",
+ "itertools 0.14.0",
+ "k256",
+ "num-bigint 0.4.6",
+ "num-traits",
+ "p256",
+ "ripemd",
+ "ruint",
+ "seq-macro",
+ "sha2",
+ "sha3",
+ "zeroize",
+]
+
+[[package]]
+name = "airbender-guest"
+version = "0.1.0"
+source = "git+https://github.com/matter-labs/airbender-platform?rev=097f14891ae663fc51a2312da964780c3bdafbc7#097f14891ae663fc51a2312da964780c3bdafbc7"
+dependencies = [
+ "airbender-codec",
+ "airbender-core",
+ "airbender-rt",
+ "serde",
+]
+
+[[package]]
 name = "airbender-host"
 version = "0.1.0"
 source = "git+https://github.com/matter-labs/airbender-platform?rev=097f14891ae663fc51a2312da964780c3bdafbc7#097f14891ae663fc51a2312da964780c3bdafbc7"
@@ -178,6 +233,38 @@ dependencies = [
  "sysinfo 0.33.1",
  "thiserror 2.0.18",
  "tracing",
+]
+
+[[package]]
+name = "airbender-macros"
+version = "0.1.0"
+source = "git+https://github.com/matter-labs/airbender-platform?rev=097f14891ae663fc51a2312da964780c3bdafbc7#097f14891ae663fc51a2312da964780c3bdafbc7"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
+name = "airbender-rt"
+version = "0.1.0"
+source = "git+https://github.com/matter-labs/airbender-platform?rev=097f14891ae663fc51a2312da964780c3bdafbc7#097f14891ae663fc51a2312da964780c3bdafbc7"
+dependencies = [
+ "getrandom 0.2.17",
+ "riscv_common",
+ "talc",
+]
+
+[[package]]
+name = "airbender-sdk"
+version = "0.1.0"
+source = "git+https://github.com/matter-labs/airbender-platform?rev=097f14891ae663fc51a2312da964780c3bdafbc7#097f14891ae663fc51a2312da964780c3bdafbc7"
+dependencies = [
+ "airbender-codec",
+ "airbender-crypto",
+ "airbender-guest",
+ "airbender-macros",
+ "airbender-rt",
 ]
 
 [[package]]
@@ -1797,7 +1884,7 @@ checksum = "2af50177e190e07a26ab74f8b1efbfe2ef87da2116221318cb1c2e82baf7de06"
 [[package]]
 name = "bigint_with_control"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "common_constants",
  "prover",
@@ -1809,7 +1896,7 @@ dependencies = [
 [[package]]
 name = "bigint_with_control_verifier"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "field",
  "unroll",
@@ -1874,7 +1961,7 @@ dependencies = [
  "bitflags 2.11.0",
  "cexpr",
  "clang-sys",
- "itertools 0.13.0",
+ "itertools 0.11.0",
  "log",
  "prettyplease",
  "proc-macro2",
@@ -1976,7 +2063,7 @@ dependencies = [
 [[package]]
 name = "blake2_with_compression"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "common_constants",
  "prover",
@@ -1988,7 +2075,7 @@ dependencies = [
 [[package]]
 name = "blake2_with_compression_verifier"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "field",
  "unroll",
@@ -2009,8 +2096,9 @@ dependencies = [
 [[package]]
 name = "blake2s_u32"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
+ "common_constants",
  "unroll",
 ]
 
@@ -2482,7 +2570,7 @@ version = "3.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "faf9468729b8cbcea668e36183cb69d317348c2e08e994829fb56ebfdfbaac34"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -2498,7 +2586,7 @@ dependencies = [
 [[package]]
 name = "common_constants"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 
 [[package]]
 name = "console"
@@ -2536,6 +2624,12 @@ name = "const-oid"
 version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2459377285ad874054d797f3ccebf984978aa39129f6eafde5cdc8315b612f8"
+
+[[package]]
+name = "const_for"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d9c50fcfdf972929aff202c16b80086aa3cfc6a3a820af714096c58c7c1d0582"
 
 [[package]]
 name = "const_format"
@@ -2786,7 +2880,7 @@ dependencies = [
 [[package]]
 name = "cs"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "bincode 1.3.3",
  "blake2s_u32",
@@ -3363,7 +3457,7 @@ dependencies = [
  "libc",
  "option-ext",
  "redox_users 0.5.2",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -3385,7 +3479,7 @@ checksum = "9f5b01c17f85ee988d832c40e549a64bd89ab2c9f8d8a613bdf5122ae507e294"
 dependencies = [
  "cfg-if",
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -3775,9 +3869,14 @@ dependencies = [
 name = "ere-compiler-airbender"
 version = "0.8.1"
 dependencies = [
+ "airbender-build",
+ "cargo_metadata 0.19.2",
  "ere-compiler-core",
+ "ere-prover-airbender",
+ "ere-prover-core",
  "ere-util-compile",
  "ere-util-test",
+ "tempfile",
  "thiserror 2.0.18",
 ]
 
@@ -3869,8 +3968,8 @@ dependencies = [
 name = "ere-platform-airbender"
 version = "0.8.1"
 dependencies = [
+ "airbender-sdk",
  "ere-platform-core",
- "riscv_common",
 ]
 
 [[package]]
@@ -4207,7 +4306,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4224,7 +4323,7 @@ dependencies = [
 [[package]]
 name = "execution_utils"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "clap",
  "full_statement_verifier",
@@ -4383,7 +4482,7 @@ dependencies = [
 [[package]]
 name = "fft"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "field",
  "seq-macro",
@@ -4396,7 +4495,7 @@ dependencies = [
 [[package]]
 name = "field"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "rand 0.9.4",
  "seq-macro",
@@ -4511,7 +4610,7 @@ checksum = "42703706b716c37f96a77aea830392ad231f44c9e9a67872fa5548707e11b11c"
 [[package]]
 name = "full_statement_verifier"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "add_sub_lui_auipc_mop_verifier",
  "bigint_with_control_verifier",
@@ -4796,7 +4895,7 @@ checksum = "0cc23270f6e1808e30a928bdc84dea0b9b4136a8bc82338574f23baf47bbd280"
 [[package]]
 name = "gpu_prover"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "blake2s_u32",
  "cmake",
@@ -5527,7 +5626,7 @@ dependencies = [
 [[package]]
 name = "inits_and_teardowns"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "common_constants",
  "prover",
@@ -5539,7 +5638,7 @@ dependencies = [
 [[package]]
 name = "inits_and_teardowns_verifier"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "field",
  "unroll",
@@ -5696,7 +5795,7 @@ dependencies = [
 [[package]]
 name = "jump_branch_slt"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "common_constants",
  "prover",
@@ -5708,7 +5807,7 @@ dependencies = [
 [[package]]
 name = "jump_branch_slt_verifier"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "field",
  "unroll",
@@ -5752,7 +5851,7 @@ dependencies = [
 [[package]]
 name = "keccak_special5"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "common_constants",
  "prover",
@@ -5764,7 +5863,7 @@ dependencies = [
 [[package]]
 name = "keccak_special5_verifier"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "field",
  "unroll",
@@ -5960,7 +6059,7 @@ checksum = "6373607a59f0be73a39b6fe456b8192fcc3585f602af20751600e974dd455e77"
 [[package]]
 name = "load_store_subword_only"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "common_constants",
  "prover",
@@ -5972,7 +6071,7 @@ dependencies = [
 [[package]]
 name = "load_store_subword_only_verifier"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "field",
  "unroll",
@@ -5982,7 +6081,7 @@ dependencies = [
 [[package]]
 name = "load_store_word_only"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "common_constants",
  "prover",
@@ -5994,7 +6093,7 @@ dependencies = [
 [[package]]
 name = "load_store_word_only_verifier"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "field",
  "unroll",
@@ -6420,7 +6519,7 @@ dependencies = [
 [[package]]
 name = "mul_div"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "common_constants",
  "prover",
@@ -6432,7 +6531,7 @@ dependencies = [
 [[package]]
 name = "mul_div_unsigned"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "common_constants",
  "prover",
@@ -6444,7 +6543,7 @@ dependencies = [
 [[package]]
 name = "mul_div_unsigned_verifier"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "field",
  "unroll",
@@ -6454,7 +6553,7 @@ dependencies = [
 [[package]]
 name = "mul_div_verifier"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "field",
  "unroll",
@@ -6522,7 +6621,7 @@ dependencies = [
 [[package]]
 name = "non_determinism_source"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 
 [[package]]
 name = "ntapi"
@@ -6539,7 +6638,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -9401,7 +9500,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be769465445e8c1474e9c5dac2018218498557af32d9ed057325ec9a41ae81bf"
 dependencies = [
  "heck",
- "itertools 0.14.0",
+ "itertools 0.11.0",
  "log",
  "multimap",
  "once_cell",
@@ -9421,7 +9520,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "343d3bd7056eda839b03204e68deff7d1b13aba7af2b2fd16890697274262ee7"
 dependencies = [
  "heck",
- "itertools 0.14.0",
+ "itertools 0.11.0",
  "log",
  "multimap",
  "petgraph 0.8.3",
@@ -9442,7 +9541,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a56d757972c98b346a9b766e3f02746cde6dd1cd1d1d563472929fdd74bec4d"
 dependencies = [
  "anyhow",
- "itertools 0.14.0",
+ "itertools 0.11.0",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -9455,7 +9554,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "27c6023962132f4b30eb4c172c91ce92d933da334c59c23cddee82358ddafb0b"
 dependencies = [
  "anyhow",
- "itertools 0.14.0",
+ "itertools 0.11.0",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -9482,7 +9581,7 @@ dependencies = [
 [[package]]
 name = "prover"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "blake2s_u32",
  "common_constants",
@@ -9507,7 +9606,7 @@ dependencies = [
 [[package]]
 name = "prover_examples"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "bincode 1.3.3",
  "common_constants",
@@ -10039,6 +10138,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3df6368f71f205ff9c33c076d170dd56ebf68e8161c733c0caa07a7a5509ed53"
 
 [[package]]
+name = "ripemd"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd124222d17ad93a644ed9d011a40f4fb64aa54275c08cc216524a9ea82fb09f"
+dependencies = [
+ "digest 0.10.7",
+]
+
+[[package]]
 name = "risc0-binfmt"
 version = "3.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10396,17 +10504,16 @@ checksum = "68b59d645e392e041ad18f5e529ed13242d8405c66bb192f59703ea2137017d0"
 [[package]]
 name = "riscv_common"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "common_constants",
- "heapless",
  "seq-macro",
 ]
 
 [[package]]
 name = "riscv_transpiler"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "addr2line 0.25.1",
  "blake2s_u32",
@@ -10616,7 +10723,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -10696,7 +10803,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -11183,7 +11290,7 @@ dependencies = [
 [[package]]
 name = "setups"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "add_sub_lui_auipc_mop",
  "bigint_with_control",
@@ -11275,7 +11382,7 @@ checksum = "dc6fe69c597f9c37bfeeeeeb33da3530379845f10be461a66d16d03eca2ded77"
 [[package]]
 name = "shift_binary_csr"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "common_constants",
  "prover",
@@ -11287,7 +11394,7 @@ dependencies = [
 [[package]]
 name = "shift_binary_csr_verifier"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "field",
  "unroll",
@@ -12830,7 +12937,7 @@ dependencies = [
  "getrandom 0.4.2",
  "once_cell",
  "rustix",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -13341,7 +13448,7 @@ checksum = "8df9b6e13f2d32c91b9bd719c00d1958837bc7dec474d94952798cc8e69eeec3"
 [[package]]
 name = "trace_and_split"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "common_constants",
  "prover",
@@ -13355,7 +13462,7 @@ dependencies = [
 [[package]]
 name = "trace_holder"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "field",
  "worker",
@@ -13489,7 +13596,7 @@ dependencies = [
 [[package]]
 name = "transcript"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "blake2s_u32",
  "unroll",
@@ -13736,7 +13843,7 @@ checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
 [[package]]
 name = "unified_reduced_machine"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "common_constants",
  "prover",
@@ -13748,7 +13855,7 @@ dependencies = [
 [[package]]
 name = "unified_reduced_machine_verifier"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "field",
  "unroll",
@@ -13890,7 +13997,7 @@ dependencies = [
 [[package]]
 name = "verifier_common"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "blake2s_u32",
  "cs",
@@ -13905,7 +14012,7 @@ dependencies = [
 [[package]]
 name = "verifier_generator"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "proc-macro2",
  "prover",
@@ -14170,7 +14277,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -14805,7 +14912,7 @@ dependencies = [
 [[package]]
 name = "worker"
 version = "0.1.0"
-source = "git+https://github.com/matter-labs//zksync-airbender?rev=591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a#591efe90f1a5f0e0cfe23ac366bf0fc221fbfe0a"
+source = "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb"
 dependencies = [
  "num_cpus",
  "rayon",
