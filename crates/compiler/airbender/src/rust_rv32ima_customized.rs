@@ -1,14 +1,14 @@
 use std::{env, fs, iter, path::Path};
 
-use airbender_build::{BuildConfig, BuildError, DEFAULT_GUEST_TARGET, build_dist};
+use airbender_build::{
+    BuildConfig, BuildError, DEFAULT_GUEST_TARGET, DEFAULT_GUEST_TOOLCHAIN, build_dist,
+};
 use cargo_metadata::TargetKind;
 use ere_compiler_core::{Compiler, Elf};
 use ere_util_compile::{CommonError, cargo_metadata, rustup_add_rust_src};
 use tempfile::tempdir;
 
 use crate::Error;
-
-const DEFAULT_RUSTUP_TOOLCHAIN: &str = "nightly-2026-02-10";
 
 const LINKER_SCRIPT: &str = concat!(
     include_str!("rust_rv32ima/memory.x"),
@@ -35,8 +35,8 @@ impl Compiler for AirbenderRustRv32imaCustomized {
     type Error = Error;
 
     fn compile(&self, guest_directory: impl AsRef<Path>) -> Result<Elf, Self::Error> {
-        let toolchain = env::var("AIRBENDER_RUST_TOOLCHAIN")
-            .unwrap_or_else(|_| DEFAULT_RUSTUP_TOOLCHAIN.to_string());
+        let toolchain =
+            env::var("ERE_RUST_TOOLCHAIN").unwrap_or_else(|_| DEFAULT_GUEST_TOOLCHAIN.into());
         rustup_add_rust_src(&toolchain)?;
 
         let guest_directory = guest_directory.as_ref();
@@ -61,14 +61,13 @@ impl Compiler for AirbenderRustRv32imaCustomized {
         let mut config = BuildConfig::new(guest_directory);
         config.bin_name = Some(bin.name.clone());
         config.dist_dir = Some(tempdir.path().to_path_buf());
+        config.target = Some(DEFAULT_GUEST_TARGET.into());
         config.cargo_args = cargo_args(&linker_script_path);
         build_dist(&config)?;
 
-        let target = config.target.as_deref().unwrap_or(DEFAULT_GUEST_TARGET);
         let elf_path = metadata
             .target_directory
-            .as_std_path()
-            .join(target)
+            .join(DEFAULT_GUEST_TARGET)
             .join("release")
             .join(&bin.name);
         let elf =

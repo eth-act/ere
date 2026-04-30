@@ -31,8 +31,8 @@ impl Platform for AirbenderPlatform {
         airbender::rt::sys::exit_success(&words)
     }
 
-    fn print(_message: &str) {
-        let _ = airbender::rt::uart::QuasiUart::new().write_str(_message);
+    fn print(message: &str) {
+        let _ = airbender::rt::uart::QuasiUart::new().write_str(message);
     }
 }
 

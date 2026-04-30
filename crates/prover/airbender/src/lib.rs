@@ -2,6 +2,9 @@
 //!
 //! # Requirements
 //!
+//! To use with GPU proving support, make sure CUDA 12.9 is installed, and turn
+//! on the `cuda` feature.
+//!
 //! - `objcopy` (from `binutils`) - Used to convert ELF to binary/text at zkVMProver construction
 //!   time
 //!

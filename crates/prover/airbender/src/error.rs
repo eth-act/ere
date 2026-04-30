@@ -7,10 +7,10 @@ pub enum Error {
     #[error(transparent)]
     CommonError(#[from] CommonError),
 
-    #[error("Enable `cuda` feature to enable `ProverResource::Gpu`")]
+    #[error("Enable `cuda` feature to use `ProverResource::Gpu`")]
     CudaFeatureDisabled,
 
-    #[error("Cpu prover is not available, use `ProverResource::Gpu`")]
+    #[error("Cpu prover not available, use `ProverResource::Gpu`")]
     CpuProverNotAvailable,
 
     #[error("Guest execution did not terminate")]
@@ -21,9 +21,6 @@ pub enum Error {
 
     #[error(transparent)]
     Sdk(#[from] HostError),
-
-    #[error("Prove panicked: {0}")]
-    ProvePanic(String),
 
     #[error(transparent)]
     Verifier(#[from] ere_verifier_airbender::Error),

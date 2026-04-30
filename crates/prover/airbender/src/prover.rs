@@ -118,7 +118,11 @@ impl zkVMProver for AirbenderProver {
         match self.resource {
             ProverResource::Cpu => Err(Error::CpuProverNotAvailable),
             ProverResource::Gpu => Err(Error::CudaFeatureDisabled),
-            _ => unreachable!(),
+            _ => Err(CommonError::unsupported_prover_resource_kind(
+                self.resource.kind(),
+                [ProverResourceKind::Cpu, ProverResourceKind::Gpu],
+            )
+            .into()),
         }
     }
 
@@ -152,7 +156,7 @@ impl zkVMProver for AirbenderProver {
                 (proof.into_inner(), receipt)
             }
             _ => Err(Error::Sdk(airbender_host::HostError::Prover(
-                "Expect Proof::Real in ProverLevel::RecursionUnified".to_string(),
+                "Expected Proof::Real in ProverLevel::RecursionUnified".to_string(),
             )))?,
         };
         let proving_time = start.elapsed();
@@ -209,8 +213,12 @@ fn elf_to_bin(elf: &[u8]) -> Result<([u8; 32], PathBuf), Error> {
     let bin_hash_hex: String = bin_hash.iter().map(|b| format!("{b:02x}")).collect();
     let cache_bin_path = cache_dir.join(format!("{bin_hash_hex}.bin"));
     let cache_text_path = cache_dir.join(format!("{bin_hash_hex}.text"));
-    fs::rename(&bin_path, &cache_bin_path).map_err(|err| CommonError::io("rename", err))?;
-    fs::rename(&text_path, &cache_text_path).map_err(|err| CommonError::io("rename", err))?;
+    if !cache_bin_path.exists() {
+        fs::rename(&bin_path, &cache_bin_path).map_err(|err| CommonError::io("rename", err))?;
+    }
+    if !cache_text_path.exists() {
+        fs::rename(&text_path, &cache_text_path).map_err(|err| CommonError::io("rename", err))?;
+    }
 
     Ok((bin_hash, cache_bin_path))
 }
@@ -266,6 +274,8 @@ pub(crate) mod tests {
     use ere_compiler_airbender::AirbenderRustRv32imaCustomized;
     use ere_compiler_core::{Compiler, Elf};
     use ere_prover_core::{Input, ProverResource, zkVMProver};
+    #[cfg(feature = "cuda")]
+    use ere_util_test::host::run_zkvm_prove;
     use ere_util_test::{
         codec::BincodeLegacy,
         host::{TestCase, run_zkvm_execute, testing_guest_directory},
@@ -313,7 +323,7 @@ pub(crate) mod tests {
         let zkvm = AirbenderProver::new(elf, ProverResource::Gpu).unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
-        ere_util_test::host::run_zkvm_prove(&zkvm, &test_case);
+        run_zkvm_prove(&zkvm, &test_case);
     }
 
     #[cfg(feature = "cuda")]
@@ -331,6 +341,6 @@ pub(crate) mod tests {
 
         // Should be able to recover
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
-        ere_util_test::host::run_zkvm_prove(&zkvm, &test_case);
+        run_zkvm_prove(&zkvm, &test_case);
     }
 }
