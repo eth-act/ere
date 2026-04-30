@@ -1,5 +1,5 @@
 use alloc::vec::Vec;
-use core::{array, iter::repeat_with, ops::Deref};
+use core::{array, fmt::Write, iter::repeat_with, ops::Deref};
 
 use ere_platform_core::Platform;
 
@@ -11,8 +11,8 @@ pub struct AirbenderPlatform;
 
 impl Platform for AirbenderPlatform {
     fn read_whole_input() -> impl Deref<Target = [u8]> {
-        let len = airbender_riscv_common::csr_read_word() as usize;
-        repeat_with(airbender_riscv_common::csr_read_word)
+        let len = airbender::rt::sys::read_word() as usize;
+        repeat_with(airbender::rt::sys::read_word)
             .take(len.div_ceil(4))
             .flat_map(u32::to_le_bytes)
             .take(len)
@@ -28,12 +28,25 @@ impl Platform for AirbenderPlatform {
         let words = array::from_fn(|i| {
             u32::from_le_bytes(array::from_fn(|j| *output.get(4 * i + j).unwrap_or(&0)))
         });
-        airbender_riscv_common::zksync_os_finish_success(&words);
+        airbender::rt::sys::exit_success(&words)
     }
 
     fn print(_message: &str) {
-        #[cfg(feature = "uart")]
-        core::fmt::Write::write_str(&mut airbender_riscv_common::QuasiUART::new(), _message)
-            .unwrap();
+        let _ = airbender::rt::uart::QuasiUart::new().write_str(_message);
     }
+}
+
+#[cfg(not(feature = "allocator-custom"))]
+#[macro_export]
+macro_rules! entrypoint {
+    ($name:ident) => {
+        #[unsafe(no_mangle)]
+        #[unsafe(link_section = ".init.rust")]
+        pub extern "C" fn _start_rust() -> ! {
+            $crate::airbender::rt::start(|| {
+                $name();
+                unsafe { core::hint::unreachable_unchecked() }
+            })
+        }
+    };
 }

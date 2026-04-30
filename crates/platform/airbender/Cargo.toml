@@ -7,16 +7,18 @@ license.workspace = true
 
 [dependencies]
 # Airbender dependencies
-airbender_riscv_common.workspace = true
+airbender-sdk.workspace = true
 
 # Local dependencies
 ere-platform-core.workspace = true
 
 [features]
-default = []
-uart = ["airbender_riscv_common/uart"]
-custom_panic = ["airbender_riscv_common/custom_panic"]
-custom_allocator = ["airbender_riscv_common/custom_allocator"]
+default = ["allocator-talc"]
+std = ["airbender-sdk/std"]
+crypto = ["airbender-sdk/crypto"]
+allocator-bump = ["airbender-sdk/allocator-bump"]
+allocator-talc = ["airbender-sdk/allocator-talc"]
+allocator-custom = ["airbender-sdk/allocator-custom"]
 
 [lints]
 workspace = true
