@@ -5,7 +5,7 @@ use airbender_build::{
 };
 use cargo_metadata::TargetKind;
 use ere_compiler_core::{Compiler, Elf};
-use ere_util_compile::{CommonError, cargo_metadata, rustup_add_rust_src};
+use ere_util_compile::{CommonError, cargo_metadata, rustup_add_components};
 use tempfile::tempdir;
 
 use crate::Error;
@@ -37,7 +37,7 @@ impl Compiler for AirbenderRustRv32imaCustomized {
     fn compile(&self, guest_directory: impl AsRef<Path>) -> Result<Elf, Self::Error> {
         let toolchain =
             env::var("ERE_RUST_TOOLCHAIN").unwrap_or_else(|_| DEFAULT_GUEST_TOOLCHAIN.into());
-        rustup_add_rust_src(&toolchain)?;
+        rustup_add_components(&toolchain, ["rust-src", "llvm-tools-preview"])?;
 
         let guest_directory = guest_directory.as_ref();
 

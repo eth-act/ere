@@ -10,4 +10,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Set default toolchain to nightly-2026-02-10
 RUN rustup default nightly-2026-02-10
 
+# Copy the Airbender SDK installer script from the workspace context
+COPY --chmod=755 scripts/sdk_installers/install_airbender_sdk.sh /tmp/install_airbender_sdk.sh
+
+# Run the Airbender SDK installation script.
+RUN /tmp/install_airbender_sdk.sh && rm /tmp/install_airbender_sdk.sh
+
 CMD ["/bin/bash"]

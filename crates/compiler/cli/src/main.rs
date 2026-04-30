@@ -64,9 +64,8 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> Result<Elf, Error
     let elf = {
         use ere_compiler_airbender::*;
         match compiler_kind {
-            CompilerKind::Rust | CompilerKind::RustCustomized => {
-                AirbenderRustRv32ima.compile(guest_dir)?
-            }
+            CompilerKind::Rust => AirbenderRustRv32ima.compile(guest_dir)?,
+            CompilerKind::RustCustomized => AirbenderRustRv32imaCustomized.compile(guest_dir)?,
             _ => anyhow::bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]

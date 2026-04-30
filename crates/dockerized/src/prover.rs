@@ -608,7 +608,7 @@ mod tests {
         use super::*;
         test!(
             Airbender,
-            Rust,
+            RustCustomized,
             "basic",
             [BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256()],
             [
