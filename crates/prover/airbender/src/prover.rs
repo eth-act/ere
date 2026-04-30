@@ -53,7 +53,9 @@ impl AirbenderProver {
         let program_vk = compute_program_vk(bin_hash);
         let verifier = AirbenderVerifier::new(program_vk);
 
-        let runner = TranspilerRunnerBuilder::new(&bin_path).build()?;
+        let runner = TranspilerRunnerBuilder::new(&bin_path)
+            .with_cycles(usize::MAX)
+            .build()?;
 
         #[cfg(feature = "cuda")]
         let gpu_prover = match resource {
