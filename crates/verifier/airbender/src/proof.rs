@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 /// A proof produced by the host prover that bundles everything needed for
 /// verification.
 ///
-/// Wraps `airbender-host`'s [`UnrolledProgramProof`], serialized via bincode legacy.
+/// Wraps [`UnrolledProgramProof`], serialized via bincode legacy.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct AirbenderProof(pub UnrolledProgramProof);
