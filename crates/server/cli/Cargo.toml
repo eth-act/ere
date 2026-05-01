@@ -8,12 +8,13 @@ license.workspace = true
 [dependencies]
 anyhow = { workspace = true }
 bincode = { workspace = true, features = ["alloc", "serde"] }
-clap = { workspace = true, features = ["derive"] }
+clap = { workspace = true, features = ["derive", "env"] }
 metrics = { workspace = true }
 metrics-exporter-prometheus = { workspace = true }
 opentelemetry = { workspace = true }
 opentelemetry-otlp = { workspace = true, features = ["grpc-tonic"] }
 opentelemetry_sdk = { workspace = true, features = ["rt-tokio"] }
+parking_lot = { workspace = true }
 pin-project-lite = { workspace = true }
 reqwest = { workspace = true, features = ["rustls-tls"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal"] }

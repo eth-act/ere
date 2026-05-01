@@ -1,7 +1,7 @@
 use std::{
     net::{Ipv4Addr, SocketAddr},
     sync::Arc,
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 use anyhow::{Context, Error};
@@ -16,9 +16,11 @@ use ere_server_api::{
     VerifyRequest, VerifyResponse, ZkvmService, execute_response::Result as ExecuteResult,
     prove_response::Result as ProveResult, router, verify_response::Result as VerifyResult,
 };
+use parking_lot::Mutex;
 use tokio::{
     net::TcpListener,
     signal::unix::{SignalKind, signal},
+    sync::Semaphore,
 };
 use tower::ServiceBuilder;
 use tower_http::{catch_panic::CatchPanicLayer, trace::TraceLayer};
@@ -26,7 +28,7 @@ use tracing::info;
 use twirp::{
     Request, Response, Router, TwirpErrorResponse,
     async_trait::async_trait,
-    axum::{self, middleware, routing::get},
+    axum::{self, extract::State, middleware, routing::get},
     internal, invalid_argument,
     reqwest::StatusCode,
     server::not_found_handler,
@@ -34,17 +36,123 @@ use twirp::{
 
 use crate::{metrics, otel};
 
-/// zkVMProver server that handles the request by forwarding to the underlying
-/// [`zkVMProver`] implementation methods.
+pub async fn run(
+    port: u16,
+    elf: Elf,
+    resource: ProverResource,
+    prove_timeout: Option<Duration>,
+) -> Result<(), Error> {
+    let resource_kind = resource.kind();
+    let zkvm = crate::construct_zkvm(elf, resource)?;
+    info!("initialized zkVMProver with {resource_kind} prover");
+
+    let metrics_handle = metrics::init(zkvm.name(), zkvm.sdk_version())
+        .context("failed to install metrics recorder")?;
+    metrics::spawn_upkeep(metrics_handle.clone());
+
+    let prove_state = Arc::new(ProveState::new(prove_timeout));
+    let server = Arc::new(zkVMServer::new(zkvm, Arc::clone(&prove_state)));
+
+    let api_middleware = ServiceBuilder::new()
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(otel::trace_layer_make_span)
+                .on_request(())
+                .on_response(otel::trace_layer_on_response)
+                .on_failure(otel::trace_layer_on_failure),
+        )
+        .layer(otel::RecordCancellationLayer)
+        .layer(middleware::from_fn(metrics::middleware))
+        .layer(CatchPanicLayer::new());
+
+    let app = Router::new()
+        .nest("/twirp", router(server))
+        .fallback(not_found_handler)
+        .layer(api_middleware)
+        .route("/metrics", get(metrics::handler).with_state(metrics_handle))
+        .route("/health", get(health_handler).with_state(prove_state));
+
+    let addr = SocketAddr::new(Ipv4Addr::UNSPECIFIED.into(), port);
+    let tcp_listener = TcpListener::bind(addr).await?;
+
+    info!("listening on {}", addr);
+
+    axum::serve(tcp_listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await?;
+
+    info!("shutdown gracefully");
+
+    Ok(())
+}
+
+/// Shared state for the prove endpoint. Holds when the currently-running prove started and the
+/// prove timeout above which `/health` reports the server unhealthy. A `None` started timestamp
+/// means no prove is in flight. `is_timeout` is always `false` when no timeout is configured.
+pub struct ProveState {
+    started_at: Mutex<Option<Instant>>,
+    prove_timeout: Option<Duration>,
+}
+
+impl ProveState {
+    pub fn new(prove_timeout: Option<Duration>) -> Self {
+        Self {
+            started_at: Mutex::new(None),
+            prove_timeout,
+        }
+    }
+
+    /// Returns `true` if a prove has been running longer than the configured timeout.
+    pub fn is_timeout(&self) -> bool {
+        let Some(timeout) = self.prove_timeout else {
+            return false;
+        };
+        match *self.started_at.lock() {
+            Some(started) => started.elapsed() > timeout,
+            None => false,
+        }
+    }
+}
+
+/// Guard for an in-flight prove. Set on construction, cleared on `Drop`.
+struct ProveInFlight {
+    state: Arc<ProveState>,
+}
+
+impl ProveInFlight {
+    fn new(state: Arc<ProveState>) -> Self {
+        *state.started_at.lock() = Some(Instant::now());
+        Self { state }
+    }
+}
+
+impl Drop for ProveInFlight {
+    fn drop(&mut self) {
+        *self.state.started_at.lock() = None;
+    }
+}
+
+/// zkVMProver server that handles the request by forwarding to the underlying [`zkVMProver`]
+/// implementation methods.
+///
+/// `prove` is gated by a binary [`Semaphore`] so only one prove runs at a time. Requests queue in
+/// FIFO order, dropping a request future before the permit is acquired removes that waiter from
+/// the queue.
+///
+/// `execute` and `verify` are assumed concurrent-safe for the underlying implementation.
 #[allow(non_camel_case_types)]
 pub struct zkVMServer<T> {
     zkvm: Arc<T>,
+    prove_sem: Arc<Semaphore>,
+    prove_state: Arc<ProveState>,
 }
 
 impl<T: 'static + zkVMProver + Send + Sync> zkVMServer<T> {
-    pub fn new(zkvm: T) -> Self {
+    pub fn new(zkvm: T, prove_state: Arc<ProveState>) -> Self {
         Self {
             zkvm: Arc::new(zkvm),
+            prove_sem: Arc::new(Semaphore::new(1)),
+            prove_state,
         }
     }
 
@@ -62,10 +170,20 @@ impl<T: 'static + zkVMProver + Send + Sync> zkVMServer<T> {
         &self,
         input: Input,
     ) -> anyhow::Result<(PublicValues, Proof<T>, ProgramProvingReport)> {
-        let zkvm = Arc::clone(&self.zkvm);
-        tokio::task::spawn_blocking(move || Ok(zkvm.prove(&input)?))
+        let permit = Arc::clone(&self.prove_sem)
+            .acquire_owned()
             .await
-            .context("prove panicked")?
+            .context("prove semaphore closed unexpectedly")?;
+
+        let zkvm = Arc::clone(&self.zkvm);
+        let prove_state = Arc::clone(&self.prove_state);
+        tokio::task::spawn_blocking(move || {
+            let _permit = permit;
+            let _in_flight = ProveInFlight::new(prove_state);
+            Ok(zkvm.prove(&input)?)
+        })
+        .await
+        .context("prove panicked")?
     }
 
     async fn verify(&self, proof: Proof<T>) -> anyhow::Result<PublicValues> {
@@ -169,50 +287,12 @@ impl<T: 'static + zkVMProver + Send + Sync> ZkvmService for zkVMServer<T> {
     }
 }
 
-fn serialize_report_err(err: bincode::error::EncodeError) -> TwirpErrorResponse {
-    internal(format!("failed to serialize report: {err}"))
-}
-
-pub async fn run(port: u16, elf: Elf, resource: ProverResource) -> Result<(), Error> {
-    let resource_kind = resource.kind();
-    let zkvm = crate::construct_zkvm(elf, resource)?;
-    info!("initialized zkVMProver with {resource_kind} prover");
-
-    let metrics_handle = metrics::init(zkvm.name(), zkvm.sdk_version())
-        .context("failed to install metrics recorder")?;
-    metrics::spawn_upkeep(metrics_handle.clone());
-
-    let api_middleware = ServiceBuilder::new()
-        .layer(
-            TraceLayer::new_for_http()
-                .make_span_with(otel::trace_layer_make_span)
-                .on_request(())
-                .on_response(otel::trace_layer_on_response)
-                .on_failure(otel::trace_layer_on_failure),
-        )
-        .layer(otel::RecordCancellationLayer)
-        .layer(middleware::from_fn(metrics::middleware))
-        .layer(CatchPanicLayer::new());
-
-    let app = Router::new()
-        .nest("/twirp", router(Arc::new(zkVMServer::new(zkvm))))
-        .fallback(not_found_handler)
-        .layer(api_middleware)
-        .route("/metrics", get(metrics::handler).with_state(metrics_handle))
-        .route("/health", get(StatusCode::OK));
-
-    let addr = SocketAddr::new(Ipv4Addr::UNSPECIFIED.into(), port);
-    let tcp_listener = TcpListener::bind(addr).await?;
-
-    info!("listening on {}", addr);
-
-    axum::serve(tcp_listener, app)
-        .with_graceful_shutdown(shutdown_signal())
-        .await?;
-
-    info!("shutdown gracefully");
-
-    Ok(())
+async fn health_handler(State(state): State<Arc<ProveState>>) -> StatusCode {
+    if state.is_timeout() {
+        StatusCode::SERVICE_UNAVAILABLE
+    } else {
+        StatusCode::OK
+    }
 }
 
 async fn shutdown_signal() {
@@ -222,4 +302,8 @@ async fn shutdown_signal() {
         _ = sigint.recv() => info!("received SIGINT"),
         _ = sigterm.recv() => info!("received SIGTERM"),
     }
+}
+
+fn serialize_report_err(err: bincode::error::EncodeError) -> TwirpErrorResponse {
+    internal(format!("failed to serialize report: {err}"))
 }
