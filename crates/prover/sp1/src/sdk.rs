@@ -1,11 +1,14 @@
 use std::{borrow::Borrow, env, sync::Arc};
 
 use ere_prover_core::{CommonError, ProverResource, ProverResourceKind, RemoteProverConfig};
+#[cfg(feature = "cuda")]
 use sp1_cuda::CudaProvingKey;
 use sp1_p3_field::PrimeField32;
 use sp1_recursion_executor::{RECURSIVE_PROOF_NUM_PV_ELTS, RecursionPublicValues};
+#[cfg(feature = "cuda")]
+use sp1_sdk::CudaProver;
 use sp1_sdk::{
-    CpuProver, CudaProver, Elf, ExecutionReport, NetworkProver, ProveRequest, Prover as SP1Prover,
+    CpuProver, Elf, ExecutionReport, NetworkProver, ProveRequest, Prover as SP1Prover,
     ProverClient, ProvingKey as SP1ProvingKeyTrait, SP1Proof, SP1ProofMode,
     SP1ProofWithPublicValues, SP1ProvingKey as CpuProvingKey, SP1PublicValues, SP1Stdin,
     SP1VerifyingKey, StatusCode,
@@ -18,6 +21,7 @@ pub enum SP1Sdk {
         prover: CpuProver,
         pk: CpuProvingKey,
     },
+    #[cfg(feature = "cuda")]
     Gpu {
         prover: CudaProver,
         pk: CudaProvingKey,
@@ -37,6 +41,7 @@ impl SP1Sdk {
                 let pk = prover.setup(elf).await.map_err(Error::setup)?;
                 Self::Cpu { prover, pk }
             }
+            #[cfg(feature = "cuda")]
             ProverResource::Gpu => {
                 let prover = ProverClient::builder().cuda().build().await;
                 let pk = prover.setup(elf).await.map_err(Error::setup)?;
@@ -54,6 +59,7 @@ impl SP1Sdk {
                 resource.kind(),
                 [
                     ProverResourceKind::Cpu,
+                    #[cfg(feature = "cuda")]
                     ProverResourceKind::Gpu,
                     ProverResourceKind::Network,
                 ],
@@ -64,6 +70,7 @@ impl SP1Sdk {
     pub fn vk(&self) -> &SP1VerifyingKey {
         match self {
             Self::Cpu { pk, .. } => pk.verifying_key(),
+            #[cfg(feature = "cuda")]
             Self::Gpu { pk, .. } => pk.verifying_key(),
             Self::Network { pk, .. } => pk.verifying_key(),
         }
@@ -75,6 +82,7 @@ impl SP1Sdk {
     ) -> Result<(SP1PublicValues, ExecutionReport), Error> {
         let (public_values, exec_report) = match self {
             Self::Cpu { prover, pk } => prover.execute(pk.elf().clone(), input).await,
+            #[cfg(feature = "cuda")]
             Self::Gpu { prover, pk } => prover.execute(pk.elf().clone(), input).await,
             Self::Network { prover, pk } => prover.execute(pk.elf().clone(), input).await,
         }
@@ -94,6 +102,7 @@ impl SP1Sdk {
                 let req = prover.prove(pk, input).compressed();
                 req.await.map_err(Error::prove)
             }
+            #[cfg(feature = "cuda")]
             Self::Gpu { prover, pk } => {
                 let req = prover.prove(pk, input).compressed();
                 req.await.map_err(Error::prove)

@@ -134,12 +134,12 @@ risc0-zkvm = { version = "3.0.5", default-features = false }
 risc0-zkvm-platform = { version = "2.2.2", default-features = false }
 
 # SP1 dependencies
-sp1-cuda = "6.0.1"
-sp1-hypercube = "6.0.1"
+sp1-cuda = "6.1.0"
+sp1-hypercube = "6.1.0"
 sp1-p3-field = { version = "0.3.2-succinct", package = "p3-field" }
-sp1-recursion-executor = "6.0.1"
-sp1-sdk = "6.0.1"
-sp1-zkvm = { version = "6.0.1", default-features = false }
+sp1-recursion-executor = "6.1.0"
+sp1-sdk = "6.1.0"
+sp1-zkvm = { version = "6.1.0", default-features = false }
 
 # ZisK dependencies
 proofman-common = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.16.1" }
