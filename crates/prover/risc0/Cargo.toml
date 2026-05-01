@@ -24,6 +24,7 @@ ere-compiler-risc0.workspace = true
 ere-util-test = { workspace = true, features = ["host"] }
 
 [features]
+default = []
 metal = ["risc0-zkvm/metal"]
 cuda = []
 

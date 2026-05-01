@@ -36,6 +36,7 @@ ere-compiler-zisk.workspace = true
 ere-util-test = { workspace = true, features = ["host"] }
 
 [features]
+default = []
 cuda = ["zisk-sdk/gpu"]
 
 [lints]
