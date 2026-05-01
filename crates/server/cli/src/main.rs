@@ -2,6 +2,7 @@ use std::{
     fs,
     io::{self, Read},
     path::PathBuf,
+    time::Duration,
 };
 
 use anyhow::{Context, Error};
@@ -39,6 +40,10 @@ struct Args {
     /// Port number for the server to listen on.
     #[arg(long, default_value = "3000")]
     port: u16,
+    /// Mark `/health` as 503 if a single prove has been running longer than this many
+    /// milliseconds. Disabled when not set.
+    #[arg(long, env = "ERE_PROVE_TIMEOUT_MS")]
+    prove_timeout_ms: Option<u64>,
     #[command(
         flatten,
         next_help_heading = "ELF source (read from stdin if none set)"
@@ -92,7 +97,10 @@ async fn main() -> Result<(), Error> {
     let elf = read_elf(args.elf).await?;
 
     match args.command {
-        Command::Server(resource) => commands::server::run(args.port, elf, resource).await?,
+        Command::Server(resource) => {
+            let prove_timeout = args.prove_timeout_ms.map(Duration::from_millis);
+            commands::server::run(args.port, elf, resource, prove_timeout).await?
+        }
         Command::Keygen { program_vk_path } => commands::keygen::run(elf, &program_vk_path)?,
     }
 
