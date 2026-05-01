@@ -157,8 +157,8 @@ mod tests {
     }
 
     #[cfg(feature = "cuda")]
-    #[test]
-    fn test_prove_gpu() {
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_prove_gpu() {
         let elf = basic_elf();
         let zkvm = SP1Prover::new(elf, ProverResource::Gpu).unwrap();
 
@@ -167,8 +167,8 @@ mod tests {
     }
 
     #[cfg(feature = "cuda")]
-    #[test]
-    fn test_prove_invalid_test_case_gpu() {
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_prove_invalid_test_case_gpu() {
         let elf = basic_elf();
         let zkvm = SP1Prover::new(elf, ProverResource::Gpu).unwrap();
 

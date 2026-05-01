@@ -27,6 +27,7 @@ ere-compiler-openvm.workspace = true
 ere-util-test = { workspace = true, features = ["host"] }
 
 [features]
+default = []
 cuda = ["openvm-sdk/cuda"]
 
 [lints]

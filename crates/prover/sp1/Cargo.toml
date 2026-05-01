@@ -12,7 +12,7 @@ thiserror.workspace = true
 tracing.workspace = true
 
 # SP1 dependencies
-sp1-cuda.workspace = true
+sp1-cuda = { workspace = true, optional = true }
 sp1-p3-field.workspace = true
 sp1-recursion-executor.workspace = true
 sp1-sdk = { workspace = true, features = ["network"] }
@@ -24,11 +24,13 @@ ere-util-tokio.workspace = true
 ere-verifier-sp1.workspace = true
 
 [dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 ere-compiler-sp1.workspace = true
 ere-util-test = { workspace = true, features = ["host"] }
 
 [features]
-cuda = []
+default = []
+cuda = ["sp1-sdk/cuda", "dep:sp1-cuda"]
 
 [lints]
 workspace = true
