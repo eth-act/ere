@@ -40,7 +40,7 @@ fn generate_zkvm_sdk_version_impl() {
         "openvm-sdk",
         "risc0-zkvm",
         "sp1-sdk",
-        "zisk-sdk",
+        "ziskos",
     ]
     .map(detect_sdk_version);
 

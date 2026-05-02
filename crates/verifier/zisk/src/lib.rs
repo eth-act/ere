@@ -8,6 +8,6 @@ pub use ere_verifier_core::*;
 pub use crate::{
     error::Error,
     program_vk::ZiskProgramVk,
-    proof::{PUBLIC_VALUES_SIZE, ZiskProof},
+    proof::{PUBLIC_VALUES_BYTES, ZiskProof},
     verifier::{ZiskVerifier, ensure_program_vk_matches},
 };
