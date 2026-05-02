@@ -1,17 +1,24 @@
 use bytemuck::cast_slice;
 use ere_verifier_core::{PublicValues, zkVMVerifier};
-use proofman_verifier::verify_vadcop_final;
+use proofman_verifier::verify_vadcop_final_compressed_bytes;
 
 use crate::{Error, ZiskProgramVk, ZiskProof};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
-/// Verifying key of the aggregation proof.
-const VADCOP_FINAL_VK: [u64; 4] = [
-    9211010158316595036,
-    7055235338110277438,
-    2391371252028311145,
-    10691781997660262077,
+/// Aggregation verifying key for VadcopFinalMinimal proofs in zisk v0.17.0.
+///
+/// To reproduce:
+///
+/// ```bash
+/// python3 -c "import struct,sys; print(list(struct.unpack('<4Q',open(sys.argv[1],'rb').read())))" \
+///     $HOME/.zisk/provingKey/zisk/vadcop_final_compressed/vadcop_final_compressed.verkey.bin
+/// ```
+const VADCOP_FINAL_MINIMAL_VK: [u64; 4] = [
+    371850295254322978,
+    2764832171281751502,
+    14747498303081942412,
+    8181136173693786776,
 ];
 
 /// Verifier bound to a specific compiled guest program.
@@ -40,13 +47,17 @@ impl zkVMVerifier for ZiskVerifier {
     }
 
     fn verify(&self, proof: &ZiskProof) -> Result<PublicValues, Self::Error> {
-        ensure_program_vk_matches(self.program_vk, proof.program_vk())?;
+        let (progam_vk, public_values) = proof.to_parts()?;
 
-        if !verify_vadcop_final(&proof.vadcop_final_proof()?, cast_slice(&VADCOP_FINAL_VK)) {
+        ensure_program_vk_matches(self.program_vk, progam_vk)?;
+
+        let proof_bytes = proof.as_bytes()?;
+        let vk_bytes = cast_slice(&VADCOP_FINAL_MINIMAL_VK);
+        if !verify_vadcop_final_compressed_bytes(proof_bytes, vk_bytes) {
             return Err(Error::InvalidProof);
         }
 
-        Ok(proof.public_values.as_slice().into())
+        Ok(public_values.into())
     }
 
     fn name(&self) -> &'static str {
