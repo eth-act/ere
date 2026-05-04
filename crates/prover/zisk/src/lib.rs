@@ -33,11 +33,10 @@
 //! | `ERE_ZISK_SETUP_ON_INIT`               | Flag  |         | Setup local prover on initialization instead of lazily                 |
 //! | `ERE_ZISK_UNLOCK_MAPPED_MEMORY`        | Flag  |         | Configure the prover to unlock mapped memory                           |
 //! | `ERE_ZISK_MINIMAL_MEMORY`              | Flag  |         | Configure the prover to use minimal memory                             |
-//! | `ERE_ZISK_PREALLOCATE`                 | Flag  |         | Configure the prover to preallocate memory                             |
-//! | `ERE_ZISK_SHARED_TABLES`               | Flag  |         | Configure the prover to use shared tables                              |
 //! | `ERE_ZISK_MAX_STREAMS`                 | Value |         | Configure the prover max streams                                       |
 //! | `ERE_ZISK_NUMBER_THREADS_WITNESS`      | Value |         | Configure the prover number of witness threads                         |
 //! | `ERE_ZISK_MAX_WITNESS_STORED`          | Value |         | Configure the prover max witness stored                                |
+//! | `ERE_ZISK_CLUSTER_PROVE_TIMEOUT_SECS`  | Value |         | Timeout for the cluster client prove job                               |
 //!
 //! [`install_zisk_sdk.sh`]: https://github.com/eth-act/ere/blob/master/scripts/sdk_installers/install_zisk_sdk.sh
 //! [`ziskup`]: https://raw.githubusercontent.com/0xPolygonHermez/zisk/main/ziskup/install.sh
