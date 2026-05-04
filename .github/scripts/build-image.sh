@@ -128,13 +128,11 @@ BASE_BUILD_ARGS=()
 BASE_ZKVM_BUILD_ARGS=(--build-arg "BASE_IMAGE=$BASE_IMAGE")
 COMPILER_ZKVM_BUILD_ARGS=(--build-arg "BASE_ZKVM_IMAGE=$BASE_ZKVM_IMAGE")
 SERVER_ZKVM_BUILD_ARGS=(--build-arg "BASE_ZKVM_IMAGE=$BASE_ZKVM_IMAGE")
-CLUSTER_ZKVM_BUILD_ARGS=()
 
 if [ "$CUDA" = true ]; then
     BASE_BUILD_ARGS+=(--build-arg "CUDA=1")
     BASE_ZKVM_BUILD_ARGS+=(--build-arg "CUDA=1")
     SERVER_ZKVM_BUILD_ARGS+=(--build-arg "CUDA=1")
-    CLUSTER_ZKVM_BUILD_ARGS+=(--build-arg "CUDA=1")
 fi
 
 # Default CUDA_ARCHS when --cuda is set but --cuda-archs not specified
@@ -167,7 +165,6 @@ if [ "$CUDA" = true ] && [ -n "$CUDA_ARCHS" ]; then
         zisk)
             BASE_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCHS=$CUDA_ARCHS")
             SERVER_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCHS=$CUDA_ARCHS")
-            CLUSTER_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCHS=$CUDA_ARCHS")
             ;;
         *)
             ;;
@@ -225,7 +222,6 @@ if [ "$BUILD_CLUSTER" = true ]; then
     docker build \
         --file "docker/${ZKVM}/Dockerfile.cluster" \
         --tag "$CLUSTER_ZKVM_IMAGE" \
-        "${CLUSTER_ZKVM_BUILD_ARGS[@]}" \
         .
 fi
 
