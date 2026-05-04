@@ -16,6 +16,8 @@ const PROOF_BODY_BYTES: usize = 8 * PROOF_BODY_WORDS;
 const PROOF_WORDS: usize = 1 + PROOF_PREFIX_WORDS + PROOF_BODY_WORDS;
 
 /// Zisk VadcopFinalMinimal proof in u64 words.
+///
+/// Proof layout in `[n_publics (1), program_vk (4), public_values (64), proof_body (32594)]`.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct ZiskProof(pub Vec<u64>);

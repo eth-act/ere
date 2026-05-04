@@ -5,7 +5,7 @@ use core::time::Duration;
 use bincode::error::DecodeError;
 use ere_compiler_core::Elf;
 use ere_prover_core::{Input, RemoteProverConfig, zkVMVerifier};
-use ere_verifier_zisk::{ZiskProgramVk, ZiskProof, ZiskVerifier};
+use ere_verifier_zisk::{PUBLIC_VALUES_BYTES, ZiskProgramVk, ZiskProof, ZiskVerifier};
 use serde::{Deserialize, Serialize};
 use tokio::time::Instant;
 use tonic::transport::Channel;
@@ -246,7 +246,7 @@ fn parse_proof(bytes: &[u8]) -> Result<ZiskProof, Error> {
         bincode::serde::borrow_decode_from_slice(bytes, bincode::config::legacy())?;
 
     let program_vk = ZiskProgramVk::try_from(proof.program_vk.vk.as_slice())?;
-    let public_values = <[u8; _]>::try_from(proof.publics.data)
+    let public_values = <[u8; PUBLIC_VALUES_BYTES]>::try_from(proof.publics.data)
         .map_err(|_| DecodeError::Other("invalid public values length"))?;
     Ok(ZiskProof::from_parts(
         &program_vk,

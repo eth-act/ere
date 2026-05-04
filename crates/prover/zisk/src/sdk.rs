@@ -112,9 +112,9 @@ impl ZiskSdk {
             })?,
         };
 
-        let (progam_vk, public_values) = proof.to_parts()?;
+        let (program_vk, public_values) = proof.to_parts()?;
 
-        ensure_program_vk_matches(self.program_vk(), progam_vk)?;
+        ensure_program_vk_matches(self.program_vk(), program_vk)?;
 
         Ok((public_values.into(), proof, proving_time))
     }

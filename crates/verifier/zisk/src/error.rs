@@ -16,7 +16,7 @@ pub enum Error {
     #[error("Invalid proof format: {0}")]
     InvalidProofFormat(String),
 
-    /// `verify_vadcop_final_proof` returned false.
+    /// `verify_vadcop_final_compressed_bytes` returned false.
     #[error("Invalid proof")]
     InvalidProof,
 

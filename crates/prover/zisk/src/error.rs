@@ -27,6 +27,9 @@ pub enum Error {
     #[error("Build prover failed: {0}")]
     BuildProver(#[source] anyhow::Error),
 
+    #[error("Compute program VK failed: {0}")]
+    ComputeProgramVk(#[source] anyhow::Error),
+
     #[error("Setup failed: {0}")]
     Setup(#[source] anyhow::Error),
 

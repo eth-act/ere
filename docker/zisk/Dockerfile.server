@@ -53,7 +53,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libclang-dev \
     clang \
     # Used to kill the ASM services when prover panics
-    psmisc \
+    procps \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy ZisK SDK
