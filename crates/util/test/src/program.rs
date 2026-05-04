@@ -32,10 +32,27 @@ pub trait Program {
 fn run_inner<G: Program, P: Platform, T: AsRef<[u8]>>(
     output_bytes_modifier: impl Fn(Vec<u8>) -> T,
 ) {
+    P::cycle_scope_start("read_input");
     let input_bytes = P::read_whole_input();
+    P::cycle_scope_end("read_input");
+
+    P::cycle_scope_start("decode_input");
     let input = G::Input::decode_from_slice(&input_bytes).unwrap();
+    P::cycle_scope_end("decode_input");
+
+    P::cycle_scope_start("compute");
     let output = G::compute(input);
+    P::cycle_scope_end("compute");
+
+    P::cycle_scope_start("encode_output");
     let output_bytes = output.encode_to_vec().unwrap();
+    P::cycle_scope_end("encode_output");
+
+    P::cycle_scope_start("postprocess_output");
     let modified_output_bytes = output_bytes_modifier(output_bytes);
+    P::cycle_scope_end("postprocess_output");
+
+    P::cycle_scope_start("write_output");
     P::write_whole_output(modified_output_bytes.as_ref());
+    P::cycle_scope_end("write_output");
 }
