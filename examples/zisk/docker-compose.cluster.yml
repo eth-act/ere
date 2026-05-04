@@ -1,42 +1,36 @@
 services:
-  zisk-setup:
+  zisk-download-proving-key:
     image: ghcr.io/eth-act/ere/ere-cluster-zisk:latest-cuda
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
-        set -e
+        set -euo pipefail
 
-        if [ ! -d "/root/.zisk/provingKey" ]; then
-          echo "Install rustup temporarily for ziskup..."
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none
-          source "$$HOME/.cargo/env"
+        if [ ! -d "/root/.zisk/provingKey/zisk" ]; then
+          ZISK_VERSION="0.17.0"
+          KEY_FILE="zisk-provingkey-$${ZISK_VERSION}.tar.gz"
+          BUCKET="https://storage.googleapis.com/zisk-setup"
 
-          echo "Download proving key..."
-          SETUP_KEY=proving-no-consttree /app/ziskup/ziskup
+          echo "Downloading proving key $${ZISK_VERSION}..."
+          cd /tmp
+          curl -fsSL -o "$${KEY_FILE}"     "$${BUCKET}/$${KEY_FILE}"
+          curl -fsSL -o "$${KEY_FILE}.md5" "$${BUCKET}/$${KEY_FILE}.md5"
+          md5sum -c "$${KEY_FILE}.md5"
 
-          echo "Cleaning up rustup, cargo, toolchains and binaries..."
-          rustup self uninstall -y
-          rm -rf /root/.zisk/toolchains
-          rm /root/.zisk/bin/cargo-zisk
-          rm /root/.zisk/bin/riscv2zisk
-          rm /root/.zisk/bin/zisk-coordinator
-          rm /root/.zisk/bin/ziskemu
-          rm /root/.zisk/bin/ziskup
-          rm /root/.zisk/bin/zisk-worker
+          rm -rf /root/.zisk/provingKey/* /root/.zisk/provingKey/.[!.]* 2>/dev/null || true
+          rm -rf /root/.zisk/cache/*      /root/.zisk/cache/.[!.]*      2>/dev/null || true
 
-          echo "Generating constant tree files (GPU). This may take a while..."
-          cargo-zisk check-setup -a
+          echo "Extracting proving key..."
+          tar --overwrite -xf "$${KEY_FILE}" -C /root/.zisk
+          rm -f "$${KEY_FILE}" "$${KEY_FILE}.md5"
+
+          echo "Generating constant tree files..."
+          cargo-zisk check-setup --gpu
         else
           echo "Proving key already exists, skipping"
         fi
-
-        echo "Running rom-setup..."
-        cargo-zisk rom-setup -e /app/elf
-
-        echo "Setup complete"
     volumes:
-      - zisk-setup:/root/.zisk
-      - ${ELF_PATH}:/app/elf:ro
+      - zisk-proving-key:/root/.zisk/provingKey
     deploy:
       resources:
         reservations:
@@ -49,18 +43,13 @@ services:
     image: ghcr.io/eth-act/ere/ere-cluster-zisk:latest-cuda
     command:
       - "zisk-coordinator"
-      - "--config"
-      - "/app/config/coordinator/prod.toml"
     ports:
-      - "50051:50051"
-    # volumes:
-      # Uncomment to override config
-      # - ./coordinator-config:/app/config/coordinator/prod.toml:ro
+      - "7000:7000"
     environment:
       - RUST_LOG=info
-    restart: unless-stopped                                                                                                                                
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "grpcurl", "-plaintext", "-import-path", "/app/proto", "-proto", "zisk_distributed_api.proto", "localhost:50051", "zisk.distributed.api.v1.ZiskDistributedApi/HealthCheck"]
+      test: ["CMD", "curl", "-fsS", "http://localhost:9090/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -70,24 +59,17 @@ services:
     image: ghcr.io/eth-act/ere/ere-cluster-zisk:latest-cuda
     command:
       - "zisk-worker"
-      - "--config"
-      - "/app/config/worker/prod.toml"
       - "--coordinator-url"
       - "http://zisk-coordinator:50051"
-      - "--elf"
-      - "/app/elf"
+      - "--gpu"
     volumes:
-      # Mount proving key
-      - zisk-setup:/root/.zisk:ro
-      # Mount ELF
+      - zisk-proving-key:/root/.zisk/provingKey
       - ${ELF_PATH}:/app/elf:ro
-      # Uncomment to override config
-      # - ./worker-config:/app/config/worker/prod.toml:ro
     environment:
       - RUST_LOG=info
     restart: unless-stopped
     depends_on:
-      zisk-setup:
+      zisk-download-proving-key:
         condition: service_completed_successfully
       zisk-coordinator:
         condition: service_healthy
@@ -122,7 +104,7 @@ services:
   #             capabilities: [gpu]
 
 volumes:
-  zisk-setup:
+  zisk-proving-key:
 
 networks:
   default:
