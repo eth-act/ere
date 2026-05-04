@@ -11,11 +11,23 @@ pub enum Error {
     #[error("Failed to connect to cluster: {0}")]
     ConnectionFailed(#[from] tonic::transport::Error),
 
-    #[error("Cluster error: {0}")]
-    Cluster(String),
+    #[error("Cluster job {job_id} failed: {reason}")]
+    JobFailed { job_id: String, reason: String },
 
-    #[error("Invalid proof format: {0}")]
-    InvalidProofFormat(String),
+    #[error("Cluster job {0} was cancelled")]
+    JobCancelled(String),
+
+    #[error("Setup job {job_id} timed out")]
+    SetupTimeout { job_id: String },
+
+    #[error("Prove job {job_id} timed out")]
+    ProveTimeout { job_id: String },
+
+    #[error("Cluster response missing field: {0}")]
+    MissingField(&'static str),
+
+    #[error("Decode cluster proof failed: {0}")]
+    DecodeProof(#[from] bincode::error::DecodeError),
 
     #[error(transparent)]
     Verifier(#[from] ere_verifier_zisk::Error),
