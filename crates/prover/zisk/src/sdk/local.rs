@@ -1,6 +1,8 @@
 use std::{
     env,
     panic::{self, AssertUnwindSafe},
+    process::Command,
+    thread::sleep,
     time::{Duration, Instant},
 };
 
@@ -67,7 +69,7 @@ impl LocalProver {
         let program_vk = prover
             .prover
             .program_vk(&program, false)
-            .map_err(Error::Setup)?;
+            .map_err(Error::ComputeProgramVk)?;
         let program_vk = ZiskProgramVk::try_from(program_vk.vk.as_slice())?;
 
         if config.setup_on_init {
@@ -153,12 +155,18 @@ fn build_prover(config: &Config, resource: &ProverResource) -> Result<ZiskProver
         .map_err(Error::BuildProver)
 }
 
-/// Clear the program cache so the next `setup` spawns fresh ASM services.
+/// Clear the program cache so the next `setup` spawns fresh ASM services, then SIGTERM any orphan
+/// ASM child still bound to our `ZISK_{pid}_*` shmem prefix.
 fn uninitialize(prover: &ZiskProver<Asm>, mut initialized: MutexGuard<bool>) {
     *initialized = false;
     if let Err(err) = prover.prover.clear_program() {
         warn!("failed to clear_program: {err}");
     }
+    let pid = std::process::id();
+    let _ = Command::new("pkill")
+        .args(["-f", "--", &format!("--shm_prefix ZISK_{pid}_")])
+        .output();
+    sleep(Duration::from_secs(1));
 }
 
 fn parse_proof(proof: &Proof) -> Result<ZiskProof, ere_verifier_zisk::Error> {

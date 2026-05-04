@@ -47,9 +47,9 @@ impl zkVMVerifier for ZiskVerifier {
     }
 
     fn verify(&self, proof: &ZiskProof) -> Result<PublicValues, Self::Error> {
-        let (progam_vk, public_values) = proof.to_parts()?;
+        let (program_vk, public_values) = proof.to_parts()?;
 
-        ensure_program_vk_matches(self.program_vk, progam_vk)?;
+        ensure_program_vk_matches(self.program_vk, program_vk)?;
 
         let proof_bytes = proof.as_bytes()?;
         let vk_bytes = cast_slice(&VADCOP_FINAL_MINIMAL_VK);

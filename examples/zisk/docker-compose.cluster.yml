@@ -1,44 +1,4 @@
 services:
-  zisk-download-proving-key:
-    image: ghcr.io/eth-act/ere/ere-cluster-zisk:latest-cuda
-    entrypoint: ["/bin/bash", "-c"]
-    command:
-      - |
-        set -euo pipefail
-
-        if [ ! -d "/root/.zisk/provingKey/zisk" ]; then
-          ZISK_VERSION="0.17.0"
-          KEY_FILE="zisk-provingkey-$${ZISK_VERSION}.tar.gz"
-          BUCKET="https://storage.googleapis.com/zisk-setup"
-
-          echo "Downloading proving key $${ZISK_VERSION}..."
-          cd /tmp
-          curl -fsSL -o "$${KEY_FILE}"     "$${BUCKET}/$${KEY_FILE}"
-          curl -fsSL -o "$${KEY_FILE}.md5" "$${BUCKET}/$${KEY_FILE}.md5"
-          md5sum -c "$${KEY_FILE}.md5"
-
-          rm -rf /root/.zisk/provingKey/* /root/.zisk/provingKey/.[!.]* 2>/dev/null || true
-          rm -rf /root/.zisk/cache/*      /root/.zisk/cache/.[!.]*      2>/dev/null || true
-
-          echo "Extracting proving key..."
-          tar --overwrite -xf "$${KEY_FILE}" -C /root/.zisk
-          rm -f "$${KEY_FILE}" "$${KEY_FILE}.md5"
-
-          echo "Generating constant tree files..."
-          cargo-zisk check-setup --gpu
-        else
-          echo "Proving key already exists, skipping"
-        fi
-    volumes:
-      - zisk-proving-key:/root/.zisk/provingKey
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: ['0']
-              capabilities: [gpu]
-
   zisk-coordinator:
     image: ghcr.io/eth-act/ere/ere-cluster-zisk:latest-cuda
     command:
@@ -62,15 +22,10 @@ services:
       - "--coordinator-url"
       - "http://zisk-coordinator:50051"
       - "--gpu"
-    volumes:
-      - zisk-proving-key:/root/.zisk/provingKey
-      - ${ELF_PATH}:/app/elf:ro
     environment:
       - RUST_LOG=info
     restart: unless-stopped
     depends_on:
-      zisk-download-proving-key:
-        condition: service_completed_successfully
       zisk-coordinator:
         condition: service_healthy
     shm_size: 32G
@@ -102,9 +57,6 @@ services:
   #           - driver: nvidia
   #             device_ids: ['x']
   #             capabilities: [gpu]
-
-volumes:
-  zisk-proving-key:
 
 networks:
   default:
