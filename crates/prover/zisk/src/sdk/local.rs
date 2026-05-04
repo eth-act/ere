@@ -1,31 +1,28 @@
-use std::{env, fs, panic, path::PathBuf, process::Command, thread::sleep, time::Duration};
+use std::{
+    env,
+    panic::{self, AssertUnwindSafe},
+    time::{Duration, Instant},
+};
 
-use blake3::Hash;
-use bytemuck::checked::try_cast_slice;
-use ere_prover_core::CommonError;
-use ere_verifier_zisk::{PUBLIC_VALUES_SIZE, ZiskProgramVk, ZiskProof, ensure_program_vk_matches};
+use ere_compiler_core::Elf;
+use ere_prover_core::{Input, ProverResource};
+use ere_verifier_zisk::{PUBLIC_VALUES_BYTES, ZiskProgramVk, ZiskProof};
 use parking_lot::{Mutex, MutexGuard};
-use proofman_common::ParamsGPU;
-use tempfile::tempdir;
-use tracing::info;
-use zisk_rom_setup::generate_assembly;
-use zisk_sdk::{
-    Asm, ElfBinaryFromFile, ProofOpts, ProverClientBuilder, ZiskProgramPK,
-    ZiskProofWithPublicValues, ZiskProver, ZiskStdin,
+use tracing::warn;
+use zisk_common::{Proof, ProofKind, io::ZiskStdin};
+use zisk_prover_backend::{
+    Asm, AsmOptions, BackendProverOpts, GuestProgram, ProverClientBuilder, ZiskProver,
 };
 
 use crate::{
     error::Error,
-    sdk::{dot_zisk_dir, panic_msg},
+    sdk::{framed_stdin, panic_msg},
 };
 
-const ELF_NAME: &str = "elf";
-
 struct Config {
-    preallocate: bool,
+    setup_on_init: bool,
     unlock_mapped_memory: bool,
     minimal_memory: bool,
-    shared_tables: bool,
     max_streams: Option<usize>,
     number_threads_witness: Option<usize>,
     max_witness_stored: Option<usize>,
@@ -43,198 +40,131 @@ impl Config {
                 })
                 .transpose()
         };
-        let preallocate = env::var_os("ERE_ZISK_PREALLOCATE").is_some();
-        let unlock_mapped_memory = env::var_os("ERE_ZISK_UNLOCK_MAPPED_MEMORY").is_some();
-        let minimal_memory = env::var_os("ERE_ZISK_MINIMAL_MEMORY").is_some();
-        let shared_tables = env::var_os("ERE_ZISK_SHARED_TABLES").is_some();
-        let max_streams = parse_usize("ERE_ZISK_MAX_STREAMS")?;
-        let number_threads_witness = parse_usize("ERE_ZISK_NUMBER_THREADS_WITNESS")?;
-        let max_witness_stored = parse_usize("ERE_ZISK_MAX_WITNESS_STORED")?;
         Ok(Self {
-            preallocate,
-            unlock_mapped_memory,
-            minimal_memory,
-            shared_tables,
-            max_streams,
-            number_threads_witness,
-            max_witness_stored,
+            setup_on_init: env::var_os("ERE_ZISK_SETUP_ON_INIT").is_some(),
+            unlock_mapped_memory: env::var_os("ERE_ZISK_UNLOCK_MAPPED_MEMORY").is_some(),
+            minimal_memory: env::var_os("ERE_ZISK_MINIMAL_MEMORY").is_some(),
+            max_streams: parse_usize("ERE_ZISK_MAX_STREAMS")?,
+            number_threads_witness: parse_usize("ERE_ZISK_NUMBER_THREADS_WITNESS")?,
+            max_witness_stored: parse_usize("ERE_ZISK_MAX_WITNESS_STORED")?,
         })
     }
 }
 
 pub struct LocalProver {
-    config: Config,
-    elf: Vec<u8>,
-    elf_hash: Hash,
+    prover: ZiskProver<Asm>,
+    program: GuestProgram,
     program_vk: ZiskProgramVk,
-    prover_and_pk: Mutex<Option<(ZiskProver<Asm>, ZiskProgramPK)>>,
+    initialized: Mutex<bool>,
 }
 
 impl LocalProver {
-    pub fn new(elf: Vec<u8>, program_vk: ZiskProgramVk) -> Result<Self, Error> {
+    pub fn new(elf: Elf, resource: &ProverResource) -> Result<Self, Error> {
         let config = Config::from_env()?;
-        let elf_hash = blake3::hash(&elf);
+        let prover = build_prover(&config, resource)?;
 
-        let prover_and_pk = env::var_os("ERE_ZISK_SETUP_ON_INIT")
-            .map(|_| initialize(&config, &elf, elf_hash))
-            .transpose()?;
+        let program = GuestProgram::from_bytes("guest", elf.0);
+        let program_vk = prover
+            .prover
+            .program_vk(&program, false)
+            .map_err(Error::Setup)?;
+        let program_vk = ZiskProgramVk::try_from(program_vk.vk.as_slice())?;
+
+        if config.setup_on_init {
+            prover.setup(&program).run().map_err(Error::Setup)?;
+        }
 
         Ok(Self {
-            config,
-            elf,
-            elf_hash,
+            prover,
+            program,
             program_vk,
-            prover_and_pk: Mutex::new(prover_and_pk),
+            initialized: Mutex::new(config.setup_on_init),
         })
     }
 
-    pub fn prove(&self, stdin: &[u8]) -> Result<(ZiskProof, Duration), Error> {
-        let mut guard = self.prover_and_pk.lock();
+    pub fn program_vk(&self) -> ZiskProgramVk {
+        self.program_vk
+    }
 
-        if guard.is_none() {
-            *guard = Some(initialize(&self.config, &self.elf, self.elf_hash)?)
+    pub fn prove(&self, input: &Input) -> Result<(ZiskProof, Duration), Error> {
+        let mut initialized = self.initialized.lock();
+
+        if !*initialized {
+            self.prover
+                .setup(&self.program)
+                .run()
+                .map_err(Error::Setup)?;
+            *initialized = true;
         }
 
-        let (prover, pk) = guard.as_ref().unwrap();
+        let stdin = ZiskStdin::from_vec(framed_stdin(input.stdin()));
 
-        let stdin = ZiskStdin::from_vec(stdin.to_vec());
-        let tempdir = tempdir().map_err(CommonError::tempdir)?;
-        let mut opts = ProofOpts::default().output_dir(tempdir.path().to_path_buf());
-        if self.config.minimal_memory {
-            opts = opts.minimal_memory();
-        }
+        let started = Instant::now();
+        let result = panic::catch_unwind(AssertUnwindSafe(|| {
+            self.prover
+                .prove(&self.program, stdin)
+                .wrap_proof(ProofKind::VadcopFinalMinimal)
+                .run()
+        }));
+        let proving_time = started.elapsed();
 
-        let result = panic::catch_unwind(|| prover.prove(pk, stdin).with_proof_options(opts).run());
-
-        let (proof, proving_time) = match result {
-            Err(err) => {
-                uninitialize(guard);
-                Err(Error::ProvePanic(panic_msg(err)))
-            }
+        match result {
+            Ok(Ok(output)) => Ok((parse_proof(output.get_proof())?, proving_time)),
             Ok(Err(err)) => {
-                uninitialize(guard);
+                uninitialize(&self.prover, initialized);
                 Err(Error::Prove(err))
             }
-            Ok(Ok(result)) => Ok((
-                extract_proof(result.get_proof_with_publics())?,
-                result.get_duration(),
-            )),
-        }?;
-
-        ensure_program_vk_matches(self.program_vk, proof.program_vk)?;
-
-        Ok((proof, proving_time))
+            Err(panic) => {
+                uninitialize(&self.prover, initialized);
+                Err(Error::ProvePanic(panic_msg(panic)))
+            }
+        }
     }
 }
 
-fn assembly_files_exist(elf_hash: Hash) -> bool {
-    ["mt", "rh", "mo"].into_iter().all(|suffix| {
-        let bin = cache_dir().join(format!("{ELF_NAME}-{elf_hash}-{suffix}.bin"));
-        bin.exists()
-    })
-}
-
-fn initialize(
-    config: &Config,
-    elf: &[u8],
-    elf_hash: Hash,
-) -> Result<(ZiskProver<Asm>, ZiskProgramPK), Error> {
-    info!("Initializing ZisK prover...");
-
-    fs::create_dir_all(cache_dir())
-        .map_err(|err| CommonError::create_dir("cache", cache_dir(), err))?;
-
-    if !assembly_files_exist(elf_hash) {
-        generate_assembly(elf, ELF_NAME, &cache_dir(), false, false)
-            .map_err(|error| Error::GenerateAssembly(error.to_string()))?;
-    };
-
-    let mut params_gpu = ParamsGPU::new(config.preallocate);
+fn build_prover(config: &Config, resource: &ProverResource) -> Result<ZiskProver<Asm>, Error> {
+    let mut opts = BackendProverOpts::default();
+    if matches!(resource, ProverResource::Gpu) {
+        opts = opts.gpu();
+    }
+    if config.minimal_memory {
+        opts = opts.minimal_memory();
+    }
     if let Some(max_streams) = config.max_streams {
-        params_gpu.with_max_number_streams(max_streams);
+        opts = opts.max_streams(max_streams);
     }
     if let Some(number_threads_witness) = config.number_threads_witness {
-        params_gpu.with_number_threads_pools_witness(number_threads_witness);
+        opts = opts.number_threads_witness(number_threads_witness);
     }
     if let Some(max_witness_stored) = config.max_witness_stored {
-        params_gpu.with_max_witness_stored(max_witness_stored);
+        opts = opts.max_witness_stored(max_witness_stored);
     }
 
-    let prover = ProverClientBuilder::new()
+    let mut asm_options = AsmOptions::default();
+    if config.unlock_mapped_memory {
+        asm_options = asm_options.unlock_mapped_memory();
+    }
+    opts = opts.with_asm_options(asm_options);
+
+    ProverClientBuilder::new()
         .asm()
-        .gpu(Some(params_gpu))
-        .unlock_mapped_memory(config.unlock_mapped_memory)
-        .shared_tables(config.shared_tables)
+        .with_prover_options(opts)
         .build()
-        .map_err(Error::InitProver)?;
-
-    let elf_binary = ElfBinaryFromFile {
-        elf: elf.to_vec(),
-        name: ELF_NAME.to_string(),
-        with_hints: false,
-        path: None,
-    };
-    let (pk, _) = prover.setup(&elf_binary).map_err(Error::SetupProver)?;
-
-    info!("ZisK prover initialized");
-
-    Ok((prover, pk))
+        .map_err(Error::BuildProver)
 }
 
-fn uninitialize(mut prover_and_pk: MutexGuard<Option<(ZiskProver<Asm>, ZiskProgramPK)>>) {
-    info!("Uninitializing ZisK prover...");
-
-    let _ = Command::new("fuser")
-        .args(["-k", "-9", "23115/tcp", "23116/tcp", "23117/tcp"])
-        .output();
-    sleep(Duration::from_secs(1));
-
-    drop(prover_and_pk.take());
-
-    info!("ZisK prover uninitialized");
+/// Clear the program cache so the next `setup` spawns fresh ASM services.
+fn uninitialize(prover: &ZiskProver<Asm>, mut initialized: MutexGuard<bool>) {
+    *initialized = false;
+    if let Err(err) = prover.prover.clear_program() {
+        warn!("failed to clear_program: {err}");
+    }
 }
 
-/// Extracts a typed [`ZiskProof`] from the SDK's [`ZiskProofWithPublicValues`].
-fn extract_proof(proof_with_publics: &ZiskProofWithPublicValues) -> Result<ZiskProof, Error> {
-    let proof = if let zisk_sdk::ZiskProof::VadcopFinal(proof) = &proof_with_publics.proof {
-        if !proof.len().is_multiple_of(8) {
-            return Err(Error::InvalidProofFormat(format!(
-                "proof byte length {} is not a multiple of 8",
-                proof.len()
-            )));
-        }
-        try_cast_slice(proof)
-            .map(<[u64]>::to_vec)
-            .unwrap_or_else(|_| {
-                proof
-                    .chunks_exact(8)
-                    .map(|bytes| u64::from_le_bytes(bytes.try_into().unwrap()))
-                    .collect()
-            })
-    } else {
-        return Err(Error::UnexpectedProofKind(
-            match &proof_with_publics.proof {
-                zisk_sdk::ZiskProof::Null() => "Null",
-                zisk_sdk::ZiskProof::VadcopFinalCompressed(_) => "VadcopFinalCompressed",
-                zisk_sdk::ZiskProof::Plonk(_) => "Plonk",
-                zisk_sdk::ZiskProof::Fflonk(_) => "Fflonk",
-                _ => "Unknown",
-            },
-        ));
-    };
-
-    let program_vk = ZiskProgramVk::try_from(&proof_with_publics.program_vk.vk)?;
-    let mut public_values = [0u8; PUBLIC_VALUES_SIZE];
-    proof_with_publics.publics.read_slice(&mut public_values);
-
-    Ok(ZiskProof {
-        proof,
-        program_vk,
-        public_values,
-    })
-}
-
-/// Returns path to `~/.zisk/cache` directory.
-fn cache_dir() -> PathBuf {
-    dot_zisk_dir().join("cache")
+fn parse_proof(proof: &Proof) -> Result<ZiskProof, ere_verifier_zisk::Error> {
+    let program_vk = ZiskProgramVk::try_from(proof.program_vk.vk.as_slice())?;
+    let mut public_values = [0u8; PUBLIC_VALUES_BYTES];
+    proof.publics.head();
+    proof.publics.read_slice(&mut public_values);
+    ZiskProof::from_parts(&program_vk, &public_values, &proof.proof_bytes)
 }

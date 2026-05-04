@@ -228,11 +228,10 @@ impl ServerContainer {
                 .inherit_env("ERE_ZISK_SETUP_ON_INIT")
                 .inherit_env("ERE_ZISK_UNLOCK_MAPPED_MEMORY")
                 .inherit_env("ERE_ZISK_MINIMAL_MEMORY")
-                .inherit_env("ERE_ZISK_PREALLOCATE")
-                .inherit_env("ERE_ZISK_SHARED_TABLES")
                 .inherit_env("ERE_ZISK_MAX_STREAMS")
                 .inherit_env("ERE_ZISK_NUMBER_THREADS_WITNESS")
-                .inherit_env("ERE_ZISK_MAX_WITNESS_STORED"),
+                .inherit_env("ERE_ZISK_MAX_WITNESS_STORED")
+                .inherit_env("ERE_ZISK_CLUSTER_PROVE_TIMEOUT_SECS"),
             _ => cmd,
         };
 
