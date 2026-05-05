@@ -5,7 +5,7 @@
 //! To install all requirements, run [`install_openvm_sdk.sh`] from the Ere
 //! repository at the same git revision as your `ere-prover-openvm` dependency.
 //!
-//! To use with GPU proving support, make sure CUDA 12.9 is installed, and turn
+//! To use with GPU proving support, make sure CUDA 13.0 is installed, and turn
 //! on the `cuda` feature.
 //!
 //! ## `zkVMProver` requirements

@@ -1,6 +1,6 @@
 ARG BASE_ZKVM_IMAGE=ere-base-airbender:latest
 ARG RUNTIME_IMAGE=ubuntu:24.04
-ARG RUNTIME_CUDA_IMAGE=nvidia/cuda:12.9.1-runtime-ubuntu24.04
+ARG RUNTIME_CUDA_IMAGE=nvidia/cuda:13.0.3-runtime-ubuntu24.04
 
 # Whether to enable CUDA feature or not.
 ARG CUDA

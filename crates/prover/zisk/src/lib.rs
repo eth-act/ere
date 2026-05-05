@@ -5,7 +5,7 @@
 //! To install all requirements, run [`install_zisk_sdk.sh`] from the Ere
 //! repository at the same git revision as your `ere-prover-zisk` dependency.
 //!
-//! GPU proving requires the `cuda` Cargo feature and CUDA 12.9 installed.
+//! GPU proving requires the `cuda` Cargo feature and CUDA 13.0 installed.
 //!
 //! ## `zkVMProver` requirements
 //!

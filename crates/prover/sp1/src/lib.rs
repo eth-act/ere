@@ -5,6 +5,8 @@
 //! To install all requirements, run [`install_sp1_sdk.sh`] from the Ere
 //! repository at the same git revision as your `ere-prover-sp1` dependency.
 //!
+//! GPU proving requires the `cuda` Cargo feature and CUDA 13.0 installed.
+//!
 //! ## `zkVMProver` requirements
 //!
 //! - `docker` - Used by `zkVMProver::prove` if `ProverResource::Gpu` is selected

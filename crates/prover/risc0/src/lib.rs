@@ -5,7 +5,7 @@
 //! To install all requirements, run [`install_risc0_sdk.sh`] from the Ere
 //! repository at the same git revision as your `ere-prover-risc0` dependency.
 //!
-//! To install `r0vm-cuda` (with GPU proving support), make sure CUDA 12.9 is
+//! To install `r0vm-cuda` (with GPU proving support), make sure CUDA 13.0 is
 //! installed, run [`install_risc0_sdk.sh`] with env `CUDA=1` set.
 //!
 //! ## `zkVMProver` requirements

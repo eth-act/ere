@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.9.1-runtime-ubuntu24.04
+FROM nvidia/cuda:13.0.3-runtime-ubuntu24.04
 
 # Taken from https://0xpolygonhermez.github.io/zisk/getting_started/installation.html
 RUN apt-get update && apt-get install -y --no-install-recommends \
