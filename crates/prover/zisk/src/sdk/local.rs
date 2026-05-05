@@ -131,7 +131,7 @@ impl LocalProver {
 
 fn build_prover(config: &Config, resource: &ProverResource) -> Result<ZiskProver<Asm>, Error> {
     let mut opts = BackendProverOpts::default();
-    if matches!(resource, ProverResource::Gpu) {
+    if cfg!(feature = "cuda") && matches!(resource, ProverResource::Gpu) {
         opts = opts.gpu();
     }
     if config.minimal_memory {

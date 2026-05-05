@@ -28,6 +28,7 @@ enum Backend {
 }
 
 pub struct ZiskSdk {
+    resource: ProverResource,
     backend: Backend,
     rom: ZiskRom,
 }
@@ -67,7 +68,11 @@ impl ZiskSdk {
             }
         };
 
-        Ok(Self { backend, rom })
+        Ok(Self {
+            resource,
+            backend,
+            rom,
+        })
     }
 
     pub fn program_vk(&self) -> ZiskProgramVk {
@@ -101,6 +106,10 @@ impl ZiskSdk {
     }
 
     pub fn prove(&self, input: &Input) -> Result<(PublicValues, ZiskProof, Duration), Error> {
+        if cfg!(not(feature = "cuda")) && self.resource == ProverResource::Gpu {
+            return Err(Error::CudaFeatureDisabled);
+        }
+
         let (proof, proving_time) = match &self.backend {
             Backend::Local(local) => local.prove(input)?,
             Backend::Cluster {

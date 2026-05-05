@@ -39,6 +39,9 @@ pub enum Error {
     #[error("Prove panicked: {0}")]
     ProvePanic(String),
 
+    #[error("Enable `cuda` feature to use `ProverResource::Gpu`")]
+    CudaFeatureDisabled,
+
     // Cluster
     #[error(transparent)]
     Cluster(#[from] ere_cluster_client_zisk::Error),
