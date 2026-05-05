@@ -44,6 +44,11 @@ struct Args {
     /// milliseconds. Disabled when not set.
     #[arg(long, env = "ERE_PROVE_TIMEOUT_MS")]
     prove_timeout_ms: Option<u64>,
+    /// Hard timeout: terminate server process if a single prove has been running longer than
+    /// this many seconds. Disabled when not set. This forces container restart to recover from
+    /// deadlocked provers.
+    #[arg(long, env = "ERE_PROVE_TIMEOUT_SEC")]
+    prove_hard_timeout_sec: Option<u64>,
     #[command(
         flatten,
         next_help_heading = "ELF source (read from stdin if none set)"
@@ -99,7 +104,9 @@ async fn main() -> Result<(), Error> {
     match args.command {
         Command::Server(resource) => {
             let prove_timeout = args.prove_timeout_ms.map(Duration::from_millis);
-            commands::server::run(args.port, elf, resource, prove_timeout).await?
+            let prove_hard_timeout = args.prove_hard_timeout_sec.map(Duration::from_secs);
+            commands::server::run(args.port, elf, resource, prove_timeout, prove_hard_timeout)
+                .await?
         }
         Command::Keygen { program_vk_path } => commands::keygen::run(elf, &program_vk_path)?,
     }

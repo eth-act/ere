@@ -24,7 +24,7 @@ use tokio::{
 };
 use tower::ServiceBuilder;
 use tower_http::{catch_panic::CatchPanicLayer, trace::TraceLayer};
-use tracing::info;
+use tracing::{error, info};
 use twirp::{
     Request, Response, Router, TwirpErrorResponse,
     async_trait::async_trait,
@@ -41,6 +41,7 @@ pub async fn run(
     elf: Elf,
     resource: ProverResource,
     prove_timeout: Option<Duration>,
+    prove_hard_timeout: Option<Duration>,
 ) -> Result<(), Error> {
     let resource_kind = resource.kind();
     let zkvm = crate::construct_zkvm(elf, resource)?;
@@ -52,6 +53,32 @@ pub async fn run(
 
     let prove_state = Arc::new(ProveState::new(prove_timeout));
     let server = Arc::new(zkVMServer::new(zkvm, Arc::clone(&prove_state)));
+
+    // Spawn global watchdog for hard timeout if configured
+    if let Some(hard_timeout) = prove_hard_timeout {
+        let prove_state_clone = Arc::clone(&prove_state);
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(Duration::from_secs(5));
+            loop {
+                interval.tick().await;
+
+                if let Some(started) = *prove_state_clone.started_at.lock() {
+                    let elapsed = started.elapsed();
+                    if elapsed > hard_timeout {
+                        error!(
+                            "Prove exceeded hard timeout of {:?} (elapsed: {:?}), terminating server",
+                            hard_timeout, elapsed
+                        );
+                        std::process::exit(1);
+                    }
+                }
+            }
+        });
+        info!(
+            "Global prove watchdog enabled with hard timeout of {:?}",
+            hard_timeout
+        );
+    }
 
     let api_middleware = ServiceBuilder::new()
         .layer(
@@ -306,4 +333,79 @@ async fn shutdown_signal() {
 
 fn serialize_report_err(err: bincode::error::EncodeError) -> TwirpErrorResponse {
     internal(format!("failed to serialize report: {err}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::thread;
+
+    #[test]
+    fn test_prove_state_timeout_detection() {
+        // Test soft timeout detection (used by health check)
+        let timeout = Duration::from_millis(100);
+        let prove_state = ProveState::new(Some(timeout));
+
+        // Initially, no prove is running
+        assert!(!prove_state.is_timeout());
+
+        // Simulate prove start
+        {
+            *prove_state.started_at.lock() = Some(Instant::now());
+        }
+
+        // Immediately after start, should not timeout
+        assert!(!prove_state.is_timeout());
+
+        // Wait for timeout to expire
+        thread::sleep(Duration::from_millis(150));
+
+        // Now it should timeout
+        assert!(prove_state.is_timeout());
+
+        // Clear the started_at (simulating prove completion)
+        {
+            *prove_state.started_at.lock() = None;
+        }
+
+        // After clearing, should not timeout
+        assert!(!prove_state.is_timeout());
+    }
+
+    #[test]
+    fn test_prove_state_no_timeout_configured() {
+        // When no timeout is configured, is_timeout should always return false
+        let prove_state = ProveState::new(None);
+
+        assert!(!prove_state.is_timeout());
+
+        // Even with a prove running
+        {
+            *prove_state.started_at.lock() = Some(Instant::now());
+        }
+
+        assert!(!prove_state.is_timeout());
+    }
+
+    #[test]
+    fn test_prove_in_flight_guard() {
+        // Test that ProveInFlight guard correctly sets and clears started_at
+        let prove_state = Arc::new(ProveState::new(None));
+
+        // Initially no prove running
+        assert!(prove_state.started_at.lock().is_none());
+
+        {
+            // Create guard (simulates prove start)
+            let _guard = ProveInFlight::new(Arc::clone(&prove_state));
+
+            // started_at should be set
+            assert!(prove_state.started_at.lock().is_some());
+
+            // Guard is dropped here
+        }
+
+        // After guard drop, started_at should be cleared
+        assert!(prove_state.started_at.lock().is_none());
+    }
 }
