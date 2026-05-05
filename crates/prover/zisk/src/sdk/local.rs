@@ -9,6 +9,7 @@ use std::{
 use ere_compiler_core::Elf;
 use ere_prover_core::{Input, ProverResource};
 use ere_verifier_zisk::{PUBLIC_VALUES_BYTES, ZiskProgramVk, ZiskProof};
+use once_cell::sync::OnceCell;
 use parking_lot::{Mutex, MutexGuard};
 use tracing::warn;
 use zisk_common::{Proof, ProofKind, io::ZiskStdin};
@@ -20,6 +21,10 @@ use crate::{
     error::Error,
     sdk::{framed_stdin, panic_msg},
 };
+
+// Use a shared prover instance to avoid `MpiCtx` get initialized twice, to support multiple
+// `ZiskProver` instances creation (e.g. testing different ELFs).
+static LOCAL_PROVER: OnceCell<ZiskProver<Asm>> = OnceCell::new();
 
 struct Config {
     setup_on_init: bool,
@@ -54,7 +59,7 @@ impl Config {
 }
 
 pub struct LocalProver {
-    prover: ZiskProver<Asm>,
+    prover: &'static ZiskProver<Asm>,
     program: GuestProgram,
     program_vk: ZiskProgramVk,
     initialized: Mutex<bool>,
@@ -63,7 +68,7 @@ pub struct LocalProver {
 impl LocalProver {
     pub fn new(elf: Elf, resource: &ProverResource) -> Result<Self, Error> {
         let config = Config::from_env()?;
-        let prover = build_prover(&config, resource)?;
+        let prover = LOCAL_PROVER.get_or_try_init(|| build_prover(&config, resource))?;
 
         let program = GuestProgram::from_bytes("guest", elf.0);
         let program_vk = prover
@@ -113,11 +118,11 @@ impl LocalProver {
         match result {
             Ok(Ok(output)) => Ok((parse_proof(output.get_proof())?, proving_time)),
             Ok(Err(err)) => {
-                uninitialize(&self.prover, initialized);
+                uninitialize(self.prover, initialized);
                 Err(Error::Prove(err))
             }
             Err(panic) => {
-                uninitialize(&self.prover, initialized);
+                uninitialize(self.prover, initialized);
                 Err(Error::ProvePanic(panic_msg(panic)))
             }
         }
