@@ -1,3 +1,5 @@
+#![allow(unexpected_cfgs)]
+
 use core::ops::Deref;
 
 use ere_platform_core::{LengthPrefixedStdin, Platform};
@@ -33,22 +35,28 @@ impl Platform for ZiskPlatform {
     }
 
     fn cycle_scope_start(_name: &str) {
-        // FIXME: Uncomment when ZisK support profile opcode in program setup
-        // #[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
-        // ziskos::ziskos_syscall!(
-        //     ziskos::SYSCALL_PROFILE_ID,
-        //     ziskos::PROFILE_REPORT_START_COST_ID,
-        //     &_name as *const &str as usize
-        // );
+        // NOTE: If the profile syscall is emitted, the ELF can NOT be proved by ASM prover.
+        #[cfg(all(
+            feature = "cycle-scope",
+            all(target_os = "zkvm", target_vendor = "zisk")
+        ))]
+        ziskos::ziskos_syscall!(
+            ziskos::SYSCALL_PROFILE_ID,
+            ziskos::PROFILE_REPORT_START_COST_ID,
+            &_name as *const &str as usize
+        );
     }
 
     fn cycle_scope_end(_name: &str) {
-        // FIXME: Uncomment when ZisK support profile opcode in program setup
-        // #[cfg(all(target_os = "zkvm", target_vendor = "zisk"))]
-        // ziskos::ziskos_syscall!(
-        //     ziskos::SYSCALL_PROFILE_ID,
-        //     ziskos::PROFILE_REPORT_END_COST_ID,
-        //     &_name as *const &str as usize
-        // )
+        // NOTE: If the profile syscall is emitted, the ELF can NOT be proved by ASM prover.
+        #[cfg(all(
+            feature = "cycle-scope",
+            all(target_os = "zkvm", target_vendor = "zisk")
+        ))]
+        ziskos::ziskos_syscall!(
+            ziskos::SYSCALL_PROFILE_ID,
+            ziskos::PROFILE_REPORT_END_COST_ID,
+            &_name as *const &str as usize
+        )
     }
 }
