@@ -4179,6 +4179,7 @@ dependencies = [
  "ere-util-test",
  "ere-util-tokio",
  "ere-verifier-zisk",
+ "once_cell",
  "parking_lot",
  "tempfile",
  "thiserror 2.0.18",
