@@ -33,7 +33,7 @@ ensure_tool_installed "cargo" "to pre-build lib-c"
 if [ -n "$CUDA" ]; then
     export USE_GPU=true
 else
-    export USE_GPU=fasle
+    export USE_GPU=false
 fi
 
 # Step 1: Download and run the script that installs the ziskup binary itself.
