@@ -37,6 +37,7 @@ pub use error::Error;
 /// - Airbender: `CUDAARCHS` (semicolon-separated, e.g. "89;120")
 /// - OpenVM: `CUDA_ARCH` (comma-separated, e.g. "89,120")
 /// - Risc0: `NVCC_APPEND_FLAGS` (nvcc --generate-code flags)
+/// - SP1: `CUDA_ARCHS` (comma-separated, e.g. "89,120")
 /// - Zisk: `CUDA_ARCHS` (comma-separated, e.g. "89,120")
 fn apply_cuda_build_args(
     cmd: DockerBuildCmd,
@@ -73,7 +74,7 @@ fn apply_cuda_build_args(
                 .join(" ");
             cmd.build_arg("NVCC_APPEND_FLAGS", value)
         }
-        zkVMKind::Zisk => {
+        zkVMKind::SP1 | zkVMKind::Zisk => {
             let value = cuda_archs
                 .iter()
                 .map(|arch| arch.to_string())
@@ -81,7 +82,6 @@ fn apply_cuda_build_args(
                 .join(",");
             cmd.build_arg("CUDA_ARCHS", value)
         }
-        _ => cmd,
     })
 }
 

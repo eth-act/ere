@@ -2,10 +2,27 @@ ARG BASE_IMAGE=ere-base:latest
 
 FROM $BASE_IMAGE
 
+# Whether to enable CUDA feature or not.
+ARG CUDA
+
+# Env variable read by SP1 crate `sp1-gpu-sys`, comma-separated numeric arch IDs (e.g. "120" or "89,120")
+ARG CUDA_ARCHS=120
+
 # Install the well known proto files.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libprotobuf-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Build prerequisites for `sp1-gpu-server`.
+RUN if [ -n "$CUDA" ]; then \
+    apt-get update && apt-get install -y --no-install-recommends \
+    golang-go libclang-dev && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    CMAKE_VERSION=3.31.4 && \
+    curl -fsSL "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.sh" -o /tmp/cmake.sh && \
+    sh /tmp/cmake.sh --skip-license --prefix=/usr/local && \
+    rm /tmp/cmake.sh; \
+    fi
 
 # Set default toolchain to 1.91.1 and uninstall the original one.
 RUN rustup default 1.91.1 && \

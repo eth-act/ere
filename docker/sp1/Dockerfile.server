@@ -20,6 +20,13 @@ RUN cargo build --release --package ere-server --bin ere-server --features sp1${
 
 FROM $RUNTIME_IMAGE AS runtime
 FROM $RUNTIME_CUDA_IMAGE AS runtime_cuda
+
+# Copy sp1-gpu-server.
+COPY --from=build_stage /root/.sp1/bin/sp1-gpu-server /root/.sp1/bin/sp1-gpu-server
+
+# Add SP1 SDK to path
+ENV PATH=/root/.sp1/bin:$PATH
+
 FROM runtime${CUDA:+_cuda} AS runtime_stage
 
 # Copy ere-server

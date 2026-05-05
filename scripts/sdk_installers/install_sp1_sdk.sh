@@ -51,7 +51,15 @@ echo "  export SP1_DIR=\"${SP1_DIR}\""
 echo "  export PATH=\"${SP1_DIR}/bin:\$PATH\""
 echo "Then source your profile or open a new terminal."
 
-# Download CUDA prover (supports CUDA compute capabilities 80, 86, 89, 90, 100, 120)
-mkdir -p $HOME/.sp1/bin && \
-    curl -L "https://github.com/succinctlabs/sp1/releases/download/${SP1_VERSION}/sp1_gpu_server_${SP1_VERSION}_x86_64.tar.gz" | \
-    tar -xzf - -C $HOME/.sp1/bin
+# Build sp1-gpu-server from source so it links against the host's CUDA
+# runtime.
+if [ -n "$CUDA" ]; then
+    TEMP_DIR=$(mktemp -d)
+    trap 'rm -rf "$TEMP_DIR"' EXIT
+
+    git clone https://github.com/succinctlabs/sp1.git --depth 1 --branch "$SP1_VERSION" "$TEMP_DIR/sp1"
+    cd "$TEMP_DIR/sp1"
+
+    cargo build --release --bin sp1-gpu-server
+    cp ./target/release/sp1-gpu-server "$SP1_DIR/bin/sp1-gpu-server"
+fi

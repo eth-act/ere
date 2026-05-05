@@ -162,7 +162,7 @@ if [ "$CUDA" = true ] && [ -n "$CUDA_ARCHS" ]; then
             BASE_ZKVM_BUILD_ARGS+=(--build-arg "NVCC_APPEND_FLAGS=$NVCC_APPEND_FLAGS")
             SERVER_ZKVM_BUILD_ARGS+=(--build-arg "NVCC_APPEND_FLAGS=$NVCC_APPEND_FLAGS")
             ;;
-        zisk)
+        sp1|zisk)
             BASE_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCHS=$CUDA_ARCHS")
             SERVER_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCHS=$CUDA_ARCHS")
             ;;
