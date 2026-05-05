@@ -1,3 +1,71 @@
+FROM nvidia/cuda:13.0.3-devel-ubuntu24.04 AS build_stage
+
+# Taken from https://0xpolygonhermez.github.io/zisk/getting_started/installation.html
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    xz-utils \
+    jq \
+    curl \
+    build-essential \
+    qemu-system \
+    libomp-dev \
+    libgmp-dev \
+    nlohmann-json3-dev \
+    protobuf-compiler \
+    uuid-dev \
+    libgrpc++-dev \
+    libsecp256k1-dev \
+    libsodium-dev \
+    libpqxx-dev \
+    nasm \
+    libopenmpi-dev \
+    openmpi-bin \
+    openmpi-common \
+    libclang-dev \
+    clang \
+    gcc-riscv64-unknown-elf \
+    libprotobuf-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install Rust
+ENV RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo \
+    PATH=/usr/local/cargo/bin:$PATH
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --no-modify-path
+
+# Download proving key.
+RUN curl https://raw.githubusercontent.com/0xPolygonHermez/zisk/v0.17.0/ziskup/ziskup | USE_GPU=false SETUP_KEY=proving-no-consttree bash && \
+    rm -rf /root/.zisk/bin && \
+    rm -rf /root/.zisk/cache && \
+    rm -rf /root/.zisk/toolchains && \
+    rm -rf /root/.zisk/zisk
+
+# Clone repo
+WORKDIR /app
+
+RUN git clone https://github.com/han0110/zisk.git --depth 1 --branch patch/v0.17.0 /app
+
+# Env variable read by ZisK crate `proofman-starks-lib-c`, comma-separated numeric arch IDs (e.g. "120" or "89,120")
+ARG CUDA_ARCHS=120
+
+# Build binaries
+RUN cargo build --release
+
+# Copy release artifacts into /root/.zisk
+RUN mkdir -p /root/.zisk/bin /root/.zisk/zisk/emulator-asm && \
+    cp target/release/cargo-zisk \
+    target/release/zisk-worker \
+    target/release/ziskemu \
+    target/release/riscv2zisk \
+    target/release/zisk-coordinator \
+    target/release/libziskclib.a \
+    ziskup/ziskup \
+    /root/.zisk/bin/ && \
+    cp -r emulator-asm/src /root/.zisk/zisk/emulator-asm/src && \
+    cp emulator-asm/Makefile /root/.zisk/zisk/emulator-asm/Makefile && \
+    cp -r lib-c /root/.zisk/zisk/lib-c
+
 FROM nvidia/cuda:13.0.3-runtime-ubuntu24.04
 
 # Taken from https://0xpolygonhermez.github.io/zisk/getting_started/installation.html
@@ -25,13 +93,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc-riscv64-unknown-elf \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-ENV RUSTUP_HOME=/usr/local/rustup \
-    CARGO_HOME=/usr/local/cargo \
-    PATH=/usr/local/cargo/bin:$PATH
-
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none && \
-    curl https://raw.githubusercontent.com/0xPolygonHermez/zisk/v0.17.0/ziskup/ziskup | USE_GPU=true SETUP_KEY=proving-no-consttree bash && \
-    rustup self uninstall -y
+# Copy ZisK proving key and binaries
+COPY --from=build_stage /root/.zisk /root/.zisk
 
 ENV PATH=/root/.zisk/bin:$PATH
 
