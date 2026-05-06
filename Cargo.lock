@@ -4019,6 +4019,7 @@ name = "ere-prover-airbender"
 version = "0.8.1"
 dependencies = [
  "airbender-host",
+ "bincode 2.0.1",
  "ere-compiler-airbender",
  "ere-compiler-core",
  "ere-prover-core",
@@ -4232,10 +4233,10 @@ dependencies = [
 name = "ere-verifier-airbender"
 version = "0.8.1"
 dependencies = [
- "airbender-host",
  "bincode 2.0.1",
  "ere-util-build",
  "ere-verifier-core",
+ "execution_utils",
  "serde",
  "thiserror 2.0.18",
 ]

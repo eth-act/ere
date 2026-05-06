@@ -25,6 +25,7 @@ ere-prover-core.workspace = true
 ere-verifier-airbender.workspace = true
 
 [dev-dependencies]
+bincode.workspace = true
 ere-compiler-airbender.workspace = true
 ere-util-test = { workspace = true, features = ["host"] }
 
