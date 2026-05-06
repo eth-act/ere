@@ -1,6 +1,6 @@
 use std::{env, fs, path::Path};
 
-use ere_util_build::{cargo_lock_path, detect_sdk_version, get_docker_image_tag, workspace};
+use ere_util_build::{cargo_lock_path, detect_dep_version, get_docker_image_tag, workspace};
 
 fn main() {
     generate_docker_image_tag();
@@ -36,13 +36,13 @@ fn generate_zkvm_sdk_version_impl() {
         sp1_version,
         zisk_version,
     ] = [
-        "airbender-sdk",
-        "openvm-sdk",
-        "risc0-zkvm",
-        "sp1-sdk",
-        "zisk-sdk",
+        ("ere-verifier-airbender", "execution_utils"),
+        ("ere-verifier-openvm", "openvm-sdk"),
+        ("ere-verifier-risc0", "risc0-zkvm"),
+        ("ere-verifier-sp1", "sp1-sdk"),
+        ("ere-verifier-zisk", "proofman-verifier"),
     ]
-    .map(detect_sdk_version);
+    .map(|(c, d)| detect_dep_version(c, d));
 
     let zkvm_sdk_version_impl = format!(
         r#"impl crate::zkVMKind {{
