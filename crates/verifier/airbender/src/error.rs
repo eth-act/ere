@@ -1,4 +1,3 @@
-use airbender_host::HostError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -7,7 +6,7 @@ pub enum Error {
     #[error("Failed to deserialize: {0}")]
     Deserialize(#[from] bincode::error::DecodeError),
 
-    /// Error returned by the `airbender-host` SDK.
-    #[error(transparent)]
-    Sdk(#[from] HostError),
+    /// `verify_proof_in_unified_layer` returned `Err`.
+    #[error("Invalid proof")]
+    InvalidProof,
 }

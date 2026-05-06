@@ -1,4 +1,4 @@
-use airbender_host::verify_proof;
+use airbender_execution_utils::unified_circuit::verify_proof_in_unified_layer;
 use ere_verifier_core::{PublicValues, zkVMVerifier};
 
 use crate::{AirbenderProgramVk, AirbenderProof, Error};
@@ -31,7 +31,10 @@ impl zkVMVerifier for AirbenderVerifier {
     }
 
     fn verify(&self, proof: &AirbenderProof) -> Result<PublicValues, Error> {
-        verify_proof(&proof.0, &self.program_vk.0, None, None)?;
+        let setup = &self.program_vk.0.unified_setup;
+        let layouts = &self.program_vk.0.unified_layouts;
+        verify_proof_in_unified_layer(&proof.0, setup, layouts, false)
+            .map_err(|_| Error::InvalidProof)?;
 
         Ok(proof.public_values().into())
     }

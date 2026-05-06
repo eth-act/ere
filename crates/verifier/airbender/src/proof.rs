@@ -1,6 +1,6 @@
 use core::array::from_fn;
 
-use airbender_host::raw::UnrolledProgramProof;
+use airbender_execution_utils::unrolled::UnrolledProgramProof;
 use serde::{Deserialize, Serialize};
 
 /// A proof produced by the host prover that bundles everything needed for

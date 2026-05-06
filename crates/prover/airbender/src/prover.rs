@@ -12,9 +12,7 @@ use airbender_execution_utils::{
     unified_circuit::compute_unified_setup_for_machine_configuration,
     verifier_binaries::{RECURSION_UNIFIED_BIN, RECURSION_UNIFIED_TXT},
 };
-use airbender_host::{
-    ExecutionResult, Runner, TranspilerRunner, TranspilerRunnerBuilder, UnifiedVk,
-};
+use airbender_host::{ExecutionResult, Runner, TranspilerRunner, TranspilerRunnerBuilder};
 #[cfg(feature = "cuda")]
 use airbender_host::{GpuProver, GpuProverBuilder, Proof, ProveResult, Prover as _};
 use airbender_riscv_transpiler::cycle::IWithoutByteAccessIsaConfigWithDelegation;
@@ -24,7 +22,7 @@ use ere_prover_core::{
     ProverResourceKind, PublicValues, zkVMProver,
 };
 use ere_verifier_airbender::{
-    AirbenderProgramVk, AirbenderProof, AirbenderVerifier, words_to_le_bytes,
+    AirbenderProgramVk, AirbenderProof, AirbenderVerifier, UnifiedVk, words_to_le_bytes,
 };
 use sha3::{Digest, Keccak256};
 use tempfile::tempdir;
@@ -350,19 +348,17 @@ mod tests {
     #[test]
     fn compute_program_vk_matches_sdk() {
         use ere_prover_core::codec::Encode;
-        use ere_verifier_airbender::AirbenderProgramVk;
 
         use crate::prover::{compute_program_vk, elf_to_bin};
 
         let elf = basic_elf();
         let (app_bin_hash, app_bin_path) = elf_to_bin(&elf).unwrap();
 
-        let program_vk =
-            AirbenderProgramVk(airbender_host::compute_unified_vk(&app_bin_path).unwrap());
+        let program_vk = airbender_host::compute_unified_vk(&app_bin_path).unwrap();
 
         assert_eq!(
             compute_program_vk(app_bin_hash).encode_to_vec().unwrap(),
-            program_vk.encode_to_vec().unwrap(),
+            bincode::serde::encode_to_vec(&program_vk, bincode::config::legacy()).unwrap(),
         );
     }
 }
