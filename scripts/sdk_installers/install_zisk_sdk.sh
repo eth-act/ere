@@ -34,7 +34,7 @@ ensure_tool_installed "cargo" "to pre-build lib-c"
 # Export SETUP_KEY=proving-no-consttree to download proving key without doing setup.
 export ZISK_VERSION="0.16.1"
 export SETUP_KEY=${SETUP_KEY:=proving-no-consttree}
-curl "https://raw.githubusercontent.com/0xPolygonHermez/zisk/main/ziskup/install.sh" | bash
+curl "https://raw.githubusercontent.com/0xPolygonHermez/zisk/v$ZISK_VERSION/ziskup/ziskup" | bash
 unset SETUP_KEY
 
 # Step 2: Make sure `lib-c`'s build script is ran.
