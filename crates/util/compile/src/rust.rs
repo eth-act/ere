@@ -7,6 +7,7 @@ use std::{
 };
 
 use cargo_metadata::{Metadata, MetadataCommand};
+use clap::Parser;
 use tempfile::tempdir;
 
 use crate::CommonError;
@@ -51,6 +52,7 @@ pub struct CargoBuildCmd {
     rustflags: Vec<String>,
     build_options: Vec<String>,
     linker_script: Option<String>,
+    features: Vec<String>,
 }
 
 impl Default for CargoBuildCmd {
@@ -61,6 +63,7 @@ impl Default for CargoBuildCmd {
             rustflags: Default::default(),
             build_options: Default::default(),
             linker_script: Default::default(),
+            features: Default::default(),
         }
     }
 }
@@ -103,6 +106,12 @@ impl CargoBuildCmd {
     /// Linker script to be saved into a file and pass to `RUSTFLAGS`.
     pub fn linker_script(mut self, linker_script: Option<impl AsRef<str>>) -> Self {
         self.linker_script = linker_script.map(|v| v.as_ref().to_string());
+        self
+    }
+
+    /// Cargo features to enable.
+    pub fn features(mut self, features: &[impl AsRef<str>]) -> Self {
+        self.features = features.iter().map(|v| v.as_ref().to_string()).collect();
         self
     }
 
@@ -160,13 +169,19 @@ impl CargoBuildCmd {
             .collect::<Vec<_>>()
             .join(CARGO_ENCODED_RUSTFLAGS_SEPARATOR);
 
+        let features_args = (!self.features.is_empty())
+            .then(|| ["--features".into(), self.features.join(",")])
+            .into_iter()
+            .flatten();
+
         let args = iter::empty()
             .chain([plus_toolchain(&self.toolchain)])
             .chain(["build".into()])
             .chain(self.build_options.iter().cloned())
             .chain(["--profile".into(), self.profile.clone()])
             .chain(["--target".into(), target_arg])
-            .chain(["--manifest-path".into(), package.manifest_path.to_string()]);
+            .chain(["--manifest-path".into(), package.manifest_path.to_string()])
+            .chain(features_args);
 
         let mut cmd = Command::new("cargo");
         let status = cmd
@@ -311,4 +326,18 @@ pub fn rustup_add_target(toolchain: &str, target: impl AsRef<str>) -> Result<(),
 
 fn plus_toolchain(toolchain: &str) -> String {
     format!("+{toolchain}")
+}
+
+/// Parse cargo-style `--features` / `-F` flags out of `args`.
+pub fn parse_cargo_features(args: &[String]) -> Result<Vec<String>, CommonError> {
+    #[derive(Parser, Debug)]
+    #[command(no_binary_name = true)]
+    struct Args {
+        #[arg(short = 'F', long = "features", value_delimiter = ',')]
+        features: Vec<String>,
+    }
+
+    Args::try_parse_from(args)
+        .map(|p| p.features)
+        .map_err(CommonError::invalid_args)
 }
