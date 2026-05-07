@@ -1,5 +1,5 @@
 use std::{
-    fs,
+    fs, iter,
     path::{Path, PathBuf},
 };
 
@@ -134,7 +134,10 @@ impl Compiler for DockerizedCompiler {
                 mounting_directory: self.mount_directory.to_path_buf(),
                 guest_directory: guest_directory.to_path_buf(),
             })?;
-        let guest_path_in_docker = PathBuf::from("/guest").join(guest_relative_path);
+        let guest_path_in_docker = PathBuf::from("/guest")
+            .join(guest_relative_path)
+            .to_string_lossy()
+            .to_string();
 
         let tempdir = TempDir::new().map_err(CommonError::tempdir)?;
 
@@ -153,19 +156,27 @@ impl Compiler for DockerizedCompiler {
         };
 
         const ELF_NAME: &str = "guest.elf";
+        let extra_args = (!args.is_empty())
+            .then(|| {
+                iter::empty()
+                    .chain(["--"])
+                    .chain(args.iter().map(|arg| arg.as_str()))
+            })
+            .into_iter()
+            .flatten();
         cmd.exec(
             [
                 "--compiler-kind",
                 self.compiler_kind.as_str(),
                 "--guest-dir",
-                &guest_path_in_docker.to_string_lossy(),
+                &guest_path_in_docker,
                 "--output-dir",
                 "/output",
                 "--elf-name",
                 ELF_NAME,
             ]
             .into_iter()
-            .chain(args.iter().map(|arg| arg.as_str())),
+            .chain(extra_args),
         )?;
 
         let elf_path = tempdir.path().join(ELF_NAME);
