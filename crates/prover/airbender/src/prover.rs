@@ -288,7 +288,7 @@ mod tests {
         static ELF: OnceLock<Elf> = OnceLock::new();
         ELF.get_or_init(|| {
             AirbenderRustRv32imaCustomized
-                .compile(testing_guest_directory("airbender", "basic"))
+                .compile(testing_guest_directory("airbender", "basic"), &[])
                 .unwrap()
         })
         .clone()

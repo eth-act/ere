@@ -89,7 +89,7 @@ pub(crate) mod tests {
         static ELF: OnceLock<Elf> = OnceLock::new();
         ELF.get_or_init(|| {
             ZiskRustRv64imaCustomized
-                .compile(testing_guest_directory("zisk", "basic_rust"))
+                .compile(testing_guest_directory("zisk", "basic_rust"), &[])
                 .unwrap()
         })
         .clone()
