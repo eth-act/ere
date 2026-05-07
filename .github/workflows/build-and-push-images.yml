@@ -55,7 +55,6 @@ jobs:
 
       - name: Build ere-base and ere-base-${{ matrix.zkvm }} images
         env:
-          DOCKER_BUILDKIT: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bash .github/scripts/build-image.sh \
@@ -70,7 +69,6 @@ jobs:
 
       - name: Build ere-compiler-${{ matrix.zkvm }} and ere-server-${{ matrix.zkvm }} images
         env:
-          DOCKER_BUILDKIT: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bash .github/scripts/build-image.sh \
@@ -117,7 +115,6 @@ jobs:
 
       - name: Build ere-base and ere-base-${{ matrix.zkvm }} images with CUDA enabled
         env:
-          DOCKER_BUILDKIT: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bash .github/scripts/build-image.sh \
@@ -133,7 +130,6 @@ jobs:
 
       - name: Build ere-server-${{ matrix.zkvm }} image with CUDA enabled
         env:
-          DOCKER_BUILDKIT: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bash .github/scripts/build-image.sh \
@@ -175,7 +171,6 @@ jobs:
 
       - name: Build ere-cluster-${{ matrix.zkvm }} image with CUDA enabled
         env:
-          DOCKER_BUILDKIT: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bash .github/scripts/build-image.sh \

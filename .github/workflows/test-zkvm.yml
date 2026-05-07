@@ -98,7 +98,6 @@ jobs:
 
       - name: Pull or build ere-base and ere-base-${{ inputs.zkvm }} images with CUDA enabled
         env:
-          DOCKER_BUILDKIT: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           CACHED_TAG="${{ needs.image_meta.outputs.cached_image_tag }}"
@@ -114,7 +113,6 @@ jobs:
 
       - name: Build ere-server-${{ inputs.zkvm }} image with CUDA enabled
         env:
-          DOCKER_BUILDKIT: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bash .github/scripts/build-image.sh \
@@ -127,7 +125,6 @@ jobs:
       - name: Build ere-cluster-${{ inputs.zkvm }} image with CUDA enabled
         if: ${{ inputs.cluster && needs.image_meta.outputs.dockerfile_changed == 'true' }}
         env:
-          DOCKER_BUILDKIT: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bash .github/scripts/build-image.sh \
@@ -162,6 +159,8 @@ jobs:
 
       - name: Pull base zkvm image or build locally
         if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bash .github/scripts/pull-or-build-base-zkvm-image.sh \
             --zkvm ${{ inputs.zkvm }} \
@@ -223,7 +222,6 @@ jobs:
       - name: Pull base zkvm image or build locally
         if: github.event_name == 'pull_request'
         env:
-          DOCKER_BUILDKIT: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bash .github/scripts/pull-or-build-base-zkvm-image.sh \
@@ -307,7 +305,6 @@ jobs:
       - name: Pull images or build locally
         if: github.event_name == 'pull_request'
         env:
-          DOCKER_BUILDKIT: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bash .github/scripts/pull-or-build-base-zkvm-image.sh \

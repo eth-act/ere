@@ -95,6 +95,5 @@ else
     if [ -n "$CUDA_ARCHS" ]; then
         BUILD_ARGS+=(--cuda-archs "$CUDA_ARCHS")
     fi
-    # GITHUB_TOKEN is passed through environment if set
     "$SCRIPT_DIR/build-image.sh" "${BUILD_ARGS[@]}"
 fi

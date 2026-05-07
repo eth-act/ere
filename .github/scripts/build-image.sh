@@ -179,59 +179,53 @@ if [ -n "$RUSTFLAGS" ]; then
     SERVER_ZKVM_BUILD_ARGS+=(--build-arg "RUSTFLAGS=$RUSTFLAGS")
 fi
 
-# Pass GITHUB_TOKEN as a BuildKit secret if available to prevent rzup rate limits
-SECRET_ARGS=()
-if [ -n "${GITHUB_TOKEN:-}" ]; then
-    SECRET_ARGS=(--secret id=github_token,env=GITHUB_TOKEN)
+# Pass GITHUB_TOKEN to prevent rzup hit github rate limits
+if [ -n "$GITHUB_TOKEN" ] && [ "$ZKVM" = "risc0" ]; then
+    BASE_ZKVM_BUILD_ARGS+=(--secret id=github_token,env=GITHUB_TOKEN)
 fi
 
 # Build images
 
 if [ "$BUILD_BASE" = true ]; then
     echo "Building base image: $BASE_IMAGE"
-    DOCKER_BUILDKIT=1 docker build \
+    docker build \
         --file "docker/Dockerfile.base" \
         --tag "$BASE_IMAGE" \
         "${BASE_BUILD_ARGS[@]}" \
-        "${SECRET_ARGS[@]}" \
         .
 
     echo "Building zkvm base image: $BASE_ZKVM_IMAGE"
-    DOCKER_BUILDKIT=1 docker build \
+    docker build \
         --file "docker/${ZKVM}/Dockerfile.base" \
         --tag "$BASE_ZKVM_IMAGE" \
         "${BASE_ZKVM_BUILD_ARGS[@]}" \
-        "${SECRET_ARGS[@]}" \
         .
 fi
 
 if [ "$BUILD_COMPILER" = true ]; then
     echo "Building zkvm compiler image: $COMPILER_ZKVM_IMAGE"
-    DOCKER_BUILDKIT=1 docker build \
+    docker build \
         --file "docker/${ZKVM}/Dockerfile.compiler" \
         --tag "$COMPILER_ZKVM_IMAGE" \
         "${COMPILER_ZKVM_BUILD_ARGS[@]}" \
-        "${SECRET_ARGS[@]}" \
         .
 fi
 
 if [ "$BUILD_SERVER" = true ]; then
     echo "Building zkvm server image: $SERVER_ZKVM_IMAGE"
-    DOCKER_BUILDKIT=1 docker build \
+    docker build \
         --file "docker/${ZKVM}/Dockerfile.server" \
         --tag "$SERVER_ZKVM_IMAGE" \
         "${SERVER_ZKVM_BUILD_ARGS[@]}" \
-        "${SECRET_ARGS[@]}" \
         .
 fi
 
 if [ "$BUILD_CLUSTER" = true ]; then
     echo "Building zkvm cluster image: $CLUSTER_ZKVM_IMAGE"
-    DOCKER_BUILDKIT=1 docker build \
+    docker build \
         --file "docker/${ZKVM}/Dockerfile.cluster" \
         --tag "$CLUSTER_ZKVM_IMAGE" \
         "${CLUSTER_ZKVM_BUILD_ARGS[@]}" \
-        "${SECRET_ARGS[@]}" \
         .
 fi
 
