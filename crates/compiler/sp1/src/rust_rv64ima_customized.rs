@@ -1,7 +1,7 @@
 use std::{fs, path::Path, process::Command};
 
 use ere_compiler_core::{Compiler, Elf};
-use ere_util_compile::{CommonError, cargo_metadata};
+use ere_util_compile::{CommonError, cargo_metadata, parse_cargo_features};
 use tempfile::tempdir;
 use tracing::info;
 
@@ -14,7 +14,11 @@ pub struct SP1RustRv64imaCustomized;
 impl Compiler for SP1RustRv64imaCustomized {
     type Error = Error;
 
-    fn compile(&self, guest_directory: impl AsRef<Path>) -> Result<Elf, Self::Error> {
+    fn compile(
+        &self,
+        guest_directory: impl AsRef<Path>,
+        args: &[String],
+    ) -> Result<Elf, Self::Error> {
         let guest_directory = guest_directory.as_ref();
         info!("Compiling SP1 program at {}", guest_directory.display());
 
@@ -29,16 +33,19 @@ impl Compiler for SP1RustRv64imaCustomized {
         );
 
         let mut cmd = Command::new("cargo");
+        cmd.current_dir(guest_directory).args([
+            "prove",
+            "build",
+            "--output-directory",
+            &output_dir.path().to_string_lossy(),
+            "--elf-name",
+            "guest.elf",
+        ]);
+        let features = parse_cargo_features(args)?;
+        if !features.is_empty() {
+            cmd.args(["--features", &features.join(",")]);
+        }
         let status = cmd
-            .current_dir(guest_directory)
-            .args([
-                "prove",
-                "build",
-                "--output-directory",
-                &output_dir.path().to_string_lossy(),
-                "--elf-name",
-                "guest.elf",
-            ])
             .status()
             .map_err(|err| CommonError::command(&cmd, err))?;
 
@@ -65,7 +72,9 @@ mod tests {
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("sp1", "basic");
-        let elf = SP1RustRv64imaCustomized.compile(guest_directory).unwrap();
+        let elf = SP1RustRv64imaCustomized
+            .compile(guest_directory, &[])
+            .unwrap();
         assert!(!elf.is_empty(), "ELF bytes should not be empty.");
     }
 }

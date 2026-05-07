@@ -1,8 +1,8 @@
 use std::path::Path;
 
 use ere_compiler_core::{Compiler, Elf};
-use ere_util_compile::cargo_metadata;
-use risc0_build::GuestOptions;
+use ere_util_compile::{cargo_metadata, parse_cargo_features};
+use risc0_build::GuestOptionsBuilder;
 use tracing::info;
 
 use crate::Error;
@@ -14,7 +14,11 @@ pub struct Risc0RustRv32imaCustomized;
 impl Compiler for Risc0RustRv32imaCustomized {
     type Error = Error;
 
-    fn compile(&self, guest_directory: impl AsRef<Path>) -> Result<Elf, Self::Error> {
+    fn compile(
+        &self,
+        guest_directory: impl AsRef<Path>,
+        args: &[String],
+    ) -> Result<Elf, Self::Error> {
         let guest_directory = guest_directory.as_ref();
         info!("Compiling Risc0 program at {}", guest_directory.display());
 
@@ -23,18 +27,18 @@ impl Compiler for Risc0RustRv32imaCustomized {
 
         // Use `risc0_build::build_package` to build package instead of calling
         // `cargo-risczero build` for the `unstable` features.
-        let guest = risc0_build::build_package(
-            package,
-            &metadata.target_directory,
-            GuestOptions::default(),
-        )
-        .map_err(|err| Error::BuildFailure {
-            err,
-            guest_path: guest_directory.to_path_buf(),
-        })?
-        .into_iter()
-        .next()
-        .ok_or(Error::Risc0BuildMissingGuest)?;
+        let guest_opts = GuestOptionsBuilder::default()
+            .features(parse_cargo_features(args)?)
+            .build()
+            .unwrap();
+        let guest = risc0_build::build_package(package, &metadata.target_directory, guest_opts)
+            .map_err(|err| Error::BuildFailure {
+                err,
+                guest_path: guest_directory.to_path_buf(),
+            })?
+            .into_iter()
+            .next()
+            .ok_or(Error::Risc0BuildMissingGuest)?;
 
         let elf = guest.elf.to_vec();
 
@@ -54,7 +58,9 @@ mod tests {
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("risc0", "basic");
-        let elf = Risc0RustRv32imaCustomized.compile(guest_directory).unwrap();
+        let elf = Risc0RustRv32imaCustomized
+            .compile(guest_directory, &[])
+            .unwrap();
         assert!(!elf.is_empty(), "ELF bytes should not be empty.");
     }
 }

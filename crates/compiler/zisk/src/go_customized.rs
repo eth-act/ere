@@ -12,7 +12,14 @@ pub struct ZiskGoCustomized;
 impl Compiler for ZiskGoCustomized {
     type Error = Error;
 
-    fn compile(&self, guest_directory: impl AsRef<Path>) -> Result<Elf, Self::Error> {
+    fn compile(
+        &self,
+        guest_directory: impl AsRef<Path>,
+        args: &[String],
+    ) -> Result<Elf, Self::Error> {
+        if !args.is_empty() {
+            return Err(CommonError::invalid_args("Extra args is not supported"))?;
+        }
         let guest_directory = guest_directory.as_ref();
         info!(
             "Compiling TamaGo ZisK program at {}",
@@ -75,14 +82,14 @@ mod tests {
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("zisk", "basic_go");
-        let elf = ZiskGoCustomized.compile(guest_directory).unwrap();
+        let elf = ZiskGoCustomized.compile(guest_directory, &[]).unwrap();
         assert!(!elf.is_empty(), "ELF bytes should not be empty.");
     }
 
     #[test]
     fn test_execute() {
         let guest_directory = testing_guest_directory("zisk", "basic_go");
-        let elf = ZiskGoCustomized.compile(guest_directory).unwrap();
+        let elf = ZiskGoCustomized.compile(guest_directory, &[]).unwrap();
         let zkvm = ZiskProver::new(elf, ProverResource::Cpu).unwrap();
 
         let test_case = BasicProgram::<Cbor>::valid_test_case();

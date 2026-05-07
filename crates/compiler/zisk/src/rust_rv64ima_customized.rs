@@ -1,7 +1,7 @@
 use std::{fs, path::Path, process::Command};
 
 use ere_compiler_core::{Compiler, Elf};
-use ere_util_compile::{CommonError, cargo_metadata, rustc_path};
+use ere_util_compile::{CommonError, cargo_metadata, parse_cargo_features, rustc_path};
 use tracing::info;
 
 use crate::Error;
@@ -16,7 +16,11 @@ pub struct ZiskRustRv64imaCustomized;
 impl Compiler for ZiskRustRv64imaCustomized {
     type Error = Error;
 
-    fn compile(&self, guest_directory: impl AsRef<Path>) -> Result<Elf, Self::Error> {
+    fn compile(
+        &self,
+        guest_directory: impl AsRef<Path>,
+        args: &[String],
+    ) -> Result<Elf, Self::Error> {
         let guest_directory = guest_directory.as_ref();
         info!(
             "Compiling Rust ZisK program at {}",
@@ -29,12 +33,16 @@ impl Compiler for ZiskRustRv64imaCustomized {
         info!("Parsed program name: {}", package.name);
 
         let mut cmd = Command::new("cargo");
-        let status = cmd
-            .env("RUSTC", rustc_path(ZISK_TOOLCHAIN)?)
+        cmd.env("RUSTC", rustc_path(ZISK_TOOLCHAIN)?)
             .args(["build", "--release"])
             .args(["--target", ZISK_TARGET])
             .arg("--manifest-path")
-            .arg(&package.manifest_path)
+            .arg(&package.manifest_path);
+        let features = parse_cargo_features(args)?;
+        if !features.is_empty() {
+            cmd.args(["--features", &features.join(",")]);
+        }
+        let status = cmd
             .status()
             .map_err(|err| CommonError::command(&cmd, err))?;
 
@@ -64,7 +72,9 @@ mod tests {
     #[test]
     fn test_compile() {
         let guest_directory = testing_guest_directory("zisk", "basic_rust");
-        let elf = ZiskRustRv64imaCustomized.compile(guest_directory).unwrap();
+        let elf = ZiskRustRv64imaCustomized
+            .compile(guest_directory, &[])
+            .unwrap();
         assert!(!elf.is_empty(), "ELF bytes should not be empty.");
     }
 }
