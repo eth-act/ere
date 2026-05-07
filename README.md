@@ -287,7 +287,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Compile guest program with SP1 customized toolchain
     let compiler = SP1RustRv64imaCustomized;
-    let elf = compiler.compile(guest_directory)?;
+    let elf = compiler.compile(guest_directory, &[])?;
 
     // Create zkVM instance (setup/preprocessing happens here)
     let zkvm = SP1Prover::new(elf, ProverResource::Cpu)?;
@@ -356,7 +356,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Compile guest program with SP1 customized toolchain (builds Docker images if needed)
     let compiler =
         DockerizedCompiler::new(zkVMKind::SP1, CompilerKind::RustCustomized, guest_directory)?;
-    let elf = compiler.compile(guest_directory)?;
+    let elf = compiler.compile(guest_directory, &[])?;
 
     // Create zkVM instance (builds Docker images if needed)
     // It spawns a container that runs a gRPC server handling zkVM operations
