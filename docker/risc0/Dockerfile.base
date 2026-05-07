@@ -24,9 +24,10 @@ ENV RISC0_VERSION="3.0.5" \
     RISC0_CPP_VERSION="2024.1.5" \
     RISC0_RUST_VERSION="1.94.1"
 
-# Run the Risc0 SDK installation script
+# Run the Risc0 SDK installation script with secret mount
 # It will use the RISC0_VERSION, RISC0_CPP_VERSION and RISC0_RUST_VERSION defined above.
-RUN /tmp/install_risc0_sdk.sh && rm /tmp/install_risc0_sdk.sh
+RUN --mount=type=secret,id=github_token,env=GITHUB_TOKEN \
+    /tmp/install_risc0_sdk.sh && rm /tmp/install_risc0_sdk.sh
 
 # Verify Risc0 installation (script also does this, but good for Dockerfile sanity)
 RUN echo "Verifying Risc0 installation in Dockerfile (post-script)..." && cargo risczero --version

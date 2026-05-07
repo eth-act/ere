@@ -179,6 +179,11 @@ if [ -n "$RUSTFLAGS" ]; then
     SERVER_ZKVM_BUILD_ARGS+=(--build-arg "RUSTFLAGS=$RUSTFLAGS")
 fi
 
+# Pass GITHUB_TOKEN to prevent rzup hit github rate limits
+if [ -n "$GITHUB_TOKEN" ] && [ "$ZKVM" = "risc0" ]; then
+    BASE_ZKVM_BUILD_ARGS+=(--secret id=github_token,env=GITHUB_TOKEN)
+fi
+
 # Build images
 
 if [ "$BUILD_BASE" = true ]; then

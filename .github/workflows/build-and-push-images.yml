@@ -54,6 +54,8 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build ere-base and ere-base-${{ matrix.zkvm }} images
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bash .github/scripts/build-image.sh \
             --zkvm ${{ matrix.zkvm }} \
@@ -66,6 +68,8 @@ jobs:
           docker push ${{ needs.image_meta.outputs.registry }}/ere-base-${{ matrix.zkvm }}:${{ needs.image_meta.outputs.sha_tag }}
 
       - name: Build ere-compiler-${{ matrix.zkvm }} and ere-server-${{ matrix.zkvm }} images
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bash .github/scripts/build-image.sh \
             --zkvm ${{ matrix.zkvm }} \
@@ -110,6 +114,8 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build ere-base and ere-base-${{ matrix.zkvm }} images with CUDA enabled
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bash .github/scripts/build-image.sh \
             --zkvm ${{ matrix.zkvm }} \
@@ -123,6 +129,8 @@ jobs:
           docker push ${{ needs.image_meta.outputs.registry }}/ere-base-${{ matrix.zkvm }}:${{ needs.image_meta.outputs.sha_tag }}-cuda
 
       - name: Build ere-server-${{ matrix.zkvm }} image with CUDA enabled
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bash .github/scripts/build-image.sh \
             --zkvm ${{ matrix.zkvm }} \
@@ -162,6 +170,8 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build ere-cluster-${{ matrix.zkvm }} image with CUDA enabled
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bash .github/scripts/build-image.sh \
             --zkvm ${{ matrix.zkvm }} \
