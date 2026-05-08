@@ -1,19 +1,14 @@
 use core::fmt;
-use std::sync::LazyLock;
 
 use ere_verifier_core::{PublicValues, zkVMVerifier};
 use openvm_continuations::F;
 use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
 
-use crate::{
-    Error, OpenVMProgramVk, OpenVMProof,
-    vendor::{AggVerifyingKey, verify_proof},
-};
+use crate::{Error, OpenVMProgramVk, OpenVMProof, vendor::verify_proof, verifier::vk::AGG_VK};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
-static AGG_VK: LazyLock<AggVerifyingKey> =
-    LazyLock::new(|| bitcode::deserialize(include_bytes!("../agg_stark.vk")).unwrap());
+pub mod vk;
 
 /// Verifier bound to a specific compiled guest program.
 ///
@@ -75,19 +70,4 @@ fn extract_public_values(user_public_values: &[F]) -> Result<PublicValues, Error
         .collect::<Option<Vec<u8>>>()
         .ok_or(Error::InvalidPublicValue)
         .map(PublicValues::from)
-}
-
-#[cfg(test)]
-mod tests {
-    use openvm_sdk::Sdk;
-
-    use crate::verifier::AGG_VK;
-
-    #[test]
-    fn test_agg_vk_correctness() {
-        assert_eq!(
-            bitcode::serialize(&Sdk::standard().agg_keygen().unwrap().1).unwrap(),
-            bitcode::serialize(&*AGG_VK).unwrap()
-        );
-    }
 }
