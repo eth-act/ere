@@ -11,12 +11,8 @@ tempfile.workspace = true
 thiserror.workspace = true
 
 # Airbender dependencies
-# FIXME: Enable feature security_100 if airbender-host disables the default features of
-#        execution_utils, which includes execution_utils/security_80
 airbender-host.workspace = true
-# FIXME: Remove the following deps when program vk generation is available in airbender-host
-#        without GPU requirement.
-airbender-execution-utils = { workspace = true, features = ["verifier_binaries"] }
+airbender-execution-utils.workspace = true
 airbender-riscv-transpiler.workspace = true
 
 # Local dependencies
@@ -25,7 +21,6 @@ ere-prover-core.workspace = true
 ere-verifier-airbender.workspace = true
 
 [dev-dependencies]
-bincode.workspace = true
 ere-compiler-airbender.workspace = true
 ere-util-test = { workspace = true, features = ["host"] }
 

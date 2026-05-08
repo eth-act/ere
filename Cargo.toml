@@ -112,11 +112,12 @@ twirp-build = "0.10"
 uuid = "1"
 
 # Airbender dependencies
-airbender-build = { git = "https://github.com/matter-labs/airbender-platform", rev = "097f14891ae663fc51a2312da964780c3bdafbc7" }
-airbender-host = { git = "https://github.com/matter-labs/airbender-platform", rev = "097f14891ae663fc51a2312da964780c3bdafbc7", default-features = false }
-airbender-sdk = { git = "https://github.com/matter-labs/airbender-platform", rev = "097f14891ae663fc51a2312da964780c3bdafbc7", default-features = false }
-airbender-execution-utils = { git = "https://github.com/matter-labs/zksync-airbender", branch = "dev", default-features = false, package = "execution_utils" }
-airbender-riscv-transpiler = { git = "https://github.com/matter-labs/zksync-airbender", branch = "dev", default-features = false, package = "riscv_transpiler" }
+airbender-build = { git = "https://github.com/matter-labs/airbender-platform", rev = "72cce091dbaa13a9ce1f4a8df2bd90baede03cfe" }
+airbender-host = { git = "https://github.com/matter-labs/airbender-platform", rev = "72cce091dbaa13a9ce1f4a8df2bd90baede03cfe", default-features = false }
+airbender-sdk = { git = "https://github.com/matter-labs/airbender-platform", rev = "72cce091dbaa13a9ce1f4a8df2bd90baede03cfe", default-features = false }
+airbender-execution-utils = { git = "https://github.com/matter-labs/zksync-airbender", rev = "73d69b5", default-features = false, package = "execution_utils" }
+airbender-riscv-transpiler = { git = "https://github.com/matter-labs/zksync-airbender", rev = "73d69b5", default-features = false, package = "riscv_transpiler" }
+airbender-verifier-common = { git = "https://github.com/matter-labs/zksync-airbender", rev = "73d69b5", default-features = false, package = "verifier_common" }
 
 # OpenVM dependencies
 openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.3", default-features = false }
@@ -190,12 +191,3 @@ ere-util-build = { path = "crates/util/build" }
 ere-util-compile = { path = "crates/util/compile" }
 ere-util-test = { path = "crates/util/test" }
 ere-util-tokio = { path = "crates/util/tokio" }
-
-# FIXME: Remove the patches once https://github.com/matter-labs/airbender-platform has tagged release.
-[patch."https://github.com/matter-labs/zksync-airbender"]
-common_constants = { git = "https://github.com/matter-labs//zksync-airbender", rev = "d15b86db8a1683b5a641cb420fe6b009e1eb5acb" }
-blake2s_u32 = { git = "https://github.com/matter-labs//zksync-airbender", rev = "d15b86db8a1683b5a641cb420fe6b009e1eb5acb" }
-riscv_common = { git = "https://github.com/matter-labs//zksync-airbender", rev = "d15b86db8a1683b5a641cb420fe6b009e1eb5acb" }
-execution_utils = { git = "https://github.com/matter-labs//zksync-airbender", rev = "d15b86db8a1683b5a641cb420fe6b009e1eb5acb" }
-gpu_prover = { git = "https://github.com/matter-labs//zksync-airbender", rev = "d15b86db8a1683b5a641cb420fe6b009e1eb5acb" }
-riscv_transpiler = { git = "https://github.com/matter-labs//zksync-airbender", rev = "d15b86db8a1683b5a641cb420fe6b009e1eb5acb" }

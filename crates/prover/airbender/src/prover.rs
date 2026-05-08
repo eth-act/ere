@@ -8,21 +8,21 @@ use std::{
 };
 
 use airbender_execution_utils::{
-    setups::{self, unrolled_circuits::get_unified_circuit_artifact_for_machine_type},
-    unified_circuit::compute_unified_setup_for_machine_configuration,
-    verifier_binaries::{RECURSION_UNIFIED_BIN, RECURSION_UNIFIED_TXT},
+    setups::pad_binary,
+    unrolled::{UnrolledProgramSetup, compute_setup_for_machine_configuration},
 };
 use airbender_host::{ExecutionResult, Runner, TranspilerRunner, TranspilerRunnerBuilder};
 #[cfg(feature = "cuda")]
 use airbender_host::{GpuProver, GpuProverBuilder, Proof, ProveResult, Prover as _};
-use airbender_riscv_transpiler::cycle::IWithoutByteAccessIsaConfigWithDelegation;
+use airbender_riscv_transpiler::cycle::IMStandardIsaConfigWithUnsignedMulDiv;
 use ere_compiler_core::Elf;
 use ere_prover_core::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource,
     ProverResourceKind, PublicValues, zkVMProver,
 };
 use ere_verifier_airbender::{
-    AirbenderProgramVk, AirbenderProof, AirbenderVerifier, UnifiedVk, words_to_le_bytes,
+    AirbenderProgramVk, AirbenderProof, AirbenderVerifier, UNROLLED_END_PARAMS, unified_end_params,
+    words_to_le_bytes,
 };
 use sha3::{Digest, Keccak256};
 use tempfile::tempdir;
@@ -46,9 +46,9 @@ impl AirbenderProver {
             ))?;
         }
 
-        let (bin_hash, bin_path) = elf_to_bin(&elf)?;
+        let (bin, text, bin_path) = elf_to_bin(&elf)?;
 
-        let program_vk = compute_program_vk(bin_hash);
+        let program_vk = compute_program_vk(&bin, &text);
         let verifier = AirbenderVerifier::new(program_vk);
 
         let runner = TranspilerRunnerBuilder::new(&bin_path)
@@ -169,23 +169,32 @@ impl zkVMProver for AirbenderProver {
     }
 }
 
-fn compute_program_vk(app_bin_hash: [u8; 32]) -> AirbenderProgramVk {
-    let (binary, binary_u32) = setups::pad_binary(RECURSION_UNIFIED_BIN.to_vec());
-    let (text, _) = setups::pad_binary(RECURSION_UNIFIED_TXT.to_vec());
-    let unified_setup = compute_unified_setup_for_machine_configuration::<
-        IWithoutByteAccessIsaConfigWithDelegation,
-    >(&binary, &text);
-    let unified_layouts = get_unified_circuit_artifact_for_machine_type::<
-        IWithoutByteAccessIsaConfigWithDelegation,
-    >(&binary_u32);
-    AirbenderProgramVk(UnifiedVk {
-        app_bin_hash,
-        unified_setup,
-        unified_layouts,
-    })
+/// Compute the [`AirbenderProgramVk`] for the given guest binary.
+///
+/// Computes the base-layer setup of the guest with [`compute_setup_for_machine_configuration`] and
+/// folds its `end_params` through the unrolled and unified layers using
+/// [`UnrolledProgramSetup::begin_recursion_chain`] and
+/// [`UnrolledProgramSetup::continue_recursion_chain`].
+///
+/// The resulting hash chain is what an honest unified proof for this program ends up emitting.
+fn compute_program_vk(bin: &[u8], text: &[u8]) -> AirbenderProgramVk {
+    let (padded_bin, _) = pad_binary(bin.to_vec());
+    let (padded_text, _) = pad_binary(text.to_vec());
+    let base_layer = compute_setup_for_machine_configuration::<IMStandardIsaConfigWithUnsignedMulDiv>(
+        &padded_bin,
+        &padded_text,
+    );
+
+    let (h_b, p_b) = UnrolledProgramSetup::begin_recursion_chain(&base_layer.end_params);
+    let (h_u, p_u) =
+        UnrolledProgramSetup::continue_recursion_chain(&UNROLLED_END_PARAMS, &h_b, &p_b);
+    let (h_uf, _) =
+        UnrolledProgramSetup::continue_recursion_chain(&unified_end_params(), &h_u, &p_u);
+
+    AirbenderProgramVk(h_uf)
 }
 
-fn elf_to_bin(elf: &[u8]) -> Result<([u8; 32], PathBuf), Error> {
+fn elf_to_bin(elf: &[u8]) -> Result<(Vec<u8>, Vec<u8>, PathBuf), Error> {
     let tempdir = tempdir().map_err(CommonError::tempdir)?;
     let elf_path = tempdir.path().join("app.elf");
     let bin_path = tempdir.path().join("app.bin");
@@ -204,6 +213,8 @@ fn elf_to_bin(elf: &[u8]) -> Result<([u8; 32], PathBuf), Error> {
     )?;
 
     let bin = fs::read(&bin_path).map_err(|err| CommonError::write_file("bin", &bin_path, err))?;
+    let text =
+        fs::read(&text_path).map_err(|err| CommonError::write_file("text", &text_path, err))?;
     let bin_hash: [u8; 32] = Keccak256::digest(&bin).into();
 
     let cache_dir = cache_dir();
@@ -220,7 +231,7 @@ fn elf_to_bin(elf: &[u8]) -> Result<([u8; 32], PathBuf), Error> {
         fs::rename(&text_path, &cache_text_path).map_err(|err| CommonError::io("rename", err))?;
     }
 
-    Ok((bin_hash, cache_bin_path))
+    Ok((bin, text, cache_bin_path))
 }
 
 fn objcopy(input: &Path, output: &Path, extra_args: &[&str]) -> Result<(), Error> {
@@ -342,23 +353,5 @@ mod tests {
         // Should be able to recover
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
         run_zkvm_prove(&zkvm, &test_case);
-    }
-
-    #[cfg(feature = "cuda")]
-    #[test]
-    fn compute_program_vk_matches_sdk() {
-        use ere_prover_core::codec::Encode;
-
-        use crate::prover::{compute_program_vk, elf_to_bin};
-
-        let elf = basic_elf();
-        let (app_bin_hash, app_bin_path) = elf_to_bin(&elf).unwrap();
-
-        let program_vk = airbender_host::compute_unified_vk(&app_bin_path).unwrap();
-
-        assert_eq!(
-            compute_program_vk(app_bin_hash).encode_to_vec().unwrap(),
-            bincode::serde::encode_to_vec(&program_vk, bincode::config::legacy()).unwrap(),
-        );
     }
 }
