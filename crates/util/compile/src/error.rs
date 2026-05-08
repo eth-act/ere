@@ -55,6 +55,9 @@ pub enum CommonError {
         var: String,
         var_error: std::env::VarError,
     },
+
+    #[error("Failed to parse compiler args: {0}")]
+    InvalidArgs(String),
 }
 
 impl CommonError {
@@ -132,5 +135,9 @@ impl CommonError {
 
     pub fn env_var_error(var: String, var_error: std::env::VarError) -> Self {
         Self::Env { var, var_error }
+    }
+
+    pub fn invalid_args(reason: impl std::fmt::Display) -> Self {
+        Self::InvalidArgs(reason.to_string())
     }
 }

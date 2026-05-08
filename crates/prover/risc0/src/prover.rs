@@ -203,7 +203,7 @@ mod tests {
         static ELF: OnceLock<Elf> = OnceLock::new();
         ELF.get_or_init(|| {
             Risc0RustRv32imaCustomized
-                .compile(testing_guest_directory("risc0", "basic"))
+                .compile(testing_guest_directory("risc0", "basic"), &[])
                 .unwrap()
         })
         .clone()
@@ -260,7 +260,7 @@ mod tests {
     #[test]
     fn test_aligned_allocs() {
         let elf = Risc0RustRv32imaCustomized
-            .compile(testing_guest_directory("risc0", "allocs_alignment"))
+            .compile(testing_guest_directory("risc0", "allocs_alignment"), &[])
             .unwrap();
 
         for i in 1..=16_u32 {

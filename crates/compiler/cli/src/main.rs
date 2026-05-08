@@ -34,6 +34,9 @@ struct Args {
     /// Name of the output ELF file (optional)
     #[arg(long)]
     elf_name: Option<String>,
+    /// Extra args forwarded to the underlying compiler
+    #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+    args: Vec<String>,
 }
 
 fn main() -> Result<(), Error> {
@@ -49,7 +52,7 @@ fn main() -> Result<(), Error> {
             .with_context(|| "Failed to create output directory")?;
     }
 
-    let elf = compile(args.guest_dir, args.compiler_kind)?;
+    let elf = compile(args.guest_dir, args.compiler_kind, &args.args)?;
 
     if let Some(elf_name) = args.elf_name {
         let path = args.output_dir.join(elf_name);
@@ -59,13 +62,15 @@ fn main() -> Result<(), Error> {
     Ok(())
 }
 
-fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> Result<Elf, Error> {
+fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind, args: &[String]) -> Result<Elf, Error> {
     #[cfg(feature = "airbender")]
     let elf = {
         use ere_compiler_airbender::*;
         match compiler_kind {
-            CompilerKind::Rust => AirbenderRustRv32ima.compile(guest_dir)?,
-            CompilerKind::RustCustomized => AirbenderRustRv32imaCustomized.compile(guest_dir)?,
+            CompilerKind::Rust => AirbenderRustRv32ima.compile(guest_dir, args)?,
+            CompilerKind::RustCustomized => {
+                AirbenderRustRv32imaCustomized.compile(guest_dir, args)?
+            }
             _ => anyhow::bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
@@ -77,8 +82,8 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> Result<Elf, Error
     let elf = {
         use ere_compiler_openvm::*;
         match compiler_kind {
-            CompilerKind::Rust => OpenVMRustRv32ima.compile(guest_dir)?,
-            CompilerKind::RustCustomized => OpenVMRustRv32imaCustomized.compile(guest_dir)?,
+            CompilerKind::Rust => OpenVMRustRv32ima.compile(guest_dir, args)?,
+            CompilerKind::RustCustomized => OpenVMRustRv32imaCustomized.compile(guest_dir, args)?,
             _ => anyhow::bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
@@ -90,8 +95,8 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> Result<Elf, Error
     let elf = {
         use ere_compiler_risc0::*;
         match compiler_kind {
-            CompilerKind::Rust => Risc0RustRv32ima.compile(guest_dir)?,
-            CompilerKind::RustCustomized => Risc0RustRv32imaCustomized.compile(guest_dir)?,
+            CompilerKind::Rust => Risc0RustRv32ima.compile(guest_dir, args)?,
+            CompilerKind::RustCustomized => Risc0RustRv32imaCustomized.compile(guest_dir, args)?,
             _ => anyhow::bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
@@ -103,8 +108,8 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> Result<Elf, Error
     let elf = {
         use ere_compiler_sp1::*;
         match compiler_kind {
-            CompilerKind::Rust => SP1RustRv64ima.compile(guest_dir)?,
-            CompilerKind::RustCustomized => SP1RustRv64imaCustomized.compile(guest_dir)?,
+            CompilerKind::Rust => SP1RustRv64ima.compile(guest_dir, args)?,
+            CompilerKind::RustCustomized => SP1RustRv64imaCustomized.compile(guest_dir, args)?,
             _ => anyhow::bail!(unsupported_compiler_kind_err(
                 compiler_kind,
                 [CompilerKind::Rust, CompilerKind::RustCustomized]
@@ -116,9 +121,9 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind) -> Result<Elf, Error
     let elf = {
         use ere_compiler_zisk::*;
         match compiler_kind {
-            CompilerKind::Rust => ZiskRustRv64ima.compile(guest_dir)?,
-            CompilerKind::RustCustomized => ZiskRustRv64imaCustomized.compile(guest_dir)?,
-            CompilerKind::GoCustomized => ZiskGoCustomized.compile(guest_dir)?,
+            CompilerKind::Rust => ZiskRustRv64ima.compile(guest_dir, args)?,
+            CompilerKind::RustCustomized => ZiskRustRv64imaCustomized.compile(guest_dir, args)?,
+            CompilerKind::GoCustomized => ZiskGoCustomized.compile(guest_dir, args)?,
         }
     };
 

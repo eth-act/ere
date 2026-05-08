@@ -4202,6 +4202,7 @@ version = "0.8.1"
 dependencies = [
  "anyhow",
  "cargo_metadata 0.19.2",
+ "clap",
  "tempfile",
  "thiserror 2.0.18",
 ]

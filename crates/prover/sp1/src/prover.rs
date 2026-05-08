@@ -102,7 +102,7 @@ mod tests {
         static ELF: OnceLock<Elf> = OnceLock::new();
         ELF.get_or_init(|| {
             SP1RustRv64imaCustomized
-                .compile(testing_guest_directory("sp1", "basic"))
+                .compile(testing_guest_directory("sp1", "basic"), &[])
                 .unwrap()
         })
         .clone()

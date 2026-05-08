@@ -5,7 +5,7 @@ use airbender_build::{
 };
 use cargo_metadata::TargetKind;
 use ere_compiler_core::{Compiler, Elf};
-use ere_util_compile::{CommonError, cargo_metadata, rustup_add_components};
+use ere_util_compile::{CommonError, cargo_metadata, parse_cargo_features, rustup_add_components};
 use tempfile::tempdir;
 
 use crate::Error;
@@ -34,7 +34,11 @@ pub struct AirbenderRustRv32imaCustomized;
 impl Compiler for AirbenderRustRv32imaCustomized {
     type Error = Error;
 
-    fn compile(&self, guest_directory: impl AsRef<Path>) -> Result<Elf, Self::Error> {
+    fn compile(
+        &self,
+        guest_directory: impl AsRef<Path>,
+        args: &[String],
+    ) -> Result<Elf, Self::Error> {
         let toolchain =
             env::var("ERE_RUST_TOOLCHAIN").unwrap_or_else(|_| DEFAULT_GUEST_TOOLCHAIN.into());
         rustup_add_components(&toolchain, ["rust-src", "llvm-tools-preview"])?;
@@ -62,7 +66,7 @@ impl Compiler for AirbenderRustRv32imaCustomized {
         config.bin_name = Some(bin.name.clone());
         config.dist_dir = Some(tempdir.path().to_path_buf());
         config.target = Some(DEFAULT_GUEST_TARGET.into());
-        config.cargo_args = cargo_args(&linker_script_path);
+        config.cargo_args = cargo_args(&linker_script_path, &parse_cargo_features(args)?);
         build_dist(&config)?;
 
         let elf_path = metadata
@@ -76,7 +80,7 @@ impl Compiler for AirbenderRustRv32imaCustomized {
     }
 }
 
-fn cargo_args(linker_script_path: &Path) -> Vec<String> {
+fn cargo_args(linker_script_path: &Path, features: &[String]) -> Vec<String> {
     let rustflags = {
         let linker_args = format!("link-arg=-T{}", linker_script_path.display());
         iter::empty()
@@ -85,12 +89,17 @@ fn cargo_args(linker_script_path: &Path) -> Vec<String> {
             .map(|s| format!(r#""{s}""#))
             .collect::<Vec<_>>()
     };
+    let features_args = (!features.is_empty())
+        .then(|| ["--features".to_string(), features.join(",")])
+        .into_iter()
+        .flatten();
     iter::empty()
         .chain(CARGO_BUILD_OPTIONS.iter().map(|option| option.to_string()))
         .chain([
             "--config".to_string(),
             format!("build.rustflags=[{}]", rustflags.join(",")),
         ])
+        .chain(features_args)
         .collect()
 }
 
@@ -105,7 +114,7 @@ mod tests {
     fn test_compile() {
         let guest_directory = testing_guest_directory("airbender", "basic");
         let elf = AirbenderRustRv32imaCustomized
-            .compile(guest_directory)
+            .compile(guest_directory, &[])
             .unwrap();
         assert!(!elf.is_empty(), "ELF bytes should not be empty.");
     }

@@ -183,7 +183,7 @@ mod tests {
         static ELF: OnceLock<Elf> = OnceLock::new();
         ELF.get_or_init(|| {
             OpenVMRustRv32imaCustomized
-                .compile(testing_guest_directory("openvm", "basic"))
+                .compile(testing_guest_directory("openvm", "basic"), &[])
                 .unwrap()
         })
         .clone()

@@ -1,7 +1,7 @@
 use std::{fs, path::Path};
 
 use ere_compiler_core::{Compiler, Elf};
-use ere_util_compile::{CommonError, rustup_add_rust_src};
+use ere_util_compile::{CommonError, parse_cargo_features, rustup_add_rust_src};
 use openvm_build::{GuestOptions, get_rustup_toolchain_name};
 
 use crate::Error;
@@ -13,13 +13,19 @@ pub struct OpenVMRustRv32imaCustomized;
 impl Compiler for OpenVMRustRv32imaCustomized {
     type Error = Error;
 
-    fn compile(&self, guest_directory: impl AsRef<Path>) -> Result<Elf, Self::Error> {
+    fn compile(
+        &self,
+        guest_directory: impl AsRef<Path>,
+        args: &[String],
+    ) -> Result<Elf, Self::Error> {
         rustup_add_rust_src(&get_rustup_toolchain_name())?;
 
         // Inlining `openvm_sdk::Sdk::build` in order to get raw elf bytes.
         let guest_directory = guest_directory.as_ref();
         let pkg = openvm_build::get_package(guest_directory);
-        let guest_opts = GuestOptions::default().with_profile("release".to_string());
+        let guest_opts = GuestOptions::default()
+            .with_profile("release".to_string())
+            .with_features(parse_cargo_features(args)?);
         let target_dir = match openvm_build::build_guest_package(&pkg, &guest_opts, None, &None) {
             Ok(target_dir) => target_dir,
             Err(Some(code)) => return Err(Error::BuildFailed(code))?,
@@ -46,7 +52,7 @@ mod tests {
     fn test_compile() {
         let guest_directory = testing_guest_directory("openvm", "basic");
         let elf = OpenVMRustRv32imaCustomized
-            .compile(guest_directory)
+            .compile(guest_directory, &[])
             .unwrap();
         assert!(!elf.is_empty(), "ELF bytes should not be empty.");
     }
