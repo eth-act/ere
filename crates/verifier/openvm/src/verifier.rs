@@ -1,14 +1,14 @@
 use core::fmt;
 
 use ere_verifier_core::{PublicValues, zkVMVerifier};
-use openvm_sdk::{CpuSdk, F, keygen::AggVerifyingKey};
+use openvm_continuations::F;
 use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
 
-use crate::{Error, OpenVMProgramVk, OpenVMProof};
+use crate::{Error, OpenVMProgramVk, OpenVMProof, vendor::verify_proof, verifier::vk::AGG_VK};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
-const AGG_VK_BYTES: &[u8] = include_bytes!("../agg_stark.vk");
+pub mod vk;
 
 /// Verifier bound to a specific compiled guest program.
 ///
@@ -16,7 +16,6 @@ const AGG_VK_BYTES: &[u8] = include_bytes!("../agg_stark.vk");
 /// and the aggregation verifying key embedded at build time needed to
 /// authenticate proofs.
 pub struct OpenVMVerifier {
-    agg_vk: AggVerifyingKey,
     program_vk: OpenVMProgramVk,
 }
 
@@ -31,8 +30,8 @@ impl fmt::Debug for OpenVMVerifier {
 impl OpenVMVerifier {
     /// Creates a new verifier bound to `program_vk`.
     pub fn new(program_vk: OpenVMProgramVk) -> Self {
-        let agg_vk: AggVerifyingKey = bitcode::deserialize(AGG_VK_BYTES).unwrap();
-        Self { agg_vk, program_vk }
+        let _ = &*AGG_VK;
+        Self { program_vk }
     }
 }
 
@@ -46,7 +45,7 @@ impl zkVMVerifier for OpenVMVerifier {
     }
 
     fn verify(&self, proof: &OpenVMProof) -> Result<PublicValues, Error> {
-        CpuSdk::verify_proof(&self.agg_vk, self.program_vk.0, &proof.0)?;
+        verify_proof(&AGG_VK, self.program_vk.0, &proof.0)?;
 
         extract_public_values(&proof.0.user_public_values)
     }
@@ -71,21 +70,4 @@ fn extract_public_values(user_public_values: &[F]) -> Result<PublicValues, Error
         .collect::<Option<Vec<u8>>>()
         .ok_or(Error::InvalidPublicValue)
         .map(PublicValues::from)
-}
-
-#[cfg(test)]
-mod tests {
-    use openvm_sdk::{Sdk, keygen::AggVerifyingKey};
-
-    use crate::verifier::AGG_VK_BYTES;
-
-    #[test]
-    fn test_agg_vk_correstness() {
-        assert_eq!(
-            bitcode::serialize(&Sdk::standard().agg_keygen().unwrap().1).unwrap(),
-            AGG_VK_BYTES
-        );
-
-        let _: AggVerifyingKey = bitcode::deserialize(AGG_VK_BYTES).unwrap();
-    }
 }

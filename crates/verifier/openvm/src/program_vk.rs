@@ -1,10 +1,12 @@
 use core::convert::Infallible;
 
 use ere_verifier_core::codec::{Decode, Encode};
-use openvm_sdk::commit::{AppExecutionCommit, CommitBytes};
 use serde::{Deserialize, Serialize};
 
-use crate::Error;
+use crate::{
+    Error,
+    vendor::{AppExecutionCommit, CommitBytes},
+};
 
 const PROGRAM_VK_SIZE: usize = 64;
 
@@ -22,14 +24,22 @@ const PROGRAM_VK_SIZE: usize = 64;
 #[serde(transparent)]
 pub struct OpenVMProgramVk(pub AppExecutionCommit);
 
+impl OpenVMProgramVk {
+    pub fn new(app_exe_commit: &[u8; 32], app_vm_commit: &[u8; 32]) -> Self {
+        Self(AppExecutionCommit {
+            app_exe_commit: CommitBytes(*app_exe_commit),
+            app_vm_commit: CommitBytes(*app_vm_commit),
+        })
+    }
+}
+
 impl Encode for OpenVMProgramVk {
     type Error = Infallible;
 
     fn encode_to_vec(&self) -> Result<Vec<u8>, Self::Error> {
         Ok([self.0.app_exe_commit, self.0.app_vm_commit]
             .iter()
-            .flat_map(|commit| commit.as_slice())
-            .copied()
+            .flat_map(|commit| commit.0)
             .collect())
     }
 }
@@ -45,11 +55,8 @@ impl Decode for OpenVMProgramVk {
             });
         }
         let [app_exe_commit, app_vm_commit] =
-            [&slice[..32], &slice[32..]].map(|slice| CommitBytes::new(slice.try_into().unwrap()));
-        Ok(Self(AppExecutionCommit {
-            app_exe_commit,
-            app_vm_commit,
-        }))
+            [&slice[..32], &slice[32..]].map(|slice| slice.try_into().unwrap());
+        Ok(Self::new(&app_exe_commit, &app_vm_commit))
     }
 }
 

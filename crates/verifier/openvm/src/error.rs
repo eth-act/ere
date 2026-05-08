@@ -1,22 +1,31 @@
+use openvm_circuit::arch::VmVerificationError;
 use thiserror::Error;
+
+use crate::vendor::CommitBytes;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    /// Failed to encode the proof via `openvm_sdk::codec`.
-    #[error("Failed to encode proof: {0}")]
-    Encode(#[source] std::io::Error),
-
-    /// Failed to decode the proof via `openvm_sdk::codec`.
-    #[error("Failed to decode proof: {0}")]
-    Decode(#[source] std::io::Error),
-
     /// VK byte slice was not the expected 64 bytes.
     #[error("Invalid ProgramVk length, expected: {expected}, got: {got}")]
     InvalidProgramVkLength { expected: usize, got: usize },
 
-    /// Upstream `openvm_sdk` rejected the proof.
-    #[error("Failed to verify: {0}")]
-    Verify(#[from] openvm_sdk::SdkError),
+    /// VM-level verification failure.
+    #[error("VM verification failed: {0}")]
+    VmVerification(#[from] VmVerificationError),
+
+    /// Claimed app exe commit did not match the expected one.
+    #[error("Invalid app exe commit: expected {expected:?}, actual {actual:?}")]
+    InvalidAppExeCommit {
+        expected: CommitBytes,
+        actual: CommitBytes,
+    },
+
+    /// Claimed app vm commit did not match the expected one.
+    #[error("Invalid app vm commit: expected {expected:?}, actual {actual:?}")]
+    InvalidAppVmCommit {
+        expected: CommitBytes,
+        actual: CommitBytes,
+    },
 
     /// A field element could not be downcast to `u8`.
     #[error("Invalid public value")]

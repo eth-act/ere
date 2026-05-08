@@ -51,7 +51,10 @@ impl OpenVMProver {
             .map_err(Error::ProverInit)?
             .app_commit();
 
-        let verifier = OpenVMVerifier::new(OpenVMProgramVk(app_commit));
+        let verifier = OpenVMVerifier::new(OpenVMProgramVk::new(
+            app_commit.app_exe_commit.as_slice(),
+            app_commit.app_vm_commit.as_slice(),
+        ));
 
         Ok(Self {
             app_exe,
@@ -146,7 +149,7 @@ impl zkVMProver for OpenVMProver {
             });
         }
 
-        let proof = OpenVMProof(proof);
+        let proof = OpenVMProof::new(proof);
 
         // FIXME: Remove this if the `sdk.prove()` above checks exit code.
         let public_values = self.verifier.verify(&proof)?;

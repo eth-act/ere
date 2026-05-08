@@ -4255,9 +4255,11 @@ dependencies = [
 name = "ere-verifier-openvm"
 version = "0.8.1"
 dependencies = [
+ "bincode 2.0.1",
  "bitcode",
  "ere-util-build",
  "ere-verifier-core",
+ "openvm-circuit",
  "openvm-continuations",
  "openvm-sdk",
  "openvm-stark-sdk",
