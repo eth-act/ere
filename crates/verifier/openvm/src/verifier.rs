@@ -1,4 +1,5 @@
 use core::fmt;
+use std::sync::LazyLock;
 
 use ere_verifier_core::{PublicValues, zkVMVerifier};
 use openvm_continuations::F;
@@ -30,7 +31,7 @@ impl fmt::Debug for OpenVMVerifier {
 impl OpenVMVerifier {
     /// Creates a new verifier bound to `program_vk`.
     pub fn new(program_vk: OpenVMProgramVk) -> Self {
-        let _ = &*AGG_VK;
+        LazyLock::force(&AGG_VK);
         Self { program_vk }
     }
 }
