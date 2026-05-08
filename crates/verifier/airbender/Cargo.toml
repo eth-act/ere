@@ -11,10 +11,16 @@ serde = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
 
 # Airbender dependencies
-airbender-execution-utils.workspace = true
+# FIXME: Remove feature `prover` when upstream fixes the un-gated import of `prover_examples`.
+airbender-execution-utils = { workspace = true, features = ["prover"] }
+airbender-verifier-common.workspace = true
 
 # Local dependencies
 ere-verifier-core.workspace = true
+
+[dev-dependencies]
+airbender-execution-utils = { workspace = true, features = ["verifier_binaries"] }
+airbender-riscv-transpiler.workspace = true
 
 [build-dependencies]
 ere-util-build.workspace = true

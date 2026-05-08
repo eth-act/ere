@@ -1,5 +1,3 @@
-use core::array::from_fn;
-
 use airbender_execution_utils::unrolled::UnrolledProgramProof;
 use serde::{Deserialize, Serialize};
 
@@ -10,13 +8,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct AirbenderProof(pub UnrolledProgramProof);
-
-impl AirbenderProof {
-    /// Public values as bytes from the `register_final_values`.
-    pub fn public_values(&self) -> [u8; 32] {
-        words_to_le_bytes(from_fn(|i| self.0.register_final_values[10 + i].value))
-    }
-}
 
 pub fn words_to_le_bytes(words: [u32; 8]) -> [u8; 32] {
     let mut bytes = [0u8; 32];

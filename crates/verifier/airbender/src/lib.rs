@@ -7,7 +7,10 @@ pub use ere_verifier_core::*;
 
 pub use crate::{
     error::Error,
-    program_vk::{AirbenderProgramVk, UnifiedVk},
+    program_vk::AirbenderProgramVk,
     proof::{AirbenderProof, words_to_le_bytes},
-    verifier::AirbenderVerifier,
+    verifier::{
+        AirbenderVerifier,
+        vk::{UNROLLED_END_PARAMS, unified_end_params},
+    },
 };
