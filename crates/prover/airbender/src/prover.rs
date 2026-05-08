@@ -149,13 +149,13 @@ impl zkVMProver for AirbenderProver {
             .map_err(|err| Error::ExecutePanic(panic_msg(err)))??;
 
         let start = Instant::now();
-        let (proof, receipt) = match gpu_prover.prove(&input_words)? {
+        let (proof, receipt, cycles) = match gpu_prover.prove(&input_words)? {
             ProveResult {
                 proof: Proof::Real(proof),
                 receipt,
-                ..
+                cycles,
             } if proof.level() == airbender_host::ProverLevel::RecursionUnified => {
-                (proof.into_inner(), receipt)
+                (proof.into_inner(), receipt, cycles)
             }
             _ => Err(Error::Sdk(airbender_host::HostError::Prover(
                 "Expected Proof::Real in ProverLevel::RecursionUnified".to_string(),
@@ -166,7 +166,10 @@ impl zkVMProver for AirbenderProver {
         Ok((
             words_to_le_bytes(receipt.output).into(),
             AirbenderProof(proof),
-            ProgramProvingReport::new(proving_time),
+            ProgramProvingReport {
+                proving_time,
+                total_num_cycles: Some(cycles),
+            },
         ))
     }
 }

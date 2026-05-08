@@ -30,12 +30,19 @@ impl ProgramExecutionReport {
 
 /// ProgramProvingReport produces information about proving a particular
 /// program's instance.
+///
+/// Note: Execution is fused into the proving pipeline.
+/// To get separate execution metrics, call `execute()` before `prove()`.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ProgramProvingReport {
     pub proving_time: Duration,
+    pub total_num_cycles: Option<u64>,
 }
 impl ProgramProvingReport {
     pub fn new(proving_time: Duration) -> Self {
-        Self { proving_time }
+        Self {
+            proving_time,
+            total_num_cycles: None,
+        }
     }
 }

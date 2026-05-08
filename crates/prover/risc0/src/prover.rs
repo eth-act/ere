@@ -163,7 +163,10 @@ impl zkVMProver for Risc0Prover {
         Ok((
             public_values,
             proof,
-            ProgramProvingReport::new(proving_time),
+            ProgramProvingReport {
+                proving_time,
+                total_num_cycles: Some(prove_info.stats.total_cycles),
+            },
         ))
     }
 }
