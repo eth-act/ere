@@ -63,7 +63,7 @@ jobs:
             --package ere-verifier-risc0 \
             --package ere-verifier-sp1 \
             --package ere-verifier-zisk \
-            -- test_verifier
+            --test verifier
 
   test-nightly:
     name: Test and clippy verifier crates with nightly toolchain
@@ -97,4 +97,4 @@ jobs:
             --package ere-verifier \
             --package ere-verifier-* \
             --features nightly \
-            -- test_verifier
+            --test verifier

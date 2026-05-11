@@ -8,7 +8,7 @@ use crate::Error;
 const PROGRAM_VK_SIZE: usize = 32;
 
 /// Verifying key for a specific guest program.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Eq, Ord, PartialOrd, PartialEq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct AirbenderProgramVk(pub [u32; 8]);
 
