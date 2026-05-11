@@ -5,6 +5,10 @@ use crate::vendor::CommitBytes;
 
 #[derive(Debug, Error)]
 pub enum Error {
+    /// Failed to deserialize a proof or program VK.
+    #[error("Failed to deserialize: {0}")]
+    Deserialize(#[from] bincode::error::DecodeError),
+
     /// VK byte slice was not the expected 64 bytes.
     #[error("Invalid ProgramVk length, expected: {expected}, got: {got}")]
     InvalidProgramVkLength { expected: usize, got: usize },
