@@ -18,4 +18,4 @@ impl OpenVMProof {
     }
 }
 
-ere_verifier_core::codec::impl_codec_by_bincode_legacy!(OpenVMProof);
+ere_verifier_core::codec::impl_codec_by_bincode_legacy!(OpenVMProof, reject_trailing_bytes);

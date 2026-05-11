@@ -1,9 +1,40 @@
-use ere_verifier_core::codec::impl_codec_by_bincode_legacy;
+use core::{array::from_fn, convert::Infallible};
+
+use ere_verifier_core::codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
+
+use crate::Error;
+
+const PROGRAM_VK_SIZE: usize = 32;
 
 /// Verifying key for a specific guest program.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct AirbenderProgramVk(pub [u32; 8]);
 
-impl_codec_by_bincode_legacy!(AirbenderProgramVk);
+impl Encode for AirbenderProgramVk {
+    type Error = Infallible;
+
+    fn encode_to_vec(&self) -> Result<Vec<u8>, Self::Error> {
+        let words = self.0;
+        Ok(words.iter().flat_map(|word| word.to_le_bytes()).collect())
+    }
+}
+
+impl Decode for AirbenderProgramVk {
+    type Error = Error;
+
+    fn decode_from_slice(slice: &[u8]) -> Result<Self, Self::Error> {
+        if slice.len() != PROGRAM_VK_SIZE {
+            return Err(Error::InvalidProgramVkLength {
+                expected: PROGRAM_VK_SIZE,
+                got: slice.len(),
+            });
+        }
+        let words = from_fn(|i| u32::from_le_bytes(from_fn(|j| slice[4 * i + j])));
+        Ok(Self(words))
+    }
+}
+
+ere_verifier_core::codec::impl_try_from_bytes_by_decode!(AirbenderProgramVk);
+ere_verifier_core::codec::impl_into_bytes_by_encode!(AirbenderProgramVk);

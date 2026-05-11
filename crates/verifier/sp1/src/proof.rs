@@ -10,4 +10,4 @@ use sp1_sdk::SP1ProofWithPublicValues;
 #[serde(transparent)]
 pub struct SP1Proof(pub SP1ProofWithPublicValues);
 
-ere_verifier_core::codec::impl_codec_by_bincode_legacy!(SP1Proof);
+ere_verifier_core::codec::impl_codec_by_bincode_legacy!(SP1Proof, reject_trailing_bytes);

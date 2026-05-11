@@ -54,4 +54,4 @@ fn cast_bytes(data: Vec<u64>) -> Vec<u8> {
     unsafe { Vec::from_raw_parts(ptr, len, cap) }
 }
 
-ere_verifier_core::codec::impl_codec_by_bincode_legacy!(ZiskProof);
+ere_verifier_core::codec::impl_codec_by_bincode_legacy!(ZiskProof, reject_trailing_bytes);
