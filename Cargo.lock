@@ -4234,6 +4234,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "ere-verifier"
+version = "0.8.1"
+dependencies = [
+ "ere-catalog",
+ "ere-verifier-airbender",
+ "ere-verifier-core",
+ "ere-verifier-openvm",
+ "ere-verifier-risc0",
+ "ere-verifier-sp1",
+ "ere-verifier-zisk",
+ "paste",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "ere-verifier-airbender"
 version = "0.8.1"
 dependencies = [
