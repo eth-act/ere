@@ -1,0 +1,88 @@
+name: Test and clippy verifier crates
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  show-program-vk-and-proof-size:
+    name: Show program vk and proof size
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run
+        run: python3 .github/scripts/show-program-vk-and-proof-size.py
+
+  test-stable:
+    name: Test and clippy verifier crates with stable toolchain
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run cargo clippy verifier crates
+        run: |
+          cargo clippy --all-targets \
+            --package ere-verifier \
+            --package ere-verifier-openvm \
+            --package ere-verifier-risc0 \
+            --package ere-verifier-sp1 \
+            --package ere-verifier-zisk \
+            -- -D warnings
+
+      - name: Run cargo test verifier crates
+        run: |
+          cargo test --release \
+            --package ere-verifier \
+            --package ere-verifier-openvm \
+            --package ere-verifier-risc0 \
+            --package ere-verifier-sp1 \
+            --package ere-verifier-zisk \
+            -- test_verifier
+
+  test-nightly:
+    name: Test and clippy verifier crates with nightly toolchain
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy
+
+      - name: Run cargo clippy verifier crates
+        run: |
+          cargo clippy --all-targets \
+            --package ere-verifier \
+            --package ere-verifier-* \
+            --features nightly \
+            -- -D warnings
+
+      - name: Run cargo test verifier crates
+        run: |
+          cargo test --release \
+            --package ere-verifier \
+            --package ere-verifier-* \
+            --features nightly \
+            -- test_verifier
