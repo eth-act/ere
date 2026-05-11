@@ -3,6 +3,7 @@ use ere_verifier_core::{PublicValues, codec::Decode, zkVMVerifier};
 
 use crate::error::Error;
 
+#[derive(Debug)]
 pub enum Verifier {
     #[cfg(feature = "nightly")]
     Airbender(ere_verifier_airbender::AirbenderVerifier),
