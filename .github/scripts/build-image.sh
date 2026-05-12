@@ -179,8 +179,8 @@ if [ -n "$RUSTFLAGS" ]; then
     SERVER_ZKVM_BUILD_ARGS+=(--build-arg "RUSTFLAGS=$RUSTFLAGS")
 fi
 
-# Pass GITHUB_TOKEN to prevent rzup hit github rate limits
-if [ -n "$GITHUB_TOKEN" ] && [ "$ZKVM" = "risc0" ]; then
+# Pass GITHUB_TOKEN to prevent rzup/sp1up hit github rate limits
+if [ -n "$GITHUB_TOKEN" ] && { [ "$ZKVM" = "risc0" ] || [ "$ZKVM" = "sp1" ]; }; then
     BASE_ZKVM_BUILD_ARGS+=(--secret id=github_token,env=GITHUB_TOKEN)
 fi
 

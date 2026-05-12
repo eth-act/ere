@@ -19,9 +19,10 @@ COPY --chmod=755 scripts/sdk_installers/install_sp1_sdk.sh /tmp/install_sp1_sdk.
 ENV SP1_DIR="/root/.sp1" \
     SP1_VERSION="v6.1.0"
 
-# Run the SP1 SDK installation script
+# Run the SP1 SDK installation script with secret mount
 # It will use the SP1_DIR and SP1_VERSION defined above.
-RUN /tmp/install_sp1_sdk.sh && rm /tmp/install_sp1_sdk.sh
+RUN --mount=type=secret,id=github_token,env=GITHUB_TOKEN \
+    /tmp/install_sp1_sdk.sh && rm /tmp/install_sp1_sdk.sh
 
 # Update the image's persistent PATH to include SP1 binaries.
 # This uses the SP1_DIR defined above.

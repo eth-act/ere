@@ -220,6 +220,9 @@ impl ServerContainer {
             zkVMKind::Risc0 => cmd
                 .inherit_env("ERE_RISC0_SEGMENT_PO2")
                 .inherit_env("ERE_RISC0_KECCAK_PO2"),
+            // SP1 uses shared memory to exchange data between processes, here
+            // we set 32G for safety.
+            zkVMKind::SP1 => cmd.option("shm-size", "32G"),
             // ZisK uses shared memory to exchange data between processes, it
             // requires at least 16G shared memory, here we set 32G for safety.
             zkVMKind::Zisk => cmd
