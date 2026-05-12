@@ -17,9 +17,7 @@ impl Verifier {
     pub fn new(zkvm_kind: zkVMKind, encoded_program_vk: &[u8]) -> Result<Self, Error> {
         Ok(match zkvm_kind {
             #[cfg(not(feature = "nightly"))]
-            zkVMKind::Airbender => {
-                panic!("Airbender requires nightly toolchain and nightly feature enabled")
-            }
+            zkVMKind::Airbender => return Err(Error::NightlyFeatureRequired),
             #[cfg(feature = "nightly")]
             zkVMKind::Airbender => {
                 let program_vk = Decode::decode_from_slice(encoded_program_vk)

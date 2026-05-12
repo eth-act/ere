@@ -86,6 +86,9 @@ jobs:
         with:
           components: clippy
 
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
       - name: Run cargo clippy verifier crates
         run: |
           cargo clippy --all-targets \

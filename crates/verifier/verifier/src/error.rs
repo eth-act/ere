@@ -1,5 +1,7 @@
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error("Airbender support requires the `nightly` cargo feature and nightly toolchain")]
+    NightlyFeatureRequired,
     #[error("failed to decode program vk: {0}")]
     DecodeProgramVk(String),
     #[error("failed to decode proof: {0}")]
