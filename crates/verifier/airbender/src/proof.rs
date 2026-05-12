@@ -18,4 +18,4 @@ pub fn words_to_le_bytes(words: [u32; 8]) -> [u8; 32] {
     bytes
 }
 
-ere_verifier_core::codec::impl_codec_by_bincode_legacy!(AirbenderProof);
+ere_verifier_core::codec::impl_codec_by_bincode_legacy!(AirbenderProof, reject_trailing_bytes);

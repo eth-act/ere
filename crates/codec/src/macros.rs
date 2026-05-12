@@ -81,6 +81,10 @@ macro_rules! impl_into_bytes_by_encode {
 /// Implements [`Encode`](crate::Encode) and [`Decode`](crate::Decode) for
 /// `$ty` via `bincode::serde` with `bincode::config::legacy()`.
 ///
+/// Pass `reject_trailing_bytes` as the second argument to get a strict decode
+/// implementation that returns error when the input slice contains more bytes
+/// than the encoded value occupies.
+///
 /// Requires the `alloc` and `serde` features of `bincode` to be enabled in
 /// the caller's `Cargo.toml`.
 #[macro_export]
@@ -98,7 +102,32 @@ macro_rules! impl_codec_by_bincode_legacy {
             type Error = bincode::error::DecodeError;
 
             fn decode_from_slice(slice: &[u8]) -> Result<Self, Self::Error> {
-                bincode::serde::decode_from_slice(slice, bincode::config::legacy()).map(|(v, _)| v)
+                bincode::serde::decode_from_slice(slice, bincode::config::legacy())
+                    .map(|(value, _)| value)
+            }
+        }
+    };
+    ($ty:ty, reject_trailing_bytes) => {
+        impl $crate::Encode for $ty {
+            type Error = bincode::error::EncodeError;
+
+            fn encode_to_vec(&self) -> Result<Vec<u8>, Self::Error> {
+                bincode::serde::encode_to_vec(self, bincode::config::legacy())
+            }
+        }
+
+        impl $crate::Decode for $ty {
+            type Error = bincode::error::DecodeError;
+
+            fn decode_from_slice(slice: &[u8]) -> Result<Self, Self::Error> {
+                let (value, consumed) =
+                    bincode::serde::decode_from_slice(slice, bincode::config::legacy())?;
+                if consumed != slice.len() {
+                    return Err(bincode::error::DecodeError::Other(
+                        "trailing bytes after decoded value",
+                    ));
+                }
+                Ok(value)
             }
         }
     };

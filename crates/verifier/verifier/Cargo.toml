@@ -1,0 +1,28 @@
+[package]
+name = "ere-verifier"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+thiserror = { workspace = true }
+
+# Local dependencies
+ere-catalog = { workspace = true }
+ere-verifier-core = { workspace = true }
+ere-verifier-airbender = { workspace = true, optional = true }
+ere-verifier-openvm = { workspace = true }
+ere-verifier-risc0 = { workspace = true }
+ere-verifier-sp1 = { workspace = true }
+ere-verifier-zisk = { workspace = true }
+
+[dev-dependencies]
+paste.workspace = true
+
+[features]
+default = []
+nightly = ["dep:ere-verifier-airbender"]
+
+[lints]
+workspace = true

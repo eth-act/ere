@@ -11,4 +11,4 @@ use serde::{Deserialize, Serialize};
 #[serde(transparent)]
 pub struct Risc0Proof(pub Receipt);
 
-ere_verifier_core::codec::impl_codec_by_bincode_legacy!(Risc0Proof);
+ere_verifier_core::codec::impl_codec_by_bincode_legacy!(Risc0Proof, reject_trailing_bytes);

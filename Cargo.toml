@@ -23,6 +23,7 @@ members = [
     "crates/prover/sp1",
     "crates/prover/zisk",
     # Verifier
+    "crates/verifier/verifier",
     "crates/verifier/core",
     "crates/verifier/airbender",
     "crates/verifier/openvm",
@@ -174,6 +175,7 @@ ere-prover-openvm = { path = "crates/prover/openvm" }
 ere-prover-risc0 = { path = "crates/prover/risc0" }
 ere-prover-sp1 = { path = "crates/prover/sp1" }
 ere-prover-zisk = { path = "crates/prover/zisk" }
+ere-verifier = { path = "crates/verifier/verifier" }
 ere-verifier-core = { path = "crates/verifier/core" }
 ere-verifier-airbender = { path = "crates/verifier/airbender" }
 ere-verifier-openvm = { path = "crates/verifier/openvm" }

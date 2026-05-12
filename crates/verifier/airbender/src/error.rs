@@ -6,6 +6,10 @@ pub enum Error {
     #[error("Failed to deserialize: {0}")]
     Deserialize(#[from] bincode::error::DecodeError),
 
+    /// VK byte slice was not the expected 32 bytes.
+    #[error("Invalid ProgramVk length, expected: {expected}, got: {got}")]
+    InvalidProgramVkLength { expected: usize, got: usize },
+
     /// `verify_proof_in_unified_layer` returned `Err`.
     #[error("Invalid proof")]
     InvalidProof,

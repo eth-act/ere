@@ -22,4 +22,4 @@ impl fmt::Debug for SP1ProgramVk {
     }
 }
 
-ere_verifier_core::codec::impl_codec_by_bincode_legacy!(SP1ProgramVk);
+ere_verifier_core::codec::impl_codec_by_bincode_legacy!(SP1ProgramVk, reject_trailing_bytes);

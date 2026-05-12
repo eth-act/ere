@@ -1,5 +1,5 @@
 use core::{marker::PhantomData, ops::Deref};
-use std::path::PathBuf;
+use std::{env, fs, path::PathBuf};
 
 use ere_codec::{Decode, Encode};
 use ere_prover_core::{Input, PublicValues, zkVMProver};
@@ -41,6 +41,16 @@ pub fn run_zkvm_prove(zkvm: &impl zkVMProver, test_case: &impl TestCase) -> Publ
     assert_eq!(prover_public_values, verifier_public_values);
 
     test_case.assert_output(&verifier_public_values);
+
+    if env::var_os("ERE_GENERATE_VERIFIER_FIXTURE").is_some() {
+        let fixture_dir =
+            workspace().join(format!("crates/verifier/{}/tests/fixtures", zkvm.name()));
+        let proof = proof.encode_to_vec().unwrap();
+        let program_vk = zkvm.program_vk().encode_to_vec().unwrap();
+        fs::write(fixture_dir.join("proof.bin"), proof).unwrap();
+        fs::write(fixture_dir.join("program_vk.bin"), program_vk).unwrap();
+        fs::write(fixture_dir.join("public_values.bin"), &prover_public_values).unwrap();
+    }
 
     verifier_public_values
 }
