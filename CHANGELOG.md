@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.9.0](https://github.com/eth-act/ere/compare/v0.8.1...v0.9.0) (2026-05-12)
+
+
+### Features
+
+* add a binary semaphore to ere-server prove endpoint ([#348](https://github.com/eth-act/ere/issues/348)) ([580a70a](https://github.com/eth-act/ere/commit/580a70ae9cb873c21f91db9e282f43a57434de6a))
+* add crate `ere-verifier` and test fixture for verifier crates ([#359](https://github.com/eth-act/ere/issues/359)) ([cb84829](https://github.com/eth-act/ere/commit/cb8482925d2fa05fb3ed8c11024834cd0f48b6df))
+* finer modules ([#346](https://github.com/eth-act/ere/issues/346)) ([44e91ed](https://github.com/eth-act/ere/commit/44e91ed7c0bd5398d55eb4ce43594ac0f161dd2b))
+* fix airbender verifier ([#357](https://github.com/eth-act/ere/issues/357)) ([86cca13](https://github.com/eth-act/ere/commit/86cca13141a4c5128bd5c2bd50ade99868951cb7))
+* **provers:** Add optional cycle tracking to proving report ([#358](https://github.com/eth-act/ere/issues/358)) ([918985c](https://github.com/eth-act/ere/commit/918985c07cb66c151f2eb4f28d9527e730c7267b))
+* support `--feature` args in `Compiler::compile` ([#355](https://github.com/eth-act/ere/issues/355)) ([073b419](https://github.com/eth-act/ere/commit/073b41993f2262bbaec7ccc05cd2c9d93ebc2f3d))
+* update `detect_sdk_version` ([#353](https://github.com/eth-act/ere/issues/353)) ([ef7a4cc](https://github.com/eth-act/ere/commit/ef7a4ccd94cfcd700c3a3058658e0814915cb09e))
+* update `sp1` to `v6.1.0` ([#349](https://github.com/eth-act/ere/issues/349)) ([02659ca](https://github.com/eth-act/ere/commit/02659ca3701f9d013ac89fded4aa250c29256fb6))
+* update airbender to use sdk ([#347](https://github.com/eth-act/ere/issues/347)) ([ad57b1d](https://github.com/eth-act/ere/commit/ad57b1d74db3c56a7e1413ab29300f38d9a8c864))
+* vendor verifier from `openvm-sdk` to avoid pulling in `openvm` as dep ([#356](https://github.com/eth-act/ere/issues/356)) ([2118a31](https://github.com/eth-act/ere/commit/2118a315599a2460c483d8ac119616c4b6700169))
+* zisk cluster verify ([#344](https://github.com/eth-act/ere/issues/344)) ([21b40df](https://github.com/eth-act/ere/commit/21b40dfeea610c430ede65be055041ea4117694b))
+
+
+### Bug Fixes
+
+* zisk sdk install script to pin ziskup ([#354](https://github.com/eth-act/ere/issues/354)) ([e63f6e8](https://github.com/eth-act/ere/commit/e63f6e8713bd429d80fcd188f893e98a17a3574e))
+
 ## [0.8.1](https://github.com/eth-act/ere/compare/v0.8.0...v0.8.1) (2026-04-23)
 
 
