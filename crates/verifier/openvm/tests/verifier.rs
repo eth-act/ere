@@ -1,9 +1,11 @@
+use core::iter;
+
 use bincode::error::DecodeError;
 use ere_verifier_core::{codec::Decode, zkVMVerifier};
 use ere_verifier_openvm::{Error, OpenVMProgramVk, OpenVMProof, OpenVMVerifier};
 use openvm_circuit::arch::VmVerificationError;
 use openvm_continuations::F;
-use openvm_stark_sdk::openvm_stark_backend::p3_field::{Field, FieldAlgebra};
+use openvm_stark_sdk::openvm_stark_backend::p3_field::{Field, FieldAlgebra, PrimeField32};
 
 const PROGRAM_VK: &[u8] = include_bytes!("./fixtures/program_vk.bin");
 const PROOF: &[u8] = include_bytes!("./fixtures/proof.bin");
@@ -104,4 +106,43 @@ fn verifier_with_unexpected_program_vk() -> OpenVMVerifier {
     let mut program_vk = OpenVMProgramVk::decode_from_slice(PROGRAM_VK).unwrap();
     program_vk.0.app_exe_commit.0[0] ^= 0xFF;
     OpenVMVerifier::new(program_vk)
+}
+
+#[test]
+fn test_malleable_proof() {
+    let bytes = proof_bytes_with_aliased_field_element();
+    let Err(err) = OpenVMProof::decode_from_slice(&bytes) else {
+        unreachable!()
+    };
+    assert!(matches!(err, DecodeError::OtherString(ref s) if s == "Value is out of range"));
+}
+
+fn proof_bytes_with_aliased_field_element() -> Vec<u8> {
+    const BABYBEAR_MODULUS: u32 = 0x7800_0001;
+
+    let proof = OpenVMProof::decode_from_slice(PROOF).unwrap();
+    let bytes = iter::empty()
+        .chain(&proof.0.inner.opening.proof.query_proofs)
+        .flat_map(|proof| &proof.input_proof)
+        .flat_map(|opening| &opening.opening_proof)
+        .flatten()
+        .map(|value| value.to_unique_u32().to_le_bytes())
+        .find(|bytes| subslice_positions(PROOF, bytes).count() == 1)
+        .unwrap();
+    let offset = subslice_positions(PROOF, &bytes).next().unwrap();
+
+    let value = u32::from_le_bytes(PROOF[offset..offset + 4].try_into().unwrap());
+    let aliased = value.checked_add(BABYBEAR_MODULUS).unwrap();
+
+    let mut proof_aliased = PROOF.to_vec();
+    proof_aliased[offset..offset + 4].copy_from_slice(&aliased.to_le_bytes());
+    assert_ne!(PROOF, proof_aliased);
+    proof_aliased
+}
+
+fn subslice_positions(haystack: &[u8], needle: &[u8]) -> impl Iterator<Item = usize> {
+    haystack
+        .windows(needle.len())
+        .enumerate()
+        .filter_map(move |(i, subslice)| (subslice == needle).then_some(i))
 }
