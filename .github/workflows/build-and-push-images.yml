@@ -6,7 +6,7 @@ on:
       - master
 
 env:
-  CUDA_ARCHS: '89,120'
+  CUDA_ARCHS: '80,86,89,90,100,120'
 
 jobs:
   image_meta:
