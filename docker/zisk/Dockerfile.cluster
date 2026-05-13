@@ -30,7 +30,7 @@ ENV RUSTUP_HOME=/usr/local/rustup \
     PATH=/usr/local/cargo/bin:$PATH
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none && \
-    curl https://raw.githubusercontent.com/0xPolygonHermez/zisk/v0.17.0/ziskup/ziskup | USE_GPU=true SETUP_KEY=proving-no-consttree bash && \
+    curl https://raw.githubusercontent.com/0xPolygonHermez/zisk/v0.18.0/ziskup/ziskup | USE_GPU=true SETUP_KEY=proving-no-consttree bash && \
     rustup self uninstall -y
 
 ENV PATH=/root/.zisk/bin:$PATH

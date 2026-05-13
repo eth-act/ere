@@ -1,12 +1,13 @@
 //! Remote ZisK cluster proving.
 
-use core::time::Duration;
+use core::{iter, time::Duration};
 
-use bincode::error::DecodeError;
 use ere_compiler_core::Elf;
 use ere_prover_core::{Input, RemoteProverConfig, zkVMVerifier};
-use ere_verifier_zisk::{PUBLIC_VALUES_BYTES, ZiskProgramVk, ZiskProof, ZiskVerifier};
-use serde::{Deserialize, Serialize};
+use ere_verifier_zisk::{
+    PROGRAM_VK_WORDS, PUBLIC_VALUES_BYTES, VadcopFinalProof, ZiskProgramVk, ZiskProof, ZiskVerifier,
+};
+use serde::Deserialize;
 use tokio::time::Instant;
 use tonic::transport::Channel;
 
@@ -215,42 +216,65 @@ fn framed_stdin(data: &[u8]) -> Vec<u8> {
 }
 
 fn parse_proof(bytes: &[u8]) -> Result<ZiskProof, Error> {
-    #[derive(Default, Serialize, Deserialize)]
-    pub struct Proof<'a> {
-        pub proof_kind: ProofKind,
-        pub proof_bytes: &'a [u8],
-        pub publics: PublicValues,
-        pub program_vk: ProgramVK,
-        pub zisk_vk: Vec<u8>,
-    }
-
-    #[derive(Default, Serialize, Deserialize)]
-    pub enum ProofKind {
-        #[default]
-        VadcopFinal,
-        VadcopFinalMinimal,
+    #[derive(Deserialize)]
+    enum ProofBody {
+        Vadcop {
+            proof: Vec<u64>,
+            _zisk_vk: Vec<u64>,
+            minimal: bool,
+        },
         Plonk,
     }
 
-    #[derive(Default, Serialize, Deserialize)]
-    pub struct ProgramVK {
-        pub vk: Vec<u8>,
+    #[derive(Deserialize)]
+    struct PublicValues {
+        data: Vec<u8>,
     }
 
-    #[derive(Default, Serialize, Deserialize)]
-    pub struct PublicValues {
-        pub data: Vec<u8>,
+    #[derive(Deserialize)]
+    struct ProgramVK {
+        vk: Vec<u64>,
+    }
+
+    #[derive(Deserialize)]
+    struct Proof {
+        body: ProofBody,
+        publics: PublicValues,
+        program_vk: ProgramVK,
     }
 
     let (proof, _): (Proof, _) =
-        bincode::serde::borrow_decode_from_slice(bytes, bincode::config::legacy())?;
+        bincode::serde::decode_from_slice(bytes, bincode::config::standard())?;
 
-    let program_vk = ZiskProgramVk::try_from(proof.program_vk.vk.as_slice())?;
-    let public_values = <[u8; PUBLIC_VALUES_BYTES]>::try_from(proof.publics.data)
-        .map_err(|_| DecodeError::Other("invalid public values length"))?;
-    Ok(ZiskProof::from_parts(
-        &program_vk,
-        &public_values,
-        proof.proof_bytes,
-    )?)
+    if proof.program_vk.vk.len() != PROGRAM_VK_WORDS {
+        Err(ere_verifier_zisk::Error::InvalidProgramVkLength {
+            expected: PROGRAM_VK_WORDS * 8,
+            got: proof.program_vk.vk.len() * 8,
+        })?;
+    };
+    if proof.publics.data.len() != PUBLIC_VALUES_BYTES {
+        Err(ere_verifier_zisk::Error::InvalidPublicValueLength {
+            expected: PUBLIC_VALUES_BYTES,
+            got: proof.publics.data.len(),
+        })?;
+    };
+
+    let public_values = {
+        let to_u64 = |bytes: &[u8]| u32::from_le_bytes(bytes.try_into().unwrap()) as u64;
+        iter::empty()
+            .chain(proof.program_vk.vk)
+            .chain(proof.publics.data.chunks_exact(4).map(to_u64))
+            .collect()
+    };
+
+    let ProofBody::Vadcop {
+        proof,
+        minimal: true,
+        ..
+    } = proof.body
+    else {
+        return Err(ere_verifier_zisk::Error::InvalidVadcopFinalProofKind)?;
+    };
+
+    Ok(ZiskProof(VadcopFinalProof::new(proof, public_values, true)))
 }

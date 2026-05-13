@@ -1,5 +1,5 @@
 use ere_util_build::detect_and_generate_name_and_sdk_version;
 
 fn main() {
-    detect_and_generate_name_and_sdk_version("zisk", "ere-verifier-zisk", "proofman-verifier");
+    detect_and_generate_name_and_sdk_version("zisk", "ere-verifier-zisk", "zisk-verifier");
 }

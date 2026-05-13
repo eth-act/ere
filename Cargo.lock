@@ -794,6 +794,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "arc-swap"
+version = "1.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6a3a1fd6f75306b68087b831f025c712524bcb19aad54e557b1129cfa0a2b207"
+dependencies = [
+ "rustversion",
+]
+
+[[package]]
 name = "ark-bls12-381"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1197,8 +1206,8 @@ dependencies = [
 
 [[package]]
 name = "asm-runner"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "anyhow",
  "libc",
@@ -1209,8 +1218,8 @@ dependencies = [
  "rayon",
  "thiserror 2.0.18",
  "tracing",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
 ]
 
 [[package]]
@@ -2489,13 +2498,13 @@ dependencies = [
 
 [[package]]
 name = "circuit"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0#b63274507a040bf9e09d22214df43066e8f80cb7"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0#790f9e28a6d1d8575e38dc77f2af4966b8659722"
 
 [[package]]
 name = "circuit"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 
 [[package]]
 name = "clang-sys"
@@ -3036,8 +3045,8 @@ dependencies = [
 
 [[package]]
 name = "curves"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9b40f2467b35ef26aa2aabb4a624dfed3"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.18.0#42ad4d02da3d3b6238ac126ead82a8814f3fd426"
 dependencies = [
  "fields",
  "num-bigint 0.4.6",
@@ -3250,11 +3259,11 @@ dependencies = [
 
 [[package]]
 name = "data-bus"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
 ]
 
 [[package]]
@@ -4181,12 +4190,12 @@ dependencies = [
  "ere-verifier-zisk",
  "once_cell",
  "parking_lot",
+ "rom-setup",
  "tempfile",
  "thiserror 2.0.18",
  "tokio",
- "tracing",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "zisk-prover-backend",
  "ziskemu",
 ]
@@ -4381,9 +4390,11 @@ dependencies = [
  "bytemuck",
  "ere-util-build",
  "ere-verifier-core",
+ "proofman-util",
  "proofman-verifier",
  "serde",
  "thiserror 2.0.18",
+ "zisk-verifier 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
 ]
 
 [[package]]
@@ -4430,10 +4441,11 @@ dependencies = [
 
 [[package]]
 name = "executor"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "anyhow",
+ "arc-swap",
  "asm-runner",
  "crossbeam",
  "data-bus",
@@ -4465,8 +4477,8 @@ dependencies = [
  "sm-rom",
  "tracing",
  "witness",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "zisk-pil",
  "ziskemu",
 ]
@@ -4591,8 +4603,8 @@ dependencies = [
 
 [[package]]
 name = "fields"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9b40f2467b35ef26aa2aabb4a624dfed3"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.18.0#42ad4d02da3d3b6238ac126ead82a8814f3fd426"
 dependencies = [
  "cfg-if",
  "num-bigint 0.4.6",
@@ -6003,23 +6015,23 @@ checksum = "09edd9e8b54e49e587e4f6295a7d29c3ea94d469cb40ab8ca70b288248a81db2"
 
 [[package]]
 name = "lib-c"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0#b63274507a040bf9e09d22214df43066e8f80cb7"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0#790f9e28a6d1d8575e38dc77f2af4966b8659722"
 
 [[package]]
 name = "lib-c"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 
 [[package]]
 name = "lib-float"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0#b63274507a040bf9e09d22214df43066e8f80cb7"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0#790f9e28a6d1d8575e38dc77f2af4966b8659722"
 
 [[package]]
 name = "lib-float"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 
 [[package]]
 name = "libc"
@@ -6359,8 +6371,8 @@ dependencies = [
 
 [[package]]
 name = "mem-common"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "clap",
  "fields",
@@ -6372,21 +6384,21 @@ dependencies = [
  "rayon",
  "static_assertions",
  "tracing",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "zisk-pil",
 ]
 
 [[package]]
 name = "mem-planner-cpp"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "mem-common",
  "proofman-common",
  "proofman-util",
  "tracing",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "zisk-pil",
 ]
 
@@ -8966,8 +8978,8 @@ dependencies = [
 
 [[package]]
 name = "pil-std-lib"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9b40f2467b35ef26aa2aabb4a624dfed3"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.18.0#42ad4d02da3d3b6238ac126ead82a8814f3fd426"
 dependencies = [
  "colored",
  "fields",
@@ -9125,8 +9137,8 @@ dependencies = [
 
 [[package]]
 name = "precomp-arith-eq"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "ark-bn254",
  "ark-ff 0.5.0",
@@ -9135,14 +9147,14 @@ dependencies = [
  "ark-std 0.5.0",
  "fields",
  "lazy_static",
- "lib-c 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "lib-c 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "mem-common",
  "num-bigint 0.4.6",
  "num-traits",
  "path-clean",
  "pil-std-lib",
  "precompiles-common",
- "precompiles-helpers 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "precompiles-helpers 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "proofman-common",
  "proofman-macros",
  "proofman-util",
@@ -9155,15 +9167,15 @@ dependencies = [
  "tracing",
  "typenum",
  "witness",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "zisk-pil",
 ]
 
 [[package]]
 name = "precomp-arith-eq-384"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -9172,7 +9184,7 @@ dependencies = [
  "ark-std 0.5.0",
  "fields",
  "lazy_static",
- "lib-c 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "lib-c 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "mem-common",
  "num-bigint 0.4.6",
  "num-traits",
@@ -9180,7 +9192,7 @@ dependencies = [
  "pil-std-lib",
  "precomp-arith-eq",
  "precompiles-common",
- "precompiles-helpers 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "precompiles-helpers 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "proofman-common",
  "proofman-macros",
  "proofman-util",
@@ -9192,19 +9204,19 @@ dependencies = [
  "tracing",
  "typenum",
  "witness",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "zisk-pil",
 ]
 
 [[package]]
 name = "precomp-big-int"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "fields",
  "generic-array 0.14.9",
- "lib-c 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "lib-c 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "mem-common",
  "pil-std-lib",
  "precompiles-common",
@@ -9214,15 +9226,15 @@ dependencies = [
  "rayon",
  "sm-mem",
  "tracing",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "zisk-pil",
 ]
 
 [[package]]
 name = "precomp-blake2"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "fields",
  "mem-common",
@@ -9234,23 +9246,23 @@ dependencies = [
  "rayon",
  "sm-mem",
  "tracing",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "zisk-pil",
 ]
 
 [[package]]
 name = "precomp-dma"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "fields",
  "generic-array 0.14.9",
- "lib-c 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "lib-c 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "mem-common",
  "pil-std-lib",
  "precompiles-common",
- "precompiles-helpers 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "precompiles-helpers 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "proofman",
  "proofman-common",
  "proofman-macros",
@@ -9258,37 +9270,37 @@ dependencies = [
  "rayon",
  "sm-mem",
  "tracing",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "zisk-pil",
 ]
 
 [[package]]
 name = "precomp-keccakf"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
- "circuit 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "circuit 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "fields",
  "path-clean",
  "pil-std-lib",
  "precompiles-common",
- "precompiles-helpers 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "precompiles-helpers 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "proofman-common",
  "proofman-macros",
  "proofman-util",
  "rayon",
  "tiny-keccak",
  "tracing",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "zisk-pil",
 ]
 
 [[package]]
 name = "precomp-poseidon2"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "fields",
  "mem-common",
@@ -9301,15 +9313,15 @@ dependencies = [
  "sha2",
  "sm-mem",
  "tracing",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "zisk-pil",
 ]
 
 [[package]]
 name = "precomp-sha256f"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "fields",
  "mem-common",
@@ -9321,27 +9333,27 @@ dependencies = [
  "rayon",
  "sm-mem",
  "tracing",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "zisk-pil",
 ]
 
 [[package]]
 name = "precompiles-common"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "fields",
  "mem-common",
  "sm-mem",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
 ]
 
 [[package]]
 name = "precompiles-helpers"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0#b63274507a040bf9e09d22214df43066e8f80cb7"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0#790f9e28a6d1d8575e38dc77f2af4966b8659722"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -9350,17 +9362,17 @@ dependencies = [
  "ark-secp256r1",
  "ark-std 0.5.0",
  "cfg-if",
- "circuit 0.17.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0)",
+ "circuit 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
  "crunchy",
- "lib-c 0.17.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0)",
+ "lib-c 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
  "num-bigint 0.4.6",
  "num-traits",
 ]
 
 [[package]]
 name = "precompiles-helpers"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -9369,28 +9381,28 @@ dependencies = [
  "ark-secp256r1",
  "ark-std 0.5.0",
  "cfg-if",
- "circuit 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "circuit 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "crunchy",
- "lib-c 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "lib-c 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "num-bigint 0.4.6",
  "num-traits",
 ]
 
 [[package]]
 name = "precompiles-hints"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "anyhow",
  "borsh",
- "lib-c 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "precompiles-helpers 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "lib-c 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "precompiles-helpers 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "rayon",
  "rustls 0.23.37",
  "tracing",
  "zisk-cluster-common",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "ziskos-hints 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "ziskos-hints 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
 ]
 
 [[package]]
@@ -9475,13 +9487,12 @@ dependencies = [
 
 [[package]]
 name = "proofman"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9b40f2467b35ef26aa2aabb4a624dfed3"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.18.0#42ad4d02da3d3b6238ac126ead82a8814f3fd426"
 dependencies = [
- "bincode 1.3.3",
+ "bincode 2.0.1",
  "blake3",
  "borsh",
- "bytemuck",
  "chrono",
  "colored",
  "crossbeam-channel",
@@ -9510,12 +9521,11 @@ dependencies = [
 
 [[package]]
 name = "proofman-common"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9b40f2467b35ef26aa2aabb4a624dfed3"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.18.0#42ad4d02da3d3b6238ac126ead82a8814f3fd426"
 dependencies = [
- "bincode 1.3.3",
+ "bincode 2.0.1",
  "borsh",
- "bytemuck",
  "colored",
  "crossbeam-channel",
  "crossbeam-queue",
@@ -9542,8 +9552,8 @@ dependencies = [
 
 [[package]]
 name = "proofman-hints"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9b40f2467b35ef26aa2aabb4a624dfed3"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.18.0#42ad4d02da3d3b6238ac126ead82a8814f3fd426"
 dependencies = [
  "fields",
  "itoa",
@@ -9555,8 +9565,8 @@ dependencies = [
 
 [[package]]
 name = "proofman-macros"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9b40f2467b35ef26aa2aabb4a624dfed3"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.18.0#42ad4d02da3d3b6238ac126ead82a8814f3fd426"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -9565,8 +9575,8 @@ dependencies = [
 
 [[package]]
 name = "proofman-starks-lib-c"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9b40f2467b35ef26aa2aabb4a624dfed3"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.18.0#42ad4d02da3d3b6238ac126ead82a8814f3fd426"
 dependencies = [
  "crossbeam-channel",
  "tracing",
@@ -9574,11 +9584,10 @@ dependencies = [
 
 [[package]]
 name = "proofman-util"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9b40f2467b35ef26aa2aabb4a624dfed3"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.18.0#42ad4d02da3d3b6238ac126ead82a8814f3fd426"
 dependencies = [
- "bincode 1.3.3",
- "bytemuck",
+ "bincode 2.0.1",
  "colored",
  "serde",
  "sysinfo 0.35.2",
@@ -9586,13 +9595,13 @@ dependencies = [
 
 [[package]]
 name = "proofman-verifier"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9b40f2467b35ef26aa2aabb4a624dfed3"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.18.0#42ad4d02da3d3b6238ac126ead82a8814f3fd426"
 dependencies = [
- "bytemuck",
+ "bincode 2.0.1",
  "fields",
- "proofman-util",
- "rayon",
+ "num-traits",
+ "serde",
  "tracing",
 ]
 
@@ -10629,13 +10638,13 @@ dependencies = [
 
 [[package]]
 name = "riscv"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0#b63274507a040bf9e09d22214df43066e8f80cb7"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0#790f9e28a6d1d8575e38dc77f2af4966b8659722"
 
 [[package]]
 name = "riscv"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 
 [[package]]
 name = "riscv-decode"
@@ -10700,8 +10709,8 @@ dependencies = [
 
 [[package]]
 name = "rom-setup"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "anyhow",
  "blake3",
@@ -10710,8 +10719,8 @@ dependencies = [
  "proofman-common",
  "sm-rom",
  "tracing",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "zisk-pil",
 ]
 
@@ -12058,8 +12067,8 @@ dependencies = [
 
 [[package]]
 name = "sm-arith"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "fields",
  "num-bigint 0.4.6",
@@ -12072,15 +12081,15 @@ dependencies = [
  "sm-frequent-ops",
  "static_assertions",
  "tracing",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "zisk-pil",
 ]
 
 [[package]]
 name = "sm-binary"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "fields",
  "num-bigint 0.4.6",
@@ -12092,15 +12101,15 @@ dependencies = [
  "sm-frequent-ops",
  "static_assertions",
  "tracing",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "zisk-pil",
 ]
 
 [[package]]
 name = "sm-frequent-ops"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "clap",
  "fields",
@@ -12110,13 +12119,13 @@ dependencies = [
  "rayon",
  "static_assertions",
  "tracing",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
 ]
 
 [[package]]
 name = "sm-main"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "fields",
  "mem-common",
@@ -12127,16 +12136,16 @@ dependencies = [
  "proofman-util",
  "rayon",
  "tracing",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "zisk-pil",
  "ziskemu",
 ]
 
 [[package]]
 name = "sm-mem"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "fields",
  "mem-common",
@@ -12149,15 +12158,15 @@ dependencies = [
  "rayon",
  "tracing",
  "witness",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "zisk-pil",
 ]
 
 [[package]]
 name = "sm-rom"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "anyhow",
  "asm-runner",
@@ -12168,8 +12177,8 @@ dependencies = [
  "proofman-util",
  "rayon",
  "tracing",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "zisk-pil",
 ]
 
@@ -15099,8 +15108,8 @@ dependencies = [
 
 [[package]]
 name = "witness"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9b40f2467b35ef26aa2aabb4a624dfed3"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.18.0#42ad4d02da3d3b6238ac126ead82a8814f3fd426"
 dependencies = [
  "colored",
  "fields",
@@ -15322,7 +15331,7 @@ dependencies = [
 [[package]]
 name = "zisk-cluster-common"
 version = "0.1.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "anyhow",
  "borsh",
@@ -15337,17 +15346,18 @@ dependencies = [
  "tracing-appender",
  "tracing-subscriber 0.3.23",
  "uuid",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
 ]
 
 [[package]]
 name = "zisk-common"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0#b63274507a040bf9e09d22214df43066e8f80cb7"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0#790f9e28a6d1d8575e38dc77f2af4966b8659722"
 dependencies = [
  "alloy-sol-types",
  "anyhow",
- "bincode 1.3.3",
+ "bincode 2.0.1",
+ "dirs 6.0.0",
  "fields",
  "libc",
  "proofman",
@@ -15364,17 +15374,19 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber 0.3.23",
- "zisk-core 0.17.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0)",
+ "zisk-core 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
+ "zisk-verifier 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
 ]
 
 [[package]]
 name = "zisk-common"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "alloy-sol-types",
  "anyhow",
- "bincode 1.3.3",
+ "bincode 2.0.1",
+ "dirs 6.0.0",
  "fields",
  "libc",
  "proofman",
@@ -15391,63 +15403,64 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber 0.3.23",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-verifier 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
 ]
 
 [[package]]
 name = "zisk-core"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0#b63274507a040bf9e09d22214df43066e8f80cb7"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0#790f9e28a6d1d8575e38dc77f2af4966b8659722"
 dependencies = [
  "elf",
  "fields",
- "lib-c 0.17.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0)",
- "lib-float 0.17.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0)",
+ "lib-c 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
+ "lib-float 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
  "paste",
- "precompiles-helpers 0.17.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0)",
+ "precompiles-helpers 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
  "rayon",
- "riscv 0.17.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0)",
+ "riscv 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
  "serde",
  "sha2",
  "tiny-keccak",
- "zisk-definitions 0.17.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0)",
- "ziskos-hints 0.17.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0)",
+ "zisk-definitions 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
+ "ziskos-hints 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
 ]
 
 [[package]]
 name = "zisk-core"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "elf",
  "fields",
- "lib-c 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "lib-float 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "lib-c 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "lib-float 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "paste",
- "precompiles-helpers 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "precompiles-helpers 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "rayon",
- "riscv 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "riscv 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "serde",
  "sha2",
  "tiny-keccak",
- "zisk-definitions 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "ziskos-hints 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-definitions 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "ziskos-hints 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
 ]
 
 [[package]]
 name = "zisk-definitions"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0#b63274507a040bf9e09d22214df43066e8f80cb7"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0#790f9e28a6d1d8575e38dc77f2af4966b8659722"
 
 [[package]]
 name = "zisk-definitions"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 
 [[package]]
 name = "zisk-pil"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "fields",
  "proofman-common",
@@ -15459,13 +15472,13 @@ dependencies = [
 
 [[package]]
 name = "zisk-prover-backend"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "alloy-sol-types",
  "anyhow",
  "asm-runner",
- "bincode 1.3.3",
+ "bincode 2.0.1",
  "blake3",
  "borsh",
  "colored",
@@ -15481,31 +15494,31 @@ dependencies = [
  "sha2",
  "tracing",
  "zisk-cluster-common",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "ziskemu",
 ]
 
 [[package]]
 name = "zisk-verifier"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0#b63274507a040bf9e09d22214df43066e8f80cb7"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0#790f9e28a6d1d8575e38dc77f2af4966b8659722"
 dependencies = [
  "proofman-verifier",
 ]
 
 [[package]]
 name = "zisk-verifier"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "proofman-verifier",
 ]
 
 [[package]]
 name = "ziskemu"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "clap",
  "data-bus",
@@ -15518,7 +15531,7 @@ dependencies = [
  "proofman-common",
  "rayon",
  "regex",
- "riscv 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "riscv 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "serde_json",
  "sm-arith",
  "sm-binary",
@@ -15526,16 +15539,16 @@ dependencies = [
  "symbolic-demangle",
  "sysinfo 0.38.4",
  "vergen-git2",
- "zisk-common 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-core 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zisk-definitions 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zisk-definitions 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "zisk-pil",
 ]
 
 [[package]]
 name = "ziskos"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0#b63274507a040bf9e09d22214df43066e8f80cb7"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0#790f9e28a6d1d8575e38dc77f2af4966b8659722"
 dependencies = [
  "anyhow",
  "ark-bn254",
@@ -15543,7 +15556,7 @@ dependencies = [
  "ark-ff 0.5.0",
  "ark-serialize 0.5.0",
  "aurora-engine-modexp",
- "bincode 1.3.3",
+ "bincode 2.0.1",
  "blst",
  "bytes",
  "cfg-if",
@@ -15554,77 +15567,79 @@ dependencies = [
  "fields",
  "getrandom 0.2.17",
  "lazy_static",
- "lib-c 0.17.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0)",
+ "lib-c 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
+ "libc",
  "num-bigint 0.4.6",
  "num-integer",
  "num-traits",
  "once_cell",
  "paste",
- "precompiles-helpers 0.17.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0)",
+ "precompiles-helpers 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
  "rand 0.8.6",
  "ripemd",
  "secp256k1 0.31.1",
  "serde",
  "sha2",
+ "spin",
  "talc",
  "tiny-keccak",
  "tokio",
- "zisk-common 0.17.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0)",
- "zisk-definitions 0.17.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0)",
- "zisk-verifier 0.17.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0)",
- "zkvm-interface 0.17.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0)",
+ "zisk-common 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
+ "zisk-definitions 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
+ "zisk-verifier 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
+ "zkvm-interface 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
 ]
 
 [[package]]
 name = "ziskos-hints"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0#b63274507a040bf9e09d22214df43066e8f80cb7"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0#790f9e28a6d1d8575e38dc77f2af4966b8659722"
 dependencies = [
  "anyhow",
- "bincode 1.3.3",
+ "bincode 2.0.1",
  "cfg-if",
  "fields",
  "getrandom 0.2.17",
  "lazy_static",
- "lib-c 0.17.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0)",
+ "lib-c 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
  "num-bigint 0.4.6",
  "num-integer",
  "num-traits",
  "paste",
- "precompiles-helpers 0.17.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0)",
+ "precompiles-helpers 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
  "rand 0.8.6",
  "ripemd",
  "serde",
  "sha2",
  "tiny-keccak",
- "zisk-verifier 0.17.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0)",
- "zkvm-interface 0.17.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0)",
+ "zisk-verifier 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
+ "zkvm-interface 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
 ]
 
 [[package]]
 name = "ziskos-hints"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "anyhow",
- "bincode 1.3.3",
+ "bincode 2.0.1",
  "cfg-if",
  "fields",
  "getrandom 0.2.17",
  "lazy_static",
- "lib-c 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "lib-c 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "num-bigint 0.4.6",
  "num-integer",
  "num-traits",
  "paste",
- "precompiles-helpers 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "precompiles-helpers 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "rand 0.8.6",
  "ripemd",
  "serde",
  "sha2",
  "tiny-keccak",
- "zisk-verifier 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
- "zkvm-interface 0.17.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0)",
+ "zisk-verifier 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
+ "zkvm-interface 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
 ]
 
 [[package]]
@@ -15682,16 +15697,16 @@ dependencies = [
 
 [[package]]
 name = "zkvm-interface"
-version = "0.17.0"
-source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.17.0#b63274507a040bf9e09d22214df43066e8f80cb7"
+version = "0.18.0"
+source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0#790f9e28a6d1d8575e38dc77f2af4966b8659722"
 dependencies = [
  "bindgen 0.72.1",
 ]
 
 [[package]]
 name = "zkvm-interface"
-version = "0.17.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.17.0#4019fa3ef32cabef4c93188029956c1efaba6654"
+version = "0.18.0"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#1029cc49e1e1100f3d9f7fd091204e69451022ca"
 dependencies = [
  "bindgen 0.72.1",
 ]

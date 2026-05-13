@@ -1,26 +1,23 @@
 use std::{
-    env,
-    panic::{self, AssertUnwindSafe},
+    env, fs,
+    path::PathBuf,
     process::Command,
-    thread::sleep,
     time::{Duration, Instant},
 };
 
 use ere_compiler_core::Elf;
-use ere_prover_core::{Input, ProverResource};
-use ere_verifier_zisk::{PUBLIC_VALUES_BYTES, ZiskProgramVk, ZiskProof};
+use ere_prover_core::{CommonError, Input, ProverResource};
+use ere_verifier_zisk::{ZiskProgramVk, ZiskProof};
 use once_cell::sync::OnceCell;
-use parking_lot::{Mutex, MutexGuard};
-use tracing::warn;
-use zisk_common::{Proof, ProofKind, io::ZiskStdin};
+use parking_lot::Mutex;
+use tempfile::tempdir;
+use zisk_common::{ProofKind, io::ZiskStdin};
 use zisk_prover_backend::{
     Asm, AsmOptions, BackendProverOpts, GuestProgram, ProverClientBuilder, ZiskProver,
 };
+use zisk_rom_setup::get_elf_bin_verkey_file_path_with_hash;
 
-use crate::{
-    error::Error,
-    sdk::{framed_stdin, panic_msg},
-};
+use crate::{error::Error, sdk::framed_stdin};
 
 // Use a shared prover instance to avoid `MpiCtx` get initialized twice, to support multiple
 // `ZiskProver` instances creation (e.g. testing different ELFs).
@@ -71,11 +68,7 @@ impl LocalProver {
         let prover = LOCAL_PROVER.get_or_try_init(|| build_prover(&config, resource))?;
 
         let program = GuestProgram::from_bytes("guest", elf.0);
-        let program_vk = prover
-            .prover
-            .program_vk(&program, false)
-            .map_err(Error::ComputeProgramVk)?;
-        let program_vk = ZiskProgramVk::try_from(program_vk.vk.as_slice())?;
+        let program_vk = program_vk(&program)?;
 
         if config.setup_on_init {
             prover.setup(&program).run().map_err(Error::Setup)?;
@@ -107,25 +100,20 @@ impl LocalProver {
         let stdin = ZiskStdin::from_vec(framed_stdin(input.stdin()));
 
         let started = Instant::now();
-        let result = panic::catch_unwind(AssertUnwindSafe(|| {
-            self.prover
-                .prove(&self.program, stdin)
-                .wrap_proof(ProofKind::VadcopFinalMinimal)
-                .run()
-        }));
+        let output = self
+            .prover
+            .prove(&self.program, stdin)
+            .wrap_proof(ProofKind::VadcopFinalMinimal)
+            .run()
+            .map_err(Error::Prove)?;
         let proving_time = started.elapsed();
 
-        match result {
-            Ok(Ok(output)) => Ok((parse_proof(output.get_proof())?, proving_time)),
-            Ok(Err(err)) => {
-                uninitialize(self.prover, initialized);
-                Err(Error::Prove(err))
-            }
-            Err(panic) => {
-                uninitialize(self.prover, initialized);
-                Err(Error::ProvePanic(panic_msg(panic)))
-            }
-        }
+        let proof = output
+            .get_proof()
+            .get_vadcop_final_proof()
+            .map_err(Error::Prove)?;
+
+        Ok((ZiskProof(proof), proving_time))
     }
 }
 
@@ -160,24 +148,37 @@ fn build_prover(config: &Config, resource: &ProverResource) -> Result<ZiskProver
         .map_err(Error::BuildProver)
 }
 
-/// Clear the program cache so the next `setup` spawns fresh ASM services, then SIGTERM any orphan
-/// ASM child still bound to our `ZISK_{pid}_*` shmem prefix.
-fn uninitialize(prover: &ZiskProver<Asm>, mut initialized: MutexGuard<bool>) {
-    *initialized = false;
-    if let Err(err) = prover.prover.clear_program() {
-        warn!("failed to clear_program: {err}");
+fn program_vk(program: &GuestProgram) -> Result<ZiskProgramVk, Error> {
+    let tempdir = tempdir().map_err(CommonError::tempdir)?;
+    let elf_path = tempdir.path().join(program.hash());
+    fs::write(&elf_path, program.elf())
+        .map_err(|err| CommonError::write_file("elf", &elf_path, err))?;
+
+    let mut cmd = Command::new("cargo-zisk");
+    let output = cmd
+        .arg("program-setup")
+        .arg("--elf")
+        .arg(&elf_path)
+        .output()
+        .map_err(|err| CommonError::command(&cmd, err))?;
+
+    if !output.status.success() {
+        Err(CommonError::command_exit_non_zero(
+            &cmd,
+            output.status,
+            Some(&output),
+        ))?
     }
-    let pid = std::process::id();
-    let _ = Command::new("pkill")
-        .args(["-f", "--", &format!("--shm_prefix ZISK_{pid}_")])
-        .output();
-    sleep(Duration::from_secs(1));
+
+    let verkey_path =
+        get_elf_bin_verkey_file_path_with_hash(program.hash(), &cache_dir()).expect("infallible");
+    let verkey =
+        fs::read(&verkey_path).map_err(|err| CommonError::read_file("verkey", verkey_path, err))?;
+    Ok(ZiskProgramVk::try_from(&verkey)?)
 }
 
-fn parse_proof(proof: &Proof) -> Result<ZiskProof, ere_verifier_zisk::Error> {
-    let program_vk = ZiskProgramVk::try_from(proof.program_vk.vk.as_slice())?;
-    let mut public_values = [0u8; PUBLIC_VALUES_BYTES];
-    proof.publics.head();
-    proof.publics.read_slice(&mut public_values);
-    ZiskProof::from_parts(&program_vk, &public_values, &proof.proof_bytes)
+fn cache_dir() -> PathBuf {
+    PathBuf::from(env::var("HOME").expect("env `$HOME` should be set"))
+        .join(".zisk")
+        .join("cache")
 }

@@ -3,9 +3,9 @@ use core::{array::from_fn, convert::Infallible};
 use ere_verifier_core::codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 
-use crate::Error;
+use crate::{Error, proof::PROGRAM_VK_WORDS};
 
-const PROGRAM_VK_SIZE: usize = 32;
+const PROGRAM_VK_BYTES: usize = PROGRAM_VK_WORDS * 8;
 
 /// Goldilocks field order (`2^64 - 2^32 + 1`); inner u64s must be strictly less.
 const GOLDILOCKS_ORDER: u64 = 0xFFFF_FFFF_0000_0001;
@@ -24,6 +24,20 @@ const GOLDILOCKS_ORDER: u64 = 0xFFFF_FFFF_0000_0001;
 #[repr(transparent)]
 pub struct ZiskProgramVk(pub [u64; 4]);
 
+impl TryFrom<&[u64]> for ZiskProgramVk {
+    type Error = Error;
+
+    fn try_from(value: &[u64]) -> Result<Self, Self::Error> {
+        if value.len() != 4 {
+            return Err(Error::InvalidProgramVkLength {
+                expected: PROGRAM_VK_BYTES,
+                got: value.len() * 8,
+            });
+        }
+        Ok(Self(value.try_into().unwrap()))
+    }
+}
+
 impl Encode for ZiskProgramVk {
     type Error = Infallible;
 
@@ -36,9 +50,9 @@ impl Decode for ZiskProgramVk {
     type Error = Error;
 
     fn decode_from_slice(slice: &[u8]) -> Result<Self, Self::Error> {
-        if slice.len() != PROGRAM_VK_SIZE {
+        if slice.len() != PROGRAM_VK_BYTES {
             return Err(Error::InvalidProgramVkLength {
-                expected: PROGRAM_VK_SIZE,
+                expected: PROGRAM_VK_BYTES,
                 got: slice.len(),
             });
         }

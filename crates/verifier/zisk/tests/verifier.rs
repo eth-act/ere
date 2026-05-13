@@ -1,3 +1,5 @@
+use core::iter;
+
 use bincode::error::DecodeError;
 use ere_verifier_core::{codec::Decode, zkVMVerifier};
 use ere_verifier_zisk::{Error, ZiskProgramVk, ZiskProof, ZiskVerifier};
@@ -83,14 +85,14 @@ fn test_invalid_proof_verify() {
 
 fn proof_with_unexpected_public_values() -> ZiskProof {
     let mut proof = ZiskProof::decode_from_slice(PROOF).unwrap();
-    proof.public_values[0] ^= 0xFF;
+    proof.0.public_values[4] ^= 0xFF;
     proof
 }
 
 fn proof_with_invalid_merkle_path() -> ZiskProof {
     let mut proof = ZiskProof::decode_from_slice(PROOF).unwrap();
-    let idx = proof.proof.len() / 2;
-    proof.proof[idx] = (proof.proof[idx] >> 1) + 2;
+    let idx = proof.0.proof.len() / 2;
+    proof.0.proof[idx] = (proof.0.proof[idx] >> 1) + 2;
     proof
 }
 
@@ -115,9 +117,8 @@ fn proof_bytes_with_aliased_field_element() -> Vec<u8> {
     const GOLDILOCKS_MODULUS: u64 = 0xFFFF_FFFF_0000_0001;
 
     let proof = ZiskProof::decode_from_slice(PROOF).unwrap();
-    let bytes = proof
-        .proof
-        .iter()
+    let bytes = iter::empty()
+        .chain(&proof.0.proof)
         .filter(|value| value.checked_add(GOLDILOCKS_MODULUS).is_some())
         .map(|value| value.to_le_bytes())
         .find(|bytes| subslice_positions(PROOF, bytes).count() == 1)

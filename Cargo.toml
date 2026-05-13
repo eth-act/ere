@@ -148,12 +148,15 @@ sp1-verifier = "6.1.0"
 sp1-zkvm = { version = "6.1.0", default-features = false }
 
 # ZisK dependencies
-proofman-verifier = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.17.0" }
-zisk-prover-backend = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.17.0" }
-zisk-common = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.17.0" }
-zisk-core = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.17.0" }
-ziskemu = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.17.0" }
-ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.17.0", default-features = false }
+proofman-util = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.18.0" }
+proofman-verifier = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.18.0" }
+zisk-common = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.18.0" }
+zisk-core = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.18.0" }
+zisk-prover-backend = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.18.0" }
+zisk-rom-setup = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.18.0", package = "rom-setup" }
+ziskemu = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.18.0" }
+zisk-verifier = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.18.0" }
+ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.18.0", default-features = false }
 
 # Local dependencies
 ere-compiler = { path = "crates/compiler/cli" }

@@ -12,7 +12,9 @@ serde = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
 
 # ZisK dependencies
+proofman-util.workspace = true
 proofman-verifier.workspace = true
+zisk-verifier.workspace = true
 
 # Local dependencies
 ere-verifier-core.workspace = true

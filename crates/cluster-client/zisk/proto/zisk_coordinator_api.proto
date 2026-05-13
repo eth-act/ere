@@ -1,4 +1,4 @@
-// Copied from https://github.com/0xPolygonHermez/zisk/blob/v0.17.0/distributed/crates/coordinator-api/proto/zisk_coordinator_api.proto.
+// Copied from https://github.com/0xPolygonHermez/zisk/blob/v0.18.0/distributed/crates/coordinator-api/proto/zisk_coordinator_api.proto.
 
 syntax = "proto3";
 
