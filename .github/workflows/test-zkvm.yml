@@ -57,7 +57,10 @@ jobs:
         uses: tj-actions/changed-files@v46
         with:
           files: |
-            docker/**
+            .github/scripts/build-image.sh
+            .github/scripts/pull-or-build-base-zkvm-image.sh
+            docker/Dockerfile.base
+            docker/${{ inputs.zkvm }}/**
             scripts/**
 
       - name: Get image metadata
