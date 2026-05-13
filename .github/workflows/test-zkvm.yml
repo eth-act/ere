@@ -59,6 +59,8 @@ jobs:
           files: |
             .github/scripts/build-image.sh
             .github/scripts/pull-or-build-base-zkvm-image.sh
+            .github/workflows/test-zkvm.yml
+            .github/workflows/test-zkvm-${{ inputs.zkvm }}.yml
             docker/Dockerfile.base
             docker/${{ inputs.zkvm }}/**
             scripts/**
