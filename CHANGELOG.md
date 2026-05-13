@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/eth-act/ere/compare/v0.9.0...v0.9.1) (2026-05-12)
+
+
+### Bug Fixes
+
+* add `shm-size` config for SP1 ([#360](https://github.com/eth-act/ere/issues/360)) ([4bdabee](https://github.com/eth-act/ere/commit/4bdabee0fbbe28717967335b91274ff50c2e838a))
+
 ## [0.9.0](https://github.com/eth-act/ere/compare/v0.8.1...v0.9.0) (2026-05-12)
 
 
