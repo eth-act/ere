@@ -33,8 +33,6 @@ jobs:
 
       - name: Check ${{ matrix.zkvm }} version
         id: check
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e -o pipefail
 
