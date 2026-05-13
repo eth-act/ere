@@ -399,6 +399,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 | `ERE_FORCE_REBUILD_DOCKER_IMAGE` | Force to rebuild docker images locally even they exist, it also prevents pulling image from registry.                                   | `false` |
 | `ERE_GPU_DEVICES`                | Specifies which GPU devices to use when running Docker containers for GPU-enabled zkVMs. The value is passed to Docker's `--gpus` flag. | `all`   |
 | `ERE_DOCKER_NETWORK`             | Specifies the Docker network being used (if any) so spawned `ere-server-*` containers will join that network.                           | ``      |
+| `ERE_COLLECT_GPU_METRICS`        | Enable GPU metrics collection during prove operations (GPU resource only). Outputs CSV files with utilization, memory, and temperature data. | `false` |
+| `ERE_GPU_METRICS_DIR`            | Directory for GPU metrics CSV files. Created automatically if missing.                                                                       | `.`     |
+| `ERE_GPU_METRICS`                | Comma-separated `nvidia-smi` query fields (overrides the defaults). See `nvidia-smi --help-query-gpu` for available options.                 | `timestamp,name,...` |
 
 Example usage:
 
@@ -415,6 +418,25 @@ ERE_GPU_DEVICES="device=0,1" ere prove ...
 # Can also signal to use any available GPUs
 ERE_GPU_DEVICES="4" ere prove ...
 ```
+
+## GPU Metrics Collection
+
+When running `ere-server` with `ProverResource::Gpu`, you can optionally collect hardware metrics during the proving process using `nvidia-smi`. 
+
+```bash
+# Basic usage (saves to current directory)
+ere-server --elf-path app.elf --collect-gpu-metrics gpu
+
+# Custom output directory and specific metrics
+ERE_GPU_METRICS="timestamp,power.draw,temperature.gpu" \
+  ere-server --elf-path app.elf --collect-gpu-metrics --gpu-metrics-dir /data/metrics gpu
+
+```
+
+Metrics are dumped into a new CSV file (`metrics_{zkvm}_{timestamp}.csv`) for each prove request, sampled at 1-second intervals. By default, it records the timestamp, GPU name, compute/memory utilization, VRAM usage, and temperature.
+
+*Note: `nvidia-smi` must be available in your system's PATH. If it is not found, the server will log a warning and continue proving normally.*
+
 
 ## Directory Layout
 

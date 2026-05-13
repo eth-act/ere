@@ -13,6 +13,7 @@ use tracing::info;
 use tracing_subscriber::{EnvFilter, Layer, layer::SubscriberExt, util::SubscriberInitExt};
 
 mod commands;
+mod gpu_metrics;
 mod metrics;
 mod otel;
 
@@ -44,6 +45,12 @@ struct Args {
     /// milliseconds. Disabled when not set.
     #[arg(long, env = "ERE_PROVE_TIMEOUT_MS")]
     prove_timeout_ms: Option<u64>,
+    /// Collect GPU metrics during prove operations using nvidia-smi
+    #[arg(long, env = "ERE_COLLECT_GPU_METRICS")]
+    collect_gpu_metrics: bool,
+    /// Directory where GPU metrics CSV files are written
+    #[arg(long, env = "ERE_GPU_METRICS_DIR", default_value = ".")]
+    gpu_metrics_dir: PathBuf,
     #[command(
         flatten,
         next_help_heading = "ELF source (read from stdin if none set)"
@@ -99,7 +106,15 @@ async fn main() -> Result<(), Error> {
     match args.command {
         Command::Server(resource) => {
             let prove_timeout = args.prove_timeout_ms.map(Duration::from_millis);
-            commands::server::run(args.port, elf, resource, prove_timeout).await?
+            commands::server::run(
+                args.port,
+                elf,
+                resource,
+                prove_timeout,
+                args.collect_gpu_metrics,
+                args.gpu_metrics_dir,
+            )
+            .await?
         }
         Command::Keygen { program_vk_path } => commands::keygen::run(elf, &program_vk_path)?,
     }
