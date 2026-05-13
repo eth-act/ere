@@ -12,7 +12,9 @@ on:
 
 jobs:
   test:
-    if: github.event_name == 'pull_request' || github.event.workflow_run.conclusion == 'success'
+    if:
+      (github.event_name == 'pull_request' && !startsWith(github.head_ref, 'release-please-')) ||
+      github.event.workflow_run.conclusion == 'success'
     uses: ./.github/workflows/test-zkvm.yml
     with:
       zkvm: airbender
