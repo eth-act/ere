@@ -14,7 +14,7 @@ include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 pub mod vk;
 
 /// Verifier bound to a specific compiled guest program.
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct AirbenderVerifier {
     program_vk: AirbenderProgramVk,
 }

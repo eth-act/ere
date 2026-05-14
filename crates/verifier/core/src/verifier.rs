@@ -10,7 +10,7 @@ use crate::{
 /// Note that a zkVM verifier instance is created for specific program.
 #[allow(non_camel_case_types)]
 #[auto_impl::auto_impl(&, Arc, Box)]
-pub trait zkVMVerifier: Debug {
+pub trait zkVMVerifier: 'static + Send + Sync + Clone + Copy + Debug {
     type ProgramVk: 'static + Send + Sync + Encode + Decode;
     type Proof: 'static + Send + Sync + Encode + Decode;
     type Error: 'static + Send + Sync + Error;
