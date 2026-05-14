@@ -27,6 +27,43 @@ jobs:
           python3 .github/scripts/show-program-vk-and-proof-size.py \
             | tee -a "$GITHUB_STEP_SUMMARY"
 
+  benchmark-verifier:
+    name: Benchmark verifier crates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Needed for crate `sp1-prover-types` (transitive dep of the verifier bench).
+      - name: Install protoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run verifier benchmark
+        run: |
+          cargo bench \
+            --package ere-verifier \
+            --features nightly \
+            --bench verify \
+            | tee bench-output.txt
+
+      - name: Append verification time to summary
+        run: |
+          {
+            echo "# Verification time"
+            echo ""
+            echo '```'
+            grep -E '^verify/' bench-output.txt | awk '{print; print ""}'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
   test-stable:
     name: Test and clippy verifier crates with stable toolchain
     runs-on: ubuntu-latest
