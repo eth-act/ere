@@ -139,7 +139,7 @@ fi
 
 # Default CUDA_ARCHS when --cuda is set but --cuda-archs not specified
 if [ "$CUDA" = true ] && [ -z "$CUDA_ARCHS" ]; then
-    CUDA_ARCHS="89,120" # Default to RTX 40 and 50 series
+    CUDA_ARCHS="80,86,89,90,100,120" # Default: RTX 30/40/50, Ampere/Hopper/Blackwell Datacenter
 fi
 
 # Per-zkVM CUDA architecture translation

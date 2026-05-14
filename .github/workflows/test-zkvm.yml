@@ -34,7 +34,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  CUDA_ARCHS: '89,120'
+  CUDA_ARCHS: '80,86,89,90,100,120'
 
 jobs:
   image_meta:
@@ -57,7 +57,12 @@ jobs:
         uses: tj-actions/changed-files@v46
         with:
           files: |
-            docker/**
+            .github/scripts/build-image.sh
+            .github/scripts/pull-or-build-base-zkvm-image.sh
+            .github/workflows/test-zkvm.yml
+            .github/workflows/test-zkvm-${{ inputs.zkvm }}.yml
+            docker/Dockerfile.base
+            docker/${{ inputs.zkvm }}/**
             scripts/**
 
       - name: Get image metadata
