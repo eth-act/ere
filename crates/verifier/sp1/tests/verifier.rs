@@ -39,6 +39,11 @@ fn test_invalid_program_vk_decode() {
             got: 33
         }
     ));
+
+    let mut non_canonical = PROGRAM_VK.to_vec();
+    non_canonical[..4].copy_from_slice(&u32::MAX.to_le_bytes());
+    let err = SP1ProgramVk::decode_from_slice(&non_canonical).unwrap_err();
+    assert!(matches!(err, Error::NonCanonicalProgramVk));
 }
 
 #[test]

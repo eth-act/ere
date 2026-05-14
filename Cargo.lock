@@ -4364,7 +4364,6 @@ version = "0.9.1"
 dependencies = [
  "bincode 2.0.1",
  "ere-util-build",
- "ere-util-tokio",
  "ere-verifier-core",
  "serde",
  "sp1-hypercube",

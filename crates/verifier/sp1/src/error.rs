@@ -11,11 +11,15 @@ pub enum Error {
     #[error("Invalid ProgramVk length, expected: {expected}, got: {got}")]
     InvalidProgramVkLength { expected: usize, got: usize },
 
+    /// Program VK byte slice contains non-canonical field element.
+    #[error("Non-canonical ProgramVk")]
+    NonCanonicalProgramVk,
+
     /// Proof was not in the expected `Compressed` form.
     #[error("Unexpected proof kind, expected: Compressed, got: {0:?}")]
     UnexpectedProofKind(SP1ProofMode),
 
-    /// Upstream `sp1-sdk` rejected the proof.
+    /// `sp1-verifier` rejected the proof.
     #[error("Failed to verify: {0}")]
     Verify(#[from] CompressedError),
 }

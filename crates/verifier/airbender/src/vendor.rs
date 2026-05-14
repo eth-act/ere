@@ -6,7 +6,8 @@ use airbender_execution_utils::{
 use airbender_full_statement_verifier::unified_circuit_statement::verify_unrolled_or_unified_circuit_recursion_layer;
 use airbender_verifier_common::{SecurityModel, prover};
 
-// FIXME: Remove when upstream `verify_proof_in_unified_layer` removes `println`.
+// Vendored from `airbender_execution_utils::unified_circuit::verify_proof_in_unified_layer`
+// to strip the upstream `println!` calls.
 pub fn verify_proof_in_unified_layer(
     proof: &UnrolledProgramProof,
     setup: &UnrolledProgramSetup,

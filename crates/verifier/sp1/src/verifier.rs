@@ -7,7 +7,7 @@ use crate::{Error, SP1ProgramVk, SP1Proof};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
-pub static COMPRESSED_VERIFIER: LazyLock<SP1CompressedVerifier> =
+static COMPRESSED_VERIFIER: LazyLock<SP1CompressedVerifier> =
     LazyLock::new(SP1CompressedVerifier::new);
 
 /// Verifier bound to a specific compiled guest program.

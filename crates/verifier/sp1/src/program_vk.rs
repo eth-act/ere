@@ -11,7 +11,8 @@ const PROGRAM_VK_SIZE: usize = 32;
 
 /// Verifying key that identifies a specific compiled guest program.
 ///
-/// Wraps [`sp1_hypercube::HashableKey::hash_u32`] output of an [`sp1_hypercube::SP1VerifyingKey`].
+/// Wraps poseidon2 digest of an [`sp1_hypercube::SP1VerifyingKey`], produced by
+/// [`sp1_hypercube::HashableKey::hash_koalabear`].
 #[derive(Debug, Copy, Clone, Eq, Ord, PartialOrd, PartialEq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct SP1ProgramVk(pub [SP1Field; DIGEST_SIZE]);
@@ -35,12 +36,15 @@ impl Decode for SP1ProgramVk {
                 got: slice.len(),
             });
         }
-        let words = from_fn(|i| from_u32(u32::from_le_bytes(from_fn(|j| slice[4 * i + j]))));
-        Ok(Self(words))
+        let words = from_fn(|i| u32::from_le_bytes(from_fn(|j| slice[4 * i + j])));
+        if words.iter().any(|word| *word >= SP1Field::ORDER_U32) {
+            return Err(Error::NonCanonicalProgramVk);
+        }
+        Ok(Self(words.map(from_canonical_u32)))
     }
 }
 
-fn from_u32<F: PrimeField32>(word: u32) -> F {
+fn from_canonical_u32<F: PrimeField32>(word: u32) -> F {
     F::from_canonical_u32(word)
 }
 
