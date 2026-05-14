@@ -1,11 +1,11 @@
 use std::sync::LazyLock;
 
-use airbender_execution_utils::unified_circuit::verify_proof_in_unified_layer;
 use ere_verifier_core::{PublicValues, zkVMVerifier};
 
 use crate::{
     AirbenderProgramVk, AirbenderProof, Error,
     proof::words_to_le_bytes,
+    vendor::verify_proof_in_unified_layer,
     verifier::vk::{SECURITY, UNIFIED_VK},
 };
 
@@ -14,7 +14,7 @@ include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 pub mod vk;
 
 /// Verifier bound to a specific compiled guest program.
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct AirbenderVerifier {
     program_vk: AirbenderProgramVk,
 }

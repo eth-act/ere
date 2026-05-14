@@ -3,13 +3,13 @@ use std::{borrow::Borrow, env, sync::Arc};
 use ere_prover_core::{CommonError, ProverResource, ProverResourceKind, RemoteProverConfig};
 #[cfg(feature = "cuda")]
 use sp1_cuda::CudaProvingKey;
-use sp1_p3_field::PrimeField32;
+use sp1_hypercube::PrimeField32;
 use sp1_recursion_executor::{RECURSIVE_PROOF_NUM_PV_ELTS, RecursionPublicValues};
 #[cfg(feature = "cuda")]
 use sp1_sdk::CudaProver;
 use sp1_sdk::{
-    CpuProver, Elf, ExecutionReport, NetworkProver, ProveRequest, Prover as SP1Prover,
-    ProverClient, ProvingKey as SP1ProvingKeyTrait, SP1Proof, SP1ProofMode,
+    CpuProver, Elf, ExecutionReport, NetworkProver, ProofFromNetwork, ProveRequest,
+    Prover as SP1Prover, ProverClient, ProvingKey as SP1ProvingKeyTrait, SP1Proof, SP1ProofMode,
     SP1ProofWithPublicValues, SP1ProvingKey as CpuProvingKey, SP1PublicValues, SP1Stdin,
     SP1VerifyingKey, StatusCode,
 };
@@ -96,7 +96,7 @@ impl SP1Sdk {
         Ok((public_values, exec_report))
     }
 
-    pub async fn prove(&self, input: SP1Stdin) -> Result<SP1ProofWithPublicValues, Error> {
+    pub async fn prove(&self, input: SP1Stdin) -> Result<ProofFromNetwork, Error> {
         let proof = match self {
             Self::Cpu { prover, pk } => {
                 let req = prover.prove(pk, input).compressed();
@@ -118,7 +118,11 @@ impl SP1Sdk {
             return Err(Error::ExecutionFailed(exit_code));
         }
 
-        Ok(proof)
+        Ok(ProofFromNetwork {
+            proof: proof.proof,
+            public_values: proof.public_values,
+            sp1_version: proof.sp1_version,
+        })
     }
 }
 

@@ -18,6 +18,7 @@ ere-verifier-sp1 = { workspace = true }
 ere-verifier-zisk = { workspace = true }
 
 [dev-dependencies]
+criterion.workspace = true
 paste.workspace = true
 
 [features]
@@ -26,3 +27,8 @@ nightly = ["dep:ere-verifier-airbender"]
 
 [lints]
 workspace = true
+
+[[bench]]
+name = "verify"
+harness = false
+required-features = ["nightly"]

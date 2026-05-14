@@ -1,4 +1,3 @@
-use core::fmt;
 use std::sync::LazyLock;
 
 use ere_verifier_core::{PublicValues, zkVMVerifier};
@@ -16,16 +15,9 @@ pub mod vk;
 /// Implements [`zkVMVerifier`]. Holds the pre-computed [`OpenVMProgramVk`]
 /// and the aggregation verifying key embedded at build time needed to
 /// authenticate proofs.
+#[derive(Clone, Copy, Debug)]
 pub struct OpenVMVerifier {
     program_vk: OpenVMProgramVk,
-}
-
-impl fmt::Debug for OpenVMVerifier {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("OpenVMVerifier")
-            .field("program_vk", &self.program_vk)
-            .finish_non_exhaustive()
-    }
 }
 
 impl OpenVMVerifier {

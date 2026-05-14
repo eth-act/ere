@@ -6,7 +6,7 @@ use ere_prover_core::{
 };
 use ere_util_tokio::block_on;
 use ere_verifier_sp1::{SP1ProgramVk, SP1Proof, SP1Verifier};
-use sp1_sdk::SP1Stdin;
+use sp1_sdk::{HashableKey, SP1Stdin};
 use tracing::info;
 
 use crate::{error::Error, sdk::SP1Sdk};
@@ -19,7 +19,7 @@ pub struct SP1Prover {
 impl SP1Prover {
     pub fn new(elf: Elf, resource: ProverResource) -> Result<Self, Error> {
         let sdk = block_on(SP1Sdk::new(elf.0, &resource))?;
-        let program_vk = SP1ProgramVk(sdk.vk().clone());
+        let program_vk = SP1ProgramVk(sdk.vk().hash_koalabear());
         let verifier = SP1Verifier::new(program_vk);
         Ok(Self { sdk, verifier })
     }

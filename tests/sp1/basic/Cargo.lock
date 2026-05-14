@@ -363,15 +363,15 @@ dependencies = [
 
 [[package]]
 name = "ere-codec"
-version = "0.8.1"
+version = "0.9.1"
 
 [[package]]
 name = "ere-platform-core"
-version = "0.8.1"
+version = "0.9.1"
 
 [[package]]
 name = "ere-platform-sp1"
-version = "0.8.1"
+version = "0.9.1"
 dependencies = [
  "ere-platform-core",
  "sp1-zkvm",
@@ -387,7 +387,7 @@ dependencies = [
 
 [[package]]
 name = "ere-util-test"
-version = "0.8.1"
+version = "0.9.1"
 dependencies = [
  "bincode 2.0.1",
  "ciborium",

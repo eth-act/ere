@@ -13,6 +13,7 @@ thiserror.workspace = true
 # Airbender dependencies
 # FIXME: Remove feature `prover` when upstream fixes the un-gated import of `prover_examples`.
 airbender-execution-utils = { workspace = true, features = ["prover"] }
+airbender-full-statement-verifier.workspace = true
 airbender-verifier-common.workspace = true
 
 # Local dependencies

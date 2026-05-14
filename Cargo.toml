@@ -67,6 +67,7 @@ cargo_metadata = "0.19.0"
 ciborium = { version = "0.2.2", default-features = false }
 ciborium-io = { version = "0.2.2", default-features = false }
 clap = "4.5.42"
+criterion = "0.8"
 digest = { version = "0.10.7", default-features = false }
 eyre = "0.6.12"
 fnv = { version = "1.0.7", default-features = false }
@@ -117,6 +118,7 @@ airbender-build = { git = "https://github.com/matter-labs/airbender-platform", r
 airbender-host = { git = "https://github.com/matter-labs/airbender-platform", rev = "72cce091dbaa13a9ce1f4a8df2bd90baede03cfe", default-features = false }
 airbender-sdk = { git = "https://github.com/matter-labs/airbender-platform", rev = "72cce091dbaa13a9ce1f4a8df2bd90baede03cfe", default-features = false }
 airbender-execution-utils = { git = "https://github.com/matter-labs/zksync-airbender", rev = "73d69b5", default-features = false, package = "execution_utils" }
+airbender-full-statement-verifier = { git = "https://github.com/matter-labs/zksync-airbender", rev = "73d69b5", default-features = false, package = "full_statement_verifier" }
 airbender-riscv-transpiler = { git = "https://github.com/matter-labs/zksync-airbender", rev = "73d69b5", default-features = false, package = "riscv_transpiler" }
 airbender-verifier-common = { git = "https://github.com/matter-labs/zksync-airbender", rev = "73d69b5", default-features = false, package = "verifier_common" }
 
@@ -138,9 +140,10 @@ risc0-zkvm-platform = { version = "2.2.2", default-features = false }
 # SP1 dependencies
 sp1-cuda = "6.1.0"
 sp1-hypercube = "6.1.0"
-sp1-p3-field = { version = "0.3.2-succinct", package = "p3-field" }
+sp1-primitives = "6.1.0"
 sp1-recursion-executor = "6.1.0"
 sp1-sdk = "6.1.0"
+sp1-verifier = "6.1.0"
 sp1-zkvm = { version = "6.1.0", default-features = false }
 
 # ZisK dependencies

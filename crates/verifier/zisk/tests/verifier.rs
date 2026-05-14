@@ -37,6 +37,11 @@ fn test_invalid_program_vk_decode() {
             got: 33
         }
     ));
+
+    let mut non_canonical = PROGRAM_VK.to_vec();
+    non_canonical[..8].copy_from_slice(&u64::MAX.to_le_bytes());
+    let err = ZiskProgramVk::decode_from_slice(&non_canonical).unwrap_err();
+    assert!(matches!(err, Error::NonCanonicalProgramVk));
 }
 
 #[test]

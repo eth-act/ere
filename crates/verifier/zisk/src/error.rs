@@ -12,6 +12,10 @@ pub enum Error {
     #[error("Invalid ProgramVk length, expected: {expected}, got: {got}")]
     InvalidProgramVkLength { expected: usize, got: usize },
 
+    /// Program VK byte slice contains non-canonical field element.
+    #[error("Non-canonical ProgramVk")]
+    NonCanonicalProgramVk,
+
     /// `verify_vadcop_final` returned false.
     #[error("Invalid proof")]
     InvalidProof,

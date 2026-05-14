@@ -1,6 +1,7 @@
 mod error;
 mod program_vk;
 mod proof;
+mod vendor;
 mod verifier;
 
 pub use ere_verifier_core::*;
