@@ -7,6 +7,9 @@ use crate::Error;
 
 const PROGRAM_VK_SIZE: usize = 32;
 
+/// Goldilocks field order (`2^64 - 2^32 + 1`); inner u64s must be strictly less.
+const GOLDILOCKS_ORDER: u64 = 0xFFFF_FFFF_0000_0001;
+
 /// Verifying key that identifies a specific compiled guest program.
 ///
 /// Produced during setup and consumed by [`ZiskVerifier`] together with a
@@ -40,6 +43,9 @@ impl Decode for ZiskProgramVk {
             });
         }
         let words = from_fn(|i| u64::from_le_bytes(from_fn(|j| slice[8 * i + j])));
+        if words.iter().any(|word| *word >= GOLDILOCKS_ORDER) {
+            return Err(Error::NonCanonicalProgramVk);
+        }
         Ok(Self(words))
     }
 }
