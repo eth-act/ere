@@ -65,7 +65,7 @@ macro_rules! test_verifier {
 
                 fn verifier_with_unexpected_program_vk() -> Verifier {
                     let mut vk = PROGRAM_VK.to_vec();
-                    *vk.last_mut().unwrap() ^= 0xFF;
+                    *vk.first_mut().unwrap() ^= 0xFF;
                     Verifier::new(zkVMKind::$zkvm_kind, &vk).unwrap()
                 }
             }
