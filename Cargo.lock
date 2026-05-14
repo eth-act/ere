@@ -4256,6 +4256,7 @@ dependencies = [
  "ere-util-build",
  "ere-verifier-core",
  "execution_utils",
+ "full_statement_verifier",
  "riscv_transpiler",
  "serde",
  "thiserror 2.0.18",

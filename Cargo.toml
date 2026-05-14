@@ -117,6 +117,7 @@ airbender-build = { git = "https://github.com/matter-labs/airbender-platform", r
 airbender-host = { git = "https://github.com/matter-labs/airbender-platform", rev = "72cce091dbaa13a9ce1f4a8df2bd90baede03cfe", default-features = false }
 airbender-sdk = { git = "https://github.com/matter-labs/airbender-platform", rev = "72cce091dbaa13a9ce1f4a8df2bd90baede03cfe", default-features = false }
 airbender-execution-utils = { git = "https://github.com/matter-labs/zksync-airbender", rev = "73d69b5", default-features = false, package = "execution_utils" }
+airbender-full-statement-verifier = { git = "https://github.com/matter-labs/zksync-airbender", rev = "73d69b5", default-features = false, package = "full_statement_verifier" }
 airbender-riscv-transpiler = { git = "https://github.com/matter-labs/zksync-airbender", rev = "73d69b5", default-features = false, package = "riscv_transpiler" }
 airbender-verifier-common = { git = "https://github.com/matter-labs/zksync-airbender", rev = "73d69b5", default-features = false, package = "verifier_common" }
 
