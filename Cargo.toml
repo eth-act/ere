@@ -67,6 +67,7 @@ cargo_metadata = "0.19.0"
 ciborium = { version = "0.2.2", default-features = false }
 ciborium-io = { version = "0.2.2", default-features = false }
 clap = "4.5.42"
+criterion = "0.8"
 digest = { version = "0.10.7", default-features = false }
 eyre = "0.6.12"
 fnv = { version = "1.0.7", default-features = false }
