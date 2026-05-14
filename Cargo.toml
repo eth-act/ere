@@ -140,9 +140,10 @@ risc0-zkvm-platform = { version = "2.2.2", default-features = false }
 # SP1 dependencies
 sp1-cuda = "6.1.0"
 sp1-hypercube = "6.1.0"
-sp1-p3-field = { version = "0.3.2-succinct", package = "p3-field" }
+sp1-primitives = "6.1.0"
 sp1-recursion-executor = "6.1.0"
 sp1-sdk = "6.1.0"
+sp1-verifier = "6.1.0"
 sp1-zkvm = { version = "6.1.0", default-features = false }
 
 # ZisK dependencies

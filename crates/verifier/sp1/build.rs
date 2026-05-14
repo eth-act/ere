@@ -1,5 +1,5 @@
 use ere_util_build::detect_and_generate_name_and_sdk_version;
 
 fn main() {
-    detect_and_generate_name_and_sdk_version("sp1", "ere-verifier-sp1", "sp1-sdk");
+    detect_and_generate_name_and_sdk_version("sp1", "ere-verifier-sp1", "sp1-verifier");
 }

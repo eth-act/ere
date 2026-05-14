@@ -1,38 +1,26 @@
-use core::fmt;
+use std::sync::LazyLock;
 
-use ere_util_tokio::block_on;
 use ere_verifier_core::{PublicValues, zkVMVerifier};
-use sp1_sdk::{LightProver, Prover, SP1Proof as SP1SdkProof};
+use sp1_verifier::compressed::SP1CompressedVerifier;
 
 use crate::{Error, SP1ProgramVk, SP1Proof};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
-/// Verifier bound to a specific compiled guest program.
-///
-/// Implements [`zkVMVerifier`]. Holds the pre-computed [`SP1ProgramVk`]
-/// and a [`LightProver`] used to perform verification via the `sp1-sdk`
-/// verification routine.
-pub struct SP1Verifier {
-    prover: LightProver,
-    program_vk: SP1ProgramVk,
-}
+pub static COMPRESSED_VERIFIER: LazyLock<SP1CompressedVerifier> =
+    LazyLock::new(SP1CompressedVerifier::new);
 
-impl fmt::Debug for SP1Verifier {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("SP1Verifier")
-            .field("program_vk", &self.program_vk)
-            .finish_non_exhaustive()
-    }
+/// Verifier bound to a specific compiled guest program.
+#[derive(Clone, Copy, Debug)]
+pub struct SP1Verifier {
+    program_vk: SP1ProgramVk,
 }
 
 impl SP1Verifier {
     /// Creates a new verifier bound to `program_vk`.
     pub fn new(program_vk: SP1ProgramVk) -> Self {
-        Self {
-            prover: block_on(LightProver::new()),
-            program_vk,
-        }
+        LazyLock::force(&COMPRESSED_VERIFIER);
+        Self { program_vk }
     }
 }
 
@@ -46,13 +34,19 @@ impl zkVMVerifier for SP1Verifier {
     }
 
     fn verify(&self, proof: &SP1Proof) -> Result<PublicValues, Error> {
-        if !matches!(proof.0.proof, SP1SdkProof::Compressed(_)) {
-            return Err(Error::UnexpectedProofKind((&proof.0.proof).into()));
-        }
+        let public_values = proof.0.public_values.as_slice();
 
-        self.prover.verify(&proof.0, &self.program_vk.0, None)?;
+        let Some(proof) = proof.0.proof.try_as_compressed_ref() else {
+            return Err(Error::UnexpectedProofKind(proof.0.mode()));
+        };
 
-        Ok(proof.0.public_values.as_slice().into())
+        COMPRESSED_VERIFIER.verify_compressed_with_public_values(
+            proof,
+            public_values,
+            &self.program_vk.0,
+        )?;
+
+        Ok(public_values.into())
     }
 
     fn name(&self) -> &'static str {
