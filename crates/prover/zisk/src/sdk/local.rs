@@ -1,21 +1,17 @@
 use std::{
-    env, fs,
-    path::PathBuf,
-    process::Command,
+    env,
     time::{Duration, Instant},
 };
 
 use ere_compiler_core::Elf;
-use ere_prover_core::{CommonError, Input, ProverResource};
+use ere_prover_core::{Input, ProverResource};
 use ere_verifier_zisk::{ZiskProgramVk, ZiskProof};
 use once_cell::sync::OnceCell;
 use parking_lot::Mutex;
-use tempfile::tempdir;
 use zisk_common::{ProofKind, io::ZiskStdin};
 use zisk_prover_backend::{
     Asm, AsmOptions, BackendProverOpts, GuestProgram, ProverClientBuilder, ZiskProver,
 };
-use zisk_rom_setup::get_elf_bin_verkey_file_path_with_hash;
 
 use crate::{error::Error, sdk::framed_stdin};
 
@@ -68,7 +64,11 @@ impl LocalProver {
         let prover = LOCAL_PROVER.get_or_try_init(|| build_prover(&config, resource))?;
 
         let program = GuestProgram::from_bytes("guest", elf.0);
-        let program_vk = program_vk(&program)?;
+        let program_vk = prover
+            .prover
+            .program_vk(&program, false)
+            .map_err(Error::ComputeProgramVk)?;
+        let program_vk = ZiskProgramVk::try_from(program_vk.vk.as_slice())?;
 
         if config.setup_on_init {
             prover.setup(&program).run().map_err(Error::Setup)?;
@@ -146,39 +146,4 @@ fn build_prover(config: &Config, resource: &ProverResource) -> Result<ZiskProver
         .with_prover_options(opts)
         .build()
         .map_err(Error::BuildProver)
-}
-
-fn program_vk(program: &GuestProgram) -> Result<ZiskProgramVk, Error> {
-    let tempdir = tempdir().map_err(CommonError::tempdir)?;
-    let elf_path = tempdir.path().join(program.hash());
-    fs::write(&elf_path, program.elf())
-        .map_err(|err| CommonError::write_file("elf", &elf_path, err))?;
-
-    let mut cmd = Command::new("cargo-zisk");
-    let output = cmd
-        .arg("program-setup")
-        .arg("--elf")
-        .arg(&elf_path)
-        .output()
-        .map_err(|err| CommonError::command(&cmd, err))?;
-
-    if !output.status.success() {
-        Err(CommonError::command_exit_non_zero(
-            &cmd,
-            output.status,
-            Some(&output),
-        ))?
-    }
-
-    let verkey_path =
-        get_elf_bin_verkey_file_path_with_hash(program.hash(), &cache_dir()).expect("infallible");
-    let verkey =
-        fs::read(&verkey_path).map_err(|err| CommonError::read_file("verkey", verkey_path, err))?;
-    Ok(ZiskProgramVk::try_from(&verkey)?)
-}
-
-fn cache_dir() -> PathBuf {
-    PathBuf::from(env::var("HOME").expect("env `$HOME` should be set"))
-        .join(".zisk")
-        .join("cache")
 }

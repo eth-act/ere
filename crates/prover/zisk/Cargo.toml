@@ -9,7 +9,6 @@ license.workspace = true
 anyhow.workspace = true
 once_cell.workspace = true
 parking_lot.workspace = true
-tempfile.workspace = true
 thiserror.workspace = true
 tokio = { workspace = true, features = ["time"] }
 
@@ -17,7 +16,6 @@ tokio = { workspace = true, features = ["time"] }
 zisk-common.workspace = true
 zisk-core.workspace = true
 zisk-prover-backend.workspace = true
-zisk-rom-setup.workspace = true
 ziskemu.workspace = true
 
 # Local dependencies
@@ -28,6 +26,7 @@ ere-util-tokio.workspace = true
 ere-verifier-zisk.workspace = true
 
 [dev-dependencies]
+tempfile.workspace = true
 ere-compiler-zisk.workspace = true
 ere-util-test = { workspace = true, features = ["host"] }
 

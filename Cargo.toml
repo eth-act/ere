@@ -153,7 +153,6 @@ proofman-verifier = { git = "https://github.com/0xPolygonHermez/pil2-proofman.gi
 zisk-common = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.18.0" }
 zisk-core = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.18.0" }
 zisk-prover-backend = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.18.0" }
-zisk-rom-setup = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.18.0", package = "rom-setup" }
 ziskemu = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.18.0" }
 zisk-verifier = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.18.0" }
 ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.18.0", default-features = false }

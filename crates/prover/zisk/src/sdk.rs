@@ -146,3 +146,49 @@ fn panic_msg(err: Box<dyn Any + Send + 'static>) -> String {
         .or_else(|| err.downcast_ref::<&'static str>().map(ToString::to_string))
         .unwrap_or_else(|| "unknown panic msg".to_string())
 }
+
+#[cfg(test)]
+mod tests {
+    use std::{fs, process::Command};
+
+    use ere_prover_core::zkVMProver;
+    use ere_verifier_zisk::ZiskProgramVk;
+    use tempfile::tempdir;
+
+    use crate::prover::tests::{basic_elf, basic_elf_zkvm};
+
+    #[test]
+    fn program_vk_matches_cargo_zisk_program_setup() {
+        let program_vk = {
+            let tempdir = tempdir().unwrap();
+            let elf_path = tempdir.path().join("guest.elf");
+            fs::write(&elf_path, &basic_elf().0).unwrap();
+
+            let status = Command::new("cargo-zisk")
+                .arg("program-setup")
+                .arg("-e")
+                .arg(&elf_path)
+                .arg("-o")
+                .arg(tempdir.path())
+                .status()
+                .unwrap();
+            assert!(status.success());
+
+            let verkey_paths = fs::read_dir(tempdir.path())
+                .unwrap()
+                .flatten()
+                .map(|entry| entry.path())
+                .filter(|path| {
+                    path.file_name()
+                        .and_then(|name| name.to_str())
+                        .is_some_and(|name| name.ends_with(".verkey.bin"))
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(verkey_paths.len(), 1);
+
+            ZiskProgramVk::try_from(fs::read(&verkey_paths[0]).unwrap().as_slice()).unwrap()
+        };
+
+        assert_eq!(*basic_elf_zkvm().program_vk(), program_vk);
+    }
+}
