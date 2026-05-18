@@ -81,7 +81,7 @@ impl zkVMProver for AirbenderProver {
 
     fn execute(&self, input: &Input) -> Result<(PublicValues, ProgramExecutionReport), Error> {
         if input.proofs.is_some() {
-            return Err(CommonError::unsupported_input("no dedicated proofs stream"))?;
+            Err(CommonError::unsupported_input("no dedicated proofs stream"))?
         }
 
         let input_words = input_to_words(input.stdin());
@@ -136,7 +136,7 @@ impl zkVMProver for AirbenderProver {
         }
 
         if input.proofs.is_some() {
-            return Err(CommonError::unsupported_input("no dedicated proofs stream"))?;
+            Err(CommonError::unsupported_input("no dedicated proofs stream"))?
         }
 
         let gpu_prover = self.gpu_prover.as_ref().unwrap();

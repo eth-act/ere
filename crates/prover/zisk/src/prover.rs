@@ -32,7 +32,7 @@ impl zkVMProver for ZiskProver {
 
     fn execute(&self, input: &Input) -> Result<(PublicValues, ProgramExecutionReport), Error> {
         if input.proofs.is_some() {
-            return Err(CommonError::unsupported_input("no dedicated proofs stream"))?;
+            Err(CommonError::unsupported_input("no dedicated proofs stream"))?
         }
 
         let start = Instant::now();
@@ -54,7 +54,7 @@ impl zkVMProver for ZiskProver {
         input: &Input,
     ) -> Result<(PublicValues, ZiskProof, ProgramProvingReport), Error> {
         if input.proofs.is_some() {
-            return Err(CommonError::unsupported_input("no dedicated proofs stream"))?;
+            Err(CommonError::unsupported_input("no dedicated proofs stream"))?
         }
 
         let (public_values, proof, proving_time) = self.sdk.prove(input)?;
