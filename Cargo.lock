@@ -4086,6 +4086,7 @@ version = "0.9.1"
 dependencies = [
  "ere-platform-core",
  "ziskos",
+ "zkvm-interface 0.18.0 (git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0)",
 ]
 
 [[package]]

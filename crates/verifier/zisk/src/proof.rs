@@ -9,7 +9,10 @@ pub const PROGRAM_VK_WORDS: usize = PROGRAM_VK_LEN;
 pub const PUBLIC_VALUES_WORDS: usize = ZISK_PUBLICS;
 pub const PUBLIC_VALUES_BYTES: usize = 4 * PUBLIC_VALUES_WORDS;
 
-/// Zisk VadcopFinalProof proof in u64 words.
+/// A proof produced by the host prover that bundles everything needed for
+/// verification.
+///
+/// Wraps [`VadcopFinalProof`], serialized via bincode legacy.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct ZiskProof(pub VadcopFinalProof);

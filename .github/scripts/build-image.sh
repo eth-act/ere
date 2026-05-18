@@ -13,6 +13,7 @@ BUILD_CLUSTER=false
 CUDA=false
 CUDA_ARCHS=""
 RUSTFLAGS=""
+GITHUB_TOKEN=""
 
 usage() {
     echo "Usage: $0 --zkvm <zkvm> --tag <tag> [--base] [--compiler] [--server] [--cluster] [--registry <registry>] [--cuda] [--cuda-archs <archs>] [--rustflags <flags>]"
