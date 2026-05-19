@@ -31,8 +31,10 @@ ensure_tool_installed "rustup" "for managing Rust toolchains (ZisK installs its 
 ensure_tool_installed "cargo" "to pre-build lib-c"
 
 # Step 1: Download and run the script that installs the ziskup binary itself.
+# Export USE_GPU to download pre-built cargo-zisk and zisk-worker with or without cuda support.
 # Export SETUP_KEY=proving-no-consttree to download proving key without doing setup.
-export ZISK_VERSION="0.16.1"
+export ZISK_VERSION="0.18.0"
+export USE_GPU=$([ -n "$CUDA" ] && echo true || echo false)
 export SETUP_KEY=${SETUP_KEY:=proving-no-consttree}
 curl "https://raw.githubusercontent.com/0xPolygonHermez/zisk/v$ZISK_VERSION/ziskup/ziskup" | bash
 unset SETUP_KEY
@@ -47,12 +49,6 @@ unset SETUP_KEY
 # re-used as long as the `ziskos` has the same version.
 WORKSPACE=$(mktemp -d)
 cargo init "$WORKSPACE" --name build-lib-c
-cargo add lib-c --git https://github.com/han0110/zisk.git --branch "patch/v$ZISK_VERSION" --manifest-path "$WORKSPACE/Cargo.toml"
+cargo add lib-c --git https://github.com/0xPolygonHermez/zisk.git --tag "v$ZISK_VERSION" --manifest-path "$WORKSPACE/Cargo.toml"
 cargo build --manifest-path "$WORKSPACE/Cargo.toml"
 rm -rf "$WORKSPACE"
-
-# FIXME: Remove this step when upgrading to `v0.17.0`
-# Step 3: Rebuild `ziskemu` using the patched repo
-cargo install --git https://github.com/han0110/zisk.git --branch "patch/v$ZISK_VERSION" --locked ziskemu
-CARGO_BIN="${CARGO_HOME:-$HOME/.cargo}/bin"
-mv $CARGO_BIN/ziskemu $HOME/.zisk/bin/ziskemu

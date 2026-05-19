@@ -1,18 +1,11 @@
-use bytemuck::cast_slice;
 use ere_verifier_core::{PublicValues, zkVMVerifier};
-use proofman_verifier::verify_vadcop_final;
+use proofman_verifier::verify_vadcop_final_compressed_u64;
 
-use crate::{Error, ZiskProgramVk, ZiskProof};
+use crate::{Error, ZiskProgramVk, ZiskProof, verifier::vk::VADCOP_FINAL_COMPRESSED_VK};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
-/// Verifying key of the aggregation proof.
-const VADCOP_FINAL_VK: [u64; 4] = [
-    9211010158316595036,
-    7055235338110277438,
-    2391371252028311145,
-    10691781997660262077,
-];
+mod vk;
 
 /// Verifier bound to a specific compiled guest program.
 ///
@@ -40,13 +33,18 @@ impl zkVMVerifier for ZiskVerifier {
     }
 
     fn verify(&self, proof: &ZiskProof) -> Result<PublicValues, Self::Error> {
-        ensure_program_vk_matches(self.program_vk, proof.program_vk())?;
+        let (program_vk, public_values) = proof.program_vk_and_public_values()?;
 
-        if !verify_vadcop_final(&proof.vadcop_final_proof()?, cast_slice(&VADCOP_FINAL_VK)) {
+        ensure_program_vk_matches(self.program_vk, program_vk)?;
+
+        if !verify_vadcop_final_compressed_u64(
+            &proof.0.proof_with_publics(),
+            &VADCOP_FINAL_COMPRESSED_VK,
+        ) {
             return Err(Error::InvalidProof);
         }
 
-        Ok(proof.public_values.as_slice().into())
+        Ok(public_values)
     }
 
     fn name(&self) -> &'static str {

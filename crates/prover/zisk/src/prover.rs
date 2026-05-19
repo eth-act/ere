@@ -6,7 +6,6 @@ use ere_prover_core::{
     zkVMProver,
 };
 use ere_verifier_zisk::{ZiskProof, ZiskVerifier};
-use mpi as _; // Import symbols referenced by starks_api.cpp
 
 use crate::{error::Error, sdk::ZiskSdk};
 
@@ -17,7 +16,7 @@ pub struct ZiskProver {
 
 impl ZiskProver {
     pub fn new(elf: Elf, resource: ProverResource) -> Result<Self, Error> {
-        let sdk = ZiskSdk::new(elf.0, resource)?;
+        let sdk = ZiskSdk::new(elf, resource)?;
         let verifier = ZiskVerifier::new(sdk.program_vk());
         Ok(Self { sdk, verifier })
     }
@@ -33,11 +32,11 @@ impl zkVMProver for ZiskProver {
 
     fn execute(&self, input: &Input) -> Result<(PublicValues, ProgramExecutionReport), Error> {
         if input.proofs.is_some() {
-            return Err(CommonError::unsupported_input("no dedicated proofs stream"))?;
+            Err(CommonError::unsupported_input("no dedicated proofs stream"))?
         }
 
         let start = Instant::now();
-        let (public_values, total_num_cycles) = self.sdk.execute(input.stdin())?;
+        let (public_values, total_num_cycles) = self.sdk.execute(input)?;
         let execution_duration = start.elapsed();
 
         Ok((
@@ -55,7 +54,7 @@ impl zkVMProver for ZiskProver {
         input: &Input,
     ) -> Result<(PublicValues, ZiskProof, ProgramProvingReport), Error> {
         if input.proofs.is_some() {
-            return Err(CommonError::unsupported_input("no dedicated proofs stream"))?;
+            Err(CommonError::unsupported_input("no dedicated proofs stream"))?
         }
 
         let (public_values, proof, proving_time) = self.sdk.prove(input)?;
@@ -70,7 +69,7 @@ impl zkVMProver for ZiskProver {
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use std::sync::{Mutex, OnceLock};
+    use std::sync::{Mutex, MutexGuard, OnceLock};
 
     use ere_compiler_core::{Compiler, Elf};
     use ere_compiler_zisk::ZiskRustRv64imaCustomized;
@@ -83,8 +82,6 @@ pub(crate) mod tests {
 
     use crate::prover::ZiskProver;
 
-    static PROVE_LOCK: Mutex<()> = Mutex::new(());
-
     pub(crate) fn basic_elf() -> Elf {
         static ELF: OnceLock<Elf> = OnceLock::new();
         ELF.get_or_init(|| {
@@ -95,10 +92,23 @@ pub(crate) mod tests {
         .clone()
     }
 
+    pub(crate) fn basic_elf_zkvm() -> MutexGuard<'static, ZiskProver> {
+        static ZKVM: OnceLock<Mutex<ZiskProver>> = OnceLock::new();
+        ZKVM.get_or_init(|| {
+            let resource = if cfg!(feature = "cuda") {
+                ProverResource::Gpu
+            } else {
+                ProverResource::Cpu
+            };
+            Mutex::new(ZiskProver::new(basic_elf(), resource).unwrap())
+        })
+        .lock()
+        .unwrap()
+    }
+
     #[test]
     fn test_execute() {
-        let elf = basic_elf();
-        let zkvm = ZiskProver::new(elf, ProverResource::Cpu).unwrap();
+        let zkvm = &*basic_elf_zkvm();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_execute(&zkvm, &test_case);
@@ -106,8 +116,7 @@ pub(crate) mod tests {
 
     #[test]
     fn test_execute_invalid_test_case() {
-        let elf = basic_elf();
-        let zkvm = ZiskProver::new(elf, ProverResource::Cpu).unwrap();
+        let zkvm = &*basic_elf_zkvm();
 
         for input in [
             Input::new(),
@@ -117,57 +126,17 @@ pub(crate) mod tests {
         }
     }
 
-    #[cfg(not(feature = "cuda"))]
     #[test]
     fn test_prove() {
-        let _guard = PROVE_LOCK.lock().unwrap();
-
-        let elf = basic_elf();
-        let zkvm = ZiskProver::new(elf, ProverResource::Cpu).unwrap();
+        let zkvm = &*basic_elf_zkvm();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
     }
 
-    #[cfg(not(feature = "cuda"))]
     #[test]
     fn test_prove_invalid_test_case() {
-        let _guard = PROVE_LOCK.lock().unwrap();
-
-        let elf = basic_elf();
-        let zkvm = ZiskProver::new(elf, ProverResource::Cpu).unwrap();
-
-        for input in [
-            Input::new(),
-            BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
-        ] {
-            assert!(zkvm.prove(&input).is_err());
-        }
-
-        // Should be able to recover
-        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
-        run_zkvm_prove(&zkvm, &test_case);
-    }
-
-    #[cfg(feature = "cuda")]
-    #[test]
-    fn test_prove_gpu() {
-        let _guard = PROVE_LOCK.lock().unwrap();
-
-        let elf = basic_elf();
-        let zkvm = ZiskProver::new(elf, ProverResource::Gpu).unwrap();
-
-        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
-        run_zkvm_prove(&zkvm, &test_case);
-    }
-
-    #[cfg(feature = "cuda")]
-    #[test]
-    fn test_prove_invalid_test_case_gpu() {
-        let _guard = PROVE_LOCK.lock().unwrap();
-
-        let elf = basic_elf();
-        let zkvm = ZiskProver::new(elf, ProverResource::Gpu).unwrap();
+        let zkvm = &*basic_elf_zkvm();
 
         for input in [
             Input::new(),
@@ -188,13 +157,11 @@ pub(crate) mod tests {
         let zkvm = ZiskProver::new(
             elf,
             ProverResource::Cluster(RemoteProverConfig {
-                endpoint: "http://127.0.0.1:50051".to_string(),
+                endpoint: "http://127.0.0.1:7000".to_string(),
                 ..Default::default()
             }),
         )
         .unwrap();
-
-        let _guard = PROVE_LOCK.lock().unwrap();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);

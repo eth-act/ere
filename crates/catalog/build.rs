@@ -40,7 +40,7 @@ fn generate_zkvm_sdk_version_impl() {
         ("ere-verifier-openvm", "openvm-sdk"),
         ("ere-verifier-risc0", "risc0-zkvm"),
         ("ere-verifier-sp1", "sp1-verifier"),
-        ("ere-verifier-zisk", "proofman-verifier"),
+        ("ere-verifier-zisk", "zisk-verifier"),
     ]
     .map(|(c, d)| detect_dep_version(c, d));
 

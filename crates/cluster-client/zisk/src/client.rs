@@ -1,40 +1,45 @@
 //! Remote ZisK cluster proving.
 
-use std::time::Duration;
+use core::{iter, time::Duration};
 
-use ere_prover_core::{Input, PublicValues, RemoteProverConfig, zkVMVerifier};
-use ere_util_tokio::block_on;
+use ere_compiler_core::Elf;
+use ere_prover_core::{Input, RemoteProverConfig, zkVMVerifier};
 use ere_verifier_zisk::{
-    PUBLIC_VALUES_SIZE, ZiskProgramVk, ZiskProof, ZiskVerifier, ensure_program_vk_matches,
+    PROGRAM_VK_WORDS, PUBLIC_VALUES_BYTES, VadcopFinalProof, ZiskProgramVk, ZiskProof, ZiskVerifier,
 };
-use futures_util::StreamExt;
+use serde::Deserialize;
+use tokio::time::Instant;
 use tonic::transport::Channel;
-use tracing::debug;
 
 use crate::{
     api::{
-        ErrorResponse, HintsMode, InputMode, LaunchProofRequest, ProofStatusType,
-        SubscribeToProofRequest, SystemStatusRequest, launch_proof_response,
-        system_status_response, zisk_distributed_api_client::ZiskDistributedApiClient,
+        CancelJobRequest, InputChunk, InputKind, JobKind, JobKindResponse, JobRequestMessage,
+        ProofKind, ProveRequest, RegisterGuestProgramRequest, SetupRequest, WaitJobResultRequest,
+        input_kind, job_kind, job_kind_response, job_status,
+        zisk_coordinator_api_client::ZiskCoordinatorApiClient,
     },
     error::Error,
 };
 
 /// Wrapper for the ZisK cluster client.
-///
-/// Connects to the ZisK cluster via gRPC and submits proof jobs.
 #[derive(Debug)]
 pub struct ZiskClusterClient {
-    client: ZiskDistributedApiClient<Channel>,
+    client: ZiskCoordinatorApiClient<Channel>,
+    hash_id: String,
     verifier: ZiskVerifier,
 }
 
 impl ZiskClusterClient {
-    /// Create a new `ZiskClusterClient` that connects to the cluster.
-    pub fn new(config: &RemoteProverConfig, program_vk: ZiskProgramVk) -> Result<Self, Error> {
-        let client = block_on(connect(&config.endpoint))?;
+    /// Connect to the coordinator and run setup for the `elf`.
+    pub async fn new(config: &RemoteProverConfig, elf: Elf) -> Result<Self, Error> {
+        let mut client = ZiskCoordinatorApiClient::connect(config.endpoint.clone()).await?;
+        let (hash_id, program_vk) = setup(&mut client, elf).await?;
         let verifier = ZiskVerifier::new(program_vk);
-        Ok(Self { client, verifier })
+        Ok(Self {
+            client,
+            hash_id,
+            verifier,
+        })
     }
 
     /// Returns a reference to the verifier.
@@ -42,132 +47,160 @@ impl ZiskClusterClient {
         &self.verifier
     }
 
-    /// Send proof request to cluster and wait for completion.
-    ///
-    /// Returns the proof with public values and proving time reported by the cluster.
-    pub async fn prove(&self, input: &Input) -> Result<(ZiskProof, Duration), Error> {
+    /// Returns the program vk.
+    pub fn program_vk(&self) -> ZiskProgramVk {
+        *self.verifier.program_vk()
+    }
+
+    /// Submits a prove job and returns its `job_id` immediately, without waiting for completion.
+    pub async fn create_prove_job(&self, input: &Input) -> Result<String, Error> {
         let mut client = self.client.clone();
-
-        // Check system status to get available compute capacity
-
-        debug!("Checking system status...");
-
-        let status_response = client.system_status(SystemStatusRequest {}).await?;
-
-        let compute_capacity = match status_response.into_inner().result {
-            Some(system_status_response::Result::Status(status)) => {
-                debug!(
-                    total_workers = status.total_workers,
-                    compute_capacity = status.compute_capacity,
-                    idle_workers = status.idle_workers,
-                    busy_workers = status.busy_workers,
-                    active_jobs = status.active_jobs,
-                    "System status",
-                );
-
-                if status.total_workers == 0 || status.compute_capacity == 0 {
-                    return Err(cluster_error("No worker available in the cluster"));
-                }
-                if status.active_jobs != 0 {
-                    return Err(cluster_error("Cluster is busy with another proof job"));
-                }
-
-                status.compute_capacity
-            }
-            Some(system_status_response::Result::Error(res)) => {
-                return Err(cluster_error_from_response("System status error", res));
-            }
-            None => {
-                return Err(cluster_error("Received empty system status response"));
-            }
+        let job = JobKind {
+            kind: Some(job_kind::Kind::Prove(ProveRequest {
+                hash_id: self.hash_id.clone(),
+                input: Some(InputKind {
+                    kind: Some(input_kind::Kind::Inline(InputChunk {
+                        data: framed_stdin(input.stdin()),
+                    })),
+                }),
+                proof_dest: ProofKind::StarkMinimal as i32,
+                proof_timeout: None,
+                hints: None,
+            })),
         };
-
-        // Launch proof
-
-        let data_id = uuid::Uuid::new_v4().to_string();
-
-        debug!(data_id = data_id, "Launching proof...");
-
-        let launch_request = LaunchProofRequest {
-            data_id,
-            compute_capacity,
-            minimal_compute_capacity: compute_capacity,
-            inputs_mode: InputMode::Data.into(),
-            inputs_uri: None,
-            input_data: Some(framed_stdin(input.stdin())),
-            hints_mode: HintsMode::None.into(),
-            hints_uri: None,
-            simulated_node: None,
+        let req = JobRequestMessage {
+            job_kind: Some(job),
         };
+        let job_id = client.job_request(req).await?.into_inner().job_id;
+        Ok(job_id)
+    }
 
-        let launch_response = client.launch_proof(launch_request).await?;
-
-        let job_id = match launch_response.into_inner().result {
-            Some(launch_proof_response::Result::JobId(job_id)) => {
-                debug!(job_id = job_id, "Proof launched successfully");
-
-                job_id
-            }
-            Some(launch_proof_response::Result::Error(res)) => {
-                return Err(cluster_error_from_response("Launch proof error", res));
-            }
-            None => {
-                return Err(cluster_error("Received empty launch proof response"));
-            }
+    /// Waits for a prove job to reach a terminal state and returns the proof along with the
+    /// self-reported proving time.
+    pub async fn wait_prove_job(&self, job_id: &str) -> Result<(ZiskProof, Duration), Error> {
+        let mut client = self.client.clone();
+        let resp = match wait_job(&mut client, job_id).await?.kind {
+            Some(job_kind_response::Kind::Prove(resp)) => resp,
+            _ => Err(Error::MissingField("kind::prove"))?,
         };
-
-        // Subscribe to proof status updates
-
-        debug!(job_id = job_id, "Subscribing to proof status updates...");
-
-        let stream = client
-            .subscribe_to_proof(SubscribeToProofRequest { job_id })
-            .await?;
-
-        // Wait for proof status update (completion or failure)
-
-        debug!("Waiting for proof status update (completion or failure)...");
-
-        let Some(update) = stream.into_inner().next().await else {
-            return Err(cluster_error("Stream ended without completion status"));
-        };
-
-        let update = update.map_err(cluster_error)?;
-
-        let proof = match ProofStatusType::try_from(update.status) {
-            Ok(ProofStatusType::ProofStatusCompleted) => match update.final_proof {
-                Some(proof) => Ok(proof),
-                None => Err(cluster_error("Missing final proof")),
-            },
-            Ok(ProofStatusType::ProofStatusFailed) => Err(update
-                .error
-                .map(|res| cluster_error_from_response("Proof generation error", res))
-                .unwrap_or_else(|| cluster_error("Unknown error"))),
-            Err(err) => Err(cluster_error(err)),
-        }?;
-
-        let proof = parse_proof(&proof.values)?;
-        let proving_time = Duration::from_millis(update.duration_ms);
-
-        debug!(?proving_time, "Proof generated successfully");
-
-        ensure_program_vk_matches(*self.verifier.program_vk(), proof.program_vk)?;
-
+        let proof = parse_proof(&resp.proof.ok_or(Error::MissingField("proof"))?.data)?;
+        let proving_time = Duration::from_nanos(
+            resp.stats
+                .ok_or(Error::MissingField("stats"))?
+                .duration_nanos,
+        );
         Ok((proof, proving_time))
     }
 
-    /// Verify `proof` against the [`ZiskProgramVk`] this client was constructed with.
-    pub fn verify(&self, proof: &ZiskProof) -> Result<PublicValues, Error> {
-        Ok(self.verifier.verify(proof)?)
+    /// Cancels a prove job.
+    ///
+    /// Returns `false` if the job is already in a terminal state.
+    pub async fn cancel_prove_job(&self, job_id: &str) -> Result<bool, Error> {
+        let mut client = self.client.clone();
+        let req = CancelJobRequest {
+            job_id: job_id.to_string(),
+        };
+        let cancelled = client.cancel_job(req).await?.into_inner().cancelled;
+        Ok(cancelled)
+    }
+
+    /// Submit a prove job, wait up to `timeout` for completion, cancel the job on timeout.
+    ///
+    /// Returns `Error::ProveTimeout` if the deadline expires before the job terminates.
+    pub async fn prove(
+        &self,
+        input: &Input,
+        deadline: Option<Instant>,
+    ) -> Result<(ZiskProof, Duration), Error> {
+        let job_id = self.create_prove_job(input).await?;
+
+        match deadline {
+            Some(deadline) => {
+                match tokio::time::timeout_at(deadline, self.wait_prove_job(&job_id)).await {
+                    Ok(result) => result,
+                    Err(_) => {
+                        let _ = self.cancel_prove_job(&job_id).await;
+                        Err(Error::ProveTimeout { job_id })
+                    }
+                }
+            }
+            _ => self.wait_prove_job(&job_id).await,
+        }
     }
 }
 
-/// Connect to the ZisK cluster at the given gRPC endpoint.
-async fn connect(endpoint: &str) -> Result<ZiskDistributedApiClient<Channel>, Error> {
-    let channel = Channel::from_shared(endpoint.to_string())?
-        .connect()
-        .await?;
-    Ok(ZiskDistributedApiClient::new(channel))
+async fn setup(
+    client: &mut ZiskCoordinatorApiClient<Channel>,
+    elf: Elf,
+) -> Result<(String, ZiskProgramVk), Error> {
+    /// Timeout for setup job.
+    const TIMEOUT: Duration = Duration::from_secs(600);
+
+    let hash_id = client
+        .register_guest_program(RegisterGuestProgramRequest { zisk_elf: elf.0 })
+        .await?
+        .into_inner()
+        .hash_id;
+
+    let job = JobKind {
+        kind: Some(job_kind::Kind::Setup(SetupRequest {
+            hash_id: hash_id.clone(),
+            with_hints: false,
+            program_name: String::new(),
+        })),
+    };
+    let req = JobRequestMessage {
+        job_kind: Some(job),
+    };
+    let job_id = client.job_request(req).await?.into_inner().job_id;
+
+    let resp = match tokio::time::timeout(TIMEOUT, wait_job(client, &job_id)).await {
+        Ok(resp) => match resp?.kind {
+            Some(job_kind_response::Kind::Setup(resp)) => resp,
+            _ => Err(Error::MissingField("kind::setup"))?,
+        },
+        Err(_) => Err(Error::SetupTimeout { job_id })?,
+    };
+    let program_vk = ZiskProgramVk::try_from(resp.vk.as_slice())?;
+    Ok((hash_id, program_vk))
+}
+
+async fn wait_job(
+    client: &mut ZiskCoordinatorApiClient<Channel>,
+    job_id: &str,
+) -> Result<JobKindResponse, Error> {
+    /// Server-side hold per `WaitJobResult`.
+    const TIMEOUT_SECS: u32 = 5;
+
+    let req = WaitJobResultRequest {
+        job_id: job_id.to_string(),
+        timeout_seconds: Some(TIMEOUT_SECS),
+    };
+    loop {
+        let resp = client.wait_job_result(req.clone()).await?.into_inner();
+
+        let status = resp
+            .job_status
+            .and_then(|s| s.status)
+            .ok_or(Error::MissingField("job_status"))?;
+        match status {
+            job_status::Status::Completed(_) => {
+                return resp.result.ok_or(Error::MissingField("result"));
+            }
+            job_status::Status::Failed(failed) => {
+                return Err(Error::JobFailed {
+                    job_id: job_id.to_string(),
+                    reason: format!("{failed:?}"),
+                });
+            }
+            job_status::Status::Cancelled(_) => {
+                return Err(Error::JobCancelled(job_id.to_string()));
+            }
+            job_status::Status::Queued(_)
+            | job_status::Status::Running(_)
+            | job_status::Status::WaitingForInput(_) => continue,
+        }
+    }
 }
 
 /// Returns `data` with a LE u64 length prefix and padding to multiple of 8.
@@ -182,59 +215,66 @@ fn framed_stdin(data: &[u8]) -> Vec<u8> {
     buf
 }
 
-fn parse_proof(values: &[u64]) -> Result<ZiskProof, Error> {
-    const PROGRAM_VK_WORDS: usize = 4;
-    const PUBLIC_VALUES_WORDS: usize = PUBLIC_VALUES_SIZE / 4;
-    const N_PUBLICS: usize = PROGRAM_VK_WORDS + PUBLIC_VALUES_WORDS;
-
-    let n_publics = values
-        .first()
-        .copied()
-        .ok_or_else(|| Error::InvalidProofFormat("proof values are empty".to_string()))?
-        as usize;
-    if n_publics != N_PUBLICS {
-        return Err(Error::InvalidProofFormat(format!(
-            "unexpected publics word count: expected {N_PUBLICS}, got {n_publics}"
-        )));
-    }
-    if values.len() < 1 + n_publics {
-        return Err(Error::InvalidProofFormat(format!(
-            "proof values too short: {} words",
-            values.len()
-        )));
+fn parse_proof(bytes: &[u8]) -> Result<ZiskProof, Error> {
+    #[derive(Deserialize)]
+    enum ProofBody {
+        Vadcop {
+            proof: Vec<u64>,
+            _zisk_vk: Vec<u64>,
+            minimal: bool,
+        },
+        Plonk,
     }
 
-    let (program_vk, public_values_words) = values[1..1 + N_PUBLICS].split_at(PROGRAM_VK_WORDS);
-    let proof = values[1 + N_PUBLICS..].to_vec();
+    #[derive(Deserialize)]
+    struct PublicValues {
+        data: Vec<u8>,
+    }
 
-    let program_vk = ZiskProgramVk(program_vk.try_into().unwrap());
+    #[derive(Deserialize)]
+    struct ProgramVK {
+        vk: Vec<u64>,
+    }
 
-    let mut public_values = [0u8; PUBLIC_VALUES_SIZE];
-    for (chunk, word) in public_values.chunks_exact_mut(4).zip(public_values_words) {
-        let word = u32::try_from(*word).map_err(|_| {
-            Error::InvalidProofFormat(format!("public value word does not fit in u32: {word}"))
+    #[derive(Deserialize)]
+    struct Proof {
+        body: ProofBody,
+        publics: PublicValues,
+        program_vk: ProgramVK,
+    }
+
+    let (proof, _): (Proof, _) =
+        bincode::serde::decode_from_slice(bytes, bincode::config::standard())?;
+
+    if proof.program_vk.vk.len() != PROGRAM_VK_WORDS {
+        Err(ere_verifier_zisk::Error::InvalidProgramVkLength {
+            expected: PROGRAM_VK_WORDS * 8,
+            got: proof.program_vk.vk.len() * 8,
         })?;
-        chunk.copy_from_slice(&word.to_le_bytes());
-    }
+    };
+    if proof.publics.data.len() != PUBLIC_VALUES_BYTES {
+        Err(ere_verifier_zisk::Error::InvalidPublicValueLength {
+            expected: PUBLIC_VALUES_BYTES,
+            got: proof.publics.data.len(),
+        })?;
+    };
 
-    Ok(ZiskProof {
+    let public_values = {
+        let to_u64 = |bytes: &[u8]| u32::from_le_bytes(bytes.try_into().unwrap()) as u64;
+        iter::empty()
+            .chain(proof.program_vk.vk)
+            .chain(proof.publics.data.chunks_exact(4).map(to_u64))
+            .collect()
+    };
+
+    let ProofBody::Vadcop {
         proof,
-        program_vk,
-        public_values,
-    })
-}
+        minimal: true,
+        ..
+    } = proof.body
+    else {
+        return Err(ere_verifier_zisk::Error::InvalidVadcopFinalProofKind)?;
+    };
 
-/// Returns `Error::Cluster`.
-fn cluster_error(s: impl ToString) -> Error {
-    Error::Cluster(s.to_string())
-}
-
-/// Returns `Error::Cluster` formatted with error code and message.
-fn cluster_error_from_response(s: impl ToString, res: ErrorResponse) -> Error {
-    Error::Cluster(format!(
-        "{}, code: {}, message: {}",
-        s.to_string(),
-        res.code,
-        res.message
-    ))
+    Ok(ZiskProof(VadcopFinalProof::new(proof, public_values, true)))
 }

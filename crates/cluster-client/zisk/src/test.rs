@@ -15,12 +15,12 @@ fn api_generation() {
         .build_client(true)
         .out_dir(tempdir.path())
         .compile_protos(
-            &[dir.join("proto").join("zisk_distributed_api.proto")],
+            &[dir.join("proto").join("zisk_coordinator_api.proto")],
             &[dir.join("proto")],
         )
         .unwrap();
 
-    let latest = tempdir.path().join("zisk.distributed.api.v1.rs");
+    let latest = tempdir.path().join("zisk.coordinator.v1.rs");
     let current = dir.join("src").join("api.rs");
 
     // If it's in CI env, don't overwrite but only check if it's up-to-date.

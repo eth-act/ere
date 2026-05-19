@@ -1,9 +1,9 @@
+#![allow(unexpected_cfgs)]
+
 use core::ops::Deref;
 
 use ere_platform_core::{LengthPrefixedStdin, Platform};
 use ziskos::ziskos_definitions::ziskos_config::UART_ADDR;
-
-use crate::profile::{SCOPE_REGISTRY, dispatch_profile};
 
 /// ZisK [`Platform`] implementation.
 ///
@@ -22,7 +22,7 @@ impl Platform for ZiskPlatform {
             "Maximum output size is 256 bytes, got {}",
             output.len()
         );
-        ziskos::io::write(output);
+        ziskos::io::commit_slice(output);
     }
 
     fn print(message: &str) {
@@ -34,13 +34,29 @@ impl Platform for ZiskPlatform {
         }
     }
 
-    fn cycle_scope_start(name: &str) {
-        let tag = SCOPE_REGISTRY.get_or_assign_tag(name);
-        dispatch_profile!(start, tag);
+    fn cycle_scope_start(_name: &str) {
+        // NOTE: If the profile syscall is emitted, the ELF can NOT be proved by ASM prover.
+        #[cfg(all(
+            feature = "cycle-scope",
+            all(target_os = "zkvm", target_vendor = "zisk")
+        ))]
+        ziskos::ziskos_syscall!(
+            ziskos::SYSCALL_PROFILE_ID,
+            ziskos::PROFILE_REPORT_START_COST_ID,
+            &_name as *const &str as usize
+        );
     }
 
-    fn cycle_scope_end(name: &str) {
-        let tag = SCOPE_REGISTRY.get_or_assign_tag(name);
-        dispatch_profile!(end, tag);
+    fn cycle_scope_end(_name: &str) {
+        // NOTE: If the profile syscall is emitted, the ELF can NOT be proved by ASM prover.
+        #[cfg(all(
+            feature = "cycle-scope",
+            all(target_os = "zkvm", target_vendor = "zisk")
+        ))]
+        ziskos::ziskos_syscall!(
+            ziskos::SYSCALL_PROFILE_ID,
+            ziskos::PROFILE_REPORT_END_COST_ID,
+            &_name as *const &str as usize
+        )
     }
 }

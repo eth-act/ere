@@ -2,8 +2,8 @@
 
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
+#[allow(clippy::enum_variant_names, clippy::large_enum_variant, dead_code)]
 #[rustfmt::skip]
-#[allow(clippy::enum_variant_names)]
 mod api;
 
 mod client;

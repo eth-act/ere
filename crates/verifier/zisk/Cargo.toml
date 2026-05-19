@@ -9,12 +9,12 @@ license.workspace = true
 bincode = { workspace = true, features = ["alloc", "serde"] }
 bytemuck.workspace = true
 serde = { workspace = true, features = ["derive"] }
-serde-big-array.workspace = true
 thiserror.workspace = true
 
 # ZisK dependencies
 proofman-util.workspace = true
 proofman-verifier.workspace = true
+zisk-verifier.workspace = true
 
 # Local dependencies
 ere-verifier-core.workspace = true

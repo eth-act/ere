@@ -1,83 +1,90 @@
-use core::{any::Any, panic::AssertUnwindSafe, time::Duration};
-use std::{env, panic, path::PathBuf, sync::Arc};
+use std::{
+    any::Any,
+    env,
+    panic::{self, AssertUnwindSafe},
+    time::Duration,
+};
 
 use ere_cluster_client_zisk::ZiskClusterClient;
+use ere_compiler_core::Elf;
 use ere_prover_core::{CommonError, Input, ProverResource, ProverResourceKind, PublicValues};
 use ere_util_tokio::block_on;
-use ere_verifier_zisk::{ZiskProgramVk, ZiskProof};
-use proofman_common::{
-    MpiCtx, ParamsGPU, ProofCtx, ProofType, SetupCtx, SetupsVadcop, VerboseMode,
-};
-use proofman_fields::Goldilocks;
-use proofman_starks_lib_c::free_device_buffers_c;
-use tempfile::tempdir;
+use ere_verifier_zisk::{ZiskProgramVk, ZiskProof, ensure_program_vk_matches};
+use tokio::time::Instant;
 use zisk_core::{Riscv2zisk, ZiskRom};
-use zisk_rom_setup::rom_merkle_setup;
-use zisk_sdk::ElfBinaryFromFile;
 use ziskemu::{Emu, EmuOptions};
 
 use crate::{error::Error, sdk::local::LocalProver};
 
 mod local;
 
-/// Prover backend - either local or cluster.
 #[allow(clippy::large_enum_variant)]
-pub enum ZiskProver {
+enum Backend {
     Local(LocalProver),
-    Cluster(ZiskClusterClient),
+    Cluster {
+        client: ZiskClusterClient,
+        prove_timeout: Option<Duration>,
+    },
 }
 
 pub struct ZiskSdk {
     resource: ProverResource,
+    backend: Backend,
     rom: ZiskRom,
-    program_vk: ZiskProgramVk,
-    prover: ZiskProver,
 }
 
 impl ZiskSdk {
-    /// Returns SDK for the ELF.
-    pub fn new(elf: Vec<u8>, resource: ProverResource) -> Result<Self, Error> {
+    pub fn new(elf: Elf, resource: ProverResource) -> Result<Self, Error> {
         // Convert ELF to ZisK ROM
         let rom = Riscv2zisk::new(&elf)
             .run()
-            .map_err(|e| Error::Riscv2zisk(e.to_string()))?;
-
-        // Compute ProgramVk
-        let program_vk = compute_program_vk(&elf)?;
+            .map_err(|err| Error::Riscv2zisk(err.to_string()))?;
 
         // Initialize prover
-        let prover = match &resource {
+        let backend = match &resource {
             ProverResource::Cpu | ProverResource::Gpu => {
-                ZiskProver::Local(LocalProver::new(elf, program_vk)?)
+                Backend::Local(LocalProver::new(elf, &resource)?)
             }
             ProverResource::Cluster(config) => {
-                ZiskProver::Cluster(ZiskClusterClient::new(config, program_vk)?)
+                let client = block_on(ZiskClusterClient::new(config, elf))?;
+                let prove_timeout = env::var("ERE_ZISK_CLUSTER_PROVE_TIMEOUT_SECS")
+                    .ok()
+                    .and_then(|val| val.parse::<u64>().ok().map(Duration::from_secs));
+                Backend::Cluster {
+                    client,
+                    prove_timeout,
+                }
             }
-            ProverResource::Network(_) => Err(CommonError::unsupported_prover_resource_kind(
-                resource.kind(),
-                [
-                    ProverResourceKind::Cpu,
-                    ProverResourceKind::Gpu,
-                    ProverResourceKind::Cluster,
-                ],
-            ))?,
+            ProverResource::Network(_) => {
+                return Err(CommonError::unsupported_prover_resource_kind(
+                    resource.kind(),
+                    [
+                        ProverResourceKind::Cpu,
+                        ProverResourceKind::Gpu,
+                        ProverResourceKind::Cluster,
+                    ],
+                )
+                .into());
+            }
         };
 
         Ok(Self {
             resource,
+            backend,
             rom,
-            program_vk,
-            prover,
         })
     }
 
     pub fn program_vk(&self) -> ZiskProgramVk {
-        self.program_vk
+        match &self.backend {
+            Backend::Local(local) => local.program_vk(),
+            Backend::Cluster { client, .. } => client.program_vk(),
+        }
     }
 
     /// Execute the ELF with the given `stdin`.
-    pub fn execute(&self, stdin: &[u8]) -> Result<(PublicValues, u64), Error> {
-        let stdin = framed_stdin(stdin);
+    pub fn execute(&self, input: &Input) -> Result<(PublicValues, u64), Error> {
+        let stdin = framed_stdin(input.stdin());
         let mut emu = Emu::new(&self.rom);
         emu.ctx = emu.create_emu_context(stdin, &EmuOptions::default());
 
@@ -99,53 +106,27 @@ impl ZiskSdk {
     }
 
     pub fn prove(&self, input: &Input) -> Result<(PublicValues, ZiskProof, Duration), Error> {
-        match &self.resource {
-            ProverResource::Cpu if cfg!(feature = "cuda") => Err(Error::CudaFeatureEnabled)?,
-            ProverResource::Gpu if cfg!(not(feature = "cuda")) => Err(Error::CudaFeatureDisabled)?,
-            _ => {}
+        if cfg!(not(feature = "cuda")) && self.resource == ProverResource::Gpu {
+            return Err(Error::CudaFeatureDisabled);
+        }
+
+        let (proof, proving_time) = match &self.backend {
+            Backend::Local(local) => local.prove(input)?,
+            Backend::Cluster {
+                client,
+                prove_timeout,
+            } => block_on(async {
+                let deadline = prove_timeout.map(|timeout| Instant::now() + timeout);
+                client.prove(input, deadline).await.map_err(Error::Cluster)
+            })?,
         };
 
-        let (proof, proving_time) = match &self.prover {
-            ZiskProver::Local(local) => local.prove(&framed_stdin(input.stdin()))?,
-            ZiskProver::Cluster(client) => block_on(client.prove(input))?,
-        };
+        let (program_vk, public_values) = proof.program_vk_and_public_values()?;
 
-        Ok((proof.public_values.into(), proof, proving_time))
+        ensure_program_vk_matches(self.program_vk(), program_vk)?;
+
+        Ok((public_values, proof, proving_time))
     }
-}
-
-fn compute_program_vk(elf: &[u8]) -> Result<ZiskProgramVk, Error> {
-    let mpi_ctx = Arc::new(MpiCtx::new());
-    let mut pctx = ProofCtx::create_ctx(proving_key_dir(), false, VerboseMode::Info, mpi_ctx)
-        .map_err(Error::ProofCtx)?;
-    let mut params = ParamsGPU::new(false);
-    params.with_max_number_streams(1);
-    let sctx = SetupCtx::new(&pctx.global_info, &ProofType::Basic, false, &params, &[]);
-    let setups_vadcop = SetupsVadcop::new(&pctx.global_info, false, false, &params, &[]);
-
-    let result = (|| {
-        pctx.set_device_buffers(&sctx, &setups_vadcop, false, &params)
-            .map_err(Error::ProofCtx)?;
-
-        let elf = ElfBinaryFromFile {
-            elf: elf.to_vec(),
-            name: String::new(),
-            with_hints: false,
-            path: None,
-        };
-
-        let tempdir = tempdir().map_err(CommonError::tempdir)?;
-
-        let (_, program_vk) =
-            rom_merkle_setup::<Goldilocks>(&pctx, &elf, &Some(tempdir.path().to_path_buf()))
-                .map_err(Error::ComputeProgramVk)?;
-
-        Ok(program_vk)
-    })();
-
-    free_device_buffers_c(pctx.get_device_buffers_ptr());
-
-    result.and_then(|program_vk| Ok(program_vk.try_into()?))
 }
 
 /// Returns `data` with a LE u64 length prefix and padding to multiple of 8.
@@ -166,40 +147,25 @@ fn panic_msg(err: Box<dyn Any + Send + 'static>) -> String {
         .unwrap_or_else(|| "unknown panic msg".to_string())
 }
 
-/// Returns path to `~/.zisk` directory.
-fn dot_zisk_dir() -> PathBuf {
-    PathBuf::from(env::var("HOME").expect("env `$HOME` should be set")).join(".zisk")
-}
-
-/// Returns path to `~/.zisk/provingKey` directory.
-fn proving_key_dir() -> PathBuf {
-    dot_zisk_dir().join("provingKey")
-}
-
 #[cfg(test)]
 mod tests {
     use std::{fs, process::Command};
 
+    use ere_prover_core::zkVMProver;
     use ere_verifier_zisk::ZiskProgramVk;
     use tempfile::tempdir;
 
-    use crate::{
-        prover::tests::basic_elf,
-        sdk::{compute_program_vk, dot_zisk_dir},
-    };
+    use crate::prover::tests::{basic_elf, basic_elf_zkvm};
 
     #[test]
-    fn compute_program_vk_matches_cargo_zisk_rom_setup() {
-        let elf = basic_elf();
-
+    fn program_vk_matches_cargo_zisk_program_setup() {
         let program_vk = {
             let tempdir = tempdir().unwrap();
             let elf_path = tempdir.path().join("guest.elf");
-            fs::write(&elf_path, &elf.0).unwrap();
+            fs::write(&elf_path, &basic_elf().0).unwrap();
 
-            let cargo_zisk = dot_zisk_dir().join("bin").join("cargo-zisk");
-            let status = Command::new(&cargo_zisk)
-                .arg("rom-setup")
+            let status = Command::new("cargo-zisk")
+                .arg("program-setup")
                 .arg("-e")
                 .arg(&elf_path)
                 .arg("-o")
@@ -223,6 +189,6 @@ mod tests {
             ZiskProgramVk::try_from(fs::read(&verkey_paths[0]).unwrap().as_slice()).unwrap()
         };
 
-        assert_eq!(compute_program_vk(&elf).unwrap(), program_vk);
+        assert_eq!(*basic_elf_zkvm().program_vk(), program_vk);
     }
 }

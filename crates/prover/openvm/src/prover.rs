@@ -92,7 +92,7 @@ impl zkVMProver for OpenVMProver {
 
     fn execute(&self, input: &Input) -> Result<(PublicValues, ProgramExecutionReport), Error> {
         if input.proofs.is_some() {
-            return Err(CommonError::unsupported_input("no dedicated proofs stream"))?;
+            Err(CommonError::unsupported_input("no dedicated proofs stream"))?
         }
 
         let mut stdin = StdIn::default();
@@ -119,7 +119,7 @@ impl zkVMProver for OpenVMProver {
         input: &Input,
     ) -> Result<(PublicValues, OpenVMProof, ProgramProvingReport), Error> {
         if input.proofs.is_some() {
-            return Err(CommonError::unsupported_input("no dedicated proofs stream"))?;
+            Err(CommonError::unsupported_input("no dedicated proofs stream"))?
         }
 
         let mut stdin = StdIn::default();

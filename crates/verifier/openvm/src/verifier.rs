@@ -8,7 +8,7 @@ use crate::{Error, OpenVMProgramVk, OpenVMProof, vendor::verify_proof, verifier:
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
-pub mod vk;
+mod vk;
 
 /// Verifier bound to a specific compiled guest program.
 ///

@@ -12,11 +12,6 @@ on:
         required: false
         type: boolean
         default: false
-      cluster:
-        description: 'Whether to build cluster image'
-        required: false
-        type: boolean
-        default: false
       test_threads:
         description: 'Number of threads when testing via docker'
         required: false
@@ -41,7 +36,6 @@ jobs:
     name: Get image metadata
     runs-on: ubuntu-latest
     outputs:
-      dockerfile_changed: ${{ steps.changed_files.outputs.any_changed }}
       image_registry: ${{ steps.image_meta.outputs.image_registry }}
       image_tag: ${{ steps.image_meta.outputs.image_tag }}
       cached_image_tag: ${{ steps.image_meta.outputs.cached_image_tag }}
@@ -125,18 +119,6 @@ jobs:
             --registry ${{ needs.image_meta.outputs.image_registry }} \
             --tag ${{ needs.image_meta.outputs.image_tag }}-cuda \
             --server \
-            --cuda-archs '${{ env.CUDA_ARCHS }}'
-
-      - name: Build ere-cluster-${{ inputs.zkvm }} image with CUDA enabled
-        if: ${{ inputs.cluster && needs.image_meta.outputs.dockerfile_changed == 'true' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          bash .github/scripts/build-image.sh \
-            --zkvm ${{ inputs.zkvm }} \
-            --registry ${{ needs.image_meta.outputs.image_registry }} \
-            --tag ${{ needs.image_meta.outputs.image_tag }}-cuda \
-            --cluster \
             --cuda-archs '${{ env.CUDA_ARCHS }}'
 
   clippy_via_docker:
