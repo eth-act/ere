@@ -9,14 +9,13 @@ IMAGE_REGISTRY=""
 BUILD_BASE=false
 BUILD_COMPILER=false
 BUILD_SERVER=false
-BUILD_CLUSTER=false
 CUDA=false
 CUDA_ARCHS=""
 RUSTFLAGS=""
 GITHUB_TOKEN=""
 
 usage() {
-    echo "Usage: $0 --zkvm <zkvm> --tag <tag> [--base] [--compiler] [--server] [--cluster] [--registry <registry>] [--cuda] [--cuda-archs <archs>] [--rustflags <flags>]"
+    echo "Usage: $0 --zkvm <zkvm> --tag <tag> [--base] [--compiler] [--server] [--registry <registry>] [--cuda] [--cuda-archs <archs>] [--rustflags <flags>]"
     echo ""
     echo "Required:"
     echo "  --zkvm <zkvm>            zkVM to build for (e.g., zisk, sp1, risc0)"
@@ -26,7 +25,6 @@ usage() {
     echo "  --base                   Build the base images"
     echo "  --compiler               Build the compiler image"
     echo "  --server                 Build the server image"
-    echo "  --cluster                Build the cluster image"
     echo ""
     echo "Optional:"
     echo "  --registry <registry>    Registry prefix (e.g., ghcr.io/eth-act/ere)"
@@ -63,10 +61,6 @@ while [[ $# -gt 0 ]]; do
             BUILD_SERVER=true
             shift
             ;;
-        --cluster)
-            BUILD_CLUSTER=true
-            shift
-            ;;
         --cuda)
             CUDA=true
             shift
@@ -101,8 +95,8 @@ if [ -z "$IMAGE_TAG" ]; then
     usage
 fi
 
-if [ "$BUILD_BASE" = false ] && [ "$BUILD_COMPILER" = false ] && [ "$BUILD_SERVER" = false ] && [ "$BUILD_CLUSTER" = false ]; then
-    echo "Error: At least one of --base, --compiler, --server, --cluster is required"
+if [ "$BUILD_BASE" = false ] && [ "$BUILD_COMPILER" = false ] && [ "$BUILD_SERVER" = false ]; then
+    echo "Error: At least one of --base, --compiler, --server is required"
     usage
 fi
 
@@ -121,7 +115,6 @@ BASE_IMAGE="${IMAGE_PREFIX}ere-base:${IMAGE_TAG}"
 BASE_ZKVM_IMAGE="${IMAGE_PREFIX}ere-base-${ZKVM}:${IMAGE_TAG}"
 COMPILER_ZKVM_IMAGE="${IMAGE_PREFIX}ere-compiler-${ZKVM}:${IMAGE_TAG}"
 SERVER_ZKVM_IMAGE="${IMAGE_PREFIX}ere-server-${ZKVM}:${IMAGE_TAG}"
-CLUSTER_ZKVM_IMAGE="${IMAGE_PREFIX}ere-cluster-${ZKVM}:${IMAGE_TAG}"
 
 # Prepare build arguments
 
@@ -215,14 +208,6 @@ if [ "$BUILD_SERVER" = true ]; then
         --file "docker/${ZKVM}/Dockerfile.server" \
         --tag "$SERVER_ZKVM_IMAGE" \
         "${SERVER_ZKVM_BUILD_ARGS[@]}" \
-        .
-fi
-
-if [ "$BUILD_CLUSTER" = true ]; then
-    echo "Building zkvm cluster image: $CLUSTER_ZKVM_IMAGE"
-    docker build \
-        --file "docker/${ZKVM}/Dockerfile.cluster" \
-        --tag "$CLUSTER_ZKVM_IMAGE" \
         .
 fi
 

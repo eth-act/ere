@@ -1,8 +1,7 @@
 services:
   zisk-coordinator:
-    image: ghcr.io/eth-act/ere/ere-cluster-zisk:latest-cuda
-    command:
-      - "zisk-coordinator"
+    image: ghcr.io/eth-act/ere/ere-server-zisk:latest-cuda
+    entrypoint: zisk-coordinator
     ports:
       - "7000:7000"
     environment:
@@ -16,9 +15,9 @@ services:
       start_period: 10s
 
   zisk-worker-0:
-    image: ghcr.io/eth-act/ere/ere-cluster-zisk:latest-cuda
+    image: ghcr.io/eth-act/ere/ere-server-zisk:latest-cuda
+    entrypoint: zisk-worker
     command:
-      - "zisk-worker"
       - "--coordinator-url"
       - "http://zisk-coordinator:50051"
       - "--gpu"

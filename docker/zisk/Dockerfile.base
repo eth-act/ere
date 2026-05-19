@@ -2,6 +2,9 @@ ARG BASE_IMAGE=ere-base:latest
 
 FROM $BASE_IMAGE
 
+# Whether to enable CUDA feature or not.
+ARG CUDA
+
 # The ere-base image provides Rust, Cargo, and common tools.
 # ZisK requires Ubuntu 22.04 or higher (ere-base uses 24.04 by default).
 # We operate as root for SDK and dependency installation.
