@@ -12,7 +12,7 @@ BUILD_SERVER=false
 CUDA=false
 CUDA_ARCHS=""
 RUSTFLAGS=""
-GITHUB_TOKEN=""
+GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 
 usage() {
     echo "Usage: $0 --zkvm <zkvm> --tag <tag> [--base] [--compiler] [--server] [--registry <registry>] [--cuda] [--cuda-archs <archs>] [--rustflags <flags>]"
