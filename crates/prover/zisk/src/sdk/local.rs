@@ -1,10 +1,10 @@
 use std::{
-    env,
+    env, fs,
     time::{Duration, Instant},
 };
 
 use ere_compiler_core::Elf;
-use ere_prover_core::{Input, ProverResource};
+use ere_prover_core::{CommonError, Input, ProverResource};
 use ere_verifier_zisk::{ZiskProgramVk, ZiskProof};
 use once_cell::sync::OnceCell;
 use parking_lot::Mutex;
@@ -71,7 +71,7 @@ impl LocalProver {
         let config = Config::from_env()?;
 
         let program = GuestProgram::from_bytes("guest", elf.0);
-        let program_vk = compute_program_vk(resource, &program);
+        let program_vk = compute_program_vk(resource, &program)?;
 
         if config.setup_on_init {
             let prover = LOCAL_PROVER.get_or_try_init(|| build_prover(&config, resource))?;
@@ -152,7 +152,10 @@ fn build_prover(config: &Config, resource: &ProverResource) -> Result<ZiskProver
 
 /// Vendored from [`zisk_rom_setup::rom_merkle_setup`] to do program setup withuot creating
 /// `ProofCtx` or generating assembly, which can only be created once due to mpi initialization.
-fn compute_program_vk(resource: &ProverResource, program: &GuestProgram) -> ZiskProgramVk {
+fn compute_program_vk(
+    resource: &ProverResource,
+    program: &GuestProgram,
+) -> Result<ZiskProgramVk, Error> {
     type F = Goldilocks;
 
     struct Guard(bool);
@@ -181,9 +184,11 @@ fn compute_program_vk(resource: &ProverResource, program: &GuestProgram) -> Zisk
     let n_cols = custom_rom_trace.num_cols() as u64;
     let mut root = [F::ZERO, F::ZERO, F::ZERO, F::ZERO];
 
+    let cache_dir = &ZiskPaths::global().cache;
+    fs::create_dir_all(cache_dir)
+        .map_err(|err| CommonError::create_dir("cache", cache_dir, err))?;
     let elf_bin_path =
-        get_elf_bin_file_path_with_hash(program.hash(), &ZiskPaths::global().cache, false)
-            .expect("infallable");
+        get_elf_bin_file_path_with_hash(program.hash(), cache_dir, false).expect("infallable");
 
     proofman_starks_lib_c::write_custom_commit_c(
         root.as_mut_ptr() as *mut u8,
@@ -196,5 +201,5 @@ fn compute_program_vk(resource: &ProverResource, program: &GuestProgram) -> Zisk
         &elf_bin_path.to_string_lossy(),
     );
 
-    ZiskProgramVk(root.map(|field| field.as_canonical_u64()))
+    Ok(ZiskProgramVk(root.map(|field| field.as_canonical_u64())))
 }
