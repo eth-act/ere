@@ -148,11 +148,16 @@ sp1-verifier = "6.1.0"
 sp1-zkvm = { version = "6.1.0", default-features = false }
 
 # ZisK dependencies
+proofman-fields = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.18.0", package = "fields" }
+proofman-starks-lib-c = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.18.0" }
 proofman-util = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.18.0" }
 proofman-verifier = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.18.0" }
 zisk-common = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.18.0" }
 zisk-core = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.18.0" }
+zisk-pil = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.18.0" }
 zisk-prover-backend = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.18.0" }
+zisk-rom-setup = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.18.0", package = "rom-setup" }
+zisk-sm-rom = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.18.0", package = "sm-rom" }
 ziskemu = { git = "https://github.com/han0110/zisk.git", branch = "patch/v0.18.0" }
 zisk-verifier = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.18.0" }
 zisk-zkvm-interface = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v0.18.0", package = "zkvm-interface" }

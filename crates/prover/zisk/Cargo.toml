@@ -13,9 +13,15 @@ thiserror.workspace = true
 tokio = { workspace = true, features = ["time"] }
 
 # ZisK dependencies
+proofman-fields.workspace = true
+proofman-starks-lib-c.workspace = true
+proofman-util.workspace = true
 zisk-common.workspace = true
 zisk-core.workspace = true
+zisk-pil.workspace = true
 zisk-prover-backend.workspace = true
+zisk-rom-setup.workspace = true
+zisk-sm-rom.workspace = true
 ziskemu.workspace = true
 
 # Local dependencies
