@@ -1,17 +1,23 @@
 use std::{
-    env,
+    env, fs,
     time::{Duration, Instant},
 };
 
 use ere_compiler_core::Elf;
-use ere_prover_core::{Input, ProverResource};
+use ere_prover_core::{CommonError, Input, ProverResource};
 use ere_verifier_zisk::{ZiskProgramVk, ZiskProof};
 use once_cell::sync::OnceCell;
 use parking_lot::Mutex;
-use zisk_common::{ProofKind, io::ZiskStdin};
+use proofman_fields::{Field, Goldilocks, PrimeField64};
+use proofman_starks_lib_c::set_gpu_mode_c;
+use proofman_util::DeviceBuffer;
+use zisk_common::{ProofKind, ZiskPaths, io::ZiskStdin};
+use zisk_pil::RomRomTrace;
 use zisk_prover_backend::{
     Asm, AsmOptions, BackendProverOpts, GuestProgram, ProverClientBuilder, ZiskProver,
 };
+use zisk_rom_setup::{ROM_BLOWUP_FACTOR, ROM_MERKLE_TREE_ARITY, get_elf_bin_file_path_with_hash};
+use zisk_sm_rom::RomSM;
 
 use crate::{error::Error, sdk::framed_stdin};
 
@@ -19,6 +25,7 @@ use crate::{error::Error, sdk::framed_stdin};
 // `ZiskProver` instances creation (e.g. testing different ELFs).
 static LOCAL_PROVER: OnceCell<ZiskProver<Asm>> = OnceCell::new();
 
+#[derive(Clone, Copy)]
 struct Config {
     setup_on_init: bool,
     unlock_mapped_memory: bool,
@@ -52,7 +59,8 @@ impl Config {
 }
 
 pub struct LocalProver {
-    prover: &'static ZiskProver<Asm>,
+    resource: ProverResource,
+    config: Config,
     program: GuestProgram,
     program_vk: ZiskProgramVk,
     initialized: Mutex<bool>,
@@ -61,21 +69,18 @@ pub struct LocalProver {
 impl LocalProver {
     pub fn new(elf: Elf, resource: &ProverResource) -> Result<Self, Error> {
         let config = Config::from_env()?;
-        let prover = LOCAL_PROVER.get_or_try_init(|| build_prover(&config, resource))?;
 
         let program = GuestProgram::from_bytes("guest", elf.0);
-        let program_vk = prover
-            .prover
-            .program_vk(&program, false)
-            .map_err(Error::ComputeProgramVk)?;
-        let program_vk = ZiskProgramVk::try_from(program_vk.vk.as_slice())?;
+        let program_vk = compute_program_vk(resource, &program)?;
 
         if config.setup_on_init {
+            let prover = LOCAL_PROVER.get_or_try_init(|| build_prover(&config, resource))?;
             prover.setup(&program).run().map_err(Error::Setup)?;
         }
 
         Ok(Self {
-            prover,
+            resource: resource.clone(),
+            config,
             program,
             program_vk,
             initialized: Mutex::new(config.setup_on_init),
@@ -87,21 +92,18 @@ impl LocalProver {
     }
 
     pub fn prove(&self, input: &Input) -> Result<(ZiskProof, Duration), Error> {
-        let mut initialized = self.initialized.lock();
+        let prover = LOCAL_PROVER.get_or_try_init(|| build_prover(&self.config, &self.resource))?;
 
+        let mut initialized = self.initialized.lock();
         if !*initialized {
-            self.prover
-                .setup(&self.program)
-                .run()
-                .map_err(Error::Setup)?;
+            prover.setup(&self.program).run().map_err(Error::Setup)?;
             *initialized = true;
         }
 
         let stdin = ZiskStdin::from_vec(framed_stdin(input.stdin()));
 
         let started = Instant::now();
-        let output = self
-            .prover
+        let output = prover
             .prove(&self.program, stdin)
             .wrap_proof(ProofKind::VadcopFinalMinimal)
             .run()
@@ -146,4 +148,58 @@ fn build_prover(config: &Config, resource: &ProverResource) -> Result<ZiskProver
         .with_prover_options(opts)
         .build()
         .map_err(Error::BuildProver)
+}
+
+/// Vendored from [`zisk_rom_setup::rom_merkle_setup`] to do program setup withuot creating
+/// `ProofCtx` or generating assembly, which can only be created once due to mpi initialization.
+fn compute_program_vk(
+    resource: &ProverResource,
+    program: &GuestProgram,
+) -> Result<ZiskProgramVk, Error> {
+    type F = Goldilocks;
+
+    struct Guard(bool);
+
+    impl Drop for Guard {
+        fn drop(&mut self) {
+            set_gpu_mode_c(self.0);
+        }
+    }
+
+    set_gpu_mode_c(false);
+    let _guard = Guard(resource.is_gpu());
+
+    let buffer = vec![F::ZERO; RomRomTrace::<F>::NUM_ROWS * RomRomTrace::<F>::ROW_SIZE];
+    let mut custom_rom_trace: RomRomTrace<F> =
+        RomRomTrace::new_from_vec(buffer).expect("infallable");
+
+    RomSM::compute_custom_trace_rom(program.elf(), &mut custom_rom_trace);
+
+    let buffer = custom_rom_trace.get_buffer::<F>();
+    let arity = ROM_MERKLE_TREE_ARITY;
+    let n = custom_rom_trace.num_rows() as u64;
+    let n_extended = ROM_BLOWUP_FACTOR * custom_rom_trace.num_rows() as u64;
+    let n_bits = n.trailing_zeros() as u64;
+    let n_bits_ext = n_extended.trailing_zeros() as u64;
+    let n_cols = custom_rom_trace.num_cols() as u64;
+    let mut root = [F::ZERO, F::ZERO, F::ZERO, F::ZERO];
+
+    let cache_dir = &ZiskPaths::global().cache;
+    fs::create_dir_all(cache_dir)
+        .map_err(|err| CommonError::create_dir("cache", cache_dir, err))?;
+    let elf_bin_path =
+        get_elf_bin_file_path_with_hash(program.hash(), cache_dir, false).expect("infallable");
+
+    proofman_starks_lib_c::write_custom_commit_c(
+        root.as_mut_ptr() as *mut u8,
+        arity,
+        n_bits,
+        n_bits_ext,
+        n_cols,
+        DeviceBuffer::default().get_ptr(),
+        buffer.as_ptr() as *mut u8,
+        &elf_bin_path.to_string_lossy(),
+    );
+
+    Ok(ZiskProgramVk(root.map(|field| field.as_canonical_u64())))
 }
