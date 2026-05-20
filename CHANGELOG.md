@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.10.0](https://github.com/eth-act/ere/compare/v0.9.1...v0.10.0) (2026-05-20)
+
+
+### Features
+
+* add verifier benchmark ([#366](https://github.com/eth-act/ere/issues/366)) ([cc9fb07](https://github.com/eth-act/ere/commit/cc9fb07e843420c302b6d227593df4c1625ba6cb))
+* extend cuda archs support of published images ([#364](https://github.com/eth-act/ere/issues/364)) ([e360a15](https://github.com/eth-act/ere/commit/e360a1538d55ff9665e65c390c68a96a9458e36f))
+* update zisk to v0.18.0 ([#367](https://github.com/eth-act/ere/issues/367)) ([5ca9e05](https://github.com/eth-act/ere/commit/5ca9e05fc479a7ae49d667c04a772b69ba7cff08))
+* zisk program vk without prover ([#368](https://github.com/eth-act/ere/issues/368)) ([d9c94a5](https://github.com/eth-act/ere/commit/d9c94a5b1c9161ae0e33f53a977ef3b977991e0a))
+
 ## [0.9.1](https://github.com/eth-act/ere/compare/v0.9.0...v0.9.1) (2026-05-12)
 
 
