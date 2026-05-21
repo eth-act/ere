@@ -172,17 +172,26 @@ impl zkVMProver for Risc0Prover {
 }
 
 impl Risc0Prover {
+    /// Converts `Input` to `ExecutorEnv`.
+    ///
+    /// Stdin is prefixed with its u32 LE byte length, which `Risc0Platform::read_input` reads to
+    /// size the payload.
     fn input_to_env(&self, input: &Input) -> Result<ExecutorEnv<'static>, Error> {
         let mut env = ExecutorEnv::builder();
         env.segment_limit_po2(self.segment_po2 as _)
             .keccak_max_po2(self.keccak_po2 as _)
             .expect("keccak_po2 in valid range");
-        env.write_slice(input.stdin());
+
+        let stdin = input.stdin();
+        env.write_slice(&(stdin.len() as u32).to_le_bytes());
+        env.write_slice(stdin);
+
         if let Some(receipts) = input.proofs() {
             for receipt in receipts.map_err(Error::DeserializeInputProofs)? {
                 env.add_assumption(AssumptionReceipt::Proven(receipt));
             }
         }
+
         env.build().map_err(Error::BuildExecutorEnv)
     }
 }

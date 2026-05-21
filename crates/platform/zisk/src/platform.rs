@@ -1,37 +1,20 @@
 #![allow(unexpected_cfgs)]
 
-use core::ops::Deref;
-
-use ere_platform_core::{LengthPrefixedStdin, Platform};
-use ziskos::ziskos_definitions::ziskos_config::UART_ADDR;
+use ere_platform_core::Platform;
 
 /// ZisK [`Platform`] implementation.
 ///
-/// Note that the maximum output size is 256 bytes, and output size will be
-/// padded to multiple of 4.
+/// `read_input` and `write_output` are inherited from the trait's default
+/// implementation, which calls [zkvm-standards] FFI symbols exported by `ziskos`.
+///
+/// Note that ZisK enforces a 256-byte output cap at the runtime level.
+///
+/// [zkvm-standards]: https://github.com/eth-act/zkvm-standards
 pub struct ZiskPlatform;
 
 impl Platform for ZiskPlatform {
-    fn read_whole_input() -> impl Deref<Target = [u8]> {
-        LengthPrefixedStdin::new(ziskos::io::read_input_slice())
-    }
-
-    fn write_whole_output(output: &[u8]) {
-        assert!(
-            output.len() <= 256,
-            "Maximum output size is 256 bytes, got {}",
-            output.len()
-        );
-        ziskos::io::commit_slice(output);
-    }
-
     fn print(message: &str) {
-        let bytes = message.as_bytes();
-        for byte in bytes {
-            unsafe {
-                core::ptr::write_volatile(UART_ADDR as *mut u8, *byte);
-            }
-        }
+        unsafe { sys_write(1, message.as_ptr(), message.len()) };
     }
 
     fn cycle_scope_start(_name: &str) {
@@ -40,11 +23,14 @@ impl Platform for ZiskPlatform {
             feature = "cycle-scope",
             all(target_os = "zkvm", target_vendor = "zisk")
         ))]
-        ziskos::ziskos_syscall!(
-            ziskos::SYSCALL_PROFILE_ID,
-            ziskos::PROFILE_REPORT_START_COST_ID,
-            &_name as *const &str as usize
-        );
+        {
+            use ziskos::{
+                PROFILE_REPORT_START_COST_ID, PROFILE_REPORT_START_STEPS_ID, SYSCALL_PROFILE_ID,
+            };
+            let name = &_name as *const &str as usize;
+            ziskos::ziskos_syscall!(SYSCALL_PROFILE_ID, PROFILE_REPORT_START_COST_ID, name);
+            ziskos::ziskos_syscall!(SYSCALL_PROFILE_ID, PROFILE_REPORT_START_STEPS_ID, name);
+        }
     }
 
     fn cycle_scope_end(_name: &str) {
@@ -53,10 +39,18 @@ impl Platform for ZiskPlatform {
             feature = "cycle-scope",
             all(target_os = "zkvm", target_vendor = "zisk")
         ))]
-        ziskos::ziskos_syscall!(
-            ziskos::SYSCALL_PROFILE_ID,
-            ziskos::PROFILE_REPORT_END_COST_ID,
-            &_name as *const &str as usize
-        )
+        {
+            use ziskos::{
+                PROFILE_REPORT_END_COST_ID, PROFILE_REPORT_END_STEPS_ID, SYSCALL_PROFILE_ID,
+            };
+            let name = &_name as *const &str as usize;
+            ziskos::ziskos_syscall!(SYSCALL_PROFILE_ID, PROFILE_REPORT_END_STEPS_ID, name);
+            ziskos::ziskos_syscall!(SYSCALL_PROFILE_ID, PROFILE_REPORT_END_COST_ID, name);
+        }
     }
+}
+
+unsafe extern "C" {
+    /// POSIX-style `write` syscall exported by `ziskos`.
+    fn sys_write(fd: u32, write_ptr: *const u8, nbytes: usize);
 }

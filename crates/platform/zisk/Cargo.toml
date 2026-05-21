@@ -8,7 +8,6 @@ license.workspace = true
 [dependencies]
 # ZisK dependencies
 ziskos.workspace = true
-zisk-zkvm-interface.workspace = true
 
 # Local dependencies
 ere-platform-core.workspace = true

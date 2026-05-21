@@ -12,8 +12,9 @@ use ere_prover_core::{
     zkVMProver,
 };
 use ere_server_api::{
-    ExecuteOk, ExecuteRequest, ExecuteResponse, ProveOk, ProveRequest, ProveResponse, VerifyOk,
-    VerifyRequest, VerifyResponse, ZkvmService, execute_response::Result as ExecuteResult,
+    ExecuteOk, ExecuteRequest, ExecuteResponse, ProgramVkOk, ProgramVkRequest, ProgramVkResponse,
+    ProveOk, ProveRequest, ProveResponse, VerifyOk, VerifyRequest, VerifyResponse, ZkvmService,
+    execute_response::Result as ExecuteResult, program_vk_response::Result as ProgramVkResult,
     prove_response::Result as ProveResult, router, verify_response::Result as VerifyResult,
 };
 use parking_lot::Mutex;
@@ -282,6 +283,20 @@ impl<T: 'static + zkVMProver + Send + Sync> ZkvmService for zkVMServer<T> {
         };
 
         Ok(Response::new(VerifyResponse {
+            result: Some(result),
+        }))
+    }
+
+    async fn program_vk(
+        &self,
+        _: Request<ProgramVkRequest>,
+    ) -> twirp::Result<Response<ProgramVkResponse>> {
+        let result = match self.zkvm.program_vk().encode_to_vec() {
+            Ok(program_vk) => ProgramVkResult::Ok(ProgramVkOk { program_vk }),
+            Err(err) => ProgramVkResult::Err(format!("failed to encode program_vk: {err:?}")),
+        };
+
+        Ok(Response::new(ProgramVkResponse {
             result: Some(result),
         }))
     }

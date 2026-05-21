@@ -154,23 +154,15 @@ Host and guest communicate through raw bytes. Serialization/deserialization can 
 
 #### Reading Private Values from Host
 
-The `Input` structure holds stdin as raw bytes. There are 2 ways to use it:
+The `Input` structure holds stdin as raw bytes. Set them with `Input::new().with_stdin(data)`, and the guest reads them back via `Platform::read_input()`.
 
-1. `Input::new().with_prefixed_stdin(data)` for `Platform::read_whole_input()`
+For Airbender and RISC Zero, the prover internally prepends a u32 LE byte-length prefix because their guest input APIs read u32 words and need a length to stop. SP1, OpenVM, and ZisK pass bytes through.
 
-    The `Platform` trait provides a unified interface to read the whole stdin. However, some zkVMs don't provide access to the stdin length, so we require it to have a length prefix.
-
-    The method `Input::with_prefixed_stdin` automatically adds a LE u32 length prefix to the stdin. In the guest, `Platform::read_whole_input` will return only the actual data.
-
-    Without the length prefix, the `Platform::read_whole_input` will cause guest panic at runtime.
-
-2. `Input::new().with_stdin(data)` for zkVM-specific stdin APIs
-
-    The method `Input::with_stdin` sets stdin without modification. Use this when you need direct access to zkVM-specific stdin APIs (e.g., `sp1_zkvm::io::read`, `risc0_zkvm::guest::env::read`), such as streaming reads or partial data consumption.
+zkVM-specific stdin APIs (e.g., `sp1_zkvm::io::read`, `risc0_zkvm::guest::env::read`) can also be used directly when finer-grained control is needed.
 
 #### Writing Public Values to Host
 
-Public values written in the guest program (via `Platform::write_whole_output()` or zkVM-specific output APIs) are returned as raw bytes to the host after `zkVMProver::execute`, `zkVMProver::prove` and `zkVMProver::verify` methods.
+Public values written in the guest program (via `Platform::write_output()` or zkVM-specific output APIs) are returned as raw bytes to the host after `zkVMProver::execute`, `zkVMProver::prove` and `zkVMProver::verify` methods.
 
 Different zkVMs handles public values in different approaches:
 
@@ -178,9 +170,9 @@ Different zkVMs handles public values in different approaches:
 | --------- | ---------- | ----------------------------- |
 | Airbender | 32 bytes   | Padded to 32 bytes with zeros |
 | OpenVM    | 32 bytes   | Padded to 32 bytes with zeros |
-| Risc0     | unlimited  | Hashed internally             |
+| RISC Zero | unlimited  | Hashed internally             |
 | SP1       | unlimited  | Hashed internally             |
-| Zisk      | 256 bytes  |                               |
+| ZisK      | 256 bytes  |                               |
 
 ## Supported zkVMs
 
@@ -188,9 +180,9 @@ Different zkVMs handles public values in different approaches:
 | --------- | ------------------------------------------------------------------------- | --------- | :---: | :-------: | :-----: |
 | Airbender | [`73d69b5`](https://github.com/matter-labs/zksync-airbender/tree/73d69b5) | `RV32IMA` |   V   |     V     |         |
 | OpenVM    | [`1.4.3`](https://github.com/openvm-org/openvm/tree/v1.4.3)               | `RV32IMA` |   V   |           |         |
-| Risc0     | [`3.0.5`](https://github.com/risc0/risc0/tree/v3.0.5)                     | `RV32IMA` |   V   |     V     |         |
+| RISC Zero | [`3.0.5`](https://github.com/risc0/risc0/tree/v3.0.5)                     | `RV32IMA` |   V   |     V     |         |
 | SP1       | [`6.1.0`](https://github.com/succinctlabs/sp1/tree/v6.1.0)                | `RV64IMA` |   V   |           |         |
-| Zisk      | [`0.18.0`](https://github.com/0xPolygonHermez/zisk/tree/v0.18.0)          | `RV64IMA` |   V   |     V     |    V    |
+| ZisK      | [`0.18.0`](https://github.com/0xPolygonHermez/zisk/tree/v0.18.0)          | `RV64IMA` |   V   |     V     |    V    |
 
 ## Examples
 
@@ -234,15 +226,15 @@ type P = SP1Platform;
 
 pub fn main() {
     // Read serialized input and deserialize it.
-    let input = P::read_whole_input();
+    let input = P::read_input();
     let n = u64::from_le_bytes(input.as_slice().try_into().unwrap());
 
     // Compute nth fib.
     let fib_n = fib(n);
 
     // Write serialized output.
-    let output = [input, fib_n.to_le_bytes().to_vec()].concat();
-    P::write_whole_output(&output);
+    let output = [input.as_slice(), &fib_n.to_le_bytes()].concat();
+    P::write_output(&output);
 }
 
 fn fib(n: u64) -> u64 {
@@ -292,10 +284,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create zkVM instance (setup/preprocessing happens here)
     let zkvm = SP1Prover::new(elf, ProverResource::Cpu)?;
 
-    // Prepare input
-    // Use `with_prefixed_stdin` when guest uses `Platform::read_whole_input()`
-    let input = Input::new().with_prefixed_stdin(10u64.to_le_bytes().to_vec());
-    let expected_output = [input, 55u64.to_le_bytes()].concat();
+    // Prepare input as raw bytes. The prover handles any framing needed by the SDK.
+    let stdin = 10u64.to_le_bytes().to_vec();
+    let input = Input::new().with_stdin(stdin.clone());
+    let expected_output = [stdin, 55u64.to_le_bytes().to_vec()].concat();
 
     // Execute
     let (public_values, report) = zkvm.execute(&input)?;
@@ -367,10 +359,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         DockerizedzkVMConfig::default(),
     )?;
 
-    // Prepare input
-    // Use `with_prefixed_stdin` when guest uses `Platform::read_whole_input()`
-    let input = Input::new().with_prefixed_stdin(10u64.to_le_bytes().to_vec());
-    let expected_output = [input, 55u64.to_le_bytes()].concat();
+    // Prepare input as raw bytes. The prover handles any framing needed by the SDK.
+    let stdin = 10u64.to_le_bytes().to_vec();
+    let input = Input::new().with_stdin(stdin.clone());
+    let expected_output = [stdin, 55u64.to_le_bytes().to_vec()].concat();
 
     // Execute
     let (public_values, report) = zkvm.execute(&input)?;

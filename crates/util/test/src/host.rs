@@ -94,7 +94,7 @@ impl<P: Program> Deref for ProgramTestCase<P> {
 
 impl<P: Program> TestCase for ProgramTestCase<P> {
     fn input(&self) -> Input {
-        Input::new().with_prefixed_stdin(self.input.encode_to_vec().unwrap())
+        Input::new().with_stdin(self.input.encode_to_vec().unwrap())
     }
 
     fn assert_output(&self, public_values: &[u8]) {

@@ -7,7 +7,7 @@
 //!
 //! # Feature flags
 //!
-//! - `nightly` *(off by default)* — Enables the `Airbender` variant of [`Verifier`] by pulling in
+//! - `nightly` *(off by default)* - Enables the `Airbender` variant of [`Verifier`] by pulling in
 //!   [`ere-verifier-airbender`]. Airbender's host SDK depends on nightly-only language features, so
 //!   the feature also requires building with a nightly Rust toolchain.
 //!

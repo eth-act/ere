@@ -1,6 +1,6 @@
 use core::{array::from_fn, ops::Deref};
 
-use ere_platform_core::{LengthPrefixedStdin, Platform};
+use ere_platform_core::Platform;
 
 /// OpenVM [`Platform`] implementation.
 ///
@@ -9,11 +9,11 @@ use ere_platform_core::{LengthPrefixedStdin, Platform};
 pub struct OpenVMPlatform;
 
 impl Platform for OpenVMPlatform {
-    fn read_whole_input() -> impl Deref<Target = [u8]> {
-        LengthPrefixedStdin::new(openvm::io::read_vec())
+    fn read_input() -> impl Deref<Target = [u8]> {
+        openvm::io::read_vec()
     }
 
-    fn write_whole_output(output: &[u8]) {
+    fn write_output(output: &[u8]) {
         assert!(
             output.len() <= 32,
             "Maximum output size is 32 bytes, got {} bytes",

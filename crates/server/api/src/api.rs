@@ -96,6 +96,32 @@ pub struct VerifyOk {
     #[prost(bytes = "vec", tag = "1")]
     pub public_values: ::prost::alloc::vec::Vec<u8>,
 }
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ProgramVkRequest {}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ProgramVkResponse {
+    #[prost(oneof = "program_vk_response::Result", tags = "1, 2")]
+    pub result: ::core::option::Option<program_vk_response::Result>,
+}
+/// Nested message and enum types in `ProgramVkResponse`.
+pub mod program_vk_response {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
+    pub enum Result {
+        #[prost(message, tag = "1")]
+        Ok(super::ProgramVkOk),
+        #[prost(string, tag = "2")]
+        Err(::prost::alloc::string::String),
+    }
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ProgramVkOk {
+    #[prost(bytes = "vec", tag = "1")]
+    pub program_vk: ::prost::alloc::vec::Vec<u8>,
+}
 pub use twirp;
 #[twirp::async_trait::async_trait]
 pub trait ZkvmService: Send + Sync {
@@ -111,6 +137,10 @@ pub trait ZkvmService: Send + Sync {
         &self,
         req: twirp::Request<VerifyRequest>,
     ) -> twirp::Result<twirp::Response<VerifyResponse>>;
+    async fn program_vk(
+        &self,
+        req: twirp::Request<ProgramVkRequest>,
+    ) -> twirp::Result<twirp::Response<ProgramVkResponse>>;
 }
 #[twirp::async_trait::async_trait]
 impl<T> ZkvmService for std::sync::Arc<T>
@@ -134,6 +164,12 @@ where
         req: twirp::Request<VerifyRequest>,
     ) -> twirp::Result<twirp::Response<VerifyResponse>> {
         T::verify(&*self, req).await
+    }
+    async fn program_vk(
+        &self,
+        req: twirp::Request<ProgramVkRequest>,
+    ) -> twirp::Result<twirp::Response<ProgramVkResponse>> {
+        T::program_vk(&*self, req).await
     }
 }
 pub fn router<T>(api: T) -> twirp::Router
@@ -159,6 +195,12 @@ where
                 api.verify(req).await
             },
         )
+        .route(
+            "/ProgramVk",
+            |api: T, req: twirp::Request<ProgramVkRequest>| async move {
+                api.program_vk(req).await
+            },
+        )
         .build()
 }
 #[twirp::async_trait::async_trait]
@@ -180,6 +222,12 @@ impl ZkvmService for twirp::client::Client {
         req: twirp::Request<VerifyRequest>,
     ) -> twirp::Result<twirp::Response<VerifyResponse>> {
         self.request("api.ZkvmService/Verify", req).await
+    }
+    async fn program_vk(
+        &self,
+        req: twirp::Request<ProgramVkRequest>,
+    ) -> twirp::Result<twirp::Response<ProgramVkResponse>> {
+        self.request("api.ZkvmService/ProgramVk", req).await
     }
 }
 #[allow(dead_code)]
@@ -228,6 +276,14 @@ pub mod handler {
                         self
                             .inner
                             .verify(twirp::details::decode_request(req).await?)
+                            .await?,
+                    )
+                }
+                "ProgramVk" => {
+                    twirp::details::encode_response(
+                        self
+                            .inner
+                            .program_vk(twirp::details::decode_request(req).await?)
                             .await?,
                     )
                 }

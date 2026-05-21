@@ -1,17 +1,17 @@
 use alloc::format;
 use core::ops::Deref;
 
-use ere_platform_core::{LengthPrefixedStdin, Platform};
+use ere_platform_core::Platform;
 
 /// SP1 [`Platform`] implementation.
 pub struct SP1Platform;
 
 impl Platform for SP1Platform {
-    fn read_whole_input() -> impl Deref<Target = [u8]> {
-        LengthPrefixedStdin::new(sp1_zkvm::io::read_vec())
+    fn read_input() -> impl Deref<Target = [u8]> {
+        sp1_zkvm::io::read_vec()
     }
 
-    fn write_whole_output(output: &[u8]) {
+    fn write_output(output: &[u8]) {
         sp1_zkvm::io::commit_slice(output);
     }
 

@@ -38,19 +38,10 @@ impl Input {
     }
 
     /// Sets stdin and returns a new `Input`.
+    ///
+    /// The guest reads these bytes via `Platform::read_input`.
     pub fn with_stdin(mut self, stdin: Vec<u8>) -> Self {
         self.stdin = stdin;
-        self
-    }
-
-    /// Sets stdin with a LE u32 length prefix and returns a new `Input`.
-    ///
-    /// The `Platform::read_whole_input` requires stdin to have a LE u32 length
-    /// prefix for efficiency reason.
-    pub fn with_prefixed_stdin(mut self, stdin: Vec<u8>) -> Self {
-        self.stdin = Vec::with_capacity(4 + stdin.len());
-        self.stdin.extend((stdin.len() as u32).to_le_bytes());
-        self.stdin.extend(stdin);
         self
     }
 
