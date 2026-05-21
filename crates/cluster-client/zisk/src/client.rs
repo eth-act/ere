@@ -24,6 +24,7 @@ use crate::{
 /// Wrapper for the ZisK cluster client.
 #[derive(Debug)]
 pub struct ZiskClusterClient {
+    elf: Elf,
     client: ZiskCoordinatorApiClient<Channel>,
     hash_id: String,
     verifier: ZiskVerifier,
@@ -33,13 +34,19 @@ impl ZiskClusterClient {
     /// Connect to the coordinator and run setup for the `elf`.
     pub async fn new(config: &RemoteProverConfig, elf: Elf) -> Result<Self, Error> {
         let mut client = ZiskCoordinatorApiClient::connect(config.endpoint.clone()).await?;
-        let (hash_id, program_vk) = setup(&mut client, elf).await?;
+        let (hash_id, program_vk) = setup(&mut client, elf.clone()).await?;
         let verifier = ZiskVerifier::new(program_vk);
         Ok(Self {
+            elf,
             client,
             hash_id,
             verifier,
         })
+    }
+
+    /// Returns a reference to the ELF.
+    pub fn elf(&self) -> &Elf {
+        &self.elf
     }
 
     /// Returns a reference to the verifier.
