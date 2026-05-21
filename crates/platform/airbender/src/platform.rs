@@ -10,7 +10,7 @@ use ere_platform_core::Platform;
 pub struct AirbenderPlatform;
 
 impl Platform for AirbenderPlatform {
-    fn read_whole_input() -> impl Deref<Target = [u8]> {
+    fn read_input() -> impl Deref<Target = [u8]> {
         let len = airbender::rt::sys::read_word() as usize;
         repeat_with(airbender::rt::sys::read_word)
             .take(len.div_ceil(4))
@@ -19,7 +19,7 @@ impl Platform for AirbenderPlatform {
             .collect::<Vec<_>>()
     }
 
-    fn write_whole_output(output: &[u8]) {
+    fn write_output(output: &[u8]) {
         assert!(
             output.len() <= 32,
             "Maximum output size is 32 bytes, got {} bytes",

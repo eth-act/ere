@@ -1,37 +1,20 @@
 #![allow(unexpected_cfgs)]
 
-use core::ops::Deref;
-
-use ere_platform_core::{LengthPrefixedStdin, Platform};
-use ziskos::ziskos_definitions::ziskos_config::UART_ADDR;
+use ere_platform_core::Platform;
 
 /// ZisK [`Platform`] implementation.
 ///
-/// Note that the maximum output size is 256 bytes, and output size will be
-/// padded to multiple of 4.
+/// `read_input` and `write_output` are inherited from the trait's default
+/// implementation, which calls [zkvm-standards] FFI symbols exported by `ziskos`.
+///
+/// Note that ZisK enforces a 256-byte output cap at the runtime level.
+///
+/// [zkvm-standards]: https://github.com/eth-act/zkvm-standards
 pub struct ZiskPlatform;
 
 impl Platform for ZiskPlatform {
-    fn read_whole_input() -> impl Deref<Target = [u8]> {
-        LengthPrefixedStdin::new(ziskos::io::read_input_slice())
-    }
-
-    fn write_whole_output(output: &[u8]) {
-        assert!(
-            output.len() <= 256,
-            "Maximum output size is 256 bytes, got {}",
-            output.len()
-        );
-        ziskos::io::commit_slice(output);
-    }
-
     fn print(message: &str) {
-        let bytes = message.as_bytes();
-        for byte in bytes {
-            unsafe {
-                core::ptr::write_volatile(UART_ADDR as *mut u8, *byte);
-            }
-        }
+        unsafe { sys_write(1, message.as_ptr(), message.len()) };
     }
 
     fn cycle_scope_start(_name: &str) {
@@ -59,4 +42,9 @@ impl Platform for ZiskPlatform {
             &_name as *const &str as usize
         )
     }
+}
+
+unsafe extern "C" {
+    /// POSIX-style `write` syscall exported by `ziskos`.
+    fn sys_write(fd: u32, write_ptr: *const u8, nbytes: usize);
 }

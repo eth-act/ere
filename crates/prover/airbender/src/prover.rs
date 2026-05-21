@@ -263,14 +263,17 @@ fn cache_dir() -> PathBuf {
         .join("cache")
 }
 
+/// Converts stdin bytes to u32 words.
+///
+/// The first word is the byte length, which `AirbenderPlatform::read_input` reads to size the
+/// payload.
 fn input_to_words(stdin: &[u8]) -> Vec<u32> {
-    stdin
-        .chunks(4)
-        .map(|chunk| {
+    core::iter::once(stdin.len() as u32)
+        .chain(stdin.chunks(4).map(|chunk| {
             let mut padded = [0u8; 4];
             padded[..chunk.len()].copy_from_slice(chunk);
             u32::from_le_bytes(padded)
-        })
+        }))
         .collect()
 }
 

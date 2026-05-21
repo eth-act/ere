@@ -9,7 +9,7 @@ use risc0_zkvm_platform as _;
 pub struct Risc0Platform;
 
 impl Platform for Risc0Platform {
-    fn read_whole_input() -> impl Deref<Target = [u8]> {
+    fn read_input() -> impl Deref<Target = [u8]> {
         let len = {
             let mut bytes = [0; 4];
             risc0_zkvm::guest::env::read_slice(&mut bytes);
@@ -20,7 +20,7 @@ impl Platform for Risc0Platform {
         input
     }
 
-    fn write_whole_output(output: &[u8]) {
+    fn write_output(output: &[u8]) {
         risc0_zkvm::guest::env::commit_slice(output);
     }
 

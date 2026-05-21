@@ -33,7 +33,7 @@ fn run_inner<G: Program, P: Platform, T: AsRef<[u8]>>(
     output_bytes_modifier: impl Fn(Vec<u8>) -> T,
 ) {
     P::cycle_scope_start("read_input");
-    let input_bytes = P::read_whole_input();
+    let input_bytes = P::read_input();
     P::cycle_scope_end("read_input");
 
     P::cycle_scope_start("decode_input");
@@ -53,6 +53,6 @@ fn run_inner<G: Program, P: Platform, T: AsRef<[u8]>>(
     P::cycle_scope_end("postprocess_output");
 
     P::cycle_scope_start("write_output");
-    P::write_whole_output(modified_output_bytes.as_ref());
+    P::write_output(modified_output_bytes.as_ref());
     P::cycle_scope_end("write_output");
 }
