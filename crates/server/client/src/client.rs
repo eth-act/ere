@@ -2,9 +2,9 @@ use core::{ops::Deref, time::Duration};
 
 use ere_prover_core::{Input, ProgramExecutionReport, ProgramProvingReport, PublicValues};
 use ere_server_api::{
-    ExecuteRequest, ProveRequest, VerifyRequest, ZkvmService,
-    execute_response::Result as ExecuteResult, prove_response::Result as ProveResult,
-    verify_response::Result as VerifyResult,
+    ExecuteRequest, ProgramVkRequest, ProveRequest, VerifyRequest, ZkvmService,
+    execute_response::Result as ExecuteResult, program_vk_response::Result as ProgramVkResult,
+    prove_response::Result as ProveResult, verify_response::Result as VerifyResult,
 };
 #[cfg(feature = "otel")]
 pub use otel_propagation::OtelPropagation;
@@ -37,6 +37,23 @@ impl Deref for EncodedProof {
 }
 
 impl AsRef<[u8]> for EncodedProof {
+    fn as_ref(&self) -> &[u8] {
+        self.0.as_ref()
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EncodedProgramVk(pub Vec<u8>);
+
+impl Deref for EncodedProgramVk {
+    type Target = Vec<u8>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl AsRef<[u8]> for EncodedProgramVk {
     fn as_ref(&self) -> &[u8] {
         self.0.as_ref()
     }
@@ -139,6 +156,17 @@ impl zkVMClient {
         match response.into_body().result.ok_or_else(result_none_err)? {
             VerifyResult::Ok(result) => Ok(result.public_values.into()),
             VerifyResult::Err(err) => Err(Error::zkVM(err)),
+        }
+    }
+
+    pub async fn program_vk(&self) -> Result<EncodedProgramVk, Error> {
+        let request = Request::new(ProgramVkRequest {});
+
+        let response = self.client.program_vk(request).await?;
+
+        match response.into_body().result.ok_or_else(result_none_err)? {
+            ProgramVkResult::Ok(result) => Ok(EncodedProgramVk(result.program_vk)),
+            ProgramVkResult::Err(err) => Err(Error::zkVM(err)),
         }
     }
 }

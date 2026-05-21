@@ -6,6 +6,7 @@ service ZkvmService {
     rpc Execute(ExecuteRequest) returns (ExecuteResponse) {}
     rpc Prove(ProveRequest) returns (ProveResponse) {}
     rpc Verify(VerifyRequest) returns (VerifyResponse) {}
+    rpc ProgramVk(ProgramVkRequest) returns (ProgramVkResponse) {}
 }
 
 message ExecuteRequest {
@@ -56,4 +57,17 @@ message VerifyResponse {
 
 message VerifyOk {
     bytes public_values = 1;
+}
+
+message ProgramVkRequest {}
+
+message ProgramVkResponse {
+    oneof result {
+        ProgramVkOk ok = 1;
+        string err = 2;
+    }
+}
+
+message ProgramVkOk {
+    bytes program_vk = 1;
 }

@@ -5,7 +5,7 @@ use ere_compiler_core::Elf;
 use ere_prover_core::{
     Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues,
 };
-use ere_server_client::{EncodedProof, reqwest::Client, url::Url, zkVMClient};
+use ere_server_client::{EncodedProgramVk, EncodedProof, reqwest::Client, url::Url, zkVMClient};
 use ere_util_tokio::block_on;
 use tokio::{
     sync::{RwLock, RwLockReadGuard},
@@ -280,6 +280,7 @@ pub struct DockerizedzkVM {
     elf: Elf,
     resource: ProverResource,
     config: DockerizedzkVMConfig,
+    program_vk: EncodedProgramVk,
     container: RwLock<Option<ServerContainer>>,
 }
 
@@ -293,12 +294,14 @@ impl DockerizedzkVM {
         build_server_image(zkvm_kind, resource.is_gpu())?;
 
         let container = ServerContainer::new(zkvm_kind, &elf, &resource)?;
+        let program_vk = block_on(container.client.program_vk())?;
 
         Ok(Self {
             zkvm_kind,
             elf,
             resource,
             config,
+            program_vk,
             container: RwLock::new(Some(container)),
         })
     }
@@ -321,6 +324,10 @@ impl DockerizedzkVM {
 
     pub fn resource(&self) -> &ProverResource {
         &self.resource
+    }
+
+    pub fn program_vk(&self) -> &EncodedProgramVk {
+        &self.program_vk
     }
 
     pub fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
