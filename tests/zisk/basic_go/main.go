@@ -30,7 +30,7 @@ type BasicProgramOutput struct {
 	A uint8  `cbor:"a"`
 }
 
-func readWholeInput() []byte {
+func readInput() []byte {
 	lengthBytes := make([]byte, 8)
 	src := unsafe.Pointer(uintptr(zkvm.INPUT_ADDR + 8))
 	for i := 0; i < 8; i++ {
@@ -44,7 +44,7 @@ func readWholeInput() []byte {
 
 func unmarshalInput(inputBytes []byte) BasicProgramInput {
 	var input BasicProgramInput
-	if err := cbor.Unmarshal(inputBytes[4:], &input); err != nil {
+	if err := cbor.Unmarshal(inputBytes, &input); err != nil {
 		panic("failed to deserialize input")
 	}
 	return input
@@ -77,14 +77,14 @@ func marshalOutput(output BasicProgramOutput) []byte {
 	return outputBytes
 }
 
-func writeWholeOutput(outputBytes []byte) {
+func writeOutput(outputBytes []byte) {
 	zisk_runtime.CommitBytes(outputBytes)
 }
 
 func main() {
-	inputBytes := readWholeInput()
+	inputBytes := readInput()
 	input := unmarshalInput(inputBytes)
 	output := compute(input)
 	outputBytes := marshalOutput(output)
-	writeWholeOutput(outputBytes)
+	writeOutput(outputBytes)
 }
