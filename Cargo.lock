@@ -3896,7 +3896,7 @@ dependencies = [
 
 [[package]]
 name = "ere-catalog"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "ere-util-build",
  "serde",
@@ -3905,7 +3905,7 @@ dependencies = [
 
 [[package]]
 name = "ere-cluster-client-zisk"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "bincode 2.0.1",
  "ere-compiler-core",
@@ -3925,11 +3925,11 @@ dependencies = [
 
 [[package]]
 name = "ere-codec"
-version = "0.10.0"
+version = "0.11.0"
 
 [[package]]
 name = "ere-compiler"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -3946,7 +3946,7 @@ dependencies = [
 
 [[package]]
 name = "ere-compiler-airbender"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "airbender-build",
  "cargo_metadata 0.19.2",
@@ -3961,14 +3961,14 @@ dependencies = [
 
 [[package]]
 name = "ere-compiler-core"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "ere-compiler-openvm"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "ere-compiler-core",
  "ere-prover-core",
@@ -3982,7 +3982,7 @@ dependencies = [
 
 [[package]]
 name = "ere-compiler-risc0"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "anyhow",
  "ere-compiler-core",
@@ -3998,7 +3998,7 @@ dependencies = [
 
 [[package]]
 name = "ere-compiler-sp1"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "ere-compiler-core",
  "ere-prover-core",
@@ -4012,7 +4012,7 @@ dependencies = [
 
 [[package]]
 name = "ere-compiler-zisk"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "ere-compiler-core",
  "ere-prover-core",
@@ -4026,7 +4026,7 @@ dependencies = [
 
 [[package]]
 name = "ere-dockerized"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "anyhow",
  "ere-catalog",
@@ -4045,7 +4045,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-airbender"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "airbender-sdk",
  "ere-platform-core",
@@ -4053,11 +4053,11 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-core"
-version = "0.10.0"
+version = "0.11.0"
 
 [[package]]
 name = "ere-platform-openvm"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "ere-platform-core",
  "openvm",
@@ -4065,7 +4065,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-risc0"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "ere-platform-core",
  "risc0-zkvm",
@@ -4074,7 +4074,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-sp1"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "ere-platform-core",
  "sp1-zkvm",
@@ -4082,7 +4082,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-zisk"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "ere-platform-core",
  "ziskos",
@@ -4090,7 +4090,7 @@ dependencies = [
 
 [[package]]
 name = "ere-prover-airbender"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "airbender-host",
  "ere-compiler-airbender",
@@ -4107,7 +4107,7 @@ dependencies = [
 
 [[package]]
 name = "ere-prover-core"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "anyhow",
  "auto_impl",
@@ -4126,7 +4126,7 @@ dependencies = [
 
 [[package]]
 name = "ere-prover-openvm"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "ere-compiler-core",
  "ere-compiler-openvm",
@@ -4141,7 +4141,7 @@ dependencies = [
 
 [[package]]
 name = "ere-prover-risc0"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -4157,7 +4157,7 @@ dependencies = [
 
 [[package]]
 name = "ere-prover-sp1"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -4178,7 +4178,7 @@ dependencies = [
 
 [[package]]
 name = "ere-prover-zisk"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "anyhow",
  "ere-cluster-client-zisk",
@@ -4207,7 +4207,7 @@ dependencies = [
 
 [[package]]
 name = "ere-server"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -4239,7 +4239,7 @@ dependencies = [
 
 [[package]]
 name = "ere-server-api"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "prost 0.14.3",
  "prost-build 0.14.3",
@@ -4251,7 +4251,7 @@ dependencies = [
 
 [[package]]
 name = "ere-server-client"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "bincode 2.0.1",
  "ere-prover-core",
@@ -4265,14 +4265,14 @@ dependencies = [
 
 [[package]]
 name = "ere-util-build"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "cargo_metadata 0.19.2",
 ]
 
 [[package]]
 name = "ere-util-compile"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "anyhow",
  "cargo_metadata 0.19.2",
@@ -4283,7 +4283,7 @@ dependencies = [
 
 [[package]]
 name = "ere-util-test"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "bincode 2.0.1",
  "ciborium",
@@ -4299,14 +4299,14 @@ dependencies = [
 
 [[package]]
 name = "ere-util-tokio"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "tokio",
 ]
 
 [[package]]
 name = "ere-verifier"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "criterion",
  "ere-catalog",
@@ -4322,7 +4322,7 @@ dependencies = [
 
 [[package]]
 name = "ere-verifier-airbender"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "bincode 2.0.1",
  "ere-util-build",
@@ -4337,7 +4337,7 @@ dependencies = [
 
 [[package]]
 name = "ere-verifier-core"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "auto_impl",
  "ere-codec",
@@ -4346,7 +4346,7 @@ dependencies = [
 
 [[package]]
 name = "ere-verifier-openvm"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "bincode 2.0.1",
  "bitcode",
@@ -4362,7 +4362,7 @@ dependencies = [
 
 [[package]]
 name = "ere-verifier-risc0"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "bincode 2.0.1",
  "ere-util-build",
@@ -4375,7 +4375,7 @@ dependencies = [
 
 [[package]]
 name = "ere-verifier-sp1"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "bincode 2.0.1",
  "ere-util-build",
@@ -4389,7 +4389,7 @@ dependencies = [
 
 [[package]]
 name = "ere-verifier-zisk"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "bincode 2.0.1",
  "bytemuck",
