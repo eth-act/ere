@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/eth-act/ere/compare/v0.10.0...v0.11.0) (2026-05-21)
+
+
+### Features
+
+* refactor platform io ([#369](https://github.com/eth-act/ere/issues/369)) ([4b113ca](https://github.com/eth-act/ere/commit/4b113ca46b9d02400c2da8fbc59db07df935ac7c))
+
 ## [0.10.0](https://github.com/eth-act/ere/compare/v0.9.1...v0.10.0) (2026-05-20)
 
 
