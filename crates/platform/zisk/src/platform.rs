@@ -23,11 +23,14 @@ impl Platform for ZiskPlatform {
             feature = "cycle-scope",
             all(target_os = "zkvm", target_vendor = "zisk")
         ))]
-        ziskos::ziskos_syscall!(
-            ziskos::SYSCALL_PROFILE_ID,
-            ziskos::PROFILE_REPORT_START_COST_ID,
-            &_name as *const &str as usize
-        );
+        {
+            use ziskos::{
+                PROFILE_REPORT_START_COST_ID, PROFILE_REPORT_START_STEPS_ID, SYSCALL_PROFILE_ID,
+            };
+            let name = &_name as *const &str as usize;
+            ziskos::ziskos_syscall!(SYSCALL_PROFILE_ID, PROFILE_REPORT_START_COST_ID, name);
+            ziskos::ziskos_syscall!(SYSCALL_PROFILE_ID, PROFILE_REPORT_START_STEPS_ID, name);
+        }
     }
 
     fn cycle_scope_end(_name: &str) {
@@ -36,11 +39,14 @@ impl Platform for ZiskPlatform {
             feature = "cycle-scope",
             all(target_os = "zkvm", target_vendor = "zisk")
         ))]
-        ziskos::ziskos_syscall!(
-            ziskos::SYSCALL_PROFILE_ID,
-            ziskos::PROFILE_REPORT_END_COST_ID,
-            &_name as *const &str as usize
-        )
+        {
+            use ziskos::{
+                PROFILE_REPORT_END_COST_ID, PROFILE_REPORT_END_STEPS_ID, SYSCALL_PROFILE_ID,
+            };
+            let name = &_name as *const &str as usize;
+            ziskos::ziskos_syscall!(SYSCALL_PROFILE_ID, PROFILE_REPORT_END_STEPS_ID, name);
+            ziskos::ziskos_syscall!(SYSCALL_PROFILE_ID, PROFILE_REPORT_END_COST_ID, name);
+        }
     }
 }
 
