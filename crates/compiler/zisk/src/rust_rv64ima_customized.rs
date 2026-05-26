@@ -1,13 +1,14 @@
-use std::{fs, path::Path, process::Command};
+use std::path::Path;
 
 use ere_compiler_core::{Compiler, Elf};
-use ere_util_compile::{CommonError, cargo_metadata, parse_cargo_features, rustc_path};
-use tracing::info;
+use ere_util_compile::{CargoBuildCmd, parse_cargo_features};
 
 use crate::Error;
 
 const ZISK_TOOLCHAIN: &str = "zisk";
 const ZISK_TARGET: &str = "riscv64ima-zisk-zkvm-elf";
+
+const RUSTFLAGS: &[&str] = &["-C", "passes=lower-atomic"];
 
 /// Compiler for Rust guest program to RV64IMA architecture, using customized
 /// Rust toolchain of ZisK.
@@ -21,43 +22,11 @@ impl Compiler for ZiskRustRv64imaCustomized {
         guest_directory: impl AsRef<Path>,
         args: &[String],
     ) -> Result<Elf, Self::Error> {
-        let guest_directory = guest_directory.as_ref();
-        info!(
-            "Compiling Rust ZisK program at {}",
-            guest_directory.display()
-        );
-
-        let metadata = cargo_metadata(guest_directory)?;
-        let package = metadata.root_package().unwrap();
-
-        info!("Parsed program name: {}", package.name);
-
-        let mut cmd = Command::new("cargo");
-        cmd.env("RUSTC", rustc_path(ZISK_TOOLCHAIN)?)
-            .args(["build", "--release"])
-            .args(["--target", ZISK_TARGET])
-            .arg("--manifest-path")
-            .arg(&package.manifest_path);
-        let features = parse_cargo_features(args)?;
-        if !features.is_empty() {
-            cmd.args(["--features", &features.join(",")]);
-        }
-        let status = cmd
-            .status()
-            .map_err(|err| CommonError::command(&cmd, err))?;
-
-        if !status.success() {
-            return Err(CommonError::command_exit_non_zero(&cmd, status, None))?;
-        }
-
-        let elf_path = metadata
-            .target_directory
-            .join("riscv64ima-zisk-zkvm-elf")
-            .join("release")
-            .join(&package.name);
-        let elf =
-            fs::read(&elf_path).map_err(|err| CommonError::read_file("elf", elf_path, err))?;
-
+        let elf = CargoBuildCmd::new()
+            .toolchain(ZISK_TOOLCHAIN)
+            .rustflags(RUSTFLAGS)
+            .features(&parse_cargo_features(args)?)
+            .exec(guest_directory, ZISK_TARGET)?;
         Ok(Elf(elf))
     }
 }
