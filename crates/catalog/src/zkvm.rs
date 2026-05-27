@@ -4,7 +4,7 @@ use core::{
 };
 
 use serde::{Deserialize, Serialize};
-use strum::{Display, EnumIter, EnumString, IntoEnumIterator, IntoStaticStr};
+use strum::{Display, EnumIter, EnumString, FromRepr, IntoEnumIterator, IntoStaticStr};
 
 /// zkVM kind supported in Ere.
 #[allow(non_camel_case_types)]
@@ -21,7 +21,9 @@ use strum::{Display, EnumIter, EnumString, IntoEnumIterator, IntoStaticStr};
     EnumString,
     IntoStaticStr,
     Display,
+    FromRepr,
 )]
+#[repr(u8)]
 #[serde(into = "String", try_from = "String")]
 #[strum(
     ascii_case_insensitive,
@@ -38,6 +40,22 @@ pub enum zkVMKind {
 }
 
 impl zkVMKind {
+    pub fn iter() -> impl Iterator<Item = Self> {
+        <Self as IntoEnumIterator>::iter()
+    }
+
+    pub fn from_u8(repr: u8) -> Option<Self> {
+        Self::from_repr(repr)
+    }
+
+    pub fn as_u8(&self) -> u8 {
+        *self as u8
+    }
+
+    pub fn as_u32(&self) -> u32 {
+        self.as_u8() as u32
+    }
+
     pub fn as_str(&self) -> &'static str {
         self.into()
     }
