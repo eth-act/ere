@@ -18,12 +18,15 @@ use crate::{error::Error, sdk::local::LocalProver};
 
 mod local;
 
+/// Default ZisK cluster prove timeout seconds.
+const DEFAULT_ZISK_CLUSTER_PROVE_TIMEOUT_SECS: u64 = 600;
+
 #[allow(clippy::large_enum_variant)]
 enum Backend {
     Local(LocalProver),
     Cluster {
         client: ZiskClusterClient,
-        prove_timeout: Option<Duration>,
+        prove_timeout: Duration,
     },
 }
 
@@ -47,9 +50,12 @@ impl ZiskSdk {
             }
             ProverResource::Cluster(config) => {
                 let client = block_on(ZiskClusterClient::new(config, elf))?;
-                let prove_timeout = env::var("ERE_ZISK_CLUSTER_PROVE_TIMEOUT_SECS")
-                    .ok()
-                    .and_then(|val| val.parse::<u64>().ok().map(Duration::from_secs));
+                let prove_timeout = Duration::from_secs(
+                    env::var("ERE_ZISK_CLUSTER_PROVE_TIMEOUT_SECS")
+                        .ok()
+                        .and_then(|val| val.parse::<u64>().ok())
+                        .unwrap_or(DEFAULT_ZISK_CLUSTER_PROVE_TIMEOUT_SECS),
+                );
                 Backend::Cluster {
                     client,
                     prove_timeout,
@@ -116,7 +122,7 @@ impl ZiskSdk {
                 client,
                 prove_timeout,
             } => block_on(async {
-                let deadline = prove_timeout.map(|timeout| Instant::now() + timeout);
+                let deadline = Instant::now() + *prove_timeout;
                 client.prove(input, deadline).await.map_err(Error::Cluster)
             })?,
         };
