@@ -1,0 +1,71 @@
+name: Test bindings
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test bindings
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: macos-13
+            target: x86_64-apple-darwin
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2026-05-01
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install zig
+        uses: mlugg/setup-zig@v1
+        with:
+          version: 0.16.0
+
+      - name: Install cargo-zigbuild
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-zigbuild
+
+      - name: Install Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: bindings/golang/go.mod
+
+      - name: Run C binding tests
+        run: cargo test --release -p ere-verifier-c
+
+      - name: Build the static library
+        run: bash bindings/scripts/build.sh ${{ matrix.target }} libere_verifier_c.tar.gz
+
+      - name: Run Go binding tests
+        shell: bash
+        run: |
+          LIBDIR="$(mktemp -d)"
+          tar -xzf libere_verifier_c.tar.gz -C "$LIBDIR"
+          cd bindings/golang
+          CGO_CFLAGS="-I$LIBDIR" CGO_LDFLAGS="-L$LIBDIR" go test ./...
