@@ -17,6 +17,9 @@ pub enum Error {
     #[error("Cluster job {0} was cancelled")]
     JobCancelled(String),
 
+    #[error("Cluster unavailable timed out")]
+    ClusterUnavailable,
+
     #[error("Setup job {job_id} timed out")]
     SetupTimeout { job_id: String },
 

@@ -8,8 +8,8 @@ use ere_verifier_zisk::{
     PROGRAM_VK_WORDS, PUBLIC_VALUES_BYTES, VadcopFinalProof, ZiskProgramVk, ZiskProof, ZiskVerifier,
 };
 use serde::Deserialize;
-use tokio::time::Instant;
-use tonic::transport::Channel;
+use tokio::time::{Instant, sleep, timeout, timeout_at};
+use tonic::{Code, transport::Channel};
 
 use crate::{
     api::{
@@ -78,7 +78,16 @@ impl ZiskClusterClient {
         let req = JobRequestMessage {
             job_kind: Some(job),
         };
-        let job_id = client.job_request(req).await?.into_inner().job_id;
+        let job_id = match client.job_request(req.clone()).await {
+            Ok(res) => res.into_inner().job_id,
+            Err(err)
+                if err.code() == Code::Unavailable && err.message().contains("setup not done") =>
+            {
+                setup(&mut client, self.elf.clone()).await?;
+                client.job_request(req).await?.into_inner().job_id
+            }
+            Err(err) => Err(err)?,
+        };
         Ok(job_id)
     }
 
@@ -111,27 +120,54 @@ impl ZiskClusterClient {
         Ok(cancelled)
     }
 
-    /// Submit a prove job, wait up to `timeout` for completion, cancel the job on timeout.
+    /// Submits a prove job, wait up to `timeout` for completion, cancel the job on deadline.
     ///
     /// Returns `Error::ProveTimeout` if the deadline expires before the job terminates.
+    ///
+    /// Retries prove job submission until deadline if cluster response the unavailable errors:
+    ///
+    /// - `setup not done`
+    /// - `no workers connected`
+    /// - `workers are setting up`
+    ///
+    /// Returns `Error::ClusterUnavailable` if the deadline expires before the job submission.
     pub async fn prove(
         &self,
         input: &Input,
-        deadline: Option<Instant>,
+        deadline: Instant,
     ) -> Result<(ZiskProof, Duration), Error> {
-        let job_id = self.create_prove_job(input).await?;
-
-        match deadline {
-            Some(deadline) => {
-                match tokio::time::timeout_at(deadline, self.wait_prove_job(&job_id)).await {
-                    Ok(result) => result,
-                    Err(_) => {
-                        let _ = self.cancel_prove_job(&job_id).await;
-                        Err(Error::ProveTimeout { job_id })
+        let fut = async {
+            loop {
+                let result = self.create_prove_job(input).await;
+                if let Err(Error::Grpc(status)) = &result
+                    && status.code() == Code::Unavailable
+                {
+                    if status.message().contains("setup not done") {
+                        setup(&mut self.client.clone(), self.elf.clone()).await?;
+                        continue;
+                    }
+                    if status.message().contains("no workers connected")
+                        || status.message().contains("workers are setting up")
+                    {
+                        sleep(Duration::from_secs(5)).await;
+                        continue;
                     }
                 }
+                return result;
             }
-            _ => self.wait_prove_job(&job_id).await,
+        };
+
+        let job_id = match timeout_at(deadline, fut).await {
+            Ok(result) => result?,
+            Err(_) => Err(Error::ClusterUnavailable)?,
+        };
+
+        match timeout_at(deadline, self.wait_prove_job(&job_id)).await {
+            Ok(result) => result,
+            Err(_) => {
+                let _ = self.cancel_prove_job(&job_id).await;
+                Err(Error::ProveTimeout { job_id })
+            }
         }
     }
 }
@@ -161,7 +197,7 @@ async fn setup(
     };
     let job_id = client.job_request(req).await?.into_inner().job_id;
 
-    let resp = match tokio::time::timeout(TIMEOUT, wait_job(client, &job_id)).await {
+    let resp = match timeout(TIMEOUT, wait_job(client, &job_id)).await {
         Ok(resp) => match resp?.kind {
             Some(job_kind_response::Kind::Setup(resp)) => resp,
             _ => Err(Error::MissingField("kind::setup"))?,
