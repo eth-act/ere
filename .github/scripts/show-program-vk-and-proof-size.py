@@ -2,27 +2,22 @@
 
 import math
 import os
+from pathlib import Path
+
+script_dir = Path(__file__).parent.resolve()
 
 
 def format_size(size):
     if size < 1024:
-        return str(size)
-    for unit in "KM":
-        size /= 1024
-        if size < 1024:
-            return (
-                f"{math.ceil(size)} {unit}iB"
-                if size >= 10
-                else f"{math.ceil(size * 10) / 10:.1f} {unit}iB"
-            )
-    return f"{math.ceil(size)} MiB"
+        return f"{size} B"
+    return f"{math.ceil(size / 1024)} KiB"
 
 
-def print_table(header, body):
+def print_table(header, sep, body):
     widths = [
         max(len(row[col]) for row in [header] + body) for col in range(len(header))
     ]
-    for row in [header, ("-" * width for width in widths)] + body:
+    for row in [header, sep] + body:
         print(
             "| "
             + " | ".join(cell.ljust(widths[col]) for col, cell in enumerate(row))
@@ -40,7 +35,9 @@ ZKVM = {
 
 sizes = {
     (zkvm, obj): format_size(
-        os.path.getsize(f"crates/verifier/{zkvm}/tests/fixtures/{obj}.bin")
+        os.path.getsize(
+            f"{script_dir}/../../crates/verifier/{zkvm}/tests/fixtures/{obj}.bin"
+        )
     )
     for zkvm in ZKVM
     for obj in ("program_vk", "proof")
@@ -48,5 +45,6 @@ sizes = {
 
 print_table(
     ("zkVM", "ProgramVK", "Proof"),
+    ("-", "-:", "-:"),
     [(ZKVM[zkvm], sizes[zkvm, "program_vk"], sizes[zkvm, "proof"]) for zkvm in ZKVM],
 )
