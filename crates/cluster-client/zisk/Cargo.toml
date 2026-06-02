@@ -15,6 +15,7 @@ thiserror.workspace = true
 tokio = { workspace = true, features = ["time"] }
 tonic.workspace = true
 tonic-prost.workspace = true
+tracing.workspace = true
 
 # Local dependencies
 ere-compiler-core.workspace = true
