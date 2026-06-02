@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.12.0](https://github.com/eth-act/ere/compare/v0.11.0...v0.12.0) (2026-06-02)
+
+
+### Features
+
+* add passes=lower-atomic to zisk customized target compiler ([#371](https://github.com/eth-act/ere/issues/371)) ([224b058](https://github.com/eth-act/ere/commit/224b058a77263670d9c9286a62ab90a4c582108b))
+* improve zisk cluster client ([#373](https://github.com/eth-act/ere/issues/373)) ([5e9a70e](https://github.com/eth-act/ere/commit/5e9a70e1436829046d1f04696f53cc9bf6aa1b14))
+* retry to survive coordinator down ([#375](https://github.com/eth-act/ere/issues/375)) ([eba2bc3](https://github.com/eth-act/ere/commit/eba2bc32526d4eef1a4d796eae6dc08f649e8963))
+
 ## [0.11.0](https://github.com/eth-act/ere/compare/v0.10.0...v0.11.0) (2026-05-21)
 
 
