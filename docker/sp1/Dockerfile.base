@@ -2,6 +2,9 @@ ARG BASE_IMAGE=ere-base:latest
 
 FROM $BASE_IMAGE
 
+# Whether to enable CUDA feature or not.
+ARG CUDA
+
 # Install the well known proto files.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libprotobuf-dev \

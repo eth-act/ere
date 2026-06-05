@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e # Exit immediately if a command exits with a non-zero status.
+set -eo pipefail
 
 echo "Installing Succinct SP1 Toolchain..."
 
@@ -52,6 +52,8 @@ echo "  export PATH=\"${SP1_DIR}/bin:\$PATH\""
 echo "Then source your profile or open a new terminal."
 
 # Download CUDA prover (supports CUDA compute capabilities 80, 86, 89, 90, 100, 120)
-mkdir -p $HOME/.sp1/bin && \
-    curl -L "https://github.com/succinctlabs/sp1/releases/download/${SP1_VERSION}/sp1_gpu_server_${SP1_VERSION}_x86_64.tar.gz" | \
-    tar -xzf - -C $HOME/.sp1/bin
+if [ -n "$CUDA" ]; then
+    mkdir -p $HOME/.sp1/bin && \
+        curl -fL "https://github.com/succinctlabs/sp1/releases/download/${SP1_VERSION}/sp1_gpu_server_${SP1_VERSION}_x86_64.tar.gz" | \
+        tar -xzf - -C $HOME/.sp1/bin
+fi
