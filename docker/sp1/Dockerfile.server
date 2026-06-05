@@ -22,6 +22,9 @@ FROM $RUNTIME_IMAGE AS runtime
 FROM $RUNTIME_CUDA_IMAGE AS runtime_cuda
 FROM runtime${CUDA:+_cuda} AS runtime_stage
 
+# Copy SP1 SDK
+COPY --from=build_stage /root/.sp1/bin /root/.sp1/bin
+
 # Copy ere-server
 COPY --from=build_stage /ere/bin/ere-server /ere/bin/ere-server
 
