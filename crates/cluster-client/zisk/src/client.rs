@@ -118,20 +118,19 @@ impl ZiskClusterClient {
                 let req = JobRequestMessage {
                     job_kind: Some(job.clone()),
                 };
-                let status = match client.job_request(req).await {
-                    Ok(res) => return Ok::<_, Error>(res.into_inner().job_id),
+                match client.job_request(req).await {
+                    Ok(res) => return Ok(res.into_inner().job_id),
+                    Err(status) if status.message().contains("setup not done") => {
+                        setup(&mut client, self.elf.clone()).await?;
+                    }
+                    Err(status) if matches!(status.code(), Code::Unavailable | Code::Internal) => {
+                        warn!(?status, "job submission failed, retrying...");
+                        sleep(Duration::from_secs(5)).await;
+                    }
                     Err(status) => {
-                        if status.code() == Code::Unavailable
-                            && status.message().contains("setup not done")
-                        {
-                            setup(&mut client, self.elf.clone()).await?;
-                            continue;
-                        }
-                        status
+                        return Err(Error::Grpc(status));
                     }
                 };
-                warn!(?status, "job submission failed, retrying...");
-                sleep(Duration::from_secs(5)).await;
             }
         };
 
