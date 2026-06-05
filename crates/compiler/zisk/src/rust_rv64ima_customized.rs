@@ -8,9 +8,10 @@ use crate::Error;
 const ZISK_TOOLCHAIN: &str = "zisk";
 const ZISK_TARGET: &str = "riscv64ima-zisk-zkvm-elf";
 
-const RUSTFLAGS: &[&str] = &[
-    "-C",
-    "passes=lower-atomic",
+const RUSTFLAGS: &[&str] = &["-C", "passes=lower-atomic"];
+
+/// LLVM flags tuned by Optuna for the Ethrex guest on Zisk
+const PROFILE_ETHREX: &[&str] = &[
     "-C",
     "llvm-args=--inline-threshold=4749",
     "-C",
@@ -59,6 +60,13 @@ const RUSTFLAGS: &[&str] = &[
     "llvm-args=--disable-licm-promotion",
 ];
 
+fn profile_flags() -> &'static [&'static str] {
+    match std::env::var("ERE_PROFILE").as_deref() {
+        Ok("ethrex") => PROFILE_ETHREX,
+        _ => &[],
+    }
+}
+
 /// Compiler for Rust guest program to RV64IMA architecture, using customized
 /// Rust toolchain of ZisK.
 pub struct ZiskRustRv64imaCustomized;
@@ -71,9 +79,10 @@ impl Compiler for ZiskRustRv64imaCustomized {
         guest_directory: impl AsRef<Path>,
         args: &[String],
     ) -> Result<Elf, Self::Error> {
+        let flags: Vec<&str> = [profile_flags(), RUSTFLAGS].concat();
         let elf = CargoBuildCmd::new()
             .toolchain(ZISK_TOOLCHAIN)
-            .rustflags(RUSTFLAGS)
+            .rustflags(&flags)
             .features(&parse_cargo_features(args)?)
             .exec(guest_directory, ZISK_TARGET)?;
         Ok(Elf(elf))

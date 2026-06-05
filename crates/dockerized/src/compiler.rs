@@ -147,6 +147,7 @@ impl Compiler for DockerizedCompiler {
             .inherit_env("NO_COLOR")
             .inherit_env("ERE_RUST_TOOLCHAIN")
             .inherit_env("ERE_RUSTFLAGS")
+            .inherit_env("ERE_PROFILE")
             .volume(&self.mount_directory, "/guest")
             .volume(tempdir.path(), "/output");
 
