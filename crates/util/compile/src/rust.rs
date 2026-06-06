@@ -157,8 +157,10 @@ impl CargoBuildCmd {
             }
         };
 
+        let extra_rustflags = std::env::var("ERE_RUSTFLAGS").unwrap_or_default();
         let encoded_rustflags = iter::empty()
             .chain(self.rustflags.iter().cloned())
+            .chain(extra_rustflags.split_whitespace().map(String::from))
             .chain(
                 self.linker_script
                     .as_ref()
