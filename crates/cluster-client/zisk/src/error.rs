@@ -11,17 +11,23 @@ pub enum Error {
     #[error("Failed to connect to cluster: {0}")]
     ConnectionFailed(#[from] tonic::transport::Error),
 
+    #[error("Cluster setup is not done yet")]
+    SetupNotDone,
+
     #[error("Cluster job {job_id} failed: {reason}")]
     JobFailed { job_id: String, reason: String },
 
     #[error("Cluster job {0} was cancelled")]
     JobCancelled(String),
 
-    #[error("Cluster unavailable timed out")]
-    ClusterUnavailable,
+    #[error("Cluster unavailable: {0}")]
+    ClusterUnavailable(tonic::Status),
 
     #[error("Setup job {job_id} timed out")]
     SetupTimeout { job_id: String },
+
+    #[error("Create prove job timeout")]
+    CreateProveJobTimeout,
 
     #[error("Prove job {job_id} timed out")]
     ProveTimeout { job_id: String },
