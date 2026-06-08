@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.12.0](https://github.com/eth-act/ere/compare/v0.11.0...v0.12.0) (2026-06-08)
+
+
+### Features
+
+* add passes=lower-atomic to zisk customized target compiler ([#371](https://github.com/eth-act/ere/issues/371)) ([224b058](https://github.com/eth-act/ere/commit/224b058a77263670d9c9286a62ab90a4c582108b))
+* improve zisk cluster client ([#373](https://github.com/eth-act/ere/issues/373)) ([5e9a70e](https://github.com/eth-act/ere/commit/5e9a70e1436829046d1f04696f53cc9bf6aa1b14))
+* retry to survive coordinator down ([#375](https://github.com/eth-act/ere/issues/375)) ([eba2bc3](https://github.com/eth-act/ere/commit/eba2bc32526d4eef1a4d796eae6dc08f649e8963))
+* verifier binding c and go ([#377](https://github.com/eth-act/ere/issues/377)) ([658473b](https://github.com/eth-act/ere/commit/658473ba58aeec59022fd33fec1163d62e36cfb5))
+
+
+### Bug Fixes
+
+* docker build of sp1 and risc0 ([#376](https://github.com/eth-act/ere/issues/376)) ([8230df9](https://github.com/eth-act/ere/commit/8230df91c155269299e4188dec933cfbc283c653))
+
+
+### Performance Improvements
+
+* add optimized llvm parameters for the zisk target ([#374](https://github.com/eth-act/ere/issues/374)) ([e2023a5](https://github.com/eth-act/ere/commit/e2023a54d0f3a5eac601a92da92862cf96554d95))
+
 ## [0.11.0](https://github.com/eth-act/ere/compare/v0.10.0...v0.11.0) (2026-05-21)
 
 
