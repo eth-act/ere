@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.1](https://github.com/eth-act/ere/compare/v0.12.0...v0.12.1) (2026-06-08)
+
+
+### Bug Fixes
+
+* release please ([#379](https://github.com/eth-act/ere/issues/379)) ([d8f0485](https://github.com/eth-act/ere/commit/d8f04854c7d561fee09aa07071ce417fdb587f48))
+
 ## [0.12.0](https://github.com/eth-act/ere/compare/v0.11.0...v0.12.0) (2026-06-08)
 
 
