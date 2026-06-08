@@ -1,6 +1,7 @@
 name: Release bindings
 
 on:
+  pull_request:
   release:
     types: [published]
   workflow_dispatch:
@@ -9,6 +10,10 @@ on:
         description: Existing release tag to attach artifacts to, for example v0.9.1
         required: true
         type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   CARGO_TERM_COLOR: always
@@ -68,6 +73,7 @@ jobs:
   upload:
     name: upload-release-assets
     needs: build
+    if: ${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write

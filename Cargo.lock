@@ -173,7 +173,7 @@ source = "git+https://github.com/matter-labs/airbender-platform?rev=72cce091dbaa
 dependencies = [
  "serde",
  "thiserror 2.0.18",
- "toml",
+ "toml 0.8.23",
 ]
 
 [[package]]
@@ -628,7 +628,7 @@ checksum = "489f1620bb7e2483fb5819ed01ab6edc1d2f93939dce35a5695085a1afd1d699"
 dependencies = [
  "alloy-sol-macro-input",
  "const-hex",
- "heck 0.5.0",
+ "heck",
  "indexmap 2.13.0",
  "proc-macro-error2",
  "proc-macro2",
@@ -646,7 +646,7 @@ checksum = "56cef806ad22d4392c5fc83cf8f2089f988eb99c7067b4e0c6f1971fc1cca318"
 dependencies = [
  "const-hex",
  "dunce",
- "heck 0.5.0",
+ "heck",
  "macro-string",
  "proc-macro2",
  "quote",
@@ -1207,7 +1207,7 @@ dependencies = [
 [[package]]
 name = "asm-runner"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "anyhow",
  "libc",
@@ -2418,12 +2418,12 @@ checksum = "37b2a672a2cb129a2e41c10b1224bb368f9f37a2b16b612598138befd7b37eb5"
 
 [[package]]
 name = "cbindgen"
-version = "0.28.0"
+version = "0.29.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eadd868a2ce9ca38de7eeafdcec9c7065ef89b42b32f0839278d55f35c54d1ff"
+checksum = "c95537b45400390270fae69ac098d057c8f5399001cde9d04f700c105ddfff2d"
 dependencies = [
  "clap",
- "heck 0.4.1",
+ "heck",
  "indexmap 2.13.0",
  "log",
  "proc-macro2",
@@ -2432,7 +2432,7 @@ dependencies = [
  "serde_json",
  "syn 2.0.117",
  "tempfile",
- "toml",
+ "toml 0.9.12+spec-1.1.0",
 ]
 
 [[package]]
@@ -2523,7 +2523,7 @@ source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0#790f9e28a6
 [[package]]
 name = "circuit"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 
 [[package]]
 name = "clang-sys"
@@ -2564,7 +2564,7 @@ version = "4.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1110bd8a634a1ab8cb04345d8d878267d57c3cf1b38d91b71af6686408bbca6a"
 dependencies = [
- "heck 0.5.0",
+ "heck",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -3279,7 +3279,7 @@ dependencies = [
 [[package]]
 name = "data-bus"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "zisk-common 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "zisk-core 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
@@ -4141,7 +4141,7 @@ dependencies = [
  "serde_yaml",
  "strum 0.27.2",
  "thiserror 2.0.18",
- "toml",
+ "toml 0.8.23",
 ]
 
 [[package]]
@@ -4476,7 +4476,7 @@ dependencies = [
 [[package]]
 name = "executor"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -5293,12 +5293,6 @@ dependencies = [
 
 [[package]]
 name = "heck"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
-
-[[package]]
-name = "heck"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
@@ -6061,7 +6055,7 @@ source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0#790f9e28a6
 [[package]]
 name = "lib-c"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 
 [[package]]
 name = "lib-float"
@@ -6071,7 +6065,7 @@ source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0#790f9e28a6
 [[package]]
 name = "lib-float"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 
 [[package]]
 name = "libc"
@@ -6412,7 +6406,7 @@ dependencies = [
 [[package]]
 name = "mem-common"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "clap",
  "fields",
@@ -6432,7 +6426,7 @@ dependencies = [
 [[package]]
 name = "mem-planner-cpp"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "mem-common",
  "proofman-common",
@@ -8053,7 +8047,7 @@ dependencies = [
  "serde_with",
  "tempfile",
  "thiserror 1.0.69",
- "toml",
+ "toml 0.8.23",
  "tracing",
 ]
 
@@ -8174,7 +8168,7 @@ dependencies = [
  "serde",
  "serde_json",
  "static_assertions",
- "toml",
+ "toml 0.8.23",
  "tracing",
  "tracing-forest",
  "tracing-subscriber 0.3.23",
@@ -9178,7 +9172,7 @@ dependencies = [
 [[package]]
 name = "precomp-arith-eq"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "ark-bn254",
  "ark-ff 0.5.0",
@@ -9215,7 +9209,7 @@ dependencies = [
 [[package]]
 name = "precomp-arith-eq-384"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -9252,7 +9246,7 @@ dependencies = [
 [[package]]
 name = "precomp-big-int"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "fields",
  "generic-array 0.14.9",
@@ -9274,7 +9268,7 @@ dependencies = [
 [[package]]
 name = "precomp-blake2"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "fields",
  "mem-common",
@@ -9294,7 +9288,7 @@ dependencies = [
 [[package]]
 name = "precomp-dma"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "fields",
  "generic-array 0.14.9",
@@ -9318,7 +9312,7 @@ dependencies = [
 [[package]]
 name = "precomp-keccakf"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "circuit 0.18.0 (git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0)",
  "fields",
@@ -9340,7 +9334,7 @@ dependencies = [
 [[package]]
 name = "precomp-poseidon2"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "fields",
  "mem-common",
@@ -9361,7 +9355,7 @@ dependencies = [
 [[package]]
 name = "precomp-sha256f"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "fields",
  "mem-common",
@@ -9381,7 +9375,7 @@ dependencies = [
 [[package]]
 name = "precompiles-common"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "fields",
  "mem-common",
@@ -9412,7 +9406,7 @@ dependencies = [
 [[package]]
 name = "precompiles-helpers"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -9431,7 +9425,7 @@ dependencies = [
 [[package]]
 name = "precompiles-hints"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "anyhow",
  "borsh",
@@ -9690,7 +9684,7 @@ version = "0.13.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be769465445e8c1474e9c5dac2018218498557af32d9ed057325ec9a41ae81bf"
 dependencies = [
- "heck 0.5.0",
+ "heck",
  "itertools 0.14.0",
  "log",
  "multimap",
@@ -9710,7 +9704,7 @@ version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "343d3bd7056eda839b03204e68deff7d1b13aba7af2b2fd16890697274262ee7"
 dependencies = [
- "heck 0.5.0",
+ "heck",
  "itertools 0.14.0",
  "log",
  "multimap",
@@ -10684,7 +10678,7 @@ source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0#790f9e28a6
 [[package]]
 name = "riscv"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 
 [[package]]
 name = "riscv-decode"
@@ -10750,7 +10744,7 @@ dependencies = [
 [[package]]
 name = "rom-setup"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "anyhow",
  "blake3",
@@ -10891,7 +10885,7 @@ dependencies = [
  "serde",
  "tempfile",
  "thiserror 1.0.69",
- "toml",
+ "toml 0.8.23",
  "toolchain_find",
 ]
 
@@ -11082,7 +11076,7 @@ dependencies = [
  "strum 0.27.2",
  "tempfile",
  "thiserror 2.0.18",
- "toml",
+ "toml 0.8.23",
  "yaml-rust2",
 ]
 
@@ -11404,6 +11398,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf41e0cfaf7226dca15e8197172c295a782857fcb97fad1808a166870dee75a3"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "serde_spanned"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6662b5879511e06e8999a8a235d848113e942c9124f211511b16466ee2995f26"
+dependencies = [
+ "serde_core",
 ]
 
 [[package]]
@@ -12108,7 +12111,7 @@ dependencies = [
 [[package]]
 name = "sm-arith"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "fields",
  "num-bigint 0.4.6",
@@ -12129,7 +12132,7 @@ dependencies = [
 [[package]]
 name = "sm-binary"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "fields",
  "num-bigint 0.4.6",
@@ -12149,7 +12152,7 @@ dependencies = [
 [[package]]
 name = "sm-frequent-ops"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "clap",
  "fields",
@@ -12165,7 +12168,7 @@ dependencies = [
 [[package]]
 name = "sm-main"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "fields",
  "mem-common",
@@ -12185,7 +12188,7 @@ dependencies = [
 [[package]]
 name = "sm-mem"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "fields",
  "mem-common",
@@ -12206,7 +12209,7 @@ dependencies = [
 [[package]]
 name = "sm-rom"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "anyhow",
  "asm-runner",
@@ -12952,7 +12955,7 @@ version = "0.26.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4c6bee85a5a24955dc440386795aa378cd9cf82acd5f764469152d2270e581be"
 dependencies = [
- "heck 0.5.0",
+ "heck",
  "proc-macro2",
  "quote",
  "rustversion",
@@ -12965,7 +12968,7 @@ version = "0.27.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7695ce3845ea4b33927c055a39dc438a45b059f7c1b3d91d38d10355fb8cbca7"
 dependencies = [
- "heck 0.5.0",
+ "heck",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -12977,7 +12980,7 @@ version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec3d08fe7078c57309d5c3d938e50eba95ba1d33b9c3a101a8465fc6861a5416"
 dependencies = [
- "heck 0.5.0",
+ "heck",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -13421,9 +13424,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc1beb996b9d83529a9e75c17a1686767d148d70663143c7854d8b4a09ced362"
 dependencies = [
  "serde",
- "serde_spanned",
+ "serde_spanned 0.6.9",
  "toml_datetime 0.6.11",
  "toml_edit 0.22.27",
+]
+
+[[package]]
+name = "toml"
+version = "0.9.12+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf92845e79fc2e2def6a5d828f0801e29a2f8acc037becc5ab08595c7d5e9863"
+dependencies = [
+ "indexmap 2.13.0",
+ "serde_core",
+ "serde_spanned 1.1.1",
+ "toml_datetime 0.7.5+spec-1.1.0",
+ "toml_parser",
+ "toml_writer",
+ "winnow 0.7.15",
 ]
 
 [[package]]
@@ -13433,6 +13451,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "22cddaf88f4fbc13c51aebbf5f8eceb5c7c5a9da2ac40a13519eb5b0a0e8f11c"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "toml_datetime"
+version = "0.7.5+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92e1cfed4a3038bc5a127e35a2d360f145e1f4b971b551a2ba5fd7aedf7e1347"
+dependencies = [
+ "serde_core",
 ]
 
 [[package]]
@@ -13463,7 +13490,7 @@ checksum = "41fe8c660ae4257887cf66394862d21dbca4a6ddd26f04a3560410406a2f819a"
 dependencies = [
  "indexmap 2.13.0",
  "serde",
- "serde_spanned",
+ "serde_spanned 0.6.9",
  "toml_datetime 0.6.11",
  "toml_write",
  "winnow 0.7.15",
@@ -13495,6 +13522,12 @@ name = "toml_write"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d99f8c9a7727884afe522e9bd5edbfc91a3312b36a77b5fb8926e4c31a41801"
+
+[[package]]
+name = "toml_writer"
+version = "1.1.1+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "756daf9b1013ebe47a8776667b466417e2d4c5679d441c26230efd9ef78692db"
 
 [[package]]
 name = "tonic"
@@ -15074,7 +15107,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ea61de684c3ea68cb082b7a88508a8b27fcc8b797d738bfc99a82facf1d752dc"
 dependencies = [
  "anyhow",
- "heck 0.5.0",
+ "heck",
  "wit-parser",
 ]
 
@@ -15085,7 +15118,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b7c566e0f4b284dd6561c786d9cb0142da491f46a9fbed79ea69cdad5db17f21"
 dependencies = [
  "anyhow",
- "heck 0.5.0",
+ "heck",
  "indexmap 2.13.0",
  "prettyplease",
  "syn 2.0.117",
@@ -15371,7 +15404,7 @@ dependencies = [
 [[package]]
 name = "zisk-cluster-common"
 version = "0.1.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "anyhow",
  "borsh",
@@ -15421,7 +15454,7 @@ dependencies = [
 [[package]]
 name = "zisk-common"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "alloy-sol-types",
  "anyhow",
@@ -15470,7 +15503,7 @@ dependencies = [
 [[package]]
 name = "zisk-core"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "elf",
  "fields",
@@ -15495,12 +15528,12 @@ source = "git+https://github.com/0xPolygonHermez/zisk.git?tag=v0.18.0#790f9e28a6
 [[package]]
 name = "zisk-definitions"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 
 [[package]]
 name = "zisk-pil"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "fields",
  "proofman-common",
@@ -15513,7 +15546,7 @@ dependencies = [
 [[package]]
 name = "zisk-prover-backend"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "alloy-sol-types",
  "anyhow",
@@ -15550,7 +15583,7 @@ dependencies = [
 [[package]]
 name = "zisk-verifier"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "proofman-verifier",
 ]
@@ -15558,7 +15591,7 @@ dependencies = [
 [[package]]
 name = "ziskemu"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "clap",
  "data-bus",
@@ -15659,7 +15692,7 @@ dependencies = [
 [[package]]
 name = "ziskos-hints"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -15746,7 +15779,7 @@ dependencies = [
 [[package]]
 name = "zkvm-interface"
 version = "0.18.0"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#c57907f7dbb845482809968948b3f4071018e7f5"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv0.18.0#ee1d6fc6587b6aac32a3dfbb29b35e79f1748316"
 dependencies = [
  "bindgen 0.72.1",
 ]

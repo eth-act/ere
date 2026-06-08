@@ -65,8 +65,8 @@ func TestVerifier(t *testing.T) {
 					t.Fatalf("Kind() = %v, %v, want %v", kind, err, fx.kind)
 				}
 
-				out := make([]byte, len(publicValues))
-				if err := v.Verify(proof, out); err != nil {
+				out, err := v.Verify(proof)
+				if err != nil {
 					t.Fatalf("Verify: %v", err)
 				}
 				if !bytes.Equal(out, publicValues) {
@@ -91,12 +91,11 @@ func TestVerifier(t *testing.T) {
 				}
 				defer v.Close()
 
-				out := make([]byte, len(publicValues))
-				if err := v.Verify(proof[:len(proof)-1], out); !errors.Is(err, ErrDecodeProof) {
+				if _, err := v.Verify(proof[:len(proof)-1]); !errors.Is(err, ErrDecodeProof) {
 					t.Fatalf("truncated proof: got %v, want ErrDecodeProof", err)
 				}
 				extended := append(append([]byte{}, proof...), 0xFF)
-				if err := v.Verify(extended, out); !errors.Is(err, ErrDecodeProof) {
+				if _, err := v.Verify(extended); !errors.Is(err, ErrDecodeProof) {
 					t.Fatalf("extended proof: got %v, want ErrDecodeProof", err)
 				}
 			})
@@ -107,11 +106,10 @@ func TestVerifier(t *testing.T) {
 					t.Fatalf("New: %v", err)
 				}
 				defer v.Close()
-				out := make([]byte, len(publicValues))
 
 				flipped := append([]byte{}, proof...)
 				flipped[len(flipped)/2] ^= 0xFF
-				if err := v.Verify(flipped, out); !errors.Is(err, ErrVerify) {
+				if _, err := v.Verify(flipped); !errors.Is(err, ErrVerify) {
 					t.Fatalf("flipped proof: got %v, want ErrVerify", err)
 				}
 
@@ -122,29 +120,11 @@ func TestVerifier(t *testing.T) {
 					t.Fatalf("New with unexpected vk: %v", err)
 				}
 				defer vv.Close()
-				if err := vv.Verify(proof, out); !errors.Is(err, ErrVerify) {
+				if _, err := vv.Verify(proof); !errors.Is(err, ErrVerify) {
 					t.Fatalf("unexpected vk: got %v, want ErrVerify", err)
 				}
 			})
 
-			t.Run("public_values_buffer_mismatch", func(t *testing.T) {
-				v, err := New(fx.kind, programVK)
-				if err != nil {
-					t.Fatalf("New: %v", err)
-				}
-				defer v.Close()
-
-				// A one-byte buffer drops non-zero trailing bytes of the public
-				// values and is rejected as too small.
-				if err := v.Verify(proof, make([]byte, 1)); !errors.Is(err, ErrPublicValuesBufferTooSmall) {
-					t.Fatalf("short buffer: got %v, want ErrPublicValuesBufferTooSmall", err)
-				}
-				// A buffer far larger than any zkVM's public values is rejected as
-				// too large.
-				if err := v.Verify(proof, make([]byte, 1<<10)); !errors.Is(err, ErrPublicValuesBufferTooLarge) {
-					t.Fatalf("long buffer: got %v, want ErrPublicValuesBufferTooLarge", err)
-				}
-			})
 		})
 	}
 }
@@ -160,7 +140,7 @@ func TestNilVerifier(t *testing.T) {
 	if _, err := v.Kind(); !errors.Is(err, ErrNullPtr) {
 		t.Fatalf("Kind on nil receiver: got %v, want ErrNullPtr", err)
 	}
-	if err := v.Verify(nil, nil); !errors.Is(err, ErrNullPtr) {
+	if _, err := v.Verify(nil); !errors.Is(err, ErrNullPtr) {
 		t.Fatalf("Verify on nil receiver: got %v, want ErrNullPtr", err)
 	}
 	v.Close()

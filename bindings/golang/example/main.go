@@ -34,8 +34,8 @@ func main() {
 	}
 	defer verifier.Close()
 
-	publicValues := make([]byte, len(expectedPublicValues))
-	if err := verifier.Verify(encodedProof, publicValues); err != nil {
+	publicValues, err := verifier.Verify(encodedProof)
+	if err != nil {
 		fail(err)
 	}
 	if !bytes.Equal(publicValues, expectedPublicValues) {

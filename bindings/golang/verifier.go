@@ -63,12 +63,6 @@ var (
 	ErrDecodeProof = errors.New("ere: failed to decode proof")
 	// ErrVerify indicates the proof was well-formed but failed cryptographic verification.
 	ErrVerify = errors.New("ere: proof failed verification")
-	// ErrPublicValuesBufferTooSmall indicates the proof verified but the
-	// public_values buffer is shorter than the proven public values.
-	ErrPublicValuesBufferTooSmall = errors.New("ere: public values buffer too small")
-	// ErrPublicValuesBufferTooLarge indicates the proof verified but the
-	// public_values buffer is longer than the proven public values.
-	ErrPublicValuesBufferTooLarge = errors.New("ere: public values buffer too large")
 	// ErrInternal indicates an unexpected internal condition that reflects a bug
 	// in the binding or the verifier library rather than an invalid argument.
 	ErrInternal = errors.New("ere: internal error")
@@ -88,10 +82,6 @@ func statusToError(status C.int32_t) error {
 		return ErrDecodeProof
 	case C.ERE_ERR_VERIFY:
 		return ErrVerify
-	case C.ERE_ERR_PUBLIC_VALUES_BUFFER_TOO_SMALL:
-		return ErrPublicValuesBufferTooSmall
-	case C.ERE_ERR_PUBLIC_VALUES_BUFFER_TOO_LARGE:
-		return ErrPublicValuesBufferTooLarge
 	case C.ERE_ERR_INTERNAL:
 		return ErrInternal
 	default:
@@ -108,16 +98,15 @@ func bytePtr(buffer []byte) *C.uint8_t {
 	return (*C.uint8_t)(unsafe.Pointer(&buffer[0]))
 }
 
-// Verifier is a handle to a zkVM verifier bound to a specific program
-// verifying key. A Verifier is constructed with [New] and released with
-// [Verifier.Close].
+// Verifier is a handle to a verifier bound to a program verifying key. It is
+// created with [New] and released with [Verifier.Close].
 type Verifier struct {
 	handle *C.EreVerifier
 }
 
-// New constructs a verifier bound to encodedProgramVK. The returned handle
-// is released either explicitly via [Verifier.Close] or by the runtime
-// finalizer.
+// New constructs a verifier bound to encodedProgramVK for the given zkVM kind.
+// The handle is released with [Verifier.Close] or, as a fallback, by the
+// garbage collector finalizer.
 func New(kind ZkVMKind, encodedProgramVK []byte) (*Verifier, error) {
 	var handle *C.EreVerifier
 	status := C.ere_verifier_new(
@@ -134,18 +123,37 @@ func New(kind ZkVMKind, encodedProgramVK []byte) (*Verifier, error) {
 	return v, nil
 }
 
-// Close releases the underlying verifier. It is safe to call more than once
-// and on a nil receiver.
-func (v *Verifier) Close() {
+// Verify checks encodedProof against the verifier's program verifying key and
+// returns the proven public values.
+//
+// The returned slice is owned by Go and managed by the garbage collector. The
+// native buffer is copied out and released within this call, so the caller
+// sizes nothing and frees nothing. Empty public values yield an empty, non-nil
+// slice.
+func (v *Verifier) Verify(encodedProof []byte) ([]byte, error) {
 	if v == nil || v.handle == nil {
-		return
+		return nil, ErrNullPtr
 	}
-	C.ere_verifier_free(v.handle)
-	v.handle = nil
-	runtime.SetFinalizer(v, nil)
+	var ptr *C.uint8_t
+	var length C.uintptr_t
+	status := C.ere_verifier_verify(
+		v.handle,
+		bytePtr(encodedProof), C.uintptr_t(len(encodedProof)),
+		&ptr, &length,
+	)
+	runtime.KeepAlive(encodedProof)
+	if err := statusToError(status); err != nil {
+		return nil, err
+	}
+	if ptr == nil || length == 0 {
+		return []byte{}, nil
+	}
+	publicValues := C.GoBytes(unsafe.Pointer(ptr), C.int(length))
+	C.ere_bytes_free(ptr, length)
+	return publicValues, nil
 }
 
-// Kind returns the zkVM the verifier was constructed for. It returns
+// Kind returns the zkVM kind the verifier was constructed for. It returns
 // [ErrNullPtr] for a nil receiver or a closed verifier.
 func (v *Verifier) Kind() (ZkVMKind, error) {
 	if v == nil || v.handle == nil {
@@ -159,26 +167,13 @@ func (v *Verifier) Kind() (ZkVMKind, error) {
 	return ZkVMKind(output), nil
 }
 
-// Verify checks encodedProof against the verifier's program verifying key and
-// copies the proven public values into publicValues, which the caller sizes.
-//
-// On success publicValues is filled with len(publicValues) bytes. The proven
-// public values may be longer than publicValues only when the bytes past it
-// are all zero, which accommodates proof systems that pad public values to a
-// fixed length. A buffer longer than the proven public values returns
-// [ErrPublicValuesBufferTooLarge]. A shorter buffer returns
-// [ErrPublicValuesBufferTooSmall] unless the dropped trailing bytes are all
-// zero, in which case the leading bytes are copied and the call succeeds.
-func (v *Verifier) Verify(encodedProof []byte, publicValues []byte) error {
+// Close releases the underlying verifier. It is safe to call more than once and
+// on a nil receiver.
+func (v *Verifier) Close() {
 	if v == nil || v.handle == nil {
-		return ErrNullPtr
+		return
 	}
-	status := C.ere_verifier_verify(
-		v.handle,
-		bytePtr(encodedProof), C.uintptr_t(len(encodedProof)),
-		bytePtr(publicValues), C.uintptr_t(len(publicValues)),
-	)
-	runtime.KeepAlive(encodedProof)
-	runtime.KeepAlive(publicValues)
-	return statusToError(status)
+	C.ere_verifier_free(v.handle)
+	v.handle = nil
+	runtime.SetFinalizer(v, nil)
 }

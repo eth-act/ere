@@ -6,38 +6,36 @@
 //! and [`ere_verifier_zkvm_kind`] calls. [`ere_verifier_free`] consumes it and
 //! must not overlap with other calls on the handle.
 
-#![allow(non_camel_case_types)]
-
 mod error;
 
 use core::{ptr, slice};
 
-use ere_verifier::{Error, zkVMKind};
+use ere_verifier::{Error, Verifier, zkVMKind};
 
 pub use crate::error::{
     ERE_ERR_BAD_KIND, ERE_ERR_DECODE_PROGRAM_VK, ERE_ERR_DECODE_PROOF, ERE_ERR_INTERNAL,
-    ERE_ERR_NULL_PTR, ERE_ERR_PUBLIC_VALUES_BUFFER_TOO_LARGE,
-    ERE_ERR_PUBLIC_VALUES_BUFFER_TOO_SMALL, ERE_ERR_VERIFY, ERE_OK,
+    ERE_ERR_NULL_PTR, ERE_ERR_VERIFY, ERE_OK,
 };
 
-/// Opaque verifier handle returned by [`ere_verifier_new`] and released by
-/// [`ere_verifier_free`].
-pub struct EreVerifier(ere_verifier::Verifier);
+/// Opaque handle to a verifier bound to a program verifying key. Created by
+/// [`ere_verifier_new`] and released by [`ere_verifier_free`].
+pub struct EreVerifier(Verifier);
 
-/// Constructs a verifier bound to an encoded program verifying key.
+/// Constructs a verifier bound to an encoded program verifying key for the
+/// selected zkVM.
 ///
-/// The `zkvm_kind` includes:
+/// `zkvm_kind` selects the target zkVM.
+///
 /// - `0` - [`zkVMKind::Airbender`]
 /// - `1` - [`zkVMKind::OpenVM`]
 /// - `2` - [`zkVMKind::Risc0`]
 /// - `3` - [`zkVMKind::SP1`]
 /// - `4` - [`zkVMKind::Zisk`]
 ///
-/// On success, writes the new handle into `*output` and returns [`ERE_OK`].
-/// The caller owns the handle and must release it with [`ere_verifier_free`].
-///
-/// On error, `*output` is set to null and the corresponding status code
-/// is returned.
+/// On success, writes the new handle into `*output` and returns [`ERE_OK`]. The
+/// caller owns the handle and must release it with [`ere_verifier_free`]. On
+/// error, `*output` is set to null and the corresponding status code is
+/// returned.
 ///
 /// # Safety
 ///
@@ -65,7 +63,7 @@ pub unsafe extern "C" fn ere_verifier_new(
         return ERE_ERR_NULL_PTR;
     };
 
-    match ere_verifier::Verifier::new(kind, encoded_program_vk) {
+    match Verifier::new(kind, encoded_program_vk) {
         Ok(verifier) => {
             let boxed = Box::new(EreVerifier(verifier));
             unsafe { *output = Box::into_raw(boxed) };
@@ -78,41 +76,45 @@ pub unsafe extern "C" fn ere_verifier_new(
     }
 }
 
-/// Verifies a proof against the verifier's program verifying key and copies the
-/// public values into the `public_values_ptr` buffer.
+/// Verifies a proof against the verifier's program verifying key and allocates a
+/// buffer holding the proven public values.
 ///
-/// When the `public_values_ptr` buffer has length exactly as verified public values, or non-zero
-/// leading part of it (accommodates proof systems that pad public values to a fixed length), the
-/// verified public values are copied to `public_values_ptr` buffer and [`ERE_OK`] is returned.
-///
-/// A buffer longer than the public values returns [`ERE_ERR_PUBLIC_VALUES_BUFFER_TOO_LARGE`], a
-/// shorter buffer returns [`ERE_ERR_PUBLIC_VALUES_BUFFER_TOO_SMALL`] unless the trailing bytes are
-/// all zero.
+/// On success, stores the buffer pointer into `*public_values_ptr` and its
+/// length into `*public_values_len`, and returns [`ERE_OK`]. The caller owns the
+/// buffer and must release it with [`ere_bytes_free`], passing back the exact
+/// `(pointer, length)` pair. Empty public values are reported as a null pointer
+/// and zero length. On error, both out-parameters are cleared to null and zero
+/// and the corresponding status code is returned.
 ///
 /// # Safety
 ///
 /// - `handle` must be a live handle returned by [`ere_verifier_new`].
 /// - `encoded_proof_ptr` must point to `encoded_proof_len` readable bytes (or be null when
 ///   `encoded_proof_len == 0`).
-/// - `public_values_ptr` must point to `public_values_len` writable bytes (or be null when
-///   `public_values_len == 0`).
+/// - `public_values_ptr` must be a non-null, writable `*mut *mut u8`.
+/// - `public_values_len` must be a non-null, writable `*mut usize`.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ere_verifier_verify(
     handle: *const EreVerifier,
     encoded_proof_ptr: *const u8,
     encoded_proof_len: usize,
-    public_values_ptr: *mut u8,
-    public_values_len: usize,
+    public_values_ptr: *mut *mut u8,
+    public_values_len: *mut usize,
 ) -> i32 {
+    if public_values_ptr.is_null() || public_values_len.is_null() {
+        return ERE_ERR_NULL_PTR;
+    }
+    unsafe {
+        *public_values_ptr = ptr::null_mut();
+        *public_values_len = 0;
+    }
+
     if handle.is_null() {
         return ERE_ERR_NULL_PTR;
     }
     let Some(encoded_proof) = (unsafe { as_slice(encoded_proof_ptr, encoded_proof_len) }) else {
         return ERE_ERR_NULL_PTR;
     };
-    if public_values_ptr.is_null() && public_values_len != 0 {
-        return ERE_ERR_NULL_PTR;
-    }
 
     let verifier = unsafe { &(*handle).0 };
     let public_values = match verifier.verify(encoded_proof) {
@@ -122,23 +124,19 @@ pub unsafe extern "C" fn ere_verifier_verify(
         Err(Error::NightlyFeatureRequired | Error::DecodeProgramVk(_)) => return ERE_ERR_INTERNAL,
     };
 
-    if public_values_len > public_values.len() {
-        return ERE_ERR_PUBLIC_VALUES_BUFFER_TOO_LARGE;
-    }
-    let (public_values, trailing) = public_values.split_at(public_values_len);
-    if trailing.iter().any(|&b| b != 0) {
-        return ERE_ERR_PUBLIC_VALUES_BUFFER_TOO_SMALL;
-    }
-    if public_values_len != 0 {
+    if !public_values.is_empty() {
+        let len = public_values.len();
+        let ptr = Box::into_raw(public_values.into_boxed_slice()) as *mut u8;
         unsafe {
-            ptr::copy_nonoverlapping(public_values.as_ptr(), public_values_ptr, public_values_len)
-        };
+            *public_values_ptr = ptr;
+            *public_values_len = len;
+        }
     }
     ERE_OK
 }
 
-/// Writes the `zkvm_kind` integer the verifier was constructed for into
-/// `*output` and returns [`ERE_OK`].
+/// Writes the zkVM kind the verifier was constructed for into `*output` and
+/// returns [`ERE_OK`].
 ///
 /// # Safety
 ///
@@ -152,7 +150,10 @@ pub unsafe extern "C" fn ere_verifier_zkvm_kind(
     if handle.is_null() || output.is_null() {
         return ERE_ERR_NULL_PTR;
     }
-    unsafe { *output = (*handle).0.zkvm_kind().as_u32() };
+
+    let verifier = unsafe { &(*handle).0 };
+    unsafe { *output = verifier.zkvm_kind().as_u32() };
+
     ERE_OK
 }
 
@@ -166,6 +167,23 @@ pub unsafe extern "C" fn ere_verifier_zkvm_kind(
 pub unsafe extern "C" fn ere_verifier_free(handle: *mut EreVerifier) {
     if !handle.is_null() {
         drop(unsafe { Box::from_raw(handle) });
+    }
+}
+
+/// Releases a byte buffer that this library allocated and handed back through a
+/// `(pointer, length)` pair. The pair must be exactly what the allocating call
+/// produced, and the buffer must not be used after this call. A null pointer or
+/// zero length is a no-op.
+///
+/// # Safety
+///
+/// `ptr` and `len` must be an unmodified pair previously produced by a function
+/// in this library that documents [`ere_bytes_free`] as its release routine and
+/// not already freed, or `ptr` must be null.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ere_bytes_free(ptr: *mut u8, len: usize) {
+    if !ptr.is_null() && len != 0 {
+        drop(unsafe { Box::from_raw(ptr::slice_from_raw_parts_mut(ptr, len)) });
     }
 }
 

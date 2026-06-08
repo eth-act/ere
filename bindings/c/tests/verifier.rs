@@ -1,11 +1,13 @@
-use core::ptr::{NonNull, null, null_mut};
+use core::{
+    ptr::{NonNull, null, null_mut},
+    slice,
+};
 
 use ere_verifier::zkVMKind;
 use ere_verifier_c::{
     ERE_ERR_BAD_KIND, ERE_ERR_DECODE_PROGRAM_VK, ERE_ERR_DECODE_PROOF, ERE_ERR_NULL_PTR,
-    ERE_ERR_PUBLIC_VALUES_BUFFER_TOO_LARGE, ERE_ERR_PUBLIC_VALUES_BUFFER_TOO_SMALL, ERE_ERR_VERIFY,
-    ERE_OK, EreVerifier, ere_verifier_free, ere_verifier_new, ere_verifier_verify,
-    ere_verifier_zkvm_kind,
+    ERE_ERR_VERIFY, ERE_OK, EreVerifier, ere_bytes_free, ere_verifier_free, ere_verifier_new,
+    ere_verifier_verify, ere_verifier_zkvm_kind,
 };
 
 #[derive(Debug)]
@@ -41,18 +43,28 @@ impl TestWrapper {
             .ok_or(rc)
     }
 
-    fn verify(&self, encoded_proof: &[u8], public_values_len: usize) -> Result<Vec<u8>, i32> {
-        let mut public_values = vec![0u8; public_values_len];
+    fn verify(&self, encoded_proof: &[u8]) -> Result<Vec<u8>, i32> {
+        let mut ptr: *mut u8 = null_mut();
+        let mut len: usize = 0;
         let rc = unsafe {
             ere_verifier_verify(
                 &*self.0,
                 encoded_proof.as_ptr(),
                 encoded_proof.len(),
-                public_values.as_mut_ptr(),
-                public_values.len(),
+                &mut ptr,
+                &mut len,
             )
         };
-        (rc == ERE_OK).then_some(public_values).ok_or(rc)
+        if rc != ERE_OK {
+            return Err(rc);
+        }
+        let public_values = if ptr.is_null() {
+            Vec::new()
+        } else {
+            unsafe { slice::from_raw_parts(ptr, len) }.to_vec()
+        };
+        unsafe { ere_bytes_free(ptr, len) };
+        Ok(public_values)
     }
 }
 
@@ -76,7 +88,7 @@ macro_rules! test_verifier {
                 fn test_verifier() {
                     let verifier = TestWrapper::new(zkVMKind::$zkvm_kind, PROGRAM_VK).unwrap();
                     let zkvm_kind = verifier.zkvm_kind().unwrap();
-                    let public_values = verifier.verify(PROOF, PUBLIC_VALUES.len()).unwrap();
+                    let public_values = verifier.verify(PROOF).unwrap();
                     assert_eq!(zkvm_kind, zkVMKind::$zkvm_kind);
                     assert_eq!(&*public_values, PUBLIC_VALUES);
                 }
@@ -98,12 +110,12 @@ macro_rules! test_verifier {
                     let verifier = TestWrapper::new(zkVMKind::$zkvm_kind, PROGRAM_VK).unwrap();
 
                     let truncated = &PROOF[..PROOF.len() - 1];
-                    let err = verifier.verify(truncated, PUBLIC_VALUES.len()).unwrap_err();
+                    let err = verifier.verify(truncated).unwrap_err();
                     assert_eq!(err, ERE_ERR_DECODE_PROOF);
 
                     let mut extended = PROOF.to_vec();
                     extended.push(0xFF);
-                    let err = verifier.verify(&extended, PUBLIC_VALUES.len()).unwrap_err();
+                    let err = verifier.verify(&extended).unwrap_err();
                     assert_eq!(err, ERE_ERR_DECODE_PROOF);
                 }
 
@@ -112,12 +124,12 @@ macro_rules! test_verifier {
                     // Proof with byte flipped
                     let verifier = TestWrapper::new(zkVMKind::$zkvm_kind, PROGRAM_VK).unwrap();
                     let proof = proof_with_byte_flipped();
-                    let err = verifier.verify(&proof, PUBLIC_VALUES.len()).unwrap_err();
+                    let err = verifier.verify(&proof).unwrap_err();
                     assert_eq!(err, ERE_ERR_VERIFY);
 
                     // Unexpected program vk
                     let verifier = verifier_with_unexpected_program_vk();
-                    let err = verifier.verify(PROOF, PUBLIC_VALUES.len()).unwrap_err();
+                    let err = verifier.verify(PROOF).unwrap_err();
                     assert_eq!(err, ERE_ERR_VERIFY);
                 }
 
@@ -132,15 +144,6 @@ macro_rules! test_verifier {
                     let mut vk = PROGRAM_VK.to_vec();
                     *vk.first_mut().unwrap() ^= 0xFF;
                     TestWrapper::new(zkVMKind::$zkvm_kind, &vk).unwrap()
-                }
-
-                #[test]
-                fn test_public_values_length_mismatch() {
-                    let verifier = TestWrapper::new(zkVMKind::$zkvm_kind, PROGRAM_VK).unwrap();
-                    let err = verifier.verify(PROOF, 1).unwrap_err();
-                    assert_eq!(err, ERE_ERR_PUBLIC_VALUES_BUFFER_TOO_SMALL);
-                    let err = verifier.verify(PROOF, 1 << 10).unwrap_err();
-                    assert_eq!(err, ERE_ERR_PUBLIC_VALUES_BUFFER_TOO_LARGE);
                 }
             }
         }
@@ -159,12 +162,15 @@ test_verifier!(Zisk);
 
 #[test]
 fn test_null_ptr() {
+    let mut pv_ptr: *mut u8 = null_mut();
+    let mut pv_len: usize = 0;
     for rc in unsafe {
         [
             ere_verifier_new(0, non_null(), 1, null_mut()),
-            ere_verifier_verify(null(), null(), 1, null_mut(), 1),
-            ere_verifier_verify(non_null(), null(), 1, null_mut(), 1),
-            ere_verifier_verify(non_null(), non_null(), 1, null_mut(), 1),
+            ere_verifier_verify(null(), null(), 1, &mut pv_ptr, &mut pv_len),
+            ere_verifier_verify(non_null(), null(), 1, &mut pv_ptr, &mut pv_len),
+            ere_verifier_verify(non_null(), non_null(), 1, null_mut(), &mut pv_len),
+            ere_verifier_verify(non_null(), non_null(), 1, &mut pv_ptr, null_mut()),
             ere_verifier_zkvm_kind(null(), null_mut()),
             ere_verifier_zkvm_kind(non_null(), null_mut()),
         ]
