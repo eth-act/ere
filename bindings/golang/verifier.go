@@ -142,6 +142,7 @@ func (v *Verifier) Verify(encodedProof []byte) ([]byte, error) {
 		&ptr, &length,
 	)
 	runtime.KeepAlive(encodedProof)
+	runtime.KeepAlive(v)
 	if err := statusToError(status); err != nil {
 		return nil, err
 	}
@@ -161,6 +162,7 @@ func (v *Verifier) Kind() (ZkVMKind, error) {
 	}
 	var output C.uint32_t
 	status := C.ere_verifier_zkvm_kind(v.handle, &output)
+	runtime.KeepAlive(v)
 	if err := statusToError(status); err != nil {
 		return 0, err
 	}
