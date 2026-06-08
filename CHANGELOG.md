@@ -5,7 +5,7 @@
 
 ### Bug Fixes
 
-* release please ([#379](https://github.com/eth-act/ere/issues/379)) ([d8f0485](https://github.com/eth-act/ere/commit/d8f04854c7d561fee09aa07071ce417fdb587f48))
+* expose setup of zisk cluster client ([#378](https://github.com/eth-act/ere/issues/378)) ([79962c0](https://github.com/eth-act/ere/commit/79962c00d9fe615393f2e0b39dc9b27e47a6aac7))
 
 ## [0.12.0](https://github.com/eth-act/ere/compare/v0.11.0...v0.12.0) (2026-06-08)
 
