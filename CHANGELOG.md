@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.2](https://github.com/eth-act/ere/compare/v0.12.1...v0.12.2) (2026-06-16)
+
+
+### Bug Fixes
+
+* use patch for ziskos with fixes of precompile impls ([#381](https://github.com/eth-act/ere/issues/381)) ([c5cf11e](https://github.com/eth-act/ere/commit/c5cf11e09efad10dab0630ff748410d541b24293))
+
 ## [0.12.1](https://github.com/eth-act/ere/compare/v0.12.0...v0.12.1) (2026-06-08)
 
 
