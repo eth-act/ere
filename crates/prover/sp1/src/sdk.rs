@@ -8,10 +8,10 @@ use sp1_recursion_executor::{RECURSIVE_PROOF_NUM_PV_ELTS, RecursionPublicValues}
 #[cfg(feature = "cuda")]
 use sp1_sdk::CudaProver;
 use sp1_sdk::{
-    CpuProver, Elf, ExecutionReport, NetworkProver, ProofFromNetwork, ProveRequest,
-    Prover as SP1Prover, ProverClient, ProvingKey as SP1ProvingKeyTrait, SP1Proof, SP1ProofMode,
-    SP1ProofWithPublicValues, SP1ProvingKey as CpuProvingKey, SP1PublicValues, SP1Stdin,
-    SP1VerifyingKey, StatusCode,
+    CpuProver, Elf, NetworkProver, ProofFromNetwork, ProveRequest, Prover as SP1Prover,
+    ProverClient, ProvingKey as SP1ProvingKeyTrait, SP1Proof, SP1ProofMode,
+    SP1ProofWithPublicValues, SP1ProvingKey as CpuProvingKey, SP1Stdin, SP1VerifyingKey,
+    StatusCode,
 };
 
 use crate::error::Error;
@@ -74,26 +74,6 @@ impl SP1Sdk {
             Self::Gpu { pk, .. } => pk.verifying_key(),
             Self::Network { pk, .. } => pk.verifying_key(),
         }
-    }
-
-    pub async fn execute(
-        &self,
-        input: SP1Stdin,
-    ) -> Result<(SP1PublicValues, ExecutionReport), Error> {
-        let (public_values, exec_report) = match self {
-            Self::Cpu { prover, pk } => prover.execute(pk.elf().clone(), input).await,
-            #[cfg(feature = "cuda")]
-            Self::Gpu { prover, pk } => prover.execute(pk.elf().clone(), input).await,
-            Self::Network { prover, pk } => prover.execute(pk.elf().clone(), input).await,
-        }
-        .map_err(|e| Error::Execute(e.into()))?;
-
-        let exit_code = exec_report.exit_code as u32;
-        if exit_code != StatusCode::SUCCESS.as_u32() {
-            return Err(Error::ExecutionFailed(exit_code));
-        }
-
-        Ok((public_values, exec_report))
     }
 
     pub async fn prove(&self, input: SP1Stdin) -> Result<ProofFromNetwork, Error> {

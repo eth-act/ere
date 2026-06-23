@@ -33,6 +33,7 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 mod error;
+mod executor;
 mod prover;
 
 pub use ere_prover_core::*;

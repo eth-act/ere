@@ -29,6 +29,7 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 mod error;
+mod executor;
 mod prover;
 mod sdk;
 

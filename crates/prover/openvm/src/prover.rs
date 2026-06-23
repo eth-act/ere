@@ -15,7 +15,7 @@ use openvm_sdk::{
     keygen::{AggProvingKey, AppProvingKey},
 };
 
-use crate::error::Error;
+use crate::{error::Error, executor::Executor};
 
 pub struct OpenVMProver {
     app_exe: Arc<VmExe<F>>,
@@ -23,6 +23,7 @@ pub struct OpenVMProver {
     agg_pk: AggProvingKey,
     app_commit: AppExecutionCommit,
     resource: ProverResource,
+    executor: Executor,
     verifier: OpenVMVerifier,
 }
 
@@ -51,6 +52,8 @@ impl OpenVMProver {
             .map_err(Error::ProverInit)?
             .app_commit();
 
+        let executor = Executor::new(sdk.executor().config.clone(), &app_exe)?;
+
         let verifier = OpenVMVerifier::new(OpenVMProgramVk::new(
             app_commit.app_exe_commit.as_slice(),
             app_commit.app_vm_commit.as_slice(),
@@ -62,6 +65,7 @@ impl OpenVMProver {
             agg_pk,
             app_commit,
             resource,
+            executor,
             verifier,
         })
     }
@@ -98,20 +102,7 @@ impl zkVMProver for OpenVMProver {
         let mut stdin = StdIn::default();
         stdin.write_bytes(input.stdin());
 
-        let start = Instant::now();
-        let public_values = self
-            .cpu_sdk()?
-            .execute(self.app_exe.clone(), stdin)
-            .map_err(Error::Execute)?;
-        let execution_duration = start.elapsed();
-
-        Ok((
-            public_values.into(),
-            ProgramExecutionReport {
-                execution_duration,
-                ..Default::default()
-            },
-        ))
+        self.executor.execute(stdin)
     }
 
     fn prove(
