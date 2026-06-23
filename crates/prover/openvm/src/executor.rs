@@ -18,11 +18,14 @@ type ExecutorInstance = openvm_circuit::arch::AotInstance<F, ExecutionCtx>;
 #[cfg(not(target_arch = "x86_64"))]
 type ExecutorInstance = openvm_circuit::arch::InterpretedInstance<F, ExecutionCtx>;
 
-/// A execution instance and the executor it borrows from.
+/// An execution instance and the executor it borrows from.
+///
+/// `instance` holds raw precompute pointers into `executor`, so the fields are
+/// declared in drop order with `instance` first, and reordering them is an
+/// uncaught use-after-free.
 pub(crate) struct Executor {
-    // Borrows from `executor`, so it is dropped first.
     instance: ExecutorInstance,
-    // Kept alive to back borrow of `instance`.
+    // Read only through `instance`'s borrows, kept alive to back them.
     #[allow(dead_code)]
     executor: VmExecutor<F, SdkVmConfig>,
     num_public_values: usize,

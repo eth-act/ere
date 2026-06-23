@@ -1,6 +1,7 @@
-//! A bounded pool of reusable JIT executors.
+//! A bounded pool of reusable SP1 execution instances.
 
 use std::{
+    env,
     num::NonZeroUsize,
     ops::{Deref, DerefMut},
     sync::Arc,
@@ -16,7 +17,14 @@ use sp1_sdk::{SP1Stdin, StatusCode};
 
 use crate::error::Error;
 
-/// A fixed-size pool of executors. Size is bounded by host's available parallelism.
+/// Upper bound on the pool size when derived from available parallelism.
+const MAX_POOL_SIZE: usize = 32;
+
+/// A fixed-size pool of reusable SP1 execution instances.
+///
+/// The size defaults to the host's available parallelism capped by
+/// [`MAX_POOL_SIZE`], and the `ERE_SP1_EXECUTOR_POOL_SIZE` environment variable
+/// overrides the bound.
 pub(crate) struct SP1ExecutorPool {
     rx: Receiver<MinimalExecutorEnum>,
     tx: Sender<MinimalExecutorEnum>,
@@ -36,7 +44,7 @@ impl SP1ExecutorPool {
         Ok(Self { rx, tx })
     }
 
-    /// Runs `stdin` on an rx executor, blocking until one is free. The
+    /// Runs `stdin` on a pooled executor, blocking until one is free. The
     /// executor rejoins the pool once the run completes.
     pub(crate) fn execute(
         &self,
@@ -108,8 +116,18 @@ impl Drop for ExecutorGuard<'_> {
     }
 }
 
-/// The executor pool size, bounding concurrent executions to the host's
-/// available parallelism.
+/// The executor pool size, bounding concurrent executions.
+///
+/// Defaults to the host's available parallelism capped by [`MAX_POOL_SIZE`].
+/// `ERE_SP1_EXECUTOR_POOL_SIZE` overrides the bound with an explicit size.
 fn execution_concurrency() -> usize {
-    thread::available_parallelism().map_or(1, NonZeroUsize::get)
+    env::var("ERE_SP1_EXECUTOR_POOL_SIZE")
+        .ok()
+        .and_then(|value| value.parse::<usize>().ok())
+        .filter(|&size| size > 0)
+        .unwrap_or_else(|| {
+            thread::available_parallelism()
+                .map_or(1, NonZeroUsize::get)
+                .min(MAX_POOL_SIZE)
+        })
 }
