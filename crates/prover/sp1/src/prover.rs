@@ -9,19 +9,25 @@ use ere_verifier_sp1::{SP1ProgramVk, SP1Proof, SP1Verifier};
 use sp1_sdk::{HashableKey, SP1Stdin};
 use tracing::info;
 
-use crate::{error::Error, sdk::SP1Sdk};
+use crate::{error::Error, executor::SP1ExecutorPool, sdk::SP1Sdk};
 
 pub struct SP1Prover {
+    executor: SP1ExecutorPool,
     sdk: SP1Sdk,
     verifier: SP1Verifier,
 }
 
 impl SP1Prover {
     pub fn new(elf: Elf, resource: ProverResource) -> Result<Self, Error> {
+        let executor = SP1ExecutorPool::new(&elf.0)?;
         let sdk = block_on(SP1Sdk::new(elf.0, &resource))?;
         let program_vk = SP1ProgramVk(sdk.vk().hash_koalabear());
         let verifier = SP1Verifier::new(program_vk);
-        Ok(Self { sdk, verifier })
+        Ok(Self {
+            executor,
+            sdk,
+            verifier,
+        })
     }
 }
 
@@ -34,20 +40,7 @@ impl zkVMProver for SP1Prover {
     }
 
     fn execute(&self, input: &Input) -> Result<(PublicValues, ProgramExecutionReport), Error> {
-        let stdin = input_to_stdin(input)?;
-
-        let start = Instant::now();
-        let (public_values, exec_report) = block_on(self.sdk.execute(stdin))?;
-        let execution_duration = start.elapsed();
-
-        Ok((
-            public_values.as_slice().into(),
-            ProgramExecutionReport {
-                total_num_cycles: exec_report.total_instruction_count(),
-                region_cycles: exec_report.cycle_tracker.into_iter().collect(),
-                execution_duration,
-            },
-        ))
+        self.executor.execute(input_to_stdin(input)?)
     }
 
     fn prove(
