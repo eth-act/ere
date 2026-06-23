@@ -181,7 +181,7 @@ Different zkVMs handles public values in different approaches:
 | Airbender | [`73d69b5`](https://github.com/matter-labs/zksync-airbender/tree/73d69b5) | `RV32IMA` |   V   |     V     |         |
 | OpenVM    | [`1.4.3`](https://github.com/openvm-org/openvm/tree/v1.4.3)               | `RV32IMA` |   V   |           |         |
 | RISC Zero | [`3.0.5`](https://github.com/risc0/risc0/tree/v3.0.5)                     | `RV32IMA` |   V   |     V     |         |
-| SP1       | [`6.1.0`](https://github.com/succinctlabs/sp1/tree/v6.1.0)                | `RV64IMA` |   V   |           |         |
+| SP1       | [`6.3.0`](https://github.com/succinctlabs/sp1/tree/v6.3.0)                | `RV64IMA` |   V   |           |         |
 | ZisK      | [`0.18.0`](https://github.com/0xPolygonHermez/zisk/tree/v0.18.0)          | `RV64IMA` |   V   |     V     |    V    |
 
 ## Examples
