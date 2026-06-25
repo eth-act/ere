@@ -9,7 +9,6 @@ use ere_verifier_zisk::{VADCOP_FINAL_HASH_FAMILY, ZiskProgramVk, ZiskProof};
 use once_cell::sync::OnceCell;
 use parking_lot::Mutex;
 use proofman_fields::{Field, Goldilocks, PrimeField64};
-use proofman_starks_lib_c::{set_gpu_mode_c, set_hash_family_c, write_custom_commit_c};
 use proofman_util::DeviceBuffer;
 use zisk_common::{HashMode, ProofKind, ZiskPaths, io::ZiskStdin};
 use zisk_prover_backend::{
@@ -165,11 +164,11 @@ fn compute_program_vk(
 
     impl Drop for Guard {
         fn drop(&mut self) {
-            set_gpu_mode_c(self.0);
+            proofman_starks_lib_c::set_gpu_mode_c(self.0);
         }
     }
 
-    let hash_mode = VADCOP_FINAL_HASH_FAMILY.parse::<HashMode>().unwrap();
+    let hash_mode: HashMode = VADCOP_FINAL_HASH_FAMILY.parse().expect("infallable");
     let mut custom_rom_trace = CustomRom::build::<F>(program.elf())?;
 
     let buffer = custom_rom_trace.get_buffer::<F>();
@@ -187,12 +186,12 @@ fn compute_program_vk(
     let elf_bin_path = get_elf_bin_file_path_with_hash(program.hash(), cache_dir, false, hash_mode)
         .expect("infallable");
 
-    set_hash_family_c(VADCOP_FINAL_HASH_FAMILY);
+    proofman_starks_lib_c::set_hash_family_c(VADCOP_FINAL_HASH_FAMILY);
 
     let _guard = Guard(cfg!(feature = "cuda") && resource.is_gpu());
-    set_gpu_mode_c(false);
+    proofman_starks_lib_c::set_gpu_mode_c(false);
 
-    write_custom_commit_c(
+    proofman_starks_lib_c::write_custom_commit_c(
         root.as_mut_ptr() as *mut u8,
         arity,
         n_bits,

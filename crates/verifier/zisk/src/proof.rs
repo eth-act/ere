@@ -3,7 +3,7 @@ pub use proofman_verifier::VadcopFinalProof;
 use serde::{Deserialize, Serialize};
 use zisk_verifier::{PROGRAM_VK_LEN, ZISK_PUBLICS};
 
-use crate::{Error, ZiskProgramVk};
+use crate::{Error, VADCOP_FINAL_HASH_FAMILY, ZiskProgramVk};
 
 pub const PROGRAM_VK_WORDS: usize = PROGRAM_VK_LEN;
 pub const PUBLIC_VALUES_WORDS: usize = ZISK_PUBLICS;
@@ -20,6 +20,10 @@ pub struct ZiskProof(pub VadcopFinalProof);
 impl ZiskProof {
     pub fn program_vk_and_public_values(&self) -> Result<(ZiskProgramVk, PublicValues), Error> {
         if !self.0.compressed {
+            return Err(Error::InvalidVadcopFinalProofKind);
+        }
+
+        if self.0.hash != VADCOP_FINAL_HASH_FAMILY {
             return Err(Error::InvalidVadcopFinalProofKind);
         }
 

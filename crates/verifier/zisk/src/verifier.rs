@@ -1,5 +1,5 @@
 use ere_verifier_core::{PublicValues, zkVMVerifier};
-use proofman_verifier::verifier;
+use proofman_verifier::{Poseidon1Verifier, Verifier};
 
 use crate::{Error, ZiskProgramVk, ZiskProof, verifier::vk::VADCOP_FINAL_COMPRESSED_VK};
 
@@ -39,14 +39,8 @@ impl zkVMVerifier for ZiskVerifier {
 
         ensure_program_vk_matches(self.program_vk, program_vk)?;
 
-        if proof.0.hash != VADCOP_FINAL_HASH_FAMILY {
-            return Err(Error::InvalidProof);
-        }
-
-        if !verifier(VADCOP_FINAL_HASH_FAMILY).verify_vadcop_final_compressed_u64(
-            &proof.0.proof_with_publics(),
-            &VADCOP_FINAL_COMPRESSED_VK,
-        ) {
+        if !Poseidon1Verifier.verify_vadcop_final_compressed(&proof.0, &VADCOP_FINAL_COMPRESSED_VK)
+        {
             return Err(Error::InvalidProof);
         }
 

@@ -5,7 +5,8 @@ use core::{iter, time::Duration};
 use ere_compiler_core::Elf;
 use ere_prover_core::{Input, RemoteProverConfig, zkVMVerifier};
 use ere_verifier_zisk::{
-    PROGRAM_VK_WORDS, PUBLIC_VALUES_BYTES, VadcopFinalProof, ZiskProgramVk, ZiskProof, ZiskVerifier,
+    PROGRAM_VK_WORDS, PUBLIC_VALUES_BYTES, VADCOP_FINAL_HASH_FAMILY, VadcopFinalProof,
+    ZiskProgramVk, ZiskProof, ZiskVerifier,
 };
 use serde::Deserialize;
 use tokio::time::{Instant, sleep, timeout, timeout_at};
@@ -309,13 +310,16 @@ fn parse_proof(bytes: &[u8]) -> Result<ZiskProof, Error> {
             .collect()
     };
 
-    let ProofBody::Vadcop {
+    let proof = if let ProofBody::Vadcop {
         proof,
         minimal: true,
         hash,
         ..
     } = proof.body
-    else {
+        && hash == VADCOP_FINAL_HASH_FAMILY
+    {
+        proof
+    } else {
         return Err(ere_verifier_zisk::Error::InvalidVadcopFinalProofKind)?;
     };
 
@@ -323,6 +327,6 @@ fn parse_proof(bytes: &[u8]) -> Result<ZiskProof, Error> {
         proof,
         public_values,
         true,
-        hash,
+        VADCOP_FINAL_HASH_FAMILY.to_string(),
     )))
 }
