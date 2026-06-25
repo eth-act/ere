@@ -61,11 +61,4 @@ ENV PATH=/root/.zisk/bin:$PATH
 # Verify cargo-zisk is accessible
 RUN echo "Verifying ZisK installation in Dockerfile ..." && cargo-zisk --version
 
-# Copy the TamaGo installer script from the workspace context
-COPY --chmod=755 scripts/install_tamago.sh /tmp/install_tamago.sh
-
-# Run the TamaGo installation script.
-RUN /tmp/install_tamago.sh && \
-    rm /tmp/install_tamago.sh
-
 CMD ["/bin/bash"]

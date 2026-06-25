@@ -4027,9 +4027,7 @@ dependencies = [
  "ere-prover-zisk",
  "ere-util-compile",
  "ere-util-test",
- "tempfile",
  "thiserror 2.0.18",
- "tracing",
 ]
 
 [[package]]

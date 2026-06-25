@@ -71,10 +71,6 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind, args: &[String]) -> 
             CompilerKind::RustCustomized => {
                 AirbenderRustRv32imaCustomized.compile(guest_dir, args)?
             }
-            _ => anyhow::bail!(unsupported_compiler_kind_err(
-                compiler_kind,
-                [CompilerKind::Rust, CompilerKind::RustCustomized]
-            )),
         }
     };
 
@@ -84,10 +80,6 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind, args: &[String]) -> 
         match compiler_kind {
             CompilerKind::Rust => OpenVMRustRv32ima.compile(guest_dir, args)?,
             CompilerKind::RustCustomized => OpenVMRustRv32imaCustomized.compile(guest_dir, args)?,
-            _ => anyhow::bail!(unsupported_compiler_kind_err(
-                compiler_kind,
-                [CompilerKind::Rust, CompilerKind::RustCustomized]
-            )),
         }
     };
 
@@ -97,10 +89,6 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind, args: &[String]) -> 
         match compiler_kind {
             CompilerKind::Rust => Risc0RustRv32ima.compile(guest_dir, args)?,
             CompilerKind::RustCustomized => Risc0RustRv32imaCustomized.compile(guest_dir, args)?,
-            _ => anyhow::bail!(unsupported_compiler_kind_err(
-                compiler_kind,
-                [CompilerKind::Rust, CompilerKind::RustCustomized]
-            )),
         }
     };
 
@@ -110,10 +98,6 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind, args: &[String]) -> 
         match compiler_kind {
             CompilerKind::Rust => SP1RustRv64ima.compile(guest_dir, args)?,
             CompilerKind::RustCustomized => SP1RustRv64imaCustomized.compile(guest_dir, args)?,
-            _ => anyhow::bail!(unsupported_compiler_kind_err(
-                compiler_kind,
-                [CompilerKind::Rust, CompilerKind::RustCustomized]
-            )),
         }
     };
 
@@ -123,18 +107,8 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind, args: &[String]) -> 
         match compiler_kind {
             CompilerKind::Rust => ZiskRustRv64ima.compile(guest_dir, args)?,
             CompilerKind::RustCustomized => ZiskRustRv64imaCustomized.compile(guest_dir, args)?,
-            CompilerKind::GoCustomized => ZiskGoCustomized.compile(guest_dir, args)?,
         }
     };
 
     Ok(elf)
-}
-
-#[allow(dead_code)]
-fn unsupported_compiler_kind_err(
-    compiler_kind: CompilerKind,
-    supported: impl IntoIterator<Item = CompilerKind>,
-) -> anyhow::Error {
-    let supported = supported.into_iter().collect::<Vec<_>>();
-    anyhow::anyhow!("Unsupported compiler kind {compiler_kind:?}, expect one of {supported:?}",)
 }
