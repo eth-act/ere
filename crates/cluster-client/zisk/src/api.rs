@@ -14,7 +14,7 @@ pub struct CostPerType {
     #[prost(uint64, tag = "6")]
     pub other: u64,
 }
-#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ExecutionStats {
     #[prost(uint64, tag = "1")]
     pub steps: u64,
@@ -22,6 +22,43 @@ pub struct ExecutionStats {
     pub duration_nanos: u64,
     #[prost(message, optional, tag = "3")]
     pub cost_per_type: ::core::option::Option<CostPerType>,
+    #[prost(message, optional, tag = "4")]
+    pub executor_time: ::core::option::Option<ExecutorTime>,
+    #[prost(message, repeated, tag = "5")]
+    pub plan: ::prost::alloc::vec::Vec<AirInstanceCount>,
+}
+/// Per-AIR planned instance count (the AIR name is derived from the ids by the consumer).
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct AirInstanceCount {
+    #[prost(uint32, tag = "1")]
+    pub airgroup_id: u32,
+    #[prost(uint32, tag = "2")]
+    pub air_id: u32,
+    #[prost(uint64, tag = "3")]
+    pub count: u64,
+}
+/// Per-phase executor timing breakdown (milliseconds).
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct ExecutorTime {
+    #[prost(uint64, tag = "1")]
+    pub total_duration: u64,
+    #[prost(uint64, tag = "2")]
+    pub execution_duration: u64,
+    #[prost(uint64, tag = "3")]
+    pub count_and_plan_duration: u64,
+    #[prost(uint64, tag = "4")]
+    pub count_and_plan_mo_duration: u64,
+    /// present only for the ASM executor
+    #[prost(message, optional, tag = "5")]
+    pub asm: ::core::option::Option<AsmExecution>,
+}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct AsmExecution {
+    /// seconds
+    #[prost(float, tag = "1")]
+    pub time: f32,
+    #[prost(float, tag = "2")]
+    pub mhz: f32,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct InputChunk {
@@ -174,11 +211,15 @@ pub struct SetupRequest {
     pub with_hints: bool,
     #[prost(string, tag = "3")]
     pub program_name: ::prost::alloc::string::String,
+    #[prost(bool, tag = "4")]
+    pub emulator_only: bool,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct SetupResponse {
     #[prost(bytes = "vec", tag = "1")]
     pub vk: ::prost::alloc::vec::Vec<u8>,
+    #[prost(string, tag = "2")]
+    pub hash_mode: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ProveRequest {
@@ -193,7 +234,7 @@ pub struct ProveRequest {
     #[prost(message, optional, tag = "5")]
     pub hints: ::core::option::Option<InputKind>,
 }
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ProveResponse {
     #[prost(message, optional, tag = "1")]
     pub proof: ::core::option::Option<Proof>,
@@ -225,21 +266,21 @@ pub struct ExecuteRequest {
     #[prost(message, optional, tag = "4")]
     pub hints: ::core::option::Option<InputKind>,
 }
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ExecuteResponse {
     #[prost(message, optional, tag = "1")]
     pub stats: ::core::option::Option<ExecutionStats>,
     #[prost(bytes = "vec", tag = "2")]
     pub public_outputs: ::prost::alloc::vec::Vec<u8>,
 }
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct JobKindResponse {
     #[prost(oneof = "job_kind_response::Kind", tags = "1, 2, 3, 4")]
     pub kind: ::core::option::Option<job_kind_response::Kind>,
 }
 /// Nested message and enum types in `JobKindResponse`.
 pub mod job_kind_response {
-    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Kind {
         #[prost(message, tag = "1")]
         Setup(super::SetupResponse),
@@ -259,7 +300,7 @@ pub struct WaitJobResultRequest {
     #[prost(uint32, optional, tag = "2")]
     pub timeout_seconds: ::core::option::Option<u32>,
 }
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct WaitJobResultResponse {
     #[prost(string, tag = "1")]
     pub job_id: ::prost::alloc::string::String,
@@ -315,14 +356,14 @@ pub struct WatchJobRequest {
     #[prost(string, tag = "1")]
     pub job_id: ::prost::alloc::string::String,
 }
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct JobEvent {
     #[prost(oneof = "job_event::Event", tags = "1, 2, 3, 4, 5, 6, 7")]
     pub event: ::core::option::Option<job_event::Event>,
 }
 /// Nested message and enum types in `JobEvent`.
 pub mod job_event {
-    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Event {
         #[prost(message, tag = "1")]
         Queued(super::JobEventQueued),
@@ -370,7 +411,7 @@ pub struct JobEventWaitingForInput {
     #[prost(message, optional, tag = "2")]
     pub timestamp: ::core::option::Option<::prost_types::Timestamp>,
 }
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct JobEventCompleted {
     #[prost(string, tag = "1")]
     pub job_id: ::prost::alloc::string::String,

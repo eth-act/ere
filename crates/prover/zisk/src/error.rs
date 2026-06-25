@@ -1,5 +1,6 @@
 use ere_prover_core::CommonError;
 use thiserror::Error;
+use zisk_sm_rom::RomError;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -26,6 +27,9 @@ pub enum Error {
     // SDK
     #[error("Build prover failed: {0}")]
     BuildProver(#[source] anyhow::Error),
+
+    #[error("Build ROM failed: {0}")]
+    BuildRom(#[from] RomError),
 
     #[error("Setup failed: {0}")]
     Setup(#[source] anyhow::Error),

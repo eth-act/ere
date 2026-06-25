@@ -171,6 +171,7 @@ async fn setup(
             hash_id: hash_id.clone(),
             with_hints: false,
             program_name: String::new(),
+            emulator_only: false,
         })),
     };
     let req = JobRequestMessage {
@@ -262,6 +263,7 @@ fn parse_proof(bytes: &[u8]) -> Result<ZiskProof, Error> {
             proof: Vec<u64>,
             _zisk_vk: Vec<u64>,
             minimal: bool,
+            hash: String,
         },
         Plonk,
     }
@@ -310,11 +312,17 @@ fn parse_proof(bytes: &[u8]) -> Result<ZiskProof, Error> {
     let ProofBody::Vadcop {
         proof,
         minimal: true,
+        hash,
         ..
     } = proof.body
     else {
         return Err(ere_verifier_zisk::Error::InvalidVadcopFinalProofKind)?;
     };
 
-    Ok(ZiskProof(VadcopFinalProof::new(proof, public_values, true)))
+    Ok(ZiskProof(VadcopFinalProof::new(
+        proof,
+        public_values,
+        true,
+        hash,
+    )))
 }
