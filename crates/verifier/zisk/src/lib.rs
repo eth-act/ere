@@ -11,5 +11,5 @@ pub use crate::{
     proof::{
         PROGRAM_VK_WORDS, PUBLIC_VALUES_BYTES, PUBLIC_VALUES_WORDS, VadcopFinalProof, ZiskProof,
     },
-    verifier::{ZiskVerifier, ensure_program_vk_matches},
+    verifier::{VADCOP_FINAL_HASH_FAMILY, ZiskVerifier, ensure_program_vk_matches},
 };

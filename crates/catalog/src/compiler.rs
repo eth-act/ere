@@ -34,9 +34,6 @@ pub enum CompilerKind {
     /// Rust compiler with customized toolchain
     #[strum(serialize = "rust-customized", serialize = "RustCustomized")]
     RustCustomized,
-    /// Go compiler with customized toolchain
-    #[strum(serialize = "go-customized", serialize = "GoCustomized")]
-    GoCustomized,
 }
 
 impl CompilerKind {
@@ -91,7 +88,6 @@ mod tests {
         for (ss, kind) in [
             (["rust", "Rust"], Rust),
             (["rust-customized", "RustCustomized"], RustCustomized),
-            (["go-customized", "GoCustomized"], GoCustomized),
         ] {
             ss.iter().for_each(|s| assert_eq!(s.parse(), Ok(kind)));
             assert_eq!(kind.as_str(), ss[0]);
@@ -102,7 +98,7 @@ mod tests {
         assert_eq!(
             ParseError::from("xxx").to_string(),
             "Unsupported compiler kind `xxx`, expect one of \
-                [rust, rust-customized, go-customized]"
+                [rust, rust-customized]"
                 .to_string()
         );
     }

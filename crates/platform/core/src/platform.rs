@@ -38,7 +38,7 @@ pub trait Platform {
     /// Prints a message to the host environment.
     ///
     /// Note that this function will be a no-op if the platform doesn't support.
-    fn print(message: &str);
+    fn print(_message: &str) {}
 
     /// Returns the current cycle count.
     ///

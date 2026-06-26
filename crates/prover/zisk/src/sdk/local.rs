@@ -5,19 +5,17 @@ use std::{
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{CommonError, Input, ProverResource};
-use ere_verifier_zisk::{ZiskProgramVk, ZiskProof};
+use ere_verifier_zisk::{VADCOP_FINAL_HASH_FAMILY, ZiskProgramVk, ZiskProof};
 use once_cell::sync::OnceCell;
 use parking_lot::Mutex;
 use proofman_fields::{Field, Goldilocks, PrimeField64};
-use proofman_starks_lib_c::set_gpu_mode_c;
 use proofman_util::DeviceBuffer;
-use zisk_common::{ProofKind, ZiskPaths, io::ZiskStdin};
-use zisk_pil::RomRomTrace;
+use zisk_common::{HashMode, ProofKind, ZiskPaths, io::ZiskStdin};
 use zisk_prover_backend::{
     Asm, AsmOptions, BackendProverOpts, GuestProgram, ProverClientBuilder, ZiskProver,
 };
-use zisk_rom_setup::{ROM_BLOWUP_FACTOR, ROM_MERKLE_TREE_ARITY, get_elf_bin_file_path_with_hash};
-use zisk_sm_rom::RomSM;
+use zisk_rom_setup::get_elf_bin_file_path_with_hash;
+use zisk_sm_rom::CustomRom;
 
 use crate::{error::Error, sdk::framed_stdin};
 
@@ -113,7 +111,7 @@ impl LocalProver {
         let proof = output
             .get_proof()
             .get_vadcop_final_proof()
-            .map_err(Error::Prove)?;
+            .map_err(|err| Error::Prove(err.into()))?;
 
         Ok((ZiskProof(proof), proving_time))
     }
@@ -121,8 +119,12 @@ impl LocalProver {
 
 fn build_prover(config: &Config, resource: &ProverResource) -> Result<ZiskProver<Asm>, Error> {
     let mut opts = BackendProverOpts::default();
-    if cfg!(feature = "cuda") && matches!(resource, ProverResource::Gpu) {
+    if cfg!(feature = "cuda") && resource.is_gpu() {
         opts = opts.gpu();
+        // Run the memory-ops planner on the CPU even though proof generation stays on the GPU. The
+        // GPU planner aborts the whole process with `exit(1)` on a degenerate or guest-rejected
+        // execution, which no in-process recovery can survive.
+        opts = opts.cpu_mops();
     }
     if config.minimal_memory {
         opts = opts.minimal_memory();
@@ -150,7 +152,7 @@ fn build_prover(config: &Config, resource: &ProverResource) -> Result<ZiskProver
         .map_err(Error::BuildProver)
 }
 
-/// Vendored from [`zisk_rom_setup::rom_merkle_setup`] to do program setup withuot creating
+/// Vendored from [`zisk_rom_setup::rom_merkle_setup`] to do program setup without creating
 /// `ProofCtx` or generating assembly, which can only be created once due to mpi initialization.
 fn compute_program_vk(
     resource: &ProverResource,
@@ -162,33 +164,32 @@ fn compute_program_vk(
 
     impl Drop for Guard {
         fn drop(&mut self) {
-            set_gpu_mode_c(self.0);
+            proofman_starks_lib_c::set_gpu_mode_c(self.0);
         }
     }
 
-    set_gpu_mode_c(false);
-    let _guard = Guard(resource.is_gpu());
-
-    let buffer = vec![F::ZERO; RomRomTrace::<F>::NUM_ROWS * RomRomTrace::<F>::ROW_SIZE];
-    let mut custom_rom_trace: RomRomTrace<F> =
-        RomRomTrace::new_from_vec(buffer).expect("infallable");
-
-    RomSM::compute_custom_trace_rom(program.elf(), &mut custom_rom_trace);
+    let hash_mode: HashMode = VADCOP_FINAL_HASH_FAMILY.parse().expect("infallable");
+    let mut custom_rom_trace = CustomRom::build::<F>(program.elf())?;
 
     let buffer = custom_rom_trace.get_buffer::<F>();
-    let arity = ROM_MERKLE_TREE_ARITY;
+    let arity = hash_mode.merkle_tree_arity();
     let n = custom_rom_trace.num_rows() as u64;
-    let n_extended = ROM_BLOWUP_FACTOR * custom_rom_trace.num_rows() as u64;
+    let n_extended = hash_mode.blowup_factor() * n;
     let n_bits = n.trailing_zeros() as u64;
     let n_bits_ext = n_extended.trailing_zeros() as u64;
     let n_cols = custom_rom_trace.num_cols() as u64;
-    let mut root = [F::ZERO, F::ZERO, F::ZERO, F::ZERO];
+    let mut root = [F::ZERO; 4];
 
     let cache_dir = &ZiskPaths::global().cache;
     fs::create_dir_all(cache_dir)
         .map_err(|err| CommonError::create_dir("cache", cache_dir, err))?;
-    let elf_bin_path =
-        get_elf_bin_file_path_with_hash(program.hash(), cache_dir, false).expect("infallable");
+    let elf_bin_path = get_elf_bin_file_path_with_hash(program.hash(), cache_dir, false, hash_mode)
+        .expect("infallable");
+
+    proofman_starks_lib_c::set_hash_family_c(VADCOP_FINAL_HASH_FAMILY);
+
+    let _guard = Guard(cfg!(feature = "cuda") && resource.is_gpu());
+    proofman_starks_lib_c::set_gpu_mode_c(false);
 
     proofman_starks_lib_c::write_custom_commit_c(
         root.as_mut_ptr() as *mut u8,

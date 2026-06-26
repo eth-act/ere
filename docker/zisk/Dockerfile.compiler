@@ -34,12 +34,6 @@ ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH
 
-# Copy TamaGo
-COPY --from=base_zkvm /root/.tamago /root/.tamago
-
-# Add TamaGo to path
-ENV PATH=/root/.tamago/bin:$PATH
-
 # Copy ZisK SDK
 COPY --from=base_zkvm /root/.zisk/toolchains /root/.zisk/toolchains
 

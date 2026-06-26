@@ -37,6 +37,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc-riscv64-unknown-elf \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Set default toolchain to latest stable
+RUN rustup toolchain list | cut -d' ' -f1 | xargs -r rustup toolchain remove && \
+    rustup default 1.96.0
+
 # Add nightly toolchain to provide cargo fallback for zisk toolchain
 RUN rustup toolchain install --profile minimal nightly
 
@@ -56,12 +60,5 @@ ENV PATH=/root/.zisk/bin:$PATH
 
 # Verify cargo-zisk is accessible
 RUN echo "Verifying ZisK installation in Dockerfile ..." && cargo-zisk --version
-
-# Copy the TamaGo installer script from the workspace context
-COPY --chmod=755 scripts/install_tamago.sh /tmp/install_tamago.sh
-
-# Run the TamaGo installation script.
-RUN /tmp/install_tamago.sh && \
-    rm /tmp/install_tamago.sh
 
 CMD ["/bin/bash"]

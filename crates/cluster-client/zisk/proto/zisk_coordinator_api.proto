@@ -1,4 +1,4 @@
-// Copied from https://github.com/0xPolygonHermez/zisk/blob/v0.18.0/distributed/crates/coordinator-api/proto/zisk_coordinator_api.proto.
+// Copied from https://github.com/0xPolygonHermez/zisk/blob/v1.0.0-alpha/distributed/crates/coordinator-api/proto/zisk_coordinator_api.proto.
 
 syntax = "proto3";
 
@@ -67,9 +67,32 @@ message CostPerType {
 }
 
 message ExecutionStats {
-  uint64      steps          = 1;
-  uint64      duration_nanos = 2;
-  CostPerType cost_per_type  = 3;
+  uint64       steps          = 1;
+  uint64       duration_nanos = 2;
+  CostPerType  cost_per_type  = 3;
+  ExecutorTime executor_time  = 4;
+  repeated AirInstanceCount plan = 5;
+}
+
+// Per-AIR planned instance count (the AIR name is derived from the ids by the consumer).
+message AirInstanceCount {
+  uint32 airgroup_id = 1;
+  uint32 air_id      = 2;
+  uint64 count       = 3;
+}
+
+// Per-phase executor timing breakdown (milliseconds).
+message ExecutorTime {
+  uint64       total_duration             = 1;
+  uint64       execution_duration         = 2;
+  uint64       count_and_plan_duration    = 3;
+  uint64       count_and_plan_mo_duration = 4;
+  AsmExecution asm                        = 5; // present only for the ASM executor
+}
+
+message AsmExecution {
+  float time = 1; // seconds
+  float mhz  = 2;
 }
 
 enum ProofKind {
@@ -187,10 +210,12 @@ message SetupRequest {
   string hash_id = 1;
   bool   with_hints = 2;
   string program_name = 3;
+  bool   emulator_only = 4;
 }
 
 message SetupResponse {
   bytes vk = 1;
+  string hash_mode = 2;
 }
 
 message ProveRequest {
@@ -362,3 +387,4 @@ message CancelJobResponse {
   string job_id    = 1;
   bool   cancelled = 2; // true if cancelled; false if already terminal
 }
+

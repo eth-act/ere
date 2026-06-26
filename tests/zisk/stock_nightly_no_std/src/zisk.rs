@@ -5,7 +5,7 @@ unsafe extern "C" fn _zisk_main() {
     crate::main();
 }
 
-// According to https://github.com/0xPolygonHermez/zisk/blob/v0.18.0/ziskos/entrypoint/src/lib.rs#L305
+// According to https://github.com/0xPolygonHermez/zisk/blob/v1.0.0-alpha/ziskos/entrypoint/src/lib.rs#L302
 core::arch::global_asm!(
     r#"
 .section .text.init
@@ -27,7 +27,7 @@ _start:
 "#,
 );
 
-// According to https://github.com/0xPolygonHermez/rust/blob/zisk/library/std/src/sys/pal/zisk/mod.rs#L48
+// According to https://github.com/0xPolygonHermez/rust/blob/zisk/library/std/src/sys/pal/zisk/mod.rs#L36
 #[panic_handler]
 fn panic_impl(_info: &core::panic::PanicInfo) -> ! {
     unsafe { core::arch::asm!("unimp", options(noreturn)) }
@@ -46,7 +46,7 @@ unsafe impl GlobalAlloc for SimpleAlloc {
 #[global_allocator]
 static HEAP: SimpleAlloc = SimpleAlloc;
 
-// According to https://github.com/0xPolygonHermez/zisk/blob/v0.18.0/ziskos/entrypoint/src/alloc/alloc.rs#L27
+// According to https://github.com/0xPolygonHermez/zisk/blob/v1.0.0-alpha/ziskos/entrypoint/src/alloc/alloc.rs#L27
 #[no_mangle]
 pub unsafe extern "C" fn sys_alloc_aligned(bytes: usize, align: usize) -> *mut u8 {
     use core::arch::asm;

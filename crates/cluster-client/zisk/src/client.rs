@@ -5,7 +5,8 @@ use core::{iter, time::Duration};
 use ere_compiler_core::Elf;
 use ere_prover_core::{Input, RemoteProverConfig, zkVMVerifier};
 use ere_verifier_zisk::{
-    PROGRAM_VK_WORDS, PUBLIC_VALUES_BYTES, VadcopFinalProof, ZiskProgramVk, ZiskProof, ZiskVerifier,
+    PROGRAM_VK_WORDS, PUBLIC_VALUES_BYTES, VADCOP_FINAL_HASH_FAMILY, VadcopFinalProof,
+    ZiskProgramVk, ZiskProof, ZiskVerifier,
 };
 use serde::Deserialize;
 use tokio::time::{Instant, sleep, timeout, timeout_at};
@@ -171,6 +172,7 @@ async fn setup(
             hash_id: hash_id.clone(),
             with_hints: false,
             program_name: String::new(),
+            emulator_only: false,
         })),
     };
     let req = JobRequestMessage {
@@ -185,6 +187,14 @@ async fn setup(
         },
         Err(_) => Err(Error::SetupTimeout { job_id })?,
     };
+
+    if !resp.hash_mode.is_empty() && resp.hash_mode != VADCOP_FINAL_HASH_FAMILY {
+        Err(Error::UnexpectedHashFamily {
+            expected: VADCOP_FINAL_HASH_FAMILY,
+            got: resp.hash_mode,
+        })?;
+    }
+
     let program_vk = ZiskProgramVk::try_from(resp.vk.as_slice())?;
     Ok((hash_id, program_vk))
 }
@@ -262,6 +272,7 @@ fn parse_proof(bytes: &[u8]) -> Result<ZiskProof, Error> {
             proof: Vec<u64>,
             _zisk_vk: Vec<u64>,
             minimal: bool,
+            hash: String,
         },
         Plonk,
     }
@@ -307,14 +318,23 @@ fn parse_proof(bytes: &[u8]) -> Result<ZiskProof, Error> {
             .collect()
     };
 
-    let ProofBody::Vadcop {
+    let proof = if let ProofBody::Vadcop {
         proof,
         minimal: true,
+        hash,
         ..
     } = proof.body
-    else {
+        && hash == VADCOP_FINAL_HASH_FAMILY
+    {
+        proof
+    } else {
         return Err(ere_verifier_zisk::Error::InvalidVadcopFinalProofKind)?;
     };
 
-    Ok(ZiskProof(VadcopFinalProof::new(proof, public_values, true)))
+    Ok(ZiskProof(VadcopFinalProof::new(
+        proof,
+        public_values,
+        true,
+        VADCOP_FINAL_HASH_FAMILY.to_string(),
+    )))
 }

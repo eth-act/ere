@@ -92,10 +92,12 @@ impl ZiskSdk {
     pub fn execute(&self, input: &Input) -> Result<(PublicValues, u64), Error> {
         let stdin = framed_stdin(input.stdin());
         let mut emu = Emu::new(&self.rom);
-        emu.ctx = emu.create_emu_context(stdin, &EmuOptions::default());
 
-        panic::catch_unwind(AssertUnwindSafe(|| emu.run_fast(&EmuOptions::default())))
-            .map_err(|err| Error::EmulatorPanic(panic_msg(err)))?;
+        panic::catch_unwind(AssertUnwindSafe(|| {
+            emu.ctx = emu.create_emu_context(stdin, &EmuOptions::default());
+            emu.run_fast(&EmuOptions::default());
+        }))
+        .map_err(|err| Error::EmulatorPanic(panic_msg(err)))?;
 
         if !emu.ctx.inst_ctx.end {
             return Err(Error::EmulatorNotTerminated);
@@ -170,7 +172,7 @@ mod tests {
             let elf_path = tempdir.path().join("guest.elf");
             fs::write(&elf_path, &basic_elf().0).unwrap();
 
-            let status = Command::new("cargo-zisk")
+            let status = Command::new("cargo-zisk-dev")
                 .arg("program-setup")
                 .arg("-e")
                 .arg(&elf_path)
