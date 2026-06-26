@@ -152,7 +152,7 @@ fn build_prover(config: &Config, resource: &ProverResource) -> Result<ZiskProver
         .map_err(Error::BuildProver)
 }
 
-/// Vendored from [`zisk_rom_setup::rom_merkle_setup`] to do program setup withuot creating
+/// Vendored from [`zisk_rom_setup::rom_merkle_setup`] to do program setup without creating
 /// `ProofCtx` or generating assembly, which can only be created once due to mpi initialization.
 fn compute_program_vk(
     resource: &ProverResource,

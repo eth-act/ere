@@ -14,6 +14,9 @@ pub enum Error {
     #[error("Cluster setup is not done yet")]
     SetupNotDone,
 
+    #[error("Cluster uses hash family {got}, expected {expected}")]
+    UnexpectedHashFamily { expected: &'static str, got: String },
+
     #[error("Cluster job {job_id} failed: {reason}")]
     JobFailed { job_id: String, reason: String },
 

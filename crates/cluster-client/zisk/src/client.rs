@@ -187,6 +187,14 @@ async fn setup(
         },
         Err(_) => Err(Error::SetupTimeout { job_id })?,
     };
+
+    if !resp.hash_mode.is_empty() && resp.hash_mode != VADCOP_FINAL_HASH_FAMILY {
+        Err(Error::UnexpectedHashFamily {
+            expected: VADCOP_FINAL_HASH_FAMILY,
+            got: resp.hash_mode,
+        })?;
+    }
+
     let program_vk = ZiskProgramVk::try_from(resp.vk.as_slice())?;
     Ok((hash_id, program_vk))
 }
