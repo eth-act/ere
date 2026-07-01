@@ -1,11 +1,14 @@
-use core::{array::from_fn, ops::Deref};
+use core::ops::Deref;
 
 use ere_platform_core::Platform;
 
+/// Maximum bytes of output the guest may reveal.
+pub const MAX_OUTPUT_BYTES: usize = 256;
+
 /// OpenVM [`Platform`] implementation.
 ///
-/// Note that the maximum output size is 32 bytes, and output less than 32
-/// bytes will be padded to 32 bytes.
+/// Note that the maximum output size is 256 bytes, and output less than 256
+/// bytes will be padded to 256 bytes.
 pub struct OpenVMPlatform;
 
 impl Platform for OpenVMPlatform {
@@ -15,11 +18,15 @@ impl Platform for OpenVMPlatform {
 
     fn write_output(output: &[u8]) {
         assert!(
-            output.len() <= 32,
-            "Maximum output size is 32 bytes, got {} bytes",
+            output.len() <= MAX_OUTPUT_BYTES,
+            "Maximum output size is {MAX_OUTPUT_BYTES} bytes, got {} bytes",
             output.len()
         );
-        openvm::io::reveal_bytes32(from_fn(|i| output.get(i).copied().unwrap_or(0)));
+        for (index, chunk) in output.chunks(4).enumerate() {
+            let mut word = [0u8; 4];
+            word[..chunk.len()].copy_from_slice(chunk);
+            openvm::io::reveal_u32(u32::from_le_bytes(word), index);
+        }
     }
 
     fn print(message: &str) {

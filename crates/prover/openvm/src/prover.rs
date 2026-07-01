@@ -3,17 +3,24 @@ use std::{path::PathBuf, sync::Arc, time::Instant};
 use ere_compiler_core::Elf;
 use ere_prover_core::{
     CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource,
-    ProverResourceKind, PublicValues, zkVMProver, zkVMVerifier,
+    ProverResourceKind, PublicValues, zkVMProver,
 };
-use ere_verifier_openvm::{OpenVMProgramVk, OpenVMProof, OpenVMVerifier};
-use openvm_circuit::arch::instructions::exe::VmExe;
+use ere_verifier_openvm::{
+    NUM_PUBLIC_VALUES, OpenVMProgramVk, OpenVMProof, OpenVMVerifier, extract_public_values,
+};
+use openvm_circuit::arch::{VmBuilder, VmExecutionConfig, instructions::exe::VmExe};
 use openvm_sdk::{
-    CpuSdk, F, StdIn,
-    commit::AppExecutionCommit,
-    config::SdkVmConfig,
+    CpuSdk, F, GenericSdk, SC, StdIn,
+    config::{AggregationSystemParams, AppConfig},
     fs::read_object_from_file,
     keygen::{AggProvingKey, AppProvingKey},
 };
+use openvm_sdk_config::{SdkVmConfig, TranspilerConfig};
+use openvm_stark_sdk::{
+    config::{MAX_APP_LOG_STACKED_HEIGHT, app_params_with_100_bits_security},
+    openvm_stark_backend::StarkEngine,
+};
+use openvm_transpiler::{FromElf, openvm_platform::memory::MEM_SIZE};
 
 use crate::{error::Error, executor::Executor};
 
@@ -21,7 +28,6 @@ pub struct OpenVMProver {
     app_exe: Arc<VmExe<F>>,
     app_pk: AppProvingKey<SdkVmConfig>,
     agg_pk: AggProvingKey,
-    app_commit: AppExecutionCommit,
     resource: ProverResource,
     executor: Executor,
     verifier: OpenVMVerifier,
@@ -36,34 +42,38 @@ impl OpenVMProver {
             ))?;
         }
 
-        let sdk = CpuSdk::standard();
+        let app_exe = Arc::new(
+            VmExe::from_elf(
+                openvm_transpiler::elf::Elf::decode(&elf.0, MEM_SIZE.try_into().unwrap())
+                    .map_err(Error::DecodeElf)?,
+                app_config().app_vm_config.transpiler(),
+            )
+            .map_err(Error::Transpile)?,
+        );
 
-        let app_exe = sdk.convert_to_exe(elf.0).map_err(Error::Transpile)?;
+        let sdk = cpu_sdk(None, None)?;
+        let app_pk = sdk.app_pk().clone();
+        let agg_pk = AggProvingKey {
+            prefix: sdk.agg_prefix_pk(),
+            internal_recursive: Arc::new(
+                read_object_from_file(internal_recursive_pk_path())
+                    .map_err(Error::ReadInternalRecursivePkFailed)?,
+            ),
+        };
 
-        let (app_pk, _) = sdk.app_keygen();
-
-        let agg_pk = read_object_from_file::<AggProvingKey, _>(agg_pk_path())
-            .map_err(Error::ReadAggKeyFailed)?;
-
-        let _ = sdk.set_agg_pk(agg_pk.clone());
-
-        let app_commit = sdk
+        let baseline = cpu_sdk(app_pk.clone().into(), agg_pk.clone().into())?
             .prover(app_exe.clone())
             .map_err(Error::ProverInit)?
-            .app_commit();
+            .generate_baseline();
 
-        let executor = Executor::new(sdk.executor().config.clone(), &app_exe)?;
+        let executor = Executor::new(sdk_vm_config(), &app_exe)?;
 
-        let verifier = OpenVMVerifier::new(OpenVMProgramVk::new(
-            app_commit.app_exe_commit.as_slice(),
-            app_commit.app_vm_commit.as_slice(),
-        ));
+        let verifier = OpenVMVerifier::new(OpenVMProgramVk::new(baseline.clone()));
 
         Ok(Self {
             app_exe,
             app_pk,
             agg_pk,
-            app_commit,
             resource,
             executor,
             verifier,
@@ -71,18 +81,12 @@ impl OpenVMProver {
     }
 
     fn cpu_sdk(&self) -> Result<CpuSdk, Error> {
-        let sdk = CpuSdk::standard();
-        let _ = sdk.set_app_pk(self.app_pk.clone());
-        let _ = sdk.set_agg_pk(self.agg_pk.clone());
-        Ok(sdk)
+        sdk(self.app_pk.clone().into(), self.agg_pk.clone().into())
     }
 
     #[cfg(feature = "cuda")]
     fn gpu_sdk(&self) -> Result<openvm_sdk::GpuSdk, Error> {
-        let sdk = openvm_sdk::GpuSdk::standard();
-        let _ = sdk.set_app_pk(self.app_pk.clone());
-        let _ = sdk.set_agg_pk(self.agg_pk.clone());
-        Ok(sdk)
+        sdk(self.app_pk.clone().into(), self.agg_pk.clone().into())
     }
 }
 
@@ -117,33 +121,22 @@ impl zkVMProver for OpenVMProver {
         stdin.write_bytes(input.stdin());
 
         let start = Instant::now();
-        let (proof, app_commit) = match self.resource {
-            ProverResource::Cpu => self.cpu_sdk()?.prove(self.app_exe.clone(), stdin),
+        let (proof, _) = match self.resource {
+            ProverResource::Cpu => self.cpu_sdk()?.prove(self.app_exe.clone(), stdin, &[]),
             #[cfg(feature = "cuda")]
-            ProverResource::Gpu => self.gpu_sdk()?.prove(self.app_exe.clone(), stdin),
+            ProverResource::Gpu => self.gpu_sdk()?.prove(self.app_exe.clone(), stdin, &[]),
             #[cfg(not(feature = "cuda"))]
             ProverResource::Gpu => return Err(Error::CudaFeatureDisabled),
-            _ => {
-                return Err(CommonError::unsupported_prover_resource_kind(
-                    self.resource.kind(),
-                    [ProverResourceKind::Cpu, ProverResourceKind::Gpu],
-                ))?;
-            }
+            _ => Err(CommonError::unsupported_prover_resource_kind(
+                self.resource.kind(),
+                [ProverResourceKind::Cpu, ProverResourceKind::Gpu],
+            ))?,
         }
         .map_err(Error::Prove)?;
         let proving_time = start.elapsed();
 
-        if app_commit != self.app_commit {
-            return Err(Error::UnexpectedAppCommit {
-                preprocessed: self.app_commit.into(),
-                proved: app_commit.into(),
-            });
-        }
-
+        let public_values = extract_public_values(&proof.user_pvs_proof.public_values)?;
         let proof = OpenVMProof::new(proof);
-
-        // FIXME: Remove this if the `sdk.prove()` above checks exit code.
-        let public_values = self.verifier.verify(&proof)?;
 
         Ok((
             public_values,
@@ -153,9 +146,53 @@ impl zkVMProver for OpenVMProver {
     }
 }
 
-fn agg_pk_path() -> PathBuf {
+fn cpu_sdk(
+    app_pk: Option<AppProvingKey<SdkVmConfig>>,
+    agg_pk: Option<AggProvingKey>,
+) -> Result<CpuSdk, Error> {
+    sdk(app_pk, agg_pk)
+}
+
+fn sdk<E, VB>(
+    app_pk: Option<AppProvingKey<SdkVmConfig>>,
+    agg_pk: Option<AggProvingKey>,
+) -> Result<GenericSdk<E, VB>, Error>
+where
+    E: StarkEngine<SC = SC>,
+    VB: Default + VmBuilder<E, VmConfig = SdkVmConfig>,
+    VB::VmConfig: VmExecutionConfig<F>,
+{
+    let mut builder = GenericSdk::builder();
+    builder = if let Some(app_pk) = app_pk {
+        builder.app_pk(app_pk)
+    } else {
+        builder.app_config(app_config())
+    };
+    builder = if let Some(agg_pk) = agg_pk {
+        builder.agg_pk(agg_pk)
+    } else {
+        builder.agg_params(AggregationSystemParams::default())
+    };
+    builder
+        .build_without_transpiler()
+        .map_err(Error::ProverInit)
+}
+
+fn sdk_vm_config() -> SdkVmConfig {
+    let mut config = SdkVmConfig::standard();
+    config.system.config = config.system.config.with_public_values(NUM_PUBLIC_VALUES);
+    config.optimize()
+}
+
+fn app_config() -> AppConfig<SdkVmConfig> {
+    let system_params = app_params_with_100_bits_security(MAX_APP_LOG_STACKED_HEIGHT);
+    AppConfig::new(sdk_vm_config(), system_params)
+}
+
+fn internal_recursive_pk_path() -> PathBuf {
     PathBuf::from(std::env::var("HOME").expect("env `$HOME` should be set"))
-        .join(".openvm/agg_stark.pk")
+        .join(".openvm")
+        .join("internal_recursive.pk")
 }
 
 #[cfg(test)]
@@ -188,7 +225,7 @@ mod tests {
         let elf = basic_elf();
         let zkvm = OpenVMProver::new(elf, ProverResource::Cpu).unwrap();
 
-        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_execute(&zkvm, &test_case);
     }
 
@@ -210,7 +247,7 @@ mod tests {
         let elf = basic_elf();
         let zkvm = OpenVMProver::new(elf, ProverResource::Cpu).unwrap();
 
-        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
     }
 
@@ -227,7 +264,7 @@ mod tests {
         }
 
         // Should be able to recover
-        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
     }
 
@@ -237,7 +274,7 @@ mod tests {
         let elf = basic_elf();
         let zkvm = OpenVMProver::new(elf, ProverResource::Gpu).unwrap();
 
-        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
     }
 
@@ -255,7 +292,7 @@ mod tests {
         }
 
         // Should be able to recover
-        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256();
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
     }
 }

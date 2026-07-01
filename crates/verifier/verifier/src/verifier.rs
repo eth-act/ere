@@ -7,7 +7,7 @@ use crate::error::Error;
 pub enum Verifier {
     #[cfg(feature = "nightly")]
     Airbender(ere_verifier_airbender::AirbenderVerifier),
-    OpenVM(ere_verifier_openvm::OpenVMVerifier),
+    OpenVM(Box<ere_verifier_openvm::OpenVMVerifier>),
     Risc0(ere_verifier_risc0::Risc0Verifier),
     SP1(ere_verifier_sp1::SP1Verifier),
     Zisk(ere_verifier_zisk::ZiskVerifier),
@@ -27,7 +27,9 @@ impl Verifier {
             zkVMKind::OpenVM => {
                 let program_vk = Decode::decode_from_slice(encoded_program_vk)
                     .map_err(Error::decode_program_vk)?;
-                Self::OpenVM(ere_verifier_openvm::OpenVMVerifier::new(program_vk))
+                Self::OpenVM(Box::new(ere_verifier_openvm::OpenVMVerifier::new(
+                    program_vk,
+                )))
             }
             zkVMKind::Risc0 => {
                 let program_vk = Decode::decode_from_slice(encoded_program_vk)

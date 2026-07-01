@@ -19,8 +19,8 @@ jobs:
         include:
           # - zkvm: airbender
           #   crate: airbender-sdk
-          - zkvm: openvm
-            crate: openvm-sdk
+          # - zkvm: openvm
+          #   crate: openvm-sdk
           - zkvm: risc0
             crate: risc0-zkvm
           - zkvm: sp1

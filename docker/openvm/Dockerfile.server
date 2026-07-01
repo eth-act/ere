@@ -30,8 +30,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copy OpenVM SDK
-COPY --from=build_stage /root/.openvm/agg_stark.pk /root/.openvm/agg_stark.pk
+# Copy OpenVM internal-recursive proving key loaded by the prover at runtime.
+COPY --from=build_stage /root/.openvm/internal_recursive.pk /root/.openvm/internal_recursive.pk
 
 # Copy ere-server
 COPY --from=build_stage /ere/bin/ere-server /ere/bin/ere-server

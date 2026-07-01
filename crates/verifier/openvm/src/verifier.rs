@@ -1,30 +1,37 @@
-use std::sync::LazyLock;
-
 use ere_verifier_core::{PublicValues, zkVMVerifier};
-use openvm_continuations::F;
-use openvm_stark_sdk::openvm_stark_backend::p3_field::PrimeField32;
+use openvm_stark_sdk::{
+    config::baby_bear_poseidon2::F, openvm_stark_backend::p3_field::PrimeField32,
+};
+use openvm_verify_stark_host::{verify_vm_stark_proof_decoded, vk::VmStarkVerifyingKey};
 
-use crate::{Error, OpenVMProgramVk, OpenVMProof, vendor::verify_proof, verifier::vk::AGG_VK};
+use crate::{Error, OpenVMProgramVk, OpenVMProof, verifier::vk::AGG_VK};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 mod vk;
+
+/// Public values bytes of OpenVM proof.
+pub const NUM_PUBLIC_VALUES: usize = 256;
 
 /// Verifier bound to a specific compiled guest program.
 ///
 /// Implements [`zkVMVerifier`]. Holds the pre-computed [`OpenVMProgramVk`]
 /// and the aggregation verifying key embedded at build time needed to
 /// authenticate proofs.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct OpenVMVerifier {
     program_vk: OpenVMProgramVk,
+    vk: VmStarkVerifyingKey,
 }
 
 impl OpenVMVerifier {
     /// Creates a new verifier bound to `program_vk`.
     pub fn new(program_vk: OpenVMProgramVk) -> Self {
-        LazyLock::force(&AGG_VK);
-        Self { program_vk }
+        let vk = VmStarkVerifyingKey {
+            mvk: AGG_VK.clone(),
+            baseline: program_vk.0.clone(),
+        };
+        Self { program_vk, vk }
     }
 }
 
@@ -38,9 +45,9 @@ impl zkVMVerifier for OpenVMVerifier {
     }
 
     fn verify(&self, proof: &OpenVMProof) -> Result<PublicValues, Error> {
-        verify_proof(&AGG_VK, self.program_vk.0, &proof.0)?;
+        verify_vm_stark_proof_decoded(&self.vk, &proof.0)?;
 
-        extract_public_values(&proof.0.user_public_values)
+        extract_public_values(&proof.0.user_pvs_proof.public_values)
     }
 
     fn name(&self) -> &'static str {
@@ -56,11 +63,17 @@ impl zkVMVerifier for OpenVMVerifier {
 ///
 /// The public values revealed in guest program will be flatten into `Vec<u8>`
 /// then converted to field elements `Vec<F>`, so here we try to downcast it.
-fn extract_public_values(user_public_values: &[F]) -> Result<PublicValues, Error> {
-    user_public_values
+pub fn extract_public_values(user_public_values: &[F]) -> Result<PublicValues, Error> {
+    let public_values = user_public_values
         .iter()
         .map(|v| u8::try_from(v.as_canonical_u32()).ok())
         .collect::<Option<Vec<u8>>>()
-        .ok_or(Error::InvalidPublicValue)
-        .map(PublicValues::from)
+        .ok_or(Error::InvalidPublicValue)?;
+    if public_values.len() != NUM_PUBLIC_VALUES {
+        return Err(Error::InvalidPublicValueSize {
+            expected: NUM_PUBLIC_VALUES,
+            got: public_values.len(),
+        });
+    }
+    Ok(PublicValues(public_values))
 }

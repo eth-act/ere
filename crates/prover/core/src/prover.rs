@@ -13,7 +13,7 @@ use crate::{Input, ProgramExecutionReport, ProgramProvingReport, PublicValues, z
 /// implementation will have their own construction function.
 #[allow(non_camel_case_types)]
 #[auto_impl::auto_impl(&, Arc, Box)]
-pub trait zkVMProver {
+pub trait zkVMProver: Sync {
     type Verifier: zkVMVerifier;
     type Error: 'static + Send + Sync + Error + From<<Self::Verifier as zkVMVerifier>::Error>;
 

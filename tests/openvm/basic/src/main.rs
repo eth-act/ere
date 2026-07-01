@@ -5,5 +5,5 @@ use ere_util_test::{
 };
 
 fn main() {
-    BasicProgram::<BincodeLegacy>::run_output_sha256::<OpenVMPlatform>();
+    BasicProgram::<BincodeLegacy>::run::<OpenVMPlatform>();
 }
