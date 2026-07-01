@@ -699,7 +699,7 @@ mod tests {
             OpenVM,
             RustCustomized,
             "basic",
-            [BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256()],
+            [BasicProgram::<BincodeLegacy>::valid_test_case()],
             [
                 Input::new(),
                 BasicProgram::<BincodeLegacy>::invalid_test_case().input()
@@ -710,7 +710,7 @@ mod tests {
             RustCustomized,
             "basic",
             [Cpu, Gpu],
-            [BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256()],
+            [BasicProgram::<BincodeLegacy>::valid_test_case()],
             [
                 Input::new(),
                 BasicProgram::<BincodeLegacy>::invalid_test_case().input()
