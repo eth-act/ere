@@ -146,14 +146,15 @@ risc0-zkvm = { version = "3.0.5", default-features = false }
 risc0-zkvm-platform = { version = "2.2.2", default-features = false }
 
 # SP1 dependencies
-sp1-core-executor = "6.3.0"
-sp1-cuda = "6.3.0"
-sp1-hypercube = "6.3.0"
-sp1-primitives = "6.3.0"
-sp1-recursion-executor = "6.3.0"
-sp1-sdk = "6.3.0"
-sp1-verifier = "6.3.0"
-sp1-zkvm = { version = "6.3.0", default-features = false }
+sp1-core-executor = { git = "https://github.com/succinctlabs/sp1", tag = "v6.3.1" }
+sp1-cuda = { git = "https://github.com/succinctlabs/sp1", tag = "v6.3.1" }
+sp1-hypercube = { git = "https://github.com/succinctlabs/sp1", tag = "v6.3.1" }
+sp1-primitives = { git = "https://github.com/succinctlabs/sp1", tag = "v6.3.1" }
+sp1-recursion-executor = { git = "https://github.com/succinctlabs/sp1", tag = "v6.3.1" }
+sp1-sdk = { git = "https://github.com/succinctlabs/sp1", tag = "v6.3.1" }
+sp1-verifier = { git = "https://github.com/succinctlabs/sp1", tag = "v6.3.1" }
+sp1-zkvm = { git = "https://github.com/succinctlabs/sp1", tag = "v6.3.1", default-features = false }
+sp1-libzkevm = { git = "https://github.com/succinctlabs/sp1", tag = "v6.3.1", package = "libzkevm" }
 
 # ZisK dependencies
 proofman-fields = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v1.0.0-alpha", package = "fields" }

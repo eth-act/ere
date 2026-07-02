@@ -3,6 +3,8 @@
 
 extern crate alloc;
 
+use sp1_libzkevm as _;
+
 mod platform;
 
 pub use ere_platform_core::Platform;
