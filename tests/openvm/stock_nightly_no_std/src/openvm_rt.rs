@@ -25,7 +25,7 @@ _start:
 static STACK_TOP: u32 = 0x0020_0400;
 
 // 1. Call `main` user function
-// 2. Call system halt environment function. It's defined by sp1 vm.
+// 2. Call system halt environment function. It is defined by openvm.
 #[unsafe(no_mangle)]
 fn __start(_argc: isize, _argv: *const *const u8) -> isize {
     main();
@@ -35,7 +35,7 @@ fn __start(_argc: isize, _argv: *const *const u8) -> isize {
     unreachable!()
 }
 
-// According to https://github.com/openvm-org/openvm/blob/v1.4.3/crates/toolchain/openvm/src/process.rs
+// According to https://github.com/openvm-org/openvm/blob/v2.0.0-rc.3/crates/toolchain/platform/src/rust_rt.rs
 #[inline(always)]
 fn terminate() {
     unsafe {
@@ -45,7 +45,7 @@ fn terminate() {
     }
 }
 
-// According to https://github.com/openvm-org/openvm/blob/v1.4.3/crates/toolchain/openvm/src/process.rs
+// According to https://github.com/openvm-org/openvm/blob/v2.0.0-rc.3/crates/toolchain/platform/src/rust_rt.rs
 #[panic_handler]
 fn panic_impl(_panic_info: &core::panic::PanicInfo) -> ! {
     unsafe {

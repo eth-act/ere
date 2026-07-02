@@ -37,7 +37,7 @@ fn generate_zkvm_sdk_version_impl() {
         zisk_version,
     ] = [
         ("ere-verifier-airbender", "execution_utils"),
-        ("ere-verifier-openvm", "openvm-sdk"),
+        ("ere-verifier-openvm", "openvm-verify-stark-host"),
         ("ere-verifier-risc0", "risc0-zkvm"),
         ("ere-verifier-sp1", "sp1-verifier"),
         ("ere-verifier-zisk", "zisk-verifier"),

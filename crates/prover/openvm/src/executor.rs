@@ -9,36 +9,49 @@ use openvm_circuit::{
     },
     system::memory::merkle::public_values::extract_public_values,
 };
-use openvm_sdk::{F, StdIn, config::SdkVmConfig};
+use openvm_sdk::{F, StdIn};
+use openvm_sdk_config::SdkVmConfig;
 
 use crate::error::Error;
 
 #[cfg(target_arch = "x86_64")]
-type ExecutorInstance = openvm_circuit::arch::AotInstance<F, ExecutionCtx>;
+type ExecutorInstance<'a> = openvm_circuit::arch::AotInstance<'a, F, ExecutionCtx>;
 #[cfg(not(target_arch = "x86_64"))]
-type ExecutorInstance = openvm_circuit::arch::InterpretedInstance<F, ExecutionCtx>;
+type ExecutorInstance<'a> = openvm_circuit::arch::InterpretedInstance<'a, F, ExecutionCtx>;
 
-/// An execution instance and the executor it borrows from.
+/// A precomputed execution instance with the executor it borrows from.
 ///
-/// `instance` holds raw precompute pointers into `executor`, so the fields are
-/// declared in drop order with `instance` first, and reordering them is an
-/// uncaught use-after-free.
+/// `instance` holds borrows (and raw precompute pointers) into `*executor`, making
+/// this self-referential. The `'static` lifetime is sound because boxing `executor`
+/// fixes its heap address across moves and declaring `instance` first drops the
+/// borrow before its referent.
 pub(crate) struct Executor {
-    instance: ExecutorInstance,
-    // Read only through `instance`'s borrows, kept alive to back them.
+    instance: ExecutorInstance<'static>,
+    // Never read directly. Owned only to keep `*executor` alive for `instance`.
     #[allow(dead_code)]
-    executor: VmExecutor<F, SdkVmConfig>,
+    executor: Box<VmExecutor<F, SdkVmConfig>>,
     num_public_values: usize,
 }
 
 impl Executor {
     pub(crate) fn new(config: SdkVmConfig, app_exe: &Arc<VmExe<F>>) -> Result<Self, Error> {
-        let executor = VmExecutor::new(config)
-            .map_err(|err| Error::Execute(VirtualMachineError::from(err).into()))?;
+        let executor = Box::new(
+            VmExecutor::new(config)
+                .map_err(|err| Error::Execute(VirtualMachineError::from(err).into()))?,
+        );
+        let num_public_values = executor.config.as_ref().num_public_values;
+
         let instance = executor
             .instance(app_exe)
             .map_err(|err| Error::Execute(VirtualMachineError::from(err).into()))?;
-        let num_public_values = executor.config.as_ref().num_public_values;
+
+        // SAFETY: `instance` borrows only into `*executor`. The executor is boxed,
+        // so its heap storage stays at a fixed address when the returned `Executor`
+        // is moved, and the `executor` field is dropped after `instance` by field
+        // order. The borrow therefore never dangles and never outlives its referent,
+        // so extending its lifetime to `'static` for co-storage is sound.
+        let instance: ExecutorInstance<'static> = unsafe { std::mem::transmute(instance) };
+
         Ok(Self {
             instance,
             executor,

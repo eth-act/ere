@@ -11,7 +11,11 @@ thiserror.workspace = true
 
 # OpenVM dependencies
 openvm-circuit.workspace = true
-openvm-sdk = { workspace = true, features = ["nightly-features"] }
+openvm-sdk.workspace = true
+openvm-sdk-config.workspace = true
+openvm-stark-sdk.workspace = true
+openvm-transpiler.workspace = true
+openvm-verify-stark-host.workspace = true
 
 # Local dependencies
 ere-compiler-core.workspace = true
@@ -20,7 +24,7 @@ ere-verifier-openvm.workspace = true
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 # OpenVM dependencies
-openvm-sdk = { workspace = true, features = ["aot", "nightly-features"] }
+openvm-sdk = { workspace = true, features = ["aot"] }
 
 [dev-dependencies]
 ere-compiler-openvm.workspace = true

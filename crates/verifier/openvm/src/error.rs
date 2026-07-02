@@ -1,37 +1,25 @@
-use openvm_circuit::arch::VmVerificationError;
+use openvm_verify_stark_host::error::VerifyStarkError;
 use thiserror::Error;
-
-use crate::vendor::CommitBytes;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    /// Failed to deserialize a proof or program VK.
-    #[error("Failed to deserialize: {0}")]
-    Deserialize(#[from] bincode::error::DecodeError),
+    /// Failed to deserialize a program VK.
+    #[error("Failed to decode program vk: {0}")]
+    DecodeProgramVk(#[from] bincode::error::DecodeError),
 
-    /// VK byte slice was not the expected 64 bytes.
-    #[error("Invalid ProgramVk length, expected: {expected}, got: {got}")]
-    InvalidProgramVkLength { expected: usize, got: usize },
+    /// Failed to decode a proof.
+    #[error("Failed to decode proof: {0}")]
+    DecodeProof(#[from] std::io::Error),
 
-    /// VM-level verification failure.
-    #[error("VM verification failed: {0}")]
-    VmVerification(#[from] VmVerificationError),
-
-    /// Claimed app exe commit did not match the expected one.
-    #[error("Invalid app exe commit: expected {expected:?}, actual {actual:?}")]
-    InvalidAppExeCommit {
-        expected: CommitBytes,
-        actual: CommitBytes,
-    },
-
-    /// Claimed app vm commit did not match the expected one.
-    #[error("Invalid app vm commit: expected {expected:?}, actual {actual:?}")]
-    InvalidAppVmCommit {
-        expected: CommitBytes,
-        actual: CommitBytes,
-    },
+    /// Failed to verify a STARK proof.
+    #[error("Verification failed: {0}")]
+    Verify(#[from] VerifyStarkError),
 
     /// A field element could not be downcast to `u8`.
     #[error("Invalid public value")]
     InvalidPublicValue,
+
+    /// Public value size is not as expected.
+    #[error("Invalid public value size, expected {expected}, got {got}")]
+    InvalidPublicValueSize { expected: usize, got: usize },
 }

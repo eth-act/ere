@@ -12,16 +12,14 @@ serde = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
 
 # OpenVM dependencies
-openvm-circuit.workspace = true
-openvm-continuations.workspace = true
 openvm-stark-sdk.workspace = true
+openvm-verify-stark-host.workspace = true
 
 # Local dependencies
 ere-verifier-core.workspace = true
 
 [dev-dependencies]
 openvm-sdk.workspace = true
-
 
 [build-dependencies]
 ere-util-build.workspace = true

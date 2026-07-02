@@ -1,5 +1,7 @@
 use ere_prover_core::CommonError;
-use openvm_sdk::{SdkError, commit::AppExecutionCommit};
+use openvm_sdk::SdkError;
+use openvm_transpiler::transpiler::TranspilerError;
+use openvm_verify_stark_host::vk::VerificationBaseline;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -11,11 +13,14 @@ pub enum Error {
     #[error("Enable `cuda` feature to enable `ProverResource::Gpu`")]
     CudaFeatureDisabled,
 
-    #[error("Transpile elf failed: {0}")]
-    Transpile(SdkError),
+    #[error("Decode elf failed: {0}")]
+    DecodeElf(eyre::Report),
 
-    #[error("Read aggregation key failed: {0}")]
-    ReadAggKeyFailed(eyre::Error),
+    #[error("Transpile elf failed: {0}")]
+    Transpile(TranspilerError),
+
+    #[error("Read internal_recursive_pk failed: {0}")]
+    ReadInternalRecursivePkFailed(eyre::Error),
 
     #[error("Initialize prover failed: {0}")]
     ProverInit(SdkError),
@@ -28,10 +33,10 @@ pub enum Error {
     #[error("OpenVM proving failed: {0}")]
     Prove(#[source] SdkError),
 
-    #[error("Unexpected app commit: {proved:?}, expected: {preprocessed:?}")]
-    UnexpectedAppCommit {
-        preprocessed: Box<AppExecutionCommit>,
-        proved: Box<AppExecutionCommit>,
+    #[error("verification baseline mismatch: expected {expected:?}, got {proved:?}")]
+    UnexpectedBaseline {
+        expected: Box<VerificationBaseline>,
+        proved: Box<VerificationBaseline>,
     },
 
     #[error(transparent)]
