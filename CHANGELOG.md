@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.13.0](https://github.com/eth-act/ere/compare/v0.12.2...v0.13.0) (2026-07-02)
+
+
+### Features
+
+* import sp1-libzkevm into ere-platform-sp1 to include zkvm-standards impl ([#388](https://github.com/eth-act/ere/issues/388)) ([968d72e](https://github.com/eth-act/ere/commit/968d72e1ca55e8744ff3517460f0bbd3ee88bd4b))
+* openvm v2.0 ([#387](https://github.com/eth-act/ere/issues/387)) ([cb14872](https://github.com/eth-act/ere/commit/cb148727f0a0606f16e91106b7fba9b7a462ef04))
+* update sp1 v6.3.0 ([#383](https://github.com/eth-act/ere/issues/383)) ([aea6655](https://github.com/eth-act/ere/commit/aea6655c3fa605e946c61457193eacc3a0ea774e))
+* zisk v1.0.0-alpha ([#385](https://github.com/eth-act/ere/issues/385)) ([2505e96](https://github.com/eth-act/ere/commit/2505e96eb9821b7aa561b56eeeddc145baa138fd))
+
 ## [0.12.2](https://github.com/eth-act/ere/compare/v0.12.1...v0.12.2) (2026-06-16)
 
 
