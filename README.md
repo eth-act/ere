@@ -179,7 +179,7 @@ Different zkVMs handles public values in different approaches:
 | zkVM      | Version                                                                    | ISA       |  GPU  | Multi GPU | Cluster |
 | --------- | -------------------------------------------------------------------------- | --------- | :---: | :-------: | :-----: |
 | Airbender | [`73d69b5`](https://github.com/matter-labs/zksync-airbender/tree/73d69b5)  | `RV32IMA` |   V   |     V     |         |
-| OpenVM    | [`2.0.0-rc.3`](https://github.com/openvm-org/openvm/tree/v2.0.0-rc.3)      | `RV32IMA` |   V   |           |         |
+| OpenVM    | [`2.0.0`](https://github.com/openvm-org/openvm/tree/v2.0.0)                | `RV32IMA` |   V   |           |         |
 | RISC Zero | [`3.0.5`](https://github.com/risc0/risc0/tree/v3.0.5)                      | `RV32IMA` |   V   |     V     |         |
 | SP1       | [`6.3.0`](https://github.com/succinctlabs/sp1/tree/v6.3.0)                 | `RV64IMA` |   V   |           |         |
 | ZisK      | [`1.0.0-alpha`](https://github.com/0xPolygonHermez/zisk/tree/v1.0.0-alpha) | `RV64IMA` |   V   |     V     |    V    |
