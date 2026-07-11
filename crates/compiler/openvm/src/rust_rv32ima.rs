@@ -6,7 +6,7 @@ use ere_util_compile::{CargoBuildCmd, parse_cargo_features};
 use crate::Error;
 
 const TARGET_TRIPLE: &str = "riscv32ima-unknown-none-elf";
-// Rust flags according to https://github.com/openvm-org/openvm/blob/v2.0.0-rc.3/crates/toolchain/build/src/lib.rs#L291
+// Rust flags according to https://github.com/openvm-org/openvm/blob/v2.0.0/crates/toolchain/build/src/lib.rs#L291
 const RUSTFLAGS: &[&str] = &[
     // Replace atomic ops with nonatomic versions since the guest is single threaded.
     "-C",
