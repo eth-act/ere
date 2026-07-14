@@ -150,8 +150,6 @@ macro_rules! test_verifier {
     };
 }
 
-test_verifier!(Airbender);
-
 test_verifier!(OpenVM);
 
 test_verifier!(SP1);

@@ -137,11 +137,6 @@ fi
 # Per-zkVM CUDA architecture translation
 if [ "$CUDA" = true ] && [ -n "$CUDA_ARCHS" ]; then
     case "$ZKVM" in
-        airbender)
-            CUDAARCHS=$(echo "$CUDA_ARCHS" | tr ',' ';')
-            BASE_ZKVM_BUILD_ARGS+=(--build-arg "CUDAARCHS=$CUDAARCHS")
-            SERVER_ZKVM_BUILD_ARGS+=(--build-arg "CUDAARCHS=$CUDAARCHS")
-            ;;
         openvm)
             BASE_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCH=$CUDA_ARCHS")
             SERVER_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCH=$CUDA_ARCHS")

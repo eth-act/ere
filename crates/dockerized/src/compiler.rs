@@ -238,13 +238,6 @@ pub(crate) mod tests {
         };
     }
 
-    mod airbender {
-        test_compile!(Airbender, RustCustomized, "basic");
-        test_compile!(Airbender, Rust, "stock_nightly_no_std");
-        test_reproducible_elf!(Airbender, RustCustomized, "basic");
-        test_reproducible_elf!(Airbender, Rust, "stock_nightly_no_std");
-    }
-
     mod openvm {
         test_compile!(OpenVM, RustCustomized, "basic");
         test_compile!(OpenVM, Rust, "stock_nightly_no_std");

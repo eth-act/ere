@@ -4,7 +4,6 @@ set -e -o pipefail
 
 # Usage: ./fetch-zkvm-version.sh <zkvm> <crate>
 # Examples:
-#   .github/scripts/fetch-zkvm-version.sh airbender airbender-sdk
 #   .github/scripts/fetch-zkvm-version.sh openvm openvm-sdk
 #   .github/scripts/fetch-zkvm-version.sh sp1 sp1-sdk
 #   .github/scripts/fetch-zkvm-version.sh zisk ziskos

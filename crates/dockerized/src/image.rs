@@ -5,7 +5,7 @@ pub fn image_tag(zkvm_kind: zkVMKind, gpu: bool) -> String {
     let suffix = match (zkvm_kind, gpu) {
         // Only the following zkVMs requires CUDA setup in the base image
         // when GPU support is required.
-        (zkVMKind::Airbender | zkVMKind::OpenVM | zkVMKind::SP1 | zkVMKind::Zisk, true) => "-cuda",
+        (zkVMKind::OpenVM | zkVMKind::SP1 | zkVMKind::Zisk, true) => "-cuda",
         _ => "",
     };
     format!("{DOCKER_IMAGE_TAG}{suffix}")

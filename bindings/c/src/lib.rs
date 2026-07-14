@@ -26,10 +26,9 @@ pub struct EreVerifier(Verifier);
 ///
 /// `zkvm_kind` selects the target zkVM.
 ///
-/// - `0` - [`zkVMKind::Airbender`]
-/// - `1` - [`zkVMKind::OpenVM`]
-/// - `2` - [`zkVMKind::SP1`]
-/// - `3` - [`zkVMKind::Zisk`]
+/// - `0` - [`zkVMKind::OpenVM`]
+/// - `1` - [`zkVMKind::SP1`]
+/// - `2` - [`zkVMKind::Zisk`]
 ///
 /// On success, writes the new handle into `*output` and returns [`ERE_OK`]. The
 /// caller owns the handle and must release it with [`ere_verifier_free`]. On
@@ -69,9 +68,7 @@ pub unsafe extern "C" fn ere_verifier_new(
             ERE_OK
         }
         Err(Error::DecodeProgramVk(_)) => ERE_ERR_DECODE_PROGRAM_VK,
-        Err(Error::NightlyFeatureRequired | Error::DecodeProof(_) | Error::Verification(_)) => {
-            ERE_ERR_INTERNAL
-        }
+        Err(Error::DecodeProof(_) | Error::Verification(_)) => ERE_ERR_INTERNAL,
     }
 }
 
@@ -120,7 +117,7 @@ pub unsafe extern "C" fn ere_verifier_verify(
         Ok(public_values) => public_values.0,
         Err(Error::DecodeProof(_)) => return ERE_ERR_DECODE_PROOF,
         Err(Error::Verification(_)) => return ERE_ERR_VERIFY,
-        Err(Error::NightlyFeatureRequired | Error::DecodeProgramVk(_)) => return ERE_ERR_INTERNAL,
+        Err(Error::DecodeProgramVk(_)) => return ERE_ERR_INTERNAL,
     };
 
     if !public_values.is_empty() {

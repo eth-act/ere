@@ -172,9 +172,9 @@ mod tests {
                 "v0.16.1",
             ),
             (
-                "git+https://github.com/matter-labs//zksync-airbender?rev=d15b86db8a1683b5a641cb420fe6b009e1eb5acb#d15b86db8a1683b5a641cb420fe6b009e1eb5acb".into(),
+                "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.0.0#8f86342c6c292b52b34f80f27b366a0f50c1baba".into(),
                 "x.x.x",
-                "d15b86d",
+                "8f86342",
             ),
             (None, "0.1.0", "v0.1.0"),
         ] {

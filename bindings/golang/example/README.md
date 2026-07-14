@@ -14,7 +14,7 @@ The archive contains `libere_verifier_c.a` and `ere_verifier.h`.
 
 ## Run against the repository fixtures
 
-For a quick local trial, build the library from source. The build also generates the header under bindings/c/build through the C crate build script. The build produces a static and a shared library side by side, so copy the static library and the header into one directory, then point cgo at it for the header and the linker at it for the library. The fixtures under crates/verifier supply a valid airbender proof.
+For a quick local trial, build the library from source. The build also generates the header under bindings/c/build through the C crate build script. The build produces a static and a shared library side by side, so copy the static library and the header into one directory, then point cgo at it for the header and the linker at it for the library. The fixtures under crates/verifier supply a valid openvm proof.
 
 ```bash
 cargo build --release -p ere-verifier-c
@@ -26,10 +26,10 @@ cp "$WORKSPACE/bindings/c/build/ere_verifier.h" /tmp/ere-lib/
 
 CGO_CFLAGS="-I/tmp/ere-lib" \
   go run -ldflags="-extldflags '-L/tmp/ere-lib'" . \
-  -kind airbender \
-  -vk "$WORKSPACE/crates/verifier/airbender/tests/fixtures/program_vk.bin" \
-  -proof "$WORKSPACE/crates/verifier/airbender/tests/fixtures/proof.bin" \
-  -pub "$WORKSPACE/crates/verifier/airbender/tests/fixtures/public_values.bin"
+  -kind openvm \
+  -vk "$WORKSPACE/crates/verifier/openvm/tests/fixtures/program_vk.bin" \
+  -proof "$WORKSPACE/crates/verifier/openvm/tests/fixtures/proof.bin" \
+  -pub "$WORKSPACE/crates/verifier/openvm/tests/fixtures/public_values.bin"
 ```
 
 A successful run prints the verified public values.

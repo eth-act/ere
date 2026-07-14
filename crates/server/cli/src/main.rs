@@ -19,8 +19,7 @@ mod otel;
 // Compile-time check to ensure exactly one zkVM feature is enabled for `ere-server`
 const _: () = {
     assert!(
-        (cfg!(feature = "airbender") as u8
-            + cfg!(feature = "openvm") as u8
+        (cfg!(feature = "openvm") as u8
             + cfg!(feature = "sp1") as u8
             + cfg!(feature = "zisk") as u8)
             == 1,
@@ -139,9 +138,6 @@ async fn read_elf(elf_source: ElfSource) -> Result<Elf, Error> {
 }
 
 pub(crate) fn construct_zkvm(elf: Elf, resource: ProverResource) -> Result<impl zkVMProver, Error> {
-    #[cfg(feature = "airbender")]
-    let zkvm = ere_prover_airbender::AirbenderProver::new(elf, resource);
-
     #[cfg(feature = "openvm")]
     let zkvm = ere_prover_openvm::OpenVMProver::new(elf, resource);
 

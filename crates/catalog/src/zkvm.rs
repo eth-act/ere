@@ -32,7 +32,6 @@ use strum::{Display, EnumIter, EnumString, FromRepr, IntoEnumIterator, IntoStati
     parse_err_ty = ParseError
 )]
 pub enum zkVMKind {
-    Airbender,
     OpenVM,
     SP1,
     Zisk,
@@ -108,7 +107,6 @@ mod tests {
     fn parse_zkvm_kind() {
         // Valid
         for (ss, kind) in [
-            (["airbender", "Airbender"], zkVMKind::Airbender),
             (["openvm", "OpenVM"], zkVMKind::OpenVM),
             (["sp1", "SP1"], zkVMKind::SP1),
             (["zisk", "Zisk"], zkVMKind::Zisk),
@@ -122,7 +120,7 @@ mod tests {
         assert_eq!(
             ParseError::from("xxx").to_string(),
             "Unsupported zkVM kind `xxx`, expect one of \
-                        [airbender, openvm, sp1, zisk]"
+                        [openvm, sp1, zisk]"
                 .to_string()
         );
     }

@@ -34,7 +34,6 @@ pub use error::Error;
 /// Applies per-zkVM CUDA architecture build args to a Docker build command.
 ///
 /// Each zkVM expects a different format for specifying CUDA architectures:
-/// - Airbender: `CUDAARCHS` (semicolon-separated, e.g. "89;120")
 /// - OpenVM: `CUDA_ARCH` (comma-separated, e.g. "89,120")
 /// - Zisk: `CUDA_ARCHS` (comma-separated, e.g. "89,120")
 fn apply_cuda_build_args(
@@ -48,14 +47,6 @@ fn apply_cuda_build_args(
     }
 
     Ok(match zkvm_kind {
-        zkVMKind::Airbender => {
-            let value = cuda_archs
-                .iter()
-                .map(|arch| arch.to_string())
-                .collect::<Vec<_>>()
-                .join(";");
-            cmd.build_arg("CUDAARCHS", value)
-        }
         zkVMKind::OpenVM => {
             let value = cuda_archs
                 .iter()
@@ -231,7 +222,6 @@ impl ServerContainer {
         // zkVM specific options when using GPU
         if gpu {
             cmd = match zkvm_kind {
-                zkVMKind::Airbender => cmd.gpus(),
                 zkVMKind::OpenVM => cmd.gpus(),
                 zkVMKind::SP1 => cmd.gpus(),
                 zkVMKind::Zisk => cmd.gpus(),
@@ -653,31 +643,6 @@ mod tests {
                 );
             )*
         };
-    }
-
-    mod airbender {
-        use super::*;
-        test_execute!(
-            Airbender,
-            RustCustomized,
-            "basic",
-            [BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256()],
-            [
-                Input::new(),
-                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
-            ]
-        );
-        test_prove!(
-            Airbender,
-            RustCustomized,
-            "basic",
-            [Gpu],
-            [BasicProgram::<BincodeLegacy>::valid_test_case().into_output_sha256()],
-            [
-                Input::new(),
-                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
-            ]
-        );
     }
 
     mod openvm {

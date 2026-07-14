@@ -41,9 +41,7 @@ jobs:
           sudo apt-get install -y protobuf-compiler
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: nightly-2026-05-01
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
@@ -52,7 +50,6 @@ jobs:
         run: |
           cargo bench \
             --package ere-verifier \
-            --features nightly \
             --bench verify \
             | tee bench-output.txt
 
@@ -103,42 +100,4 @@ jobs:
             --package ere-verifier-openvm \
             --package ere-verifier-sp1 \
             --package ere-verifier-zisk \
-            --test verifier
-
-  test-nightly:
-    name: Test and clippy verifier crates with nightly toolchain
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      # Needed for crate `sp1-prover-types`
-      - name: Install protoc
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y protobuf-compiler
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: nightly-2026-05-01
-          components: clippy
-
-      - name: Cache dependencies
-        uses: Swatinem/rust-cache@v2
-
-      - name: Run cargo clippy verifier crates
-        run: |
-          cargo clippy --all-targets \
-            --package ere-verifier \
-            --package ere-verifier-* \
-            --features nightly \
-            -- -D warnings
-
-      - name: Run cargo test verifier crates
-        run: |
-          cargo test --release \
-            --package ere-verifier \
-            --package ere-verifier-* \
-            --features nightly \
             --test verifier

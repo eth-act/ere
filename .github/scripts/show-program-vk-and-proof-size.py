@@ -26,7 +26,6 @@ def print_table(header, sep, body):
 
 
 ZKVM = {
-    "airbender": "Airbender",
     "openvm": "OpenVM",
     "sp1": "SP1",
     "zisk": "ZisK",
