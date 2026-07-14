@@ -36,7 +36,6 @@ jobs:
         zkvm:
           - airbender
           - openvm
-          - risc0
           - sp1
           - zisk
     steps:
@@ -112,7 +111,6 @@ jobs:
         zkvm:
           - airbender
           - openvm
-          - risc0
           - sp1
           - zisk
     steps:

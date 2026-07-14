@@ -28,7 +28,6 @@ def print_table(header, sep, body):
 ZKVM = {
     "airbender": "Airbender",
     "openvm": "OpenVM",
-    "risc0": "RISC Zero",
     "sp1": "SP1",
     "zisk": "ZisK",
 }

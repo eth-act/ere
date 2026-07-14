@@ -36,7 +36,6 @@ pub use error::Error;
 /// Each zkVM expects a different format for specifying CUDA architectures:
 /// - Airbender: `CUDAARCHS` (semicolon-separated, e.g. "89;120")
 /// - OpenVM: `CUDA_ARCH` (comma-separated, e.g. "89,120")
-/// - Risc0: `NVCC_APPEND_FLAGS` (nvcc --generate-code flags)
 /// - Zisk: `CUDA_ARCHS` (comma-separated, e.g. "89,120")
 fn apply_cuda_build_args(
     cmd: DockerBuildCmd,
@@ -64,14 +63,6 @@ fn apply_cuda_build_args(
                 .collect::<Vec<_>>()
                 .join(",");
             cmd.build_arg("CUDA_ARCH", value)
-        }
-        zkVMKind::Risc0 => {
-            let value = cuda_archs
-                .iter()
-                .map(|arch| format!("--generate-code arch=compute_{arch},code=sm_{arch}"))
-                .collect::<Vec<_>>()
-                .join(" ");
-            cmd.build_arg("NVCC_APPEND_FLAGS", value)
         }
         zkVMKind::Zisk => {
             let value = cuda_archs
@@ -217,9 +208,6 @@ impl ServerContainer {
 
         // zkVM specific options
         cmd = match zkvm_kind {
-            zkVMKind::Risc0 => cmd
-                .inherit_env("ERE_RISC0_SEGMENT_PO2")
-                .inherit_env("ERE_RISC0_KECCAK_PO2"),
             // SP1 uses shared memory to exchange data between processes, here
             // we set 32G for safety.
             zkVMKind::SP1 => cmd
@@ -246,7 +234,6 @@ impl ServerContainer {
                 zkVMKind::Airbender => cmd.gpus(),
                 zkVMKind::OpenVM => cmd.gpus(),
                 zkVMKind::SP1 => cmd.gpus(),
-                zkVMKind::Risc0 => cmd.gpus().inherit_env("RISC0_DEFAULT_PROVER_NUM_GPUS"),
                 zkVMKind::Zisk => cmd.gpus(),
             }
         }
@@ -707,31 +694,6 @@ mod tests {
         );
         test_prove!(
             OpenVM,
-            RustCustomized,
-            "basic",
-            [Cpu, Gpu],
-            [BasicProgram::<BincodeLegacy>::valid_test_case()],
-            [
-                Input::new(),
-                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
-            ]
-        );
-    }
-
-    mod risc0 {
-        use super::*;
-        test_execute!(
-            Risc0,
-            RustCustomized,
-            "basic",
-            [BasicProgram::<BincodeLegacy>::valid_test_case()],
-            [
-                Input::new(),
-                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
-            ]
-        );
-        test_prove!(
-            Risc0,
             RustCustomized,
             "basic",
             [Cpu, Gpu],

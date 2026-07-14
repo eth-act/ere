@@ -92,7 +92,6 @@ jobs:
           cargo clippy --all-targets \
             --package ere-verifier \
             --package ere-verifier-openvm \
-            --package ere-verifier-risc0 \
             --package ere-verifier-sp1 \
             --package ere-verifier-zisk \
             -- -D warnings
@@ -102,7 +101,6 @@ jobs:
           cargo test --release \
             --package ere-verifier \
             --package ere-verifier-openvm \
-            --package ere-verifier-risc0 \
             --package ere-verifier-sp1 \
             --package ere-verifier-zisk \
             --test verifier

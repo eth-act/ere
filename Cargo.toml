@@ -5,21 +5,18 @@ members = [
     "crates/compiler/core",
     "crates/compiler/airbender",
     "crates/compiler/openvm",
-    "crates/compiler/risc0",
     "crates/compiler/sp1",
     "crates/compiler/zisk",
     # Platform
     "crates/platform/core",
     "crates/platform/airbender",
     "crates/platform/openvm",
-    "crates/platform/risc0",
     "crates/platform/sp1",
     "crates/platform/zisk",
     # Prover
     "crates/prover/core",
     "crates/prover/airbender",
     "crates/prover/openvm",
-    "crates/prover/risc0",
     "crates/prover/sp1",
     "crates/prover/zisk",
     # Verifier
@@ -27,7 +24,6 @@ members = [
     "crates/verifier/core",
     "crates/verifier/airbender",
     "crates/verifier/openvm",
-    "crates/verifier/risc0",
     "crates/verifier/sp1",
     "crates/verifier/zisk",
     # Server
@@ -138,13 +134,6 @@ openvm-transpiler = { git = "https://github.com/han0110/openvm.git", branch = "p
 openvm-verify-stark-host = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.0.0", default-features = false }
 openvm-stark-sdk = { git = "https://github.com/han0110/stark-backend.git", branch = "patch/v2.0.0", default-features = false, features = ["parallel"] }
 
-# Risc0 dependencies
-risc0-binfmt = { version = "3.0.4", default-features = false }
-risc0-build = "3.0.5"
-risc0-zkp = { version = "3.0.4", default-features = false }
-risc0-zkvm = { version = "3.0.5", default-features = false }
-risc0-zkvm-platform = { version = "2.2.2", default-features = false }
-
 # SP1 dependencies
 sp1-core-executor = { git = "https://github.com/succinctlabs/sp1", tag = "v6.3.1" }
 sp1-cuda = { git = "https://github.com/succinctlabs/sp1", tag = "v6.3.1" }
@@ -175,26 +164,22 @@ ere-compiler = { path = "crates/compiler/cli" }
 ere-compiler-core = { path = "crates/compiler/core" }
 ere-compiler-airbender = { path = "crates/compiler/airbender" }
 ere-compiler-openvm = { path = "crates/compiler/openvm" }
-ere-compiler-risc0 = { path = "crates/compiler/risc0" }
 ere-compiler-sp1 = { path = "crates/compiler/sp1" }
 ere-compiler-zisk = { path = "crates/compiler/zisk" }
 ere-platform-core = { path = "crates/platform/core" }
 ere-platform-airbender = { path = "crates/platform/airbender" }
 ere-platform-openvm = { path = "crates/platform/openvm" }
-ere-platform-risc0 = { path = "crates/platform/risc0" }
 ere-platform-sp1 = { path = "crates/platform/sp1" }
 ere-platform-zisk = { path = "crates/platform/zisk" }
 ere-prover-core = { path = "crates/prover/core" }
 ere-prover-airbender = { path = "crates/prover/airbender" }
 ere-prover-openvm = { path = "crates/prover/openvm" }
-ere-prover-risc0 = { path = "crates/prover/risc0" }
 ere-prover-sp1 = { path = "crates/prover/sp1" }
 ere-prover-zisk = { path = "crates/prover/zisk" }
 ere-verifier = { path = "crates/verifier/verifier" }
 ere-verifier-core = { path = "crates/verifier/core" }
 ere-verifier-airbender = { path = "crates/verifier/airbender" }
 ere-verifier-openvm = { path = "crates/verifier/openvm" }
-ere-verifier-risc0 = { path = "crates/verifier/risc0" }
 ere-verifier-sp1 = { path = "crates/verifier/sp1" }
 ere-verifier-zisk = { path = "crates/verifier/zisk" }
 ere-server = { path = "crates/server/cli" }

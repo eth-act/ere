@@ -252,13 +252,6 @@ pub(crate) mod tests {
         test_reproducible_elf!(OpenVM, Rust, "stock_nightly_no_std");
     }
 
-    mod risc0 {
-        test_compile!(Risc0, RustCustomized, "basic");
-        test_compile!(Risc0, Rust, "stock_nightly_no_std");
-        test_reproducible_elf!(Risc0, RustCustomized, "basic");
-        test_reproducible_elf!(Risc0, Rust, "stock_nightly_no_std");
-    }
-
     mod sp1 {
         test_compile!(SP1, RustCustomized, "basic");
         test_compile!(SP1, Rust, "stock_nightly_no_std");

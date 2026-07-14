@@ -11,7 +11,6 @@ const _: () = {
     assert!(
         (cfg!(feature = "airbender") as u8
             + cfg!(feature = "openvm") as u8
-            + cfg!(feature = "risc0") as u8
             + cfg!(feature = "sp1") as u8
             + cfg!(feature = "zisk") as u8)
             == 1,
@@ -80,15 +79,6 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind, args: &[String]) -> 
         match compiler_kind {
             CompilerKind::Rust => OpenVMRustRv32ima.compile(guest_dir, args)?,
             CompilerKind::RustCustomized => OpenVMRustRv32imaCustomized.compile(guest_dir, args)?,
-        }
-    };
-
-    #[cfg(feature = "risc0")]
-    let elf = {
-        use ere_compiler_risc0::*;
-        match compiler_kind {
-            CompilerKind::Rust => Risc0RustRv32ima.compile(guest_dir, args)?,
-            CompilerKind::RustCustomized => Risc0RustRv32imaCustomized.compile(guest_dir, args)?,
         }
     };
 

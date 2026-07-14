@@ -78,8 +78,6 @@ test_verifier!(Airbender);
 
 test_verifier!(OpenVM);
 
-test_verifier!(Risc0);
-
 test_verifier!(SP1);
 
 test_verifier!(Zisk);

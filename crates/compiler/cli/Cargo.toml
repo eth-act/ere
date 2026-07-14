@@ -16,7 +16,6 @@ ere-catalog.workspace = true
 ere-compiler-airbender = { workspace = true, optional = true }
 ere-compiler-core.workspace = true
 ere-compiler-openvm = { workspace = true, optional = true }
-ere-compiler-risc0 = { workspace = true, optional = true }
 ere-compiler-sp1 = { workspace = true, optional = true }
 ere-compiler-zisk = { workspace = true, optional = true }
 
@@ -28,7 +27,6 @@ default = []
 # zkVM
 airbender = ["dep:ere-compiler-airbender"]
 openvm = ["dep:ere-compiler-openvm"]
-risc0 = ["dep:ere-compiler-risc0"]
 sp1 = ["dep:ere-compiler-sp1"]
 zisk = ["dep:ere-compiler-zisk"]
 

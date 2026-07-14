@@ -21,8 +21,6 @@ jobs:
           #   crate: airbender-sdk
           # - zkvm: openvm
           #   crate: openvm-sdk
-          - zkvm: risc0
-            crate: risc0-zkvm
           - zkvm: sp1
             crate: sp1-sdk
           # - zkvm: zisk

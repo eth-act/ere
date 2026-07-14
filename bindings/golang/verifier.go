@@ -29,9 +29,8 @@ type ZkVMKind uint32
 const (
 	Airbender ZkVMKind = 0
 	OpenVM    ZkVMKind = 1
-	Risc0     ZkVMKind = 2
-	SP1       ZkVMKind = 3
-	Zisk      ZkVMKind = 4
+	SP1       ZkVMKind = 2
+	Zisk      ZkVMKind = 3
 )
 
 // String implements [fmt.Stringer].
@@ -41,8 +40,6 @@ func (k ZkVMKind) String() string {
 		return "airbender"
 	case OpenVM:
 		return "openvm"
-	case Risc0:
-		return "risc0"
 	case SP1:
 		return "sp1"
 	case Zisk:

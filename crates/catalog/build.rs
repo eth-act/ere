@@ -29,16 +29,9 @@ fn generate_docker_image_tag() {
 }
 
 fn generate_zkvm_sdk_version_impl() {
-    let [
-        airbender_version,
-        openvm_version,
-        risc0_version,
-        sp1_version,
-        zisk_version,
-    ] = [
+    let [airbender_version, openvm_version, sp1_version, zisk_version] = [
         ("ere-verifier-airbender", "execution_utils"),
         ("ere-verifier-openvm", "openvm-verify-stark-host"),
-        ("ere-verifier-risc0", "risc0-zkvm"),
         ("ere-verifier-sp1", "sp1-verifier"),
         ("ere-verifier-zisk", "zisk-verifier"),
     ]
@@ -50,7 +43,6 @@ fn generate_zkvm_sdk_version_impl() {
         match self {{
             Self::Airbender => "{airbender_version}",
             Self::OpenVM => "{openvm_version}",
-            Self::Risc0 => "{risc0_version}",
             Self::SP1 => "{sp1_version}",
             Self::Zisk => "{zisk_version}",
         }}

@@ -21,7 +21,6 @@ const _: () = {
     assert!(
         (cfg!(feature = "airbender") as u8
             + cfg!(feature = "openvm") as u8
-            + cfg!(feature = "risc0") as u8
             + cfg!(feature = "sp1") as u8
             + cfg!(feature = "zisk") as u8)
             == 1,
@@ -145,9 +144,6 @@ pub(crate) fn construct_zkvm(elf: Elf, resource: ProverResource) -> Result<impl 
 
     #[cfg(feature = "openvm")]
     let zkvm = ere_prover_openvm::OpenVMProver::new(elf, resource);
-
-    #[cfg(feature = "risc0")]
-    let zkvm = ere_prover_risc0::Risc0Prover::new(elf, resource);
 
     #[cfg(feature = "sp1")]
     let zkvm = ere_prover_sp1::SP1Prover::new(elf, resource);

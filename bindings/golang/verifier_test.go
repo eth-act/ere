@@ -19,7 +19,6 @@ type fixture struct {
 var fixtures = []fixture{
 	{"airbender", Airbender},
 	{"openvm", OpenVM},
-	{"risc0", Risc0},
 	{"sp1", SP1},
 	{"zisk", Zisk},
 }

@@ -8,7 +8,6 @@ pub enum Verifier {
     #[cfg(feature = "nightly")]
     Airbender(ere_verifier_airbender::AirbenderVerifier),
     OpenVM(Box<ere_verifier_openvm::OpenVMVerifier>),
-    Risc0(ere_verifier_risc0::Risc0Verifier),
     SP1(ere_verifier_sp1::SP1Verifier),
     Zisk(ere_verifier_zisk::ZiskVerifier),
 }
@@ -31,11 +30,6 @@ impl Verifier {
                     program_vk,
                 )))
             }
-            zkVMKind::Risc0 => {
-                let program_vk = Decode::decode_from_slice(encoded_program_vk)
-                    .map_err(Error::decode_program_vk)?;
-                Self::Risc0(ere_verifier_risc0::Risc0Verifier::new(program_vk))
-            }
             zkVMKind::SP1 => {
                 let program_vk = Decode::decode_from_slice(encoded_program_vk)
                     .map_err(Error::decode_program_vk)?;
@@ -54,7 +48,6 @@ impl Verifier {
             #[cfg(feature = "nightly")]
             Self::Airbender(_) => zkVMKind::Airbender,
             Self::OpenVM(_) => zkVMKind::OpenVM,
-            Self::Risc0(_) => zkVMKind::Risc0,
             Self::SP1(_) => zkVMKind::SP1,
             Self::Zisk(_) => zkVMKind::Zisk,
         }
@@ -69,11 +62,6 @@ impl Verifier {
                 verifier.verify(&proof).map_err(Error::verification)?
             }
             Self::OpenVM(verifier) => {
-                let proof =
-                    Decode::decode_from_slice(encoded_proof).map_err(Error::decode_proof)?;
-                verifier.verify(&proof).map_err(Error::verification)?
-            }
-            Self::Risc0(verifier) => {
                 let proof =
                     Decode::decode_from_slice(encoded_proof).map_err(Error::decode_proof)?;
                 verifier.verify(&proof).map_err(Error::verification)?
