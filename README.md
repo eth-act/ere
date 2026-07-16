@@ -50,27 +50,19 @@ This repository contains the following crates:
   - [`ere-platform-core`] - `Platform` trait for guest program
   - [`ere-verifier-core`] - `zkVMVerifier` trait and `PublicValues`
 - Per-zkVM implementations for [`ere-compiler-core`] (host)
-  - [`ere-compiler-airbender`]
   - [`ere-compiler-openvm`]
-  - [`ere-compiler-risc0`]
   - [`ere-compiler-sp1`]
   - [`ere-compiler-zisk`]
 - Per-zkVM implementations for [`ere-prover-core`] (host)
-  - [`ere-prover-airbender`]
   - [`ere-prover-openvm`]
-  - [`ere-prover-risc0`]
   - [`ere-prover-sp1`]
   - [`ere-prover-zisk`]
 - Per-zkVM implementations for [`ere-platform-core`] (guest)
-  - [`ere-platform-airbender`]
   - [`ere-platform-openvm`]
-  - [`ere-platform-risc0`]
   - [`ere-platform-sp1`]
   - [`ere-platform-zisk`]
 - Per-zkVM implementations for [`ere-verifier-core`] (lightweight host verifier)
-  - [`ere-verifier-airbender`]
   - [`ere-verifier-openvm`]
-  - [`ere-verifier-risc0`]
   - [`ere-verifier-sp1`]
   - [`ere-verifier-zisk`]
 - [`ere-dockerized`] - Docker wrapper that spawns [`ere-server`] containers to run zkVM operations without local SDK installation
@@ -91,21 +83,13 @@ This repository contains the following crates:
 [`ere-prover-core`]: https://github.com/eth-act/ere/tree/master/crates/prover/core
 [`ere-platform-core`]: https://github.com/eth-act/ere/tree/master/crates/platform/core
 [`ere-verifier-core`]: https://github.com/eth-act/ere/tree/master/crates/verifier/core
-[`ere-compiler-airbender`]: https://github.com/eth-act/ere/tree/master/crates/compiler/airbender
 [`ere-compiler-openvm`]: https://github.com/eth-act/ere/tree/master/crates/compiler/openvm
-[`ere-compiler-risc0`]: https://github.com/eth-act/ere/tree/master/crates/compiler/risc0
 [`ere-compiler-sp1`]: https://github.com/eth-act/ere/tree/master/crates/compiler/sp1
 [`ere-compiler-zisk`]: https://github.com/eth-act/ere/tree/master/crates/compiler/zisk
 [`ere-cluster-client-zisk`]: https://github.com/eth-act/ere/tree/master/crates/cluster-client/zisk
-[`ere-prover-airbender`]: https://github.com/eth-act/ere/tree/master/crates/prover/airbender
-[`ere-platform-airbender`]: https://github.com/eth-act/ere/tree/master/crates/platform/airbender
-[`ere-verifier-airbender`]: https://github.com/eth-act/ere/tree/master/crates/verifier/airbender
 [`ere-prover-openvm`]: https://github.com/eth-act/ere/tree/master/crates/prover/openvm
 [`ere-platform-openvm`]: https://github.com/eth-act/ere/tree/master/crates/platform/openvm
 [`ere-verifier-openvm`]: https://github.com/eth-act/ere/tree/master/crates/verifier/openvm
-[`ere-prover-risc0`]: https://github.com/eth-act/ere/tree/master/crates/prover/risc0
-[`ere-platform-risc0`]: https://github.com/eth-act/ere/tree/master/crates/platform/risc0
-[`ere-verifier-risc0`]: https://github.com/eth-act/ere/tree/master/crates/verifier/risc0
 [`ere-prover-sp1`]: https://github.com/eth-act/ere/tree/master/crates/prover/sp1
 [`ere-platform-sp1`]: https://github.com/eth-act/ere/tree/master/crates/platform/sp1
 [`ere-verifier-sp1`]: https://github.com/eth-act/ere/tree/master/crates/verifier/sp1
@@ -156,9 +140,7 @@ Host and guest communicate through raw bytes. Serialization/deserialization can 
 
 The `Input` structure holds stdin as raw bytes. Set them with `Input::new().with_stdin(data)`, and the guest reads them back via `Platform::read_input()`.
 
-For Airbender and RISC Zero, the prover internally prepends a u32 LE byte-length prefix because their guest input APIs read u32 words and need a length to stop. SP1, OpenVM, and ZisK pass bytes through.
-
-zkVM-specific stdin APIs (e.g., `sp1_zkvm::io::read`, `risc0_zkvm::guest::env::read`) can also be used directly when finer-grained control is needed.
+zkVM-specific stdin APIs (e.g., `sp1_zkvm::io::read`) can also be used directly when finer-grained control is needed.
 
 #### Writing Public Values to Host
 
@@ -166,23 +148,19 @@ Public values written in the guest program (via `Platform::write_output()` or zk
 
 Different zkVMs handles public values in different approaches:
 
-| zkVM      | Size Limit | Note                           |
-| --------- | ---------- | ------------------------------ |
-| Airbender | 32 bytes   | Padded to 32 bytes with zeros  |
-| OpenVM    | 256 bytes  | Padded to 256 bytes with zeros |
-| RISC Zero | unlimited  | Hashed internally              |
-| SP1       | unlimited  | Hashed internally              |
-| ZisK      | 256 bytes  |                                |
+| zkVM   | Size Limit | Note                           |
+| ------ | ---------- | ------------------------------ |
+| OpenVM | 256 bytes  | Padded to 256 bytes with zeros |
+| SP1    | unlimited  | Hashed internally              |
+| ZisK   | 256 bytes  |                                |
 
 ## Supported zkVMs
 
-| zkVM      | Version                                                                    | ISA       |  GPU  | Multi GPU | Cluster |
-| --------- | -------------------------------------------------------------------------- | --------- | :---: | :-------: | :-----: |
-| Airbender | [`73d69b5`](https://github.com/matter-labs/zksync-airbender/tree/73d69b5)  | `RV32IMA` |   V   |     V     |         |
-| OpenVM    | [`2.0.0`](https://github.com/openvm-org/openvm/tree/v2.0.0)                | `RV32IMA` |   V   |           |         |
-| RISC Zero | [`3.0.5`](https://github.com/risc0/risc0/tree/v3.0.5)                      | `RV32IMA` |   V   |     V     |         |
-| SP1       | [`6.3.0`](https://github.com/succinctlabs/sp1/tree/v6.3.0)                 | `RV64IMA` |   V   |           |         |
-| ZisK      | [`1.0.0-alpha`](https://github.com/0xPolygonHermez/zisk/tree/v1.0.0-alpha) | `RV64IMA` |   V   |     V     |    V    |
+| zkVM   | Version                                                                    | ISA       |  GPU  | Multi GPU | Cluster |
+| ------ | -------------------------------------------------------------------------- | --------- | :---: | :-------: | :-----: |
+| OpenVM | [`2.0.0`](https://github.com/openvm-org/openvm/tree/v2.0.0)                | `RV32IMA` |   V   |           |         |
+| SP1    | [`6.3.1`](https://github.com/succinctlabs/sp1/tree/v6.3.1)                 | `RV64IMA` |   V   |           |         |
+| ZisK   | [`1.0.0-alpha`](https://github.com/0xPolygonHermez/zisk/tree/v1.0.0-alpha) | `RV64IMA` |   V   |     V     |    V    |
 
 ## Examples
 

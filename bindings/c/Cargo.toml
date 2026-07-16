@@ -9,7 +9,7 @@ license.workspace = true
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [dependencies]
-ere-verifier = { workspace = true, features = ["nightly"] }
+ere-verifier = { workspace = true }
 
 [dev-dependencies]
 paste.workspace = true

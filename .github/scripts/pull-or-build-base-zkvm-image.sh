@@ -15,7 +15,7 @@ usage() {
     echo "Usage: $0 --zkvm <zkvm> --tag <tag> [--registry <registry>] [--cached-tag <cached-tag>] [--cuda-archs <archs>]"
     echo ""
     echo "Required:"
-    echo "  --zkvm <zkvm>              zkVM to build for (e.g., zisk, sp1, risc0)"
+    echo "  --zkvm <zkvm>              zkVM to build for (e.g., zisk, sp1, openvm)"
     echo "  --tag <tag>                Image tag (e.g., 0.1.3, a8d7bc0, local, local-cuda)"
     echo ""
     echo "Optional:"

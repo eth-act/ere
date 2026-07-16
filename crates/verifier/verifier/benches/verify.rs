@@ -22,18 +22,9 @@ macro_rules! bench_verifier {
     };
 }
 
-bench_verifier!(Airbender);
 bench_verifier!(OpenVM);
-bench_verifier!(Risc0);
 bench_verifier!(SP1);
 bench_verifier!(Zisk);
 
-criterion_group!(
-    verify,
-    bench_airbender,
-    bench_openvm,
-    bench_risc0,
-    bench_sp1,
-    bench_zisk,
-);
+criterion_group!(verify, bench_openvm, bench_sp1, bench_zisk,);
 criterion_main!(verify);

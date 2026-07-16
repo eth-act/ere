@@ -18,7 +18,7 @@ usage() {
     echo "Usage: $0 --zkvm <zkvm> --tag <tag> [--base] [--compiler] [--server] [--registry <registry>] [--cuda] [--cuda-archs <archs>] [--rustflags <flags>]"
     echo ""
     echo "Required:"
-    echo "  --zkvm <zkvm>            zkVM to build for (e.g., zisk, sp1, risc0)"
+    echo "  --zkvm <zkvm>            zkVM to build for (e.g., zisk, sp1, openvm)"
     echo "  --tag <tag>              Image tag (e.g., 0.1.3, a8d7bc0, local, local-cuda)"
     echo ""
     echo "Image types (at least one required):"
@@ -137,24 +137,9 @@ fi
 # Per-zkVM CUDA architecture translation
 if [ "$CUDA" = true ] && [ -n "$CUDA_ARCHS" ]; then
     case "$ZKVM" in
-        airbender)
-            CUDAARCHS=$(echo "$CUDA_ARCHS" | tr ',' ';')
-            BASE_ZKVM_BUILD_ARGS+=(--build-arg "CUDAARCHS=$CUDAARCHS")
-            SERVER_ZKVM_BUILD_ARGS+=(--build-arg "CUDAARCHS=$CUDAARCHS")
-            ;;
         openvm)
             BASE_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCH=$CUDA_ARCHS")
             SERVER_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCH=$CUDA_ARCHS")
-            ;;
-        risc0)
-            NVCC_APPEND_FLAGS=""
-            IFS=',' read -ra ARCH_ARRAY <<< "$CUDA_ARCHS"
-            for arch in "${ARCH_ARRAY[@]}"; do
-                NVCC_APPEND_FLAGS+=" --generate-code arch=compute_${arch},code=sm_${arch}"
-            done
-            NVCC_APPEND_FLAGS="${NVCC_APPEND_FLAGS# }"
-            BASE_ZKVM_BUILD_ARGS+=(--build-arg "NVCC_APPEND_FLAGS=$NVCC_APPEND_FLAGS")
-            SERVER_ZKVM_BUILD_ARGS+=(--build-arg "NVCC_APPEND_FLAGS=$NVCC_APPEND_FLAGS")
             ;;
         zisk)
             BASE_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCHS=$CUDA_ARCHS")
@@ -170,8 +155,8 @@ if [ -n "$RUSTFLAGS" ]; then
     SERVER_ZKVM_BUILD_ARGS+=(--build-arg "RUSTFLAGS=$RUSTFLAGS")
 fi
 
-# Pass GITHUB_TOKEN to prevent rzup/sp1up hit github rate limits
-if [ -n "$GITHUB_TOKEN" ] && { [ "$ZKVM" = "risc0" ] || [ "$ZKVM" = "sp1" ]; }; then
+# Pass GITHUB_TOKEN to prevent sp1up hit github rate limits
+if [ -n "$GITHUB_TOKEN" ] && [ "$ZKVM" = "sp1" ]; then
     BASE_ZKVM_BUILD_ARGS+=(--secret id=github_token,env=GITHUB_TOKEN)
 fi
 

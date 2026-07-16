@@ -238,25 +238,11 @@ pub(crate) mod tests {
         };
     }
 
-    mod airbender {
-        test_compile!(Airbender, RustCustomized, "basic");
-        test_compile!(Airbender, Rust, "stock_nightly_no_std");
-        test_reproducible_elf!(Airbender, RustCustomized, "basic");
-        test_reproducible_elf!(Airbender, Rust, "stock_nightly_no_std");
-    }
-
     mod openvm {
         test_compile!(OpenVM, RustCustomized, "basic");
         test_compile!(OpenVM, Rust, "stock_nightly_no_std");
         test_reproducible_elf!(OpenVM, RustCustomized, "basic");
         test_reproducible_elf!(OpenVM, Rust, "stock_nightly_no_std");
-    }
-
-    mod risc0 {
-        test_compile!(Risc0, RustCustomized, "basic");
-        test_compile!(Risc0, Rust, "stock_nightly_no_std");
-        test_reproducible_elf!(Risc0, RustCustomized, "basic");
-        test_reproducible_elf!(Risc0, Rust, "stock_nightly_no_std");
     }
 
     mod sp1 {

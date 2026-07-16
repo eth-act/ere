@@ -34,9 +34,7 @@ jobs:
       fail-fast: false
       matrix:
         zkvm:
-          - airbender
           - openvm
-          - risc0
           - sp1
           - zisk
     steps:
@@ -110,9 +108,7 @@ jobs:
       fail-fast: false
       matrix:
         zkvm:
-          - airbender
           - openvm
-          - risc0
           - sp1
           - zisk
     steps:

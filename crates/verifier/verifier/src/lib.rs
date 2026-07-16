@@ -5,16 +5,6 @@
 //! and proofs, decodes them through the codec re-exported by
 //! [`ere-verifier-core`], and returns [`PublicValues`] on success.
 //!
-//! # Feature flags
-//!
-//! - `nightly` *(off by default)* - Enables the `Airbender` variant of [`Verifier`] by pulling in
-//!   [`ere-verifier-airbender`]. Airbender's host SDK depends on nightly-only language features, so
-//!   the feature also requires building with a nightly Rust toolchain.
-//!
-//! Without `nightly`, [`Verifier::new`] returns [`Error::NightlyFeatureRequired`] when called with
-//! the `Airbender` variant of [`zkVMKind`]. To verify proofs from every supported zkVM, enable
-//! `nightly` and build with a nightly toolchain.
-//!
 //! # Example
 //!
 //! ```rust,no_run
@@ -31,7 +21,6 @@
 //! [`zkVMKind`]: ere_catalog::zkVMKind
 //! [`PublicValues`]: ere_verifier_core::PublicValues
 //! [`ere-verifier-core`]: https://github.com/eth-act/ere/tree/master/crates/verifier/core
-//! [`ere-verifier-airbender`]: https://github.com/eth-act/ere/tree/master/crates/verifier/airbender
 
 mod error;
 mod verifier;

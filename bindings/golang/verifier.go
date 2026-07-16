@@ -27,22 +27,16 @@ import (
 type ZkVMKind uint32
 
 const (
-	Airbender ZkVMKind = 0
-	OpenVM    ZkVMKind = 1
-	Risc0     ZkVMKind = 2
-	SP1       ZkVMKind = 3
-	Zisk      ZkVMKind = 4
+	OpenVM ZkVMKind = 0
+	SP1    ZkVMKind = 1
+	Zisk   ZkVMKind = 2
 )
 
 // String implements [fmt.Stringer].
 func (k ZkVMKind) String() string {
 	switch k {
-	case Airbender:
-		return "airbender"
 	case OpenVM:
 		return "openvm"
-	case Risc0:
-		return "risc0"
 	case SP1:
 		return "sp1"
 	case Zisk:

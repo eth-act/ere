@@ -11,9 +11,7 @@ thiserror = { workspace = true }
 # Local dependencies
 ere-catalog = { workspace = true }
 ere-verifier-core = { workspace = true }
-ere-verifier-airbender = { workspace = true, optional = true }
 ere-verifier-openvm = { workspace = true }
-ere-verifier-risc0 = { workspace = true }
 ere-verifier-sp1 = { workspace = true }
 ere-verifier-zisk = { workspace = true }
 
@@ -21,14 +19,9 @@ ere-verifier-zisk = { workspace = true }
 criterion.workspace = true
 paste.workspace = true
 
-[features]
-default = []
-nightly = ["dep:ere-verifier-airbender"]
-
 [lints]
 workspace = true
 
 [[bench]]
 name = "verify"
 harness = false
-required-features = ["nightly"]
