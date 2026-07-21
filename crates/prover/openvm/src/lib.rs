@@ -26,7 +26,13 @@
 //! | `Cpu`     |    Yes    |
 //! | `Gpu`     |    Yes    |
 //! | `Network` |    No     |
-//! | `Cluster` |    No     |
+//! | `Cluster` |    Yes    |
+//!
+//! ## Environment variables
+//!
+//! | Variable | Default | Description |
+//! | -------- | ------- | ----------- |
+//! | `ERE_OPENVM_CLUSTER_PROVE_TIMEOUT_SECS` | 600 | Per-proof deadline when proving on a `Cluster`. |
 //!
 //! [`install_openvm_sdk.sh`]: https://github.com/eth-act/ere/blob/master/scripts/sdk_installers/install_openvm_sdk.sh
 
@@ -35,6 +41,7 @@
 mod error;
 mod executor;
 mod prover;
+mod sdk;
 
 pub use ere_prover_core::*;
 pub use ere_verifier_openvm::*;

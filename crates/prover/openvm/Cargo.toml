@@ -9,6 +9,8 @@ license.workspace = true
 eyre.workspace = true
 thiserror.workspace = true
 
+tokio = { workspace = true, features = ["time"] }
+
 # OpenVM dependencies
 openvm-circuit.workspace = true
 openvm-sdk.workspace = true
@@ -18,11 +20,15 @@ openvm-transpiler.workspace = true
 openvm-verify-stark-host.workspace = true
 
 # Local dependencies
+ere-cluster-client-openvm.workspace = true
 ere-compiler-core.workspace = true
 ere-prover-core.workspace = true
+ere-util-tokio.workspace = true
 ere-verifier-openvm.workspace = true
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
+tokio = { workspace = true, features = ["time"] }
+
 # OpenVM dependencies
 openvm-sdk = { workspace = true, features = ["aot"] }
 

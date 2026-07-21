@@ -39,6 +39,10 @@ pub enum Error {
         proved: Box<VerificationBaseline>,
     },
 
+    // Cluster
+    #[error(transparent)]
+    Cluster(#[from] ere_cluster_client_openvm::Error),
+
     #[error(transparent)]
     Verifier(#[from] ere_verifier_openvm::Error),
 }
