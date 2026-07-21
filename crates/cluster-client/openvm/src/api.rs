@@ -70,12 +70,9 @@ impl ProofStatus {
 /// `GET /proof_events`.
 #[derive(Debug, Deserialize)]
 pub struct ProofStateResponse {
-    /// Wall-clock from the moment the manager dispatched app proving, so it
-    /// excludes input upload and fan-out. This is the proving time the client
-    /// reports.
-    #[serde(default)]
-    pub proving_latency_ms: Option<u64>,
-    /// Wall-clock from `/start_proof`, used only as a fallback.
+    /// Wall-clock from job admission to completion, so it covers the input
+    /// fan-out to the workers as well as proving itself. This is the boundary
+    /// `ere-cluster-client-zisk` reports, so the two stay comparable.
     #[serde(default)]
     pub e2e_latency_ms: Option<u64>,
 }

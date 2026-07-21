@@ -206,6 +206,12 @@ impl OpenVMClusterClient {
     /// Subscribes to the cluster's event stream rather than polling. The
     /// timings are read once at the end, since the events carry the status
     /// alone.
+    ///
+    /// The reported time spans job admission to completion, so it includes the
+    /// manager's input fan-out to the workers. The cluster also reports a
+    /// narrower proving-only figure, which is deliberately not used because
+    /// `ere-cluster-client-zisk` reports the wider boundary and the two are
+    /// compared against each other.
     pub async fn wait_prove_job(&self, proof_uuid: &str) -> Result<(OpenVMProof, Duration), Error> {
         match self.await_settled(proof_uuid).await? {
             ProofStatus::Completed => {}
@@ -225,10 +231,9 @@ impl OpenVMClusterClient {
 
         let state = self.proof_state(proof_uuid).await?;
         let proving_time = state
-            .proving_latency_ms
-            .or(state.e2e_latency_ms)
+            .e2e_latency_ms
             .map(Duration::from_millis)
-            .ok_or(Error::MissingField("proving_latency_ms"))?;
+            .ok_or(Error::MissingField("e2e_latency_ms"))?;
 
         Ok((self.fetch_final_proof(proof_uuid).await?, proving_time))
     }
