@@ -11,6 +11,7 @@ serde = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
 
 # OpenVM dependencies
+openvm-sdk-config.workspace = true
 openvm-stark-sdk.workspace = true
 openvm-verify-stark-host.workspace = true
 

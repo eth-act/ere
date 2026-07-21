@@ -11,5 +11,7 @@ pub use crate::{
     error::Error,
     program_vk::OpenVMProgramVk,
     proof::OpenVMProof,
-    verifier::{NUM_PUBLIC_VALUES, OpenVMVerifier, extract_public_values},
+    verifier::{
+        NUM_PUBLIC_VALUES, OpenVMVerifier, extract_public_values, vm_config::sdk_vm_config,
+    },
 };

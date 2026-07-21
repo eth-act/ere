@@ -9,6 +9,7 @@ use crate::{Error, OpenVMProgramVk, OpenVMProof, verifier::vk::AGG_VK};
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 mod vk;
+pub mod vm_config;
 
 /// Public values bytes of OpenVM proof.
 pub const NUM_PUBLIC_VALUES: usize = 256;
