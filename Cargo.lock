@@ -3324,6 +3324,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "ere-cluster-client-openvm"
+version = "0.13.0"
+dependencies = [
+ "bincode 2.0.1",
+ "ere-compiler-core",
+ "ere-prover-core",
+ "ere-verifier-openvm",
+ "futures-util",
+ "reqwest",
+ "reqwest-eventsource",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "ere-cluster-client-zisk"
 version = "0.13.0"
 dependencies = [
@@ -3481,10 +3501,12 @@ dependencies = [
 name = "ere-prover-openvm"
 version = "0.13.0"
 dependencies = [
+ "ere-cluster-client-openvm",
  "ere-compiler-core",
  "ere-compiler-openvm",
  "ere-prover-core",
  "ere-util-test",
+ "ere-util-tokio",
  "ere-verifier-openvm",
  "eyre",
  "openvm-circuit",
@@ -3494,6 +3516,7 @@ dependencies = [
  "openvm-transpiler",
  "openvm-verify-stark-host",
  "thiserror 2.0.18",
+ "tokio",
 ]
 
 [[package]]
@@ -3684,6 +3707,7 @@ dependencies = [
  "ere-util-build",
  "ere-verifier-core",
  "openvm-sdk",
+ "openvm-sdk-config",
  "openvm-stark-sdk",
  "openvm-verify-stark-host",
  "serde",
@@ -4026,6 +4050,12 @@ name = "futures-task"
 version = "0.3.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "037711b3d59c33004d3856fbdc83b99d4ff37a24768fa1be9ce3538a1cde4393"
+
+[[package]]
+name = "futures-timer"
+version = "3.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af43fadb8a98512d547e37b4e92e0ced13e205c061b87b4623eff01d918d6968"
 
 [[package]]
 name = "futures-util"
@@ -5387,6 +5417,16 @@ name = "mime"
 version = "0.3.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6877bb514081ee2a7ff5ef9de3281f14a4dd4bceac4c09388074a6b5df8a139a"
+
+[[package]]
+name = "mime_guess"
+version = "2.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f7c44f8e672c00fe5308fa235f821cb4198414e1c77935c1ab6948d3fd78550e"
+dependencies = [
+ "mime",
+ "unicase",
+]
 
 [[package]]
 name = "minimal-lexical"
@@ -8890,6 +8930,7 @@ dependencies = [
  "hyper-util",
  "js-sys",
  "log",
+ "mime_guess",
  "percent-encoding",
  "pin-project-lite",
  "quinn",
@@ -8911,6 +8952,22 @@ dependencies = [
  "wasm-streams",
  "web-sys",
  "webpki-roots 1.0.6",
+]
+
+[[package]]
+name = "reqwest-eventsource"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "632c55746dbb44275691640e7b40c907c16a2dc1a5842aa98aaec90da6ec6bde"
+dependencies = [
+ "eventsource-stream",
+ "futures-core",
+ "futures-timer",
+ "mime",
+ "nom",
+ "pin-project-lite",
+ "reqwest",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
