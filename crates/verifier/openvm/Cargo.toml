@@ -6,7 +6,6 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
-bincode = { workspace = true, features = ["alloc", "serde"] }
 bitcode.workspace = true
 serde = { workspace = true, features = ["derive"] }
 thiserror.workspace = true

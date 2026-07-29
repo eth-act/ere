@@ -134,6 +134,33 @@ macro_rules! impl_codec_by_bincode_legacy {
 }
 
 /// Implements [`Encode`](crate::Encode) and [`Decode`](crate::Decode) for
+/// `$ty` via `bitcode`. Decoding rejects trailing bytes after the encoded
+/// value.
+///
+/// Requires the caller's `Cargo.toml` to depend on `bitcode` with its `serde`
+/// feature enabled.
+#[macro_export]
+macro_rules! impl_codec_by_bitcode {
+    ($ty:ty) => {
+        impl $crate::Encode for $ty {
+            type Error = bitcode::Error;
+
+            fn encode_to_vec(&self) -> Result<Vec<u8>, Self::Error> {
+                bitcode::serialize(self)
+            }
+        }
+
+        impl $crate::Decode for $ty {
+            type Error = bitcode::Error;
+
+            fn decode_from_slice(slice: &[u8]) -> Result<Self, Self::Error> {
+                bitcode::deserialize(slice)
+            }
+        }
+    };
+}
+
+/// Implements [`Encode`](crate::Encode) and [`Decode`](crate::Decode) for
 /// `$ty` via `ciborium`.
 ///
 /// Requires the caller's `Cargo.toml` to depend on `ciborium` and
