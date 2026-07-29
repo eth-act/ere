@@ -64,9 +64,13 @@ macro_rules! test_verifier {
                 }
 
                 fn verifier_with_unexpected_program_vk() -> Verifier {
-                    let mut vk = PROGRAM_VK.to_vec();
-                    *vk.first_mut().unwrap() ^= 0xFF;
-                    Verifier::new(zkVMKind::$zkvm_kind, &vk).unwrap()
+                    (0..PROGRAM_VK.len())
+                        .find_map(|i| {
+                            let mut vk = PROGRAM_VK.to_vec();
+                            vk[i] ^= 0xFF;
+                            Verifier::new(zkVMKind::$zkvm_kind, &vk).ok()
+                        })
+                        .unwrap()
                 }
             }
         }
