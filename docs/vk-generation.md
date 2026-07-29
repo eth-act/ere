@@ -2,7 +2,7 @@
 
 Ere checks a proof against a program verifying key that identifies one specific compiled guest ELF. `Verifier::new` in `ere-verifier` takes that key as an opaque byte string and decodes it with the codec of the selected zkVM, so a key file is only accepted when it already matches that exact wire encoding.
 
-This guide records the encoding for each supported zkVM and gives the commands that produce a matching key file from the upstream zkVM toolchain alone. A guest provider can therefore run the upstream tool over their own program and hand over a key file that Ere takes as is.
+This guide records the encoding for each supported zkVM and gives the commands that produce a matching key file from the upstream zkVM toolchain alone, without an Ere checkout.
 
 ## OpenVM
 
@@ -18,13 +18,14 @@ This guide records the encoding for each supported zkVM and gives the commands t
 
     ```bash
     sudo apt-get update && sudo apt-get install -y curl ca-certificates git build-essential
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
+
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly-2026-07-01
     . "$HOME/.cargo/env"
     ```
 2. Save the script as `openvm_vk_gen.rs`
 
     ```rust
-    #!/usr/bin/env -S cargo +nightly -Zscript
+    #!/usr/bin/env -S cargo +nightly-2026-07-01 -Zscript
 
     ---
     [package]
@@ -69,14 +70,17 @@ This guide records the encoding for each supported zkVM and gives the commands t
 3. Generate VK
 
     ```bash
-    GUEST=<guest>
-    ELF_PATH=<elf-path>
-    cargo +nightly -Zscript openvm_vk_gen.rs $ELF_PATH stateless-validator-$GUEST-openvm.vk
+    set -euo pipefail
+    GUEST="<guest>"
+    ELF_PATH="<elf-path>"
+    VK="stateless-validator-$GUEST-openvm.vk"
+    cargo +nightly-2026-07-01 -Zscript openvm_vk_gen.rs "$ELF_PATH" "$VK"
     ```
 4. Sanity check
 
     ```bash
-    printf 'Generated OpenVM VK sha256: %s\n' "$(sha256sum stateless-validator-$GUEST-openvm.vk | cut -d' ' -f1)"
+    [ -s "$VK" ] || { echo "empty vk" >&2; exit 1; }
+    printf 'Generated OpenVM VK sha256: %s\n' "$(sha256sum "$VK" | cut -d' ' -f1)"
     ```
 
 ## SP1
@@ -91,8 +95,10 @@ This guide records the encoding for each supported zkVM and gives the commands t
 
     ```bash
     sudo apt-get update && sudo apt-get install -y curl ca-certificates git
+
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     . "$HOME/.cargo/env"
+
     curl -L https://sp1up.succinct.xyz | bash
     export PATH="$HOME/.sp1/bin:$PATH"
     sp1up -v v6.3.1
@@ -100,14 +106,17 @@ This guide records the encoding for each supported zkVM and gives the commands t
 2. Generate VK
 
     ```bash
-    GUEST=<guest>
-    ELF_PATH=<elf-path>
-    cargo prove vkey --elf $ELF_PATH | grep -oE '0x[0-9a-f]{64}' | cut -c3- | tr a-f A-F | basenc --base16 -d > stateless-validator-$GUEST-sp1.vk
+    set -euo pipefail
+    GUEST="<guest>"
+    ELF_PATH="<elf-path>"
+    VK="stateless-validator-$GUEST-sp1.vk"
+    cargo prove vkey --elf "$ELF_PATH" | grep -oE '0x[0-9a-f]{64}' | cut -c3- | tr a-f A-F | basenc --base16 -d > "$VK"
     ```
 3. Sanity check
 
     ```bash
-    printf 'Generated SP1 VK: 0x%s\n' "$(od -An -v -tx1 stateless-validator-$GUEST-sp1.vk | tr -d ' \n')"
+    [ "$(stat -c%s "$VK")" -eq 32 ] || { echo "expected 32 bytes, got $(stat -c%s "$VK")" >&2; exit 1; }
+    printf 'Generated SP1 VK: 0x%s\n' "$(od -An -v -tx1 "$VK" | tr -d ' \n')"
     ```
 
 ## ZisK
@@ -122,24 +131,31 @@ This guide records the encoding for each supported zkVM and gives the commands t
 
     ```bash
     sudo apt-get update && sudo apt-get install -y xz-utils jq curl build-essential qemu-system libomp-dev libgmp-dev nlohmann-json3-dev protobuf-compiler uuid-dev libgrpc++-dev libsecp256k1-dev libsodium-dev libpqxx-dev nasm libopenmpi-dev openmpi-bin openmpi-common libclang-dev clang gcc-riscv64-unknown-elf python3
+
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     . "$HOME/.cargo/env"
-    export ZISK_VERSION=1.0.0-alpha SETUP_KEY=proving-no-consttree
+
+    export ZISK_VERSION=1.0.0-alpha SETUP_KEY=proving-no-consttree USE_GPU=false
     curl -sSf "https://raw.githubusercontent.com/0xPolygonHermez/zisk/v$ZISK_VERSION/ziskup/ziskup" | bash
     export PATH="$HOME/.zisk/bin:$PATH"
     ```
 2. Generate VK
 
     ```bash
-    GUEST=<guest>
-    ELF_PATH=<elf-path>
-    cargo-zisk-dev program-setup --elf $ELF_PATH --output-dir $(mktemp -d) 2>&1 \
+    set -eu
+    GUEST="<guest>"
+    ELF_PATH="<elf-path>"
+    VK="stateless-validator-$GUEST-zisk.vk"
+    TEMPDIR="$(mktemp -d)"
+    cargo-zisk-dev program-setup --elf "$ELF_PATH" --output-dir "$TEMPDIR" 2>&1 \
       | grep -oP 'Root hash: \[\K[^]]+' \
       | python3 -c 'import sys; sys.stdout.buffer.write(b"".join(int(word).to_bytes(8, "little") for word in sys.stdin.read().split(",")))' \
-      > stateless-validator-$GUEST-zisk.vk
+      > "$VK"
+    rm -rf "$TEMPDIR"
     ```
 3. Sanity check
 
     ```bash
-    printf 'Generated ZisK VK: 0x%s\n' "$(od -An -v -tx1 stateless-validator-$GUEST-zisk.vk | tr -d ' \n')"
+    [ "$(stat -c%s "$VK")" -eq 32 ] || { echo "expected 32 bytes, got $(stat -c%s "$VK")" >&2; exit 1; }
+    printf 'Generated ZisK VK: 0x%s\n' "$(od -An -v -tx1 "$VK" | tr -d ' \n')"
     ```

@@ -135,10 +135,12 @@ macro_rules! impl_codec_by_bincode_legacy {
 
 /// Implements [`Encode`](crate::Encode) and [`Decode`](crate::Decode) for
 /// `$ty` via `bitcode`. Decoding rejects trailing bytes after the encoded
-/// value.
+/// value, and re-encodes the decoded value to reject the non-minimal integer
+/// packings `bitcode` otherwise accepts, so every value has exactly one valid
+/// encoding.
 ///
 /// Requires the caller's `Cargo.toml` to depend on `bitcode` with its `serde`
-/// feature enabled.
+/// feature enabled, and on `serde`.
 #[macro_export]
 macro_rules! impl_codec_by_bitcode {
     ($ty:ty) => {
@@ -154,7 +156,13 @@ macro_rules! impl_codec_by_bitcode {
             type Error = bitcode::Error;
 
             fn decode_from_slice(slice: &[u8]) -> Result<Self, Self::Error> {
-                bitcode::deserialize(slice)
+                let value: Self = bitcode::deserialize(slice)?;
+                if bitcode::serialize(&value)? != slice {
+                    return Err(<bitcode::Error as serde::de::Error>::custom(
+                        "non-canonical encoding",
+                    ));
+                }
+                Ok(value)
             }
         }
     };
