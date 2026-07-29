@@ -30,7 +30,7 @@ fn generate_docker_image_tag() {
 
 fn generate_zkvm_sdk_version_impl() {
     let [openvm_version, sp1_version, zisk_version] = [
-        ("ere-verifier-openvm", "openvm-verify-stark-host"),
+        ("ere-platform-openvm", "openvm"),
         ("ere-verifier-sp1", "sp1-verifier"),
         ("ere-verifier-zisk", "zisk-verifier"),
     ]
