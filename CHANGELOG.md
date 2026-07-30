@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.14.0](https://github.com/eth-act/ere/compare/v0.13.0...v0.14.0) (2026-07-30)
+
+
+### Features
+
+* add verification key generation document ([#393](https://github.com/eth-act/ere/issues/393)) ([209b7f3](https://github.com/eth-act/ere/commit/209b7f34c3d694e80b4f98223fa0d20907cde014))
+* bump openvm to v2.0 official release ([#389](https://github.com/eth-act/ere/issues/389)) ([1e671da](https://github.com/eth-act/ere/commit/1e671da94655cbcd058d9b43d6819792e77a04d9))
+* propagate rustflags ([#391](https://github.com/eth-act/ere/issues/391)) ([58ca85b](https://github.com/eth-act/ere/commit/58ca85beaee2fa8acd31dbf33b90bb765aac9010))
+
+
+### Bug Fixes
+
+* rebuild zisk image ([#392](https://github.com/eth-act/ere/issues/392)) ([a25f1ae](https://github.com/eth-act/ere/commit/a25f1aed9664c3b63e73ef05360090a4c41da31b))
+
 ## [0.13.0](https://github.com/eth-act/ere/compare/v0.12.2...v0.13.0) (2026-07-02)
 
 
