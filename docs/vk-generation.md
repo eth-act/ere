@@ -1,8 +1,8 @@
 # Verification Key Generation
 
-Ere checks a proof against a program verifying key that identifies one specific compiled guest ELF. `Verifier::new` in `ere-verifier` takes that key as an opaque byte string and decodes it with the codec of the selected zkVM, so a key file is only accepted when it already matches that exact wire encoding.
+Ere checks a proof against a program VK that identifies one specific compiled guest ELF. `Verifier::new` in `ere-verifier` takes that VK as an opaque byte string and decodes it with the codec of the selected zkVM, so a VK is only accepted when it already matches that exact wire encoding.
 
-This guide records the encoding for each supported zkVM and gives the commands that produce a matching key file from the upstream zkVM toolchain alone, without an Ere checkout.
+This guide records the encoding for each supported zkVM and gives the commands that produce a matching VK from the upstream zkVM toolchain alone, without an Ere checkout.
 
 ## OpenVM
 
@@ -12,7 +12,7 @@ This guide records the encoding for each supported zkVM and gives the commands t
 
 ### Instructions
 
-`cargo openvm commit` has no flag for a compiled ELF and works off a Rust project it builds itself, so the key comes from the rust script below instead. The script applies the same app config `ere-prover-openvm` builds its prover with and generates the aggregation keys in process, so no OpenVM installation is involved.
+`cargo openvm commit` has no flag for a compiled ELF and works off a Rust project it builds itself, so the VK comes from the rust script below instead. The script applies the same app config `ere-prover-openvm` builds its prover with and generates the aggregation keys in process, so no OpenVM installation is involved.
 
 1. Setup
 
