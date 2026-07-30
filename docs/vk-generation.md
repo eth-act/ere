@@ -71,9 +71,10 @@ This guide records the encoding for each supported zkVM and gives the commands t
 
     ```bash
     set -euo pipefail
-    GUEST="<guest>"
+    ZKVM_VERSION="v2.0.0"
+    GUEST_NAME="<guest-name>"
     ELF_PATH="<elf-path>"
-    VK="stateless-validator-$GUEST-openvm.vk"
+    VK="stateless-validator-$GUEST_NAME-openvm-$ZKVM_VERSION.vk"
     cargo +nightly-2026-07-01 -Zscript openvm_vk_gen.rs "$ELF_PATH" "$VK"
     ```
 4. Sanity check
@@ -99,17 +100,18 @@ This guide records the encoding for each supported zkVM and gives the commands t
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     . "$HOME/.cargo/env"
 
+    ZKVM_VERSION="v6.3.1"
     curl -L https://sp1up.succinct.xyz | bash
     export PATH="$HOME/.sp1/bin:$PATH"
-    sp1up -v v6.3.1
+    sp1up -v "$ZKVM_VERSION"
     ```
 2. Generate VK
 
     ```bash
     set -euo pipefail
-    GUEST="<guest>"
+    GUEST_NAME="<guest-name>"
     ELF_PATH="<elf-path>"
-    VK="stateless-validator-$GUEST-sp1.vk"
+    VK="stateless-validator-$GUEST_NAME-sp1-$ZKVM_VERSION.vk"
     cargo prove vkey --elf "$ELF_PATH" | grep -oE '0x[0-9a-f]{64}' | cut -c3- | tr a-f A-F | basenc --base16 -d > "$VK"
     ```
 3. Sanity check
@@ -135,17 +137,18 @@ This guide records the encoding for each supported zkVM and gives the commands t
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     . "$HOME/.cargo/env"
 
-    export ZISK_VERSION=1.0.0-alpha SETUP_KEY=proving-no-consttree USE_GPU=false
-    curl -sSf "https://raw.githubusercontent.com/0xPolygonHermez/zisk/v$ZISK_VERSION/ziskup/ziskup" | bash
+    ZKVM_VERSION="v1.0.0-alpha"
+    export ZISK_VERSION=${ZKVM_VERSION#v} SETUP_KEY=proving-no-consttree USE_GPU=false
+    curl -sSf "https://raw.githubusercontent.com/0xPolygonHermez/zisk/$ZKVM_VERSION/ziskup/ziskup" | bash
     export PATH="$HOME/.zisk/bin:$PATH"
     ```
 2. Generate VK
 
     ```bash
     set -eu
-    GUEST="<guest>"
+    GUEST_NAME="<guest-name>"
     ELF_PATH="<elf-path>"
-    VK="stateless-validator-$GUEST-zisk.vk"
+    VK="stateless-validator-$GUEST_NAME-zisk-$ZKVM_VERSION.vk"
     TEMPDIR="$(mktemp -d)"
     cargo-zisk-dev program-setup --elf "$ELF_PATH" --output-dir "$TEMPDIR" 2>&1 \
       | grep -oP 'Root hash: \[\K[^]]+' \
