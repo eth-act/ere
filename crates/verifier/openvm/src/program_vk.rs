@@ -15,4 +15,4 @@ impl OpenVMProgramVk {
     }
 }
 
-ere_verifier_core::codec::impl_codec_by_bincode_legacy!(OpenVMProgramVk, reject_trailing_bytes);
+ere_verifier_core::codec::impl_codec_by_bitcode!(OpenVMProgramVk);

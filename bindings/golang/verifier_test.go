@@ -111,11 +111,17 @@ func TestVerifier(t *testing.T) {
 					t.Fatalf("flipped proof: got %v, want ErrVerify", err)
 				}
 
-				wrongVK := append([]byte{}, programVK...)
-				wrongVK[0] ^= 0xFF
-				vv, err := New(fx.kind, wrongVK)
-				if err != nil {
-					t.Fatalf("New with unexpected vk: %v", err)
+				var vv *Verifier
+				for i := range programVK {
+					wrongVK := append([]byte{}, programVK...)
+					wrongVK[i] ^= 0xFF
+					if v, err := New(fx.kind, wrongVK); err == nil {
+						vv = v
+						break
+					}
+				}
+				if vv == nil {
+					t.Fatalf("no byte flip yielded a decodable vk")
 				}
 				defer vv.Close()
 				if _, err := vv.Verify(proof); !errors.Is(err, ErrVerify) {

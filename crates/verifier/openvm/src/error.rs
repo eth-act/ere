@@ -5,7 +5,7 @@ use thiserror::Error;
 pub enum Error {
     /// Failed to deserialize a program VK.
     #[error("Failed to decode program vk: {0}")]
-    DecodeProgramVk(#[from] bincode::error::DecodeError),
+    DecodeProgramVk(#[from] bitcode::Error),
 
     /// Failed to decode a proof.
     #[error("Failed to decode proof: {0}")]
