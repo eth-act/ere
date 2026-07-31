@@ -74,9 +74,7 @@ impl OpenVMClusterClient {
             .connect_timeout(Duration::from_secs(10))
             .build()?;
         let endpoint = config.endpoint.trim_end_matches('/').to_string();
-        let vm_config =
-            serde_json::to_string(&sdk_vm_config()).map_err(Error::SerializeVmConfig)?;
-        let program = program_ref(&elf, &vm_config);
+        let program = program_ref(&elf);
 
         let program_vk = derive_program_vk(&elf)?;
 
@@ -364,24 +362,27 @@ impl OpenVMClusterClient {
     }
 }
 
-/// Derives the cluster-side program identity from the artifacts that define it.
+/// Program version every deployment serves.
 ///
-/// The name binds the ELF and the version binds the VM config, so a different
-/// guest or a different config is a distinct program on the cluster rather
-/// than a silent overwrite of an existing one.
+/// The name is the ELF digest and already identifies the program on its own.
+/// The cluster never interprets the version, using it only as a path component
+/// and a metrics label, so a fixed value is enough and only has to match the
+/// deployment that staged the program.
+const PROGRAM_VERSION: u32 = 0;
+
+/// Derives the cluster-side program identity from the ELF that defines it.
 ///
 /// A deployment assigns its program up front and derives this same name from
 /// the ELF it staged, so a name the cluster does not know means the client and
 /// the deployment are on different guests.
-fn program_ref(elf: &Elf, vm_config: &str) -> ProgramRef {
+fn program_ref(elf: &Elf) -> ProgramRef {
     let elf_digest = Sha256::digest(&elf.0);
-    let config_digest = Sha256::digest(vm_config.as_bytes());
     ProgramRef {
         name: format!(
             "program-{:016x}",
             u64::from_be_bytes(elf_digest[..8].try_into().expect("8 bytes"))
         ),
-        version: u32::from_be_bytes(config_digest[..4].try_into().expect("4 bytes")),
+        version: PROGRAM_VERSION,
     }
 }
 

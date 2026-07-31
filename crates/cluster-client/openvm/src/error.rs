@@ -32,8 +32,6 @@ pub enum Error {
     JobCanceled { proof_uuid: String },
     #[error("Cluster response missing field: {0}")]
     MissingField(&'static str),
-    #[error("Failed to serialize the VM config: {0}")]
-    SerializeVmConfig(#[source] serde_json::Error),
     #[error("Failed to derive the program vk from the ELF: {0}")]
     DeriveProgramVk(String),
     #[error("Failed to decode the program vk: {0}")]
