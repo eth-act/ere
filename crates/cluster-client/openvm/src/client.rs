@@ -8,6 +8,12 @@ use ere_verifier_openvm::{
     OpenVMProgramVk, OpenVMProof, OpenVMVerifier, codec::Decode, sdk_vm_config, zkVMVerifier,
 };
 use futures_util::StreamExt;
+use openvm_sdk::{
+    Sdk,
+    config::{AggregationSystemParams, AppConfig},
+    types::ExecutableFormat,
+};
+use openvm_stark_sdk::config::{MAX_APP_LOG_STACKED_HEIGHT, app_params_with_100_bits_security};
 use reqwest::{Client, StatusCode, multipart};
 use reqwest_eventsource::{Error as EventSourceError, Event, EventSource};
 use sha2::{Digest, Sha256};
@@ -19,35 +25,27 @@ use crate::{
     error::Error,
 };
 
-/// How often the client re-checks a pending registration.
-const POLL_INTERVAL: Duration = Duration::from_secs(2);
-
 /// How long the event stream may go silent before the client treats the
 /// connection as dead. The manager's keep-alive is far more frequent, so this
 /// only fires on a genuinely broken connection. It is a per-read timeout
 /// rather than a whole-request one, since a proof legitimately runs for hours.
 const EVENT_STREAM_READ_TIMEOUT: Duration = Duration::from_secs(60);
 
-/// How long to wait for the cluster to report the program's verifying key.
-/// The manager knows it as soon as the workers have run keygen, so this only
-/// covers a push that raced a concurrent one and has to be repeated.
-const DEFAULT_REGISTER_TIMEOUT: Duration = Duration::from_secs(300);
-
 /// Backoff before re-submitting a proof the cluster was too busy to accept.
 const BUSY_RETRY_INTERVAL: Duration = Duration::from_secs(5);
 
 /// Client for a self-hosted Axiom Edge cluster proving OpenVM programs.
 ///
-/// The cluster holds no program until a client registers one, so [`Self::new`]
-/// uploads the guest ELF and reads back the verifying key every worker derived
-/// from it. That makes a config or artifact mismatch a connect-time failure
-/// rather than a wrong proof.
+/// The deployment assigns its program before it accepts work, so [`Self::new`]
+/// derives the verifying key from the guest ELF locally rather than uploading
+/// anything. The program name is a digest of that ELF, so a deployment serving
+/// a different guest rejects the proof request by name instead of returning a
+/// proof the verifier would refuse.
 ///
-/// The key is available well before the cluster can prove, because each worker
-/// still has to ahead-of-time compile the guest. [`Self::prove`] absorbs that
-/// wait by retrying the submission while the manager reports the workers as
-/// not ready, then follows the proof over the cluster's event stream rather
-/// than polling it.
+/// A worker still has to ahead-of-time compile the guest before it can prove,
+/// so [`Self::prove`] absorbs that wait by retrying the submission while the
+/// manager reports the workers as not ready, then follows the proof over the
+/// cluster's event stream rather than polling it.
 #[derive(Debug)]
 pub struct OpenVMClusterClient {
     elf: Elf,
@@ -57,15 +55,11 @@ pub struct OpenVMClusterClient {
     events: Client,
     endpoint: String,
     program: ProgramRef,
-    /// The serialized `SdkVmConfig` this program was registered under, kept
-    /// so a re-registration after a manager restart replays it byte for byte.
-    vm_config: String,
     verifier: OpenVMVerifier,
 }
 
 impl OpenVMClusterClient {
-    /// Connect to the manager, register `elf`, and read back the verifying key
-    /// the cluster derived for it.
+    /// Connect to the manager and derive the verifying key for `elf`.
     ///
     /// The VM config is always [`sdk_vm_config`], since the proof is verified
     /// against a key this crate's verifier holds and only that config produces
@@ -84,7 +78,7 @@ impl OpenVMClusterClient {
             serde_json::to_string(&sdk_vm_config()).map_err(Error::SerializeVmConfig)?;
         let program = program_ref(&elf, &vm_config);
 
-        let program_vk = register(&http, &endpoint, &program, &elf, &vm_config).await?;
+        let program_vk = derive_program_vk(&elf)?;
 
         Ok(Self {
             elf,
@@ -92,7 +86,6 @@ impl OpenVMClusterClient {
             events,
             endpoint,
             program,
-            vm_config,
             verifier: OpenVMVerifier::new(program_vk),
         })
     }
@@ -309,19 +302,10 @@ impl OpenVMClusterClient {
                 match self.create_prove_job(input).await {
                     Ok(proof_uuid) => return Ok(proof_uuid),
                     Err(Error::ClusterBusy) => sleep(BUSY_RETRY_INTERVAL).await,
-                    Err(Error::ProgramNotRegistered { .. }) => {
-                        // A manager restart drops the loadout. Re-register so
-                        // a long benchmark survives it.
-                        warn!("program registration lost, re-registering...");
-                        register(
-                            &self.http,
-                            &self.endpoint,
-                            &self.program,
-                            &self.elf,
-                            &self.vm_config,
-                        )
-                        .await?;
-                    }
+                    // The deployment assigns its loadout, so a program it does
+                    // not serve is a configuration mismatch the client cannot
+                    // repair by retrying.
+                    Err(err @ Error::ProgramNotRegistered { .. }) => return Err(err),
                     Err(Error::NotReady(message)) => {
                         warn!(message, "cluster not ready, retrying...");
                         sleep(BUSY_RETRY_INTERVAL).await;
@@ -363,7 +347,7 @@ impl OpenVMClusterClient {
     }
 
     async fn fetch_final_proof(&self, proof_uuid: &str) -> Result<OpenVMProof, Error> {
-        let path = format!("/final_proof/{proof_uuid}");
+        let path = format!("/proof/{proof_uuid}");
         let resp = self
             .http
             .get(format!("{}{path}", self.endpoint))
@@ -385,96 +369,42 @@ impl OpenVMClusterClient {
 /// The name binds the ELF and the version binds the VM config, so a different
 /// guest or a different config is a distinct program on the cluster rather
 /// than a silent overwrite of an existing one.
+///
+/// A deployment assigns its program up front and derives this same name from
+/// the ELF it staged, so a name the cluster does not know means the client and
+/// the deployment are on different guests.
 fn program_ref(elf: &Elf, vm_config: &str) -> ProgramRef {
     let elf_digest = Sha256::digest(&elf.0);
     let config_digest = Sha256::digest(vm_config.as_bytes());
     ProgramRef {
         name: format!(
-            "ere-{:016x}",
+            "program-{:016x}",
             u64::from_be_bytes(elf_digest[..8].try_into().expect("8 bytes"))
         ),
         version: u32::from_be_bytes(config_digest[..4].try_into().expect("4 bytes")),
     }
 }
 
-/// Uploads the program and returns the verifying key the workers derived.
+/// Derives the program's verifying key from its ELF, without asking the
+/// cluster for one.
 ///
-/// Re-registering the same ELF and config is a no-op on the cluster, so this
-/// doubles as the recovery path when a manager restart loses the loadout.
-async fn register(
-    http: &Client,
-    endpoint: &str,
-    program: &ProgramRef,
-    elf: &Elf,
-    vm_config: &str,
-) -> Result<OpenVMProgramVk, Error> {
-    let form = multipart::Form::new()
-        .text(
-            "program",
-            serde_json::to_string(program).expect("ProgramRef is always serializable"),
-        )
-        .text("vm_config", vm_config.to_string())
-        .part(
-            "elf",
-            multipart::Part::bytes(elf.0.clone()).file_name("program.elf"),
-        );
-
-    let path = "/register_program";
-    let resp = http
-        .post(format!("{endpoint}{path}"))
-        .multipart(form)
-        .send()
-        .await?;
-    match resp.status() {
-        // 200 is an already-registered no-op, 202 a fresh registration.
-        StatusCode::OK | StatusCode::ACCEPTED => {}
-        StatusCode::CONFLICT => {
-            return Err(Error::ProgramConflict {
-                program: program.to_string(),
-            });
-        }
-        StatusCode::SERVICE_UNAVAILABLE => return Err(Error::NoWorkers),
-        status => {
-            return Err(Error::Status {
-                path: path.to_string(),
-                status,
-                body: resp.text().await.unwrap_or_default(),
-            });
-        }
-    }
-
-    let deadline = Instant::now() + DEFAULT_REGISTER_TIMEOUT;
-    loop {
-        if let Some(program_vk) = fetch_program_vk(http, endpoint, program).await? {
-            return Ok(program_vk);
-        }
-        if Instant::now() >= deadline {
-            return Err(Error::RegisterTimeout {
-                program: program.to_string(),
-            });
-        }
-        sleep(POLL_INTERVAL).await;
-    }
-}
-
-/// Fetches the program's verifying key, or `None` while the cluster is still
-/// preparing it.
-async fn fetch_program_vk(
-    http: &Client,
-    endpoint: &str,
-    program: &ProgramRef,
-) -> Result<Option<OpenVMProgramVk>, Error> {
-    let path = format!("/program_vk/{}/{}", program.name, program.version);
-    let resp = http.get(format!("{endpoint}{path}")).send().await?;
-    match resp.status() {
-        StatusCode::OK => Ok(Some(OpenVMProgramVk::decode_from_slice(
-            &resp.bytes().await?,
-        )?)),
-        StatusCode::NOT_FOUND => Ok(None),
-        status => Err(Error::Status {
-            path,
-            status,
-            body: resp.text().await.unwrap_or_default(),
-        }),
-    }
+/// The deployment assigns its program up front and builds its keyset from the
+/// same VM config and system params used here, so the baseline derived locally
+/// is the one its proofs commit to. A drift on either side surfaces as a proof
+/// that fails to verify rather than as a mismatch reported here.
+fn derive_program_vk(elf: &Elf) -> Result<OpenVMProgramVk, Error> {
+    let app_params = app_params_with_100_bits_security(MAX_APP_LOG_STACKED_HEIGHT);
+    let sdk = Sdk::new(
+        AppConfig::new(sdk_vm_config(), app_params),
+        AggregationSystemParams::default(),
+    )
+    .map_err(|e| Error::DeriveProgramVk(e.to_string()))?;
+    let exe = sdk
+        .convert_to_exe(ExecutableFormat::from(&elf.0[..]))
+        .map_err(|e| Error::DeriveProgramVk(e.to_string()))?;
+    let baseline = sdk
+        .prover(exe)
+        .map_err(|e| Error::DeriveProgramVk(e.to_string()))?
+        .generate_baseline();
+    Ok(OpenVMProgramVk::new(baseline))
 }

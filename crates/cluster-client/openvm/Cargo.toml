@@ -18,6 +18,11 @@ tokio = { workspace = true, features = ["time", "rt"] }
 tracing.workspace = true
 uuid = { workspace = true, features = ["v4"] }
 
+# OpenVM dependencies, for deriving a program's verifying key from its ELF
+# rather than reading one back from the cluster.
+openvm-sdk.workspace = true
+openvm-stark-sdk.workspace = true
+
 # Local dependencies
 ere-compiler-core.workspace = true
 ere-prover-core.workspace = true

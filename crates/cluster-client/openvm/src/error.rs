@@ -34,6 +34,8 @@ pub enum Error {
     MissingField(&'static str),
     #[error("Failed to serialize the VM config: {0}")]
     SerializeVmConfig(#[source] serde_json::Error),
+    #[error("Failed to derive the program vk from the ELF: {0}")]
+    DeriveProgramVk(String),
     #[error("Failed to decode the program vk: {0}")]
     DecodeProgramVk(#[from] bincode::error::DecodeError),
     #[error("Failed to decode the proof status event {0}: {1}")]
