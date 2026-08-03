@@ -1,7 +1,7 @@
 use std::{fs, path::Path, process::Command};
 
 use ere_compiler_core::{Compiler, Elf};
-use ere_util_compile::{CommonError, cargo_metadata, parse_cargo_features};
+use ere_util_compile::{CommonError, cargo_metadata, parse_cargo_build_options};
 use tempfile::tempdir;
 use tracing::info;
 
@@ -41,9 +41,12 @@ impl Compiler for SP1RustRv64imaCustomized {
             "--elf-name",
             "guest.elf",
         ]);
-        let features = parse_cargo_features(args)?;
-        if !features.is_empty() {
-            cmd.args(["--features", &features.join(",")]);
+        let options = parse_cargo_build_options(args)?;
+        if !options.features.is_empty() {
+            cmd.args(["--features", &options.features.join(",")]);
+        }
+        if options.ignore_rust_version {
+            cmd.arg("--ignore-rust-version");
         }
         let status = cmd
             .status()

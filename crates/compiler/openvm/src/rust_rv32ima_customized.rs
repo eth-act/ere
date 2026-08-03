@@ -1,7 +1,7 @@
 use std::{fs, path::Path};
 
 use ere_compiler_core::{Compiler, Elf};
-use ere_util_compile::{CommonError, parse_cargo_features, rustup_add_rust_src};
+use ere_util_compile::{CommonError, parse_cargo_build_options, rustup_add_rust_src};
 use openvm_build::{GuestOptions, get_rustup_toolchain_name};
 
 use crate::Error;
@@ -25,10 +25,16 @@ impl Compiler for OpenVMRustRv32imaCustomized {
         // Inlining `openvm_sdk::Sdk::build` in order to get raw elf bytes.
         let guest_directory = guest_directory.as_ref();
         let pkg = openvm_build::get_package(guest_directory);
+        let options = parse_cargo_build_options(args)?;
         let guest_opts = GuestOptions::default()
             .with_rustc_flags(extra_rustflags.split_whitespace().map(String::from))
             .with_profile("release".to_string())
-            .with_features(parse_cargo_features(args)?);
+            .with_features(options.features)
+            .with_options(
+                options
+                    .ignore_rust_version
+                    .then_some("--ignore-rust-version"),
+            );
         let target_dir = match openvm_build::build_guest_package(&pkg, &guest_opts, None, &None) {
             Ok(target_dir) => target_dir,
             Err(Some(code)) => return Err(Error::BuildFailed(code))?,
