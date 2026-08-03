@@ -311,10 +311,10 @@ fn parse_proof(bytes: &[u8]) -> Result<ZiskProof, Error> {
     };
 
     let public_values = {
-        let to_u64 = |bytes: &[u8]| u32::from_le_bytes(bytes.try_into().unwrap()) as u64;
+        let to_u64 = |bytes: &[u8; 4]| u32::from_le_bytes(*bytes) as u64;
         iter::empty()
             .chain(proof.program_vk.vk)
-            .chain(proof.publics.data.chunks_exact(4).map(to_u64))
+            .chain(proof.publics.data.as_chunks::<4>().0.iter().map(to_u64))
             .collect()
     };
 

@@ -53,7 +53,7 @@ impl Compiler for SP1RustRv64imaCustomized {
             .map_err(|err| CommonError::command(&cmd, err))?;
 
         if !status.success() {
-            return Err(CommonError::command_exit_non_zero(&cmd, status, None))?;
+            Err(CommonError::command_exit_non_zero(&cmd, status, None))?;
         }
 
         let elf_path = output_dir.path().join("guest.elf");
