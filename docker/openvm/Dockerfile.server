@@ -25,10 +25,36 @@ FROM $RUNTIME_IMAGE AS runtime
 FROM $RUNTIME_CUDA_IMAGE AS runtime_cuda
 FROM runtime${CUDA:+_cuda} AS runtime_stage
 
-# Install build-essential for AOT compilation
+# The `rvr` execution backend compiles each guest program to a native shared
+# library at prover construction, so the runtime image needs clang, lld and
+# make. Ubuntu 24.04 ships clang-18 while rvr requires clang 19 or newer, so a
+# newer clang comes from apt.llvm.org. Pinned to clang-22 to match rvr's own
+# default, whose generated code is compiled with `-Weverything -Werror` against
+# a clang-version-sensitive warning set.
+ARG CLANG_VERSION=22
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
+    binutils \
+    ca-certificates \
+    gcc \
+    gnupg \
+    libc6-dev \
+    lsb-release \
+    make \
+    software-properties-common \
+    wget \
+    && wget -qO /tmp/llvm.sh https://apt.llvm.org/llvm.sh \
+    && chmod +x /tmp/llvm.sh \
+    && /tmp/llvm.sh ${CLANG_VERSION} \
+    && apt-get install -y --no-install-recommends lld-${CLANG_VERSION} \
+    && rm -f /tmp/llvm.sh \
+    # rvr probes for a bare `lld`/`ld.lld`, and clang's `-fuse-ld=` only accepts
+    # `lld` or an absolute path, so the versioned packages need plain aliases.
+    && ln -sf /usr/bin/lld-${CLANG_VERSION} /usr/bin/lld \
+    && ln -sf /usr/bin/ld.lld-${CLANG_VERSION} /usr/bin/ld.lld \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+ENV RVR_CC=clang-${CLANG_VERSION} \
+    RVR_LD=lld
 
 # Copy OpenVM internal-recursive proving key loaded by the prover at runtime.
 COPY --from=build_stage /root/.openvm/internal_recursive.pk /root/.openvm/internal_recursive.pk

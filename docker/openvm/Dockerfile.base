@@ -5,6 +5,23 @@ FROM $BASE_IMAGE
 # The ere-base image provides Rust, Cargo, and common tools.
 # We operate as root for SDK installation.
 
+# The `rvr` execution backend builds native FFI (blst, secp256k1, keccak) with
+# clang while compiling the workspace, and requires clang 19 or newer. Ubuntu
+# 24.04 ships clang-18, so a newer clang comes from apt.llvm.org. Keep
+# CLANG_VERSION in lockstep with docker/openvm/Dockerfile.server.
+ARG CLANG_VERSION=22
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gnupg \
+    lsb-release \
+    software-properties-common \
+    && wget -qO /tmp/llvm.sh https://apt.llvm.org/llvm.sh \
+    && chmod +x /tmp/llvm.sh \
+    && /tmp/llvm.sh ${CLANG_VERSION} \
+    && rm -f /tmp/llvm.sh \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+ENV RVR_CC=clang-${CLANG_VERSION}
+
 # Copy the OpenVM SDK installer script from the workspace context
 COPY --chmod=755 scripts/sdk_installers/install_openvm_sdk.sh /tmp/install_openvm_sdk.sh
 

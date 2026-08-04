@@ -6,7 +6,7 @@ use ere_prover_core::{
     ProverResourceKind, PublicValues, zkVMProver,
 };
 use ere_verifier_openvm::{
-    NUM_PUBLIC_VALUES, OpenVMProgramVk, OpenVMProof, OpenVMVerifier, extract_public_values,
+    NUM_PUBLIC_VALUES_BYTES, OpenVMProgramVk, OpenVMProof, OpenVMVerifier, extract_public_values,
 };
 use openvm_circuit::arch::{VmBuilder, VmExecutionConfig, instructions::exe::VmExe};
 use openvm_sdk::{
@@ -180,7 +180,10 @@ where
 
 fn sdk_vm_config() -> SdkVmConfig {
     let mut config = SdkVmConfig::standard();
-    config.system.config = config.system.config.with_public_values(NUM_PUBLIC_VALUES);
+    config.system.config = config
+        .system
+        .config
+        .with_public_values_bytes(NUM_PUBLIC_VALUES_BYTES);
     config.optimize()
 }
 
@@ -200,7 +203,7 @@ mod tests {
     use std::sync::OnceLock;
 
     use ere_compiler_core::{Compiler, Elf};
-    use ere_compiler_openvm::OpenVMRustRv32imaCustomized;
+    use ere_compiler_openvm::OpenVMRustRv64imaCustomized;
     use ere_prover_core::{Input, ProverResource, zkVMProver};
     use ere_util_test::{
         codec::BincodeLegacy,
@@ -213,7 +216,7 @@ mod tests {
     fn basic_elf() -> Elf {
         static ELF: OnceLock<Elf> = OnceLock::new();
         ELF.get_or_init(|| {
-            OpenVMRustRv32imaCustomized
+            OpenVMRustRv64imaCustomized
                 .compile(testing_guest_directory("openvm", "basic"), &[])
                 .unwrap()
         })

@@ -5,7 +5,8 @@ use std::{sync::Arc, time::Instant};
 use ere_prover_core::{ProgramExecutionReport, PublicValues};
 use openvm_circuit::{
     arch::{
-        VirtualMachineError, VmExecutor, execution_mode::ExecutionCtx, instructions::exe::VmExe,
+        U16_CELL_SIZE, VirtualMachineError, VmExecutor, instructions::exe::VmExe,
+        rvr::RvrPureInstance,
     },
     system::memory::merkle::public_values::extract_public_values,
 };
@@ -14,10 +15,9 @@ use openvm_sdk_config::SdkVmConfig;
 
 use crate::error::Error;
 
-#[cfg(target_arch = "x86_64")]
-type ExecutorInstance<'a> = openvm_circuit::arch::AotInstance<'a, F, ExecutionCtx>;
-#[cfg(not(target_arch = "x86_64"))]
-type ExecutorInstance<'a> = openvm_circuit::arch::InterpretedInstance<'a, F, ExecutionCtx>;
+/// Instance produced by [`VmExecutor::instance`], which the enabled `rvr`
+/// backend compiles to a native shared library instead of interpreting.
+type ExecutorInstance<'a> = RvrPureInstance<'a>;
 
 /// A precomputed execution instance with the executor it borrows from.
 ///
@@ -30,7 +30,7 @@ pub(crate) struct Executor {
     // Never read directly. Owned only to keep `*executor` alive for `instance`.
     #[allow(dead_code)]
     executor: Box<VmExecutor<F, SdkVmConfig>>,
-    num_public_values: usize,
+    num_public_values_bytes: usize,
 }
 
 impl Executor {
@@ -39,7 +39,7 @@ impl Executor {
             VmExecutor::new(config)
                 .map_err(|err| Error::Execute(VirtualMachineError::from(err).into()))?,
         );
-        let num_public_values = executor.config.as_ref().num_public_values;
+        let num_public_values_bytes = executor.config.as_ref().num_public_values * U16_CELL_SIZE;
 
         let instance = executor
             .instance(app_exe)
@@ -55,7 +55,7 @@ impl Executor {
         Ok(Self {
             instance,
             executor,
-            num_public_values,
+            num_public_values_bytes,
         })
     }
 
@@ -67,11 +67,12 @@ impl Executor {
         let start = Instant::now();
         let final_memory = self
             .instance
-            .execute(stdin, None)
+            .execute(stdin)
             .map_err(|err| Error::Execute(VirtualMachineError::from(err).into()))?
             .memory;
         let execution_duration = start.elapsed();
-        let public_values = extract_public_values(self.num_public_values, &final_memory.memory);
+        let public_values =
+            extract_public_values(self.num_public_values_bytes, &final_memory.memory);
         Ok((
             public_values.into(),
             ProgramExecutionReport {

@@ -65,8 +65,8 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind, args: &[String]) -> 
     let elf = {
         use ere_compiler_openvm::*;
         match compiler_kind {
-            CompilerKind::Rust => OpenVMRustRv32ima.compile(guest_dir, args)?,
-            CompilerKind::RustCustomized => OpenVMRustRv32imaCustomized.compile(guest_dir, args)?,
+            CompilerKind::Rust => OpenVMRustRv64ima.compile(guest_dir, args)?,
+            CompilerKind::RustCustomized => OpenVMRustRv64imaCustomized.compile(guest_dir, args)?,
         }
     };
 

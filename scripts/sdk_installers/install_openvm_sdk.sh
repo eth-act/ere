@@ -28,7 +28,7 @@ ensure_tool_installed "rustup" "to manage Rust toolchains"
 ensure_tool_installed "git" "to install cargo-openvm from a git repository"
 ensure_tool_installed "cargo" "to build and install Rust packages"
 
-OPENVM_CLI_VERSION_TAG="v2.0.0"
+OPENVM_CLI_VERSION_TAG="v2.1.0-preview"
 
 # Install cargo-openvm using the specified toolchain and version tag
 echo "Installing cargo-openvm (version ${OPENVM_CLI_VERSION_TAG}) from GitHub repository (openvm-org/openvm)..."
@@ -44,6 +44,11 @@ else
     echo "       Ensure ${HOME}/.cargo/bin is in your PATH for new shells." >&2
     exit 1
 fi
+
+# Install the customized Rust toolchain providing the built-in guest target
+# `riscv64im-unknown-openvm-elf`, and link it into rustup
+echo "Installing OpenVM Rust toolchain..."
+cargo openvm toolchain install
 
 # Setup aggregation keys
 cargo openvm setup

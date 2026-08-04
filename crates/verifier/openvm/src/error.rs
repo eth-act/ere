@@ -15,7 +15,7 @@ pub enum Error {
     #[error("Verification failed: {0}")]
     Verify(#[from] VerifyStarkError),
 
-    /// A field element could not be downcast to `u8`.
+    /// A field element could not be downcast to `u16`.
     #[error("Invalid public value")]
     InvalidPublicValue,
 

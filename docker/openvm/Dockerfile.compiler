@@ -31,6 +31,9 @@ ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH
 
+# Copy OpenVM SDK
+COPY --from=base_zkvm /root/.openvm/toolchains /root/.openvm/toolchains
+
 # Copy ere-compiler
 COPY --from=build_stage /ere/bin/ere-compiler /ere/bin/ere-compiler
 

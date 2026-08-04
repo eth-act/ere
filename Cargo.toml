@@ -111,15 +111,15 @@ twirp-build = "0.10"
 uuid = "1"
 
 # OpenVM dependencies
-openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v2.0.0", default-features = false }
-openvm-build = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.0.0" }
-openvm-circuit = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.0.0", default-features = false }
-openvm-continuations = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.0.0", default-features = false }
-openvm-sdk = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.0.0" }
-openvm-sdk-config = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.0.0", default-features = false }
-openvm-transpiler = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.0.0", default-features = false }
-openvm-verify-stark-host = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.0.0", default-features = false }
-openvm-stark-sdk = { git = "https://github.com/han0110/stark-backend.git", branch = "patch/v2.0.0", default-features = false, features = ["parallel"] }
+openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v2.1.0-preview", default-features = false }
+openvm-build = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.1.0-preview" }
+openvm-circuit = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.1.0-preview", default-features = false }
+openvm-continuations = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.1.0-preview", default-features = false }
+openvm-sdk = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.1.0-preview" }
+openvm-sdk-config = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.1.0-preview", default-features = false }
+openvm-transpiler = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.1.0-preview", default-features = false }
+openvm-verify-stark-host = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.1.0-preview", default-features = false }
+openvm-stark-sdk = { git = "https://github.com/han0110/stark-backend.git", branch = "patch/v2.1.0-preview", default-features = false, features = ["parallel"] }
 
 # SP1 dependencies
 sp1-core-executor = { git = "https://github.com/succinctlabs/sp1", tag = "v6.3.1" }

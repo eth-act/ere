@@ -16,13 +16,13 @@ _start:
     la gp, __global_pointer$;
     .option pop;
     la sp, {0}
-    lw sp, 0(sp)
+    ld sp, 0(sp)
     call __start;
 "#,
     sym STACK_TOP
 );
 
-static STACK_TOP: u32 = 0x0020_0400;
+static STACK_TOP: u64 = 0x0020_0400;
 
 // 1. Call `main` user function
 // 2. Call system halt environment function. It is defined by openvm.
@@ -35,7 +35,7 @@ fn __start(_argc: isize, _argv: *const *const u8) -> isize {
     unreachable!()
 }
 
-// According to https://github.com/openvm-org/openvm/blob/v2.0.0/crates/toolchain/platform/src/rust_rt.rs
+// According to https://github.com/openvm-org/openvm/blob/v2.1.0-preview/crates/toolchain/platform/src/rust_rt.rs
 #[inline(always)]
 fn terminate() {
     unsafe {
@@ -45,7 +45,7 @@ fn terminate() {
     }
 }
 
-// According to https://github.com/openvm-org/openvm/blob/v2.0.0/crates/toolchain/platform/src/rust_rt.rs
+// According to https://github.com/openvm-org/openvm/blob/v2.1.0-preview/crates/toolchain/platform/src/rust_rt.rs
 #[panic_handler]
 fn panic_impl(_panic_info: &core::panic::PanicInfo) -> ! {
     unsafe {
