@@ -1,7 +1,7 @@
 use std::{env, path::Path};
 
 use ere_compiler_core::{Compiler, Elf};
-use ere_util_compile::{CargoBuildCmd, RustTarget, parse_cargo_features};
+use ere_util_compile::{CargoBuildCmd, RustTarget, parse_cargo_build_options};
 
 use crate::Error;
 
@@ -51,12 +51,14 @@ impl Compiler for ZiskRustRv64ima {
         args: &[String],
     ) -> Result<Elf, Self::Error> {
         let toolchain = env::var("ERE_RUST_TOOLCHAIN").unwrap_or_else(|_| "nightly".into());
+        let options = parse_cargo_build_options(args)?;
         let elf = CargoBuildCmd::new()
             .linker_script(Some(LINKER_SCRIPT))
             .toolchain(toolchain)
             .build_options(CARGO_BUILD_OPTIONS)
             .rustflags(RUSTFLAGS)
-            .features(&parse_cargo_features(args)?)
+            .features(&options.features)
+            .ignore_rust_version(options.ignore_rust_version)
             .exec(guest_directory, TARGET)?;
         Ok(Elf(elf))
     }

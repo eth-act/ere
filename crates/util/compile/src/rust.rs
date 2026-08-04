@@ -53,6 +53,7 @@ pub struct CargoBuildCmd {
     build_options: Vec<String>,
     linker_script: Option<String>,
     features: Vec<String>,
+    ignore_rust_version: bool,
 }
 
 impl Default for CargoBuildCmd {
@@ -64,6 +65,7 @@ impl Default for CargoBuildCmd {
             build_options: Default::default(),
             linker_script: Default::default(),
             features: Default::default(),
+            ignore_rust_version: Default::default(),
         }
     }
 }
@@ -112,6 +114,12 @@ impl CargoBuildCmd {
     /// Cargo features to enable.
     pub fn features(mut self, features: &[impl AsRef<str>]) -> Self {
         self.features = features.iter().map(|v| v.as_ref().to_string()).collect();
+        self
+    }
+
+    /// Whether to ignore `rust-version` specification in packages.
+    pub fn ignore_rust_version(mut self, ignore_rust_version: bool) -> Self {
+        self.ignore_rust_version = ignore_rust_version;
         self
     }
 
@@ -176,6 +184,10 @@ impl CargoBuildCmd {
             .into_iter()
             .flatten();
 
+        let ignore_rust_version_arg = self
+            .ignore_rust_version
+            .then(|| "--ignore-rust-version".to_string());
+
         let args = iter::empty()
             .chain([plus_toolchain(&self.toolchain)])
             .chain(["build".into()])
@@ -183,7 +195,8 @@ impl CargoBuildCmd {
             .chain(["--profile".into(), self.profile.clone()])
             .chain(["--target".into(), target_arg])
             .chain(["--manifest-path".into(), package.manifest_path.to_string()])
-            .chain(features_args);
+            .chain(features_args)
+            .chain(ignore_rust_version_arg);
 
         let mut cmd = Command::new("cargo");
         let status = cmd
@@ -330,16 +343,61 @@ fn plus_toolchain(toolchain: &str) -> String {
     format!("+{toolchain}")
 }
 
-/// Parse cargo-style `--features` / `-F` flags out of `args`.
-pub fn parse_cargo_features(args: &[String]) -> Result<Vec<String>, CommonError> {
+/// Cargo build options parsed out of the extra arguments given to a compiler.
+#[derive(Clone, Debug, Default)]
+pub struct CargoBuildOptions {
+    /// Cargo features to enable.
+    pub features: Vec<String>,
+    /// Whether to ignore `rust-version` specification in packages.
+    pub ignore_rust_version: bool,
+}
+
+/// Parse cargo-style build flags out of `args`.
+pub fn parse_cargo_build_options(args: &[String]) -> Result<CargoBuildOptions, CommonError> {
     #[derive(Parser, Debug)]
     #[command(no_binary_name = true)]
     struct Args {
         #[arg(short = 'F', long = "features", value_delimiter = ',')]
         features: Vec<String>,
+        #[arg(long)]
+        ignore_rust_version: bool,
     }
 
     Args::try_parse_from(args)
-        .map(|p| p.features)
+        .map(|p| CargoBuildOptions {
+            features: p.features,
+            ignore_rust_version: p.ignore_rust_version,
+        })
         .map_err(CommonError::invalid_args)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::rust::parse_cargo_build_options;
+
+    fn parse(args: &[&str]) -> (Vec<String>, bool) {
+        let args = args.iter().map(ToString::to_string).collect::<Vec<_>>();
+        let options = parse_cargo_build_options(&args).unwrap();
+        (options.features, options.ignore_rust_version)
+    }
+
+    #[test]
+    fn test_parse_cargo_build_options() {
+        assert_eq!(parse(&[]), (vec![], false));
+        assert_eq!(parse(&["--ignore-rust-version"]), (vec![], true));
+        assert_eq!(
+            parse(&["--features", "a,b"]),
+            (vec!["a".into(), "b".into()], false)
+        );
+        assert_eq!(
+            parse(&["-F", "a", "--ignore-rust-version"]),
+            (vec!["a".into()], true)
+        );
+    }
+
+    #[test]
+    fn test_parse_cargo_build_options_rejects_unknown() {
+        let args = ["--unknown".to_string()];
+        assert!(parse_cargo_build_options(&args).is_err());
+    }
 }

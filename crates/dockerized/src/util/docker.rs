@@ -27,7 +27,7 @@ impl CmdOption {
     pub fn to_args(&self) -> Vec<String> {
         let Self(key, value) = self;
         match value {
-            Some(value) => vec![format!("--{key}"), format!("{value}")],
+            Some(value) => vec![format!("--{key}"), value.to_string()],
             None => vec![format!("--{key}")],
         }
     }
