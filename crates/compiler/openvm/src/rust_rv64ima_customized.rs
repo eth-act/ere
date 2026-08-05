@@ -7,10 +7,7 @@ use openvm_build::GuestOptions;
 use crate::Error;
 
 /// Compiler for Rust guest program to RV64IMA architecture, using customized
-/// target `riscv64im-unknown-openvm-elf`.
-///
-/// The target is built into the `openvm-*` Rust toolchain, which ships prebuilt
-/// `core` and `alloc` and is installed by `cargo openvm toolchain install`.
+/// Rust toolchain of OpenVM and target `riscv64im-unknown-openvm-elf`.
 pub struct OpenVMRustRv64imaCustomized;
 
 impl Compiler for OpenVMRustRv64imaCustomized {

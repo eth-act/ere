@@ -15,10 +15,6 @@ use openvm_sdk_config::SdkVmConfig;
 
 use crate::error::Error;
 
-/// Instance produced by [`VmExecutor::instance`], which the enabled `rvr`
-/// backend compiles to a native shared library instead of interpreting.
-type ExecutorInstance<'a> = RvrPureInstance<'a>;
-
 /// A precomputed execution instance with the executor it borrows from.
 ///
 /// `instance` holds borrows (and raw precompute pointers) into `*executor`, making
@@ -26,7 +22,7 @@ type ExecutorInstance<'a> = RvrPureInstance<'a>;
 /// fixes its heap address across moves and declaring `instance` first drops the
 /// borrow before its referent.
 pub(crate) struct Executor {
-    instance: ExecutorInstance<'static>,
+    instance: RvrPureInstance<'static>,
     // Never read directly. Owned only to keep `*executor` alive for `instance`.
     #[allow(dead_code)]
     executor: Box<VmExecutor<F, SdkVmConfig>>,
@@ -50,7 +46,7 @@ impl Executor {
         // is moved, and the `executor` field is dropped after `instance` by field
         // order. The borrow therefore never dangles and never outlives its referent,
         // so extending its lifetime to `'static` for co-storage is sound.
-        let instance: ExecutorInstance<'static> = unsafe { std::mem::transmute(instance) };
+        let instance: RvrPureInstance<'static> = unsafe { std::mem::transmute(instance) };
 
         Ok(Self {
             instance,

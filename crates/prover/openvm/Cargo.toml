@@ -11,7 +11,7 @@ thiserror.workspace = true
 
 # OpenVM dependencies
 openvm-circuit.workspace = true
-openvm-sdk = { workspace = true, features = ["rvr"] }
+openvm-sdk = { workspace = true, features = ["jemalloc", "parallel", "rvr"] }
 openvm-sdk-config.workspace = true
 openvm-stark-sdk.workspace = true
 openvm-transpiler.workspace = true
