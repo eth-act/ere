@@ -176,7 +176,12 @@ impl ServerContainer {
     /// Offset of port used for `ere-server`.
     const PORT_OFFSET: u16 = 4174;
 
-    fn new(zkvm_kind: zkVMKind, elf: &Elf, resource: &ProverResource) -> Result<Self, Error> {
+    fn new(
+        zkvm_kind: zkVMKind,
+        elf: &Elf,
+        resource: &ProverResource,
+        health_timeout: Duration,
+    ) -> Result<Self, Error> {
         let name = format!("ere-server-{zkvm_kind}");
         remove_docker_container(&name)?;
 
@@ -237,7 +242,11 @@ impl ServerContainer {
 
         let endpoint = Url::parse(&format!("http://{host}:{port}"))?;
         let http_client = Client::new();
-        block_on(wait_until_healthy(&endpoint, http_client.clone()))?;
+        block_on(wait_until_healthy(
+            &endpoint,
+            http_client.clone(),
+            health_timeout,
+        ))?;
 
         Ok(ServerContainer {
             id: container_id,
@@ -246,11 +255,28 @@ impl ServerContainer {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+/// Default time [`DockerizedzkVMConfig::health_timeout`] allows a spawned
+/// `ere-server` to become healthy. Construction of the prover happens before the
+/// server starts serving, so this covers any preprocessing the zkVM does there.
+const DEFAULT_HEALTH_TIMEOUT: Duration = Duration::from_secs(300);
+
+#[derive(Debug, Clone)]
 pub struct DockerizedzkVMConfig {
     pub execute_timeout: Option<Duration>,
     pub prove_timeout: Option<Duration>,
     pub verify_timeout: Option<Duration>,
+    pub health_timeout: Duration,
+}
+
+impl Default for DockerizedzkVMConfig {
+    fn default() -> Self {
+        Self {
+            execute_timeout: None,
+            prove_timeout: None,
+            verify_timeout: None,
+            health_timeout: DEFAULT_HEALTH_TIMEOUT,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -272,7 +298,7 @@ impl DockerizedzkVM {
     ) -> Result<Self, Error> {
         build_server_image(zkvm_kind, resource.is_gpu())?;
 
-        let container = ServerContainer::new(zkvm_kind, &elf, &resource)?;
+        let container = ServerContainer::new(zkvm_kind, &elf, &resource, config.health_timeout)?;
         let program_vk = block_on(container.client.program_vk())?;
 
         Ok(Self {
@@ -460,6 +486,7 @@ impl DockerizedzkVM {
             self.zkvm_kind,
             &self.elf,
             &self.resource,
+            self.config.health_timeout,
         )?);
 
         let guard = guard.downgrade();
@@ -467,14 +494,17 @@ impl DockerizedzkVM {
     }
 }
 
-async fn wait_until_healthy(endpoint: &Url, http_client: Client) -> Result<(), Error> {
-    const TIMEOUT: Duration = Duration::from_secs(300); // 5mins
+async fn wait_until_healthy(
+    endpoint: &Url,
+    http_client: Client,
+    timeout: Duration,
+) -> Result<(), Error> {
     const INTERVAL: Duration = Duration::from_millis(500);
 
     let http_client = http_client.clone();
     let start = Instant::now();
     loop {
-        if start.elapsed() > TIMEOUT {
+        if start.elapsed() > timeout {
             return Err(Error::ConnectionTimeout);
         }
 
