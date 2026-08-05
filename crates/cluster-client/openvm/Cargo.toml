@@ -1,0 +1,27 @@
+[package]
+name = "ere-cluster-client-openvm"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+bincode = { workspace = true, features = ["alloc", "serde"] }
+futures-util.workspace = true
+reqwest = { workspace = true, features = ["json", "multipart"] }
+reqwest-eventsource.workspace = true
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+sha2 = { workspace = true, features = ["std"] }
+thiserror.workspace = true
+tokio = { workspace = true, features = ["time", "rt"] }
+tracing.workspace = true
+uuid = { workspace = true, features = ["v4"] }
+
+# Local dependencies
+ere-compiler-core.workspace = true
+ere-prover-core.workspace = true
+ere-verifier-openvm.workspace = true
+
+[lints]
+workspace = true
