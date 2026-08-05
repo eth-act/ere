@@ -5,6 +5,27 @@ FROM $BASE_IMAGE
 # The ere-base image provides Rust, Cargo, and common tools.
 # We operate as root for SDK installation.
 
+# `rvr` compiles guest programs with clang and lld. Ubuntu 24.04 ships
+# clang-18 while rvr requires 19 or newer, so clang-22, rvr's own default,
+# comes from apt.llvm.org.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gnupg \
+    lsb-release \
+    software-properties-common \
+    && wget -qO /tmp/llvm.sh https://apt.llvm.org/llvm.sh \
+    && chmod +x /tmp/llvm.sh \
+    && /tmp/llvm.sh 22 \
+    && apt-get install -y --no-install-recommends lld-22 \
+    && rm -f /tmp/llvm.sh \
+    # rvr probes for a bare `lld`/`ld.lld`, and clang's `-fuse-ld=` only accepts
+    # `lld` or an absolute path, so the versioned packages need plain aliases.
+    && ln -sf /usr/bin/lld-22 /usr/bin/lld \
+    && ln -sf /usr/bin/ld.lld-22 /usr/bin/ld.lld \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Add nightly toolchain to provide cargo fallback for openvm toolchain
+RUN rustup toolchain install --profile minimal nightly
+
 # Copy the OpenVM SDK installer script from the workspace context
 COPY --chmod=755 scripts/sdk_installers/install_openvm_sdk.sh /tmp/install_openvm_sdk.sh
 
@@ -15,5 +36,11 @@ RUN /tmp/install_openvm_sdk.sh && rm /tmp/install_openvm_sdk.sh
 
 # Verify cargo-openvm is accessible with the correct toolchain
 RUN cargo openvm --version
+
+# `OPENVM_RVR_NATIVE_CACHE_DIR` lets rvr reuse a compiled guest artifact across
+# proofs instead of rebuilding it on every call.
+ENV RVR_CC=clang-22 \
+    RVR_LD=lld \
+    OPENVM_RVR_NATIVE_CACHE_DIR=/root/.openvm/cache
 
 CMD ["/bin/bash"]

@@ -11,7 +11,7 @@ include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 mod vk;
 
 /// Public values bytes of OpenVM proof.
-pub const NUM_PUBLIC_VALUES: usize = 256;
+pub const NUM_PUBLIC_VALUES_BYTES: usize = 256;
 
 /// Verifier bound to a specific compiled guest program.
 ///
@@ -62,16 +62,20 @@ impl zkVMVerifier for OpenVMVerifier {
 /// Extract public values in bytes from field elements.
 ///
 /// The public values revealed in guest program will be flatten into `Vec<u8>`
-/// then converted to field elements `Vec<F>`, so here we try to downcast it.
+/// then converted to field elements `Vec<F>`, one per little-endian `u16`
+/// memory cell, so here we try to downcast and expand it.
 pub fn extract_public_values(user_public_values: &[F]) -> Result<PublicValues, Error> {
     let public_values = user_public_values
         .iter()
-        .map(|v| u8::try_from(v.as_canonical_u32()).ok())
-        .collect::<Option<Vec<u8>>>()
-        .ok_or(Error::InvalidPublicValue)?;
-    if public_values.len() != NUM_PUBLIC_VALUES {
+        .map(|v| u16::try_from(v.as_canonical_u32()).ok())
+        .collect::<Option<Vec<u16>>>()
+        .ok_or(Error::InvalidPublicValue)?
+        .into_iter()
+        .flat_map(u16::to_le_bytes)
+        .collect::<Vec<u8>>();
+    if public_values.len() != NUM_PUBLIC_VALUES_BYTES {
         return Err(Error::InvalidPublicValueSize {
-            expected: NUM_PUBLIC_VALUES,
+            expected: NUM_PUBLIC_VALUES_BYTES,
             got: public_values.len(),
         });
     }

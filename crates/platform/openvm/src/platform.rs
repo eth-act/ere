@@ -22,10 +22,10 @@ impl Platform for OpenVMPlatform {
             "Maximum output size is {MAX_OUTPUT_BYTES} bytes, got {} bytes",
             output.len()
         );
-        for (index, chunk) in output.chunks(4).enumerate() {
-            let mut word = [0u8; 4];
+        for (index, chunk) in output.chunks(8).enumerate() {
+            let mut word = [0u8; 8];
             word[..chunk.len()].copy_from_slice(chunk);
-            openvm::io::reveal_u32(u32::from_le_bytes(word), index);
+            openvm::io::reveal_u64(u64::from_le_bytes(word), index);
         }
     }
 

@@ -36,9 +36,9 @@ This guide records the encoding for each supported zkVM and gives the commands t
 
     [dependencies]
     bitcode = { version = "0.6", features = ["serde"] }
-    openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v2.0.0" }
-    openvm-sdk-config = { git = "https://github.com/openvm-org/openvm.git", tag = "v2.0.0" }
-    openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", tag = "v2.0.0" }
+    openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v2.1.0-preview" }
+    openvm-sdk-config = { git = "https://github.com/openvm-org/openvm.git", tag = "v2.1.0-preview" }
+    openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", branch = "develop-v2.1.0" }
     ---
 
     use std::{env, error::Error, fs};
@@ -53,7 +53,7 @@ This guide records the encoding for each supported zkVM and gives the commands t
 
         let app_config = {
             let mut config = SdkVmConfig::standard();
-            config.system.config = config.system.config.with_public_values(256);
+            config.system.config = config.system.config.with_public_values_bytes(256);
             let system_params = app_params_with_100_bits_security(MAX_APP_LOG_STACKED_HEIGHT);
             AppConfig::new(config.optimize(), system_params)
         };
@@ -71,7 +71,7 @@ This guide records the encoding for each supported zkVM and gives the commands t
 
     ```bash
     set -euo pipefail
-    ZKVM_VERSION="v2.0.0"
+    ZKVM_VERSION="v2.1.0-preview"
     GUEST_NAME="<guest-name>"
     ELF_PATH="<elf-path>"
     VK="stateless-validator-$GUEST_NAME-openvm-$ZKVM_VERSION.vk"
