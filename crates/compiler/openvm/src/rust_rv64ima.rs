@@ -47,10 +47,10 @@ const RUSTFLAGS: &[&str] = &[
     "--check-cfg=cfg(openvm_intrinsics)",
 ];
 const CARGO_BUILD_OPTIONS: &[&str] = &[
-    // For bare metal we have to build core and alloc
-    "-Zbuild-std=core,alloc",
-    // `memcpy` and friends are provided by `compiler_builtins` instead of the
-    // `openvm-mem` crate the customized toolchain links in.
+    // Bare metal requires building core, alloc and panic_abort
+    "-Zbuild-std=core,alloc,panic_abort",
+    // Take `memcpy` and friends from `compiler_builtins` when building the
+    // standard library crates from source.
     "-Zbuild-std-features=compiler-builtins-mem",
     // For using json target spec
     "-Zjson-target-spec",

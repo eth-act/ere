@@ -17,10 +17,11 @@ use crate::error::Error;
 
 /// A precomputed execution instance with the executor it borrows from.
 ///
-/// `instance` holds borrows (and raw precompute pointers) into `*executor`, making
-/// this self-referential. The `'static` lifetime is sound because boxing `executor`
-/// fixes its heap address across moves and declaring `instance` first drops the
-/// borrow before its referent.
+/// `instance` borrows the `SystemConfig` owned by `*executor`, making this
+/// self-referential. The `'static` lifetime is sound because that config lives
+/// behind an `Arc` whose allocation outlives every move of the returned
+/// `Executor`, and declaring `instance` first drops the borrow before its
+/// referent.
 pub(crate) struct Executor {
     instance: RvrPureInstance<'static>,
     // Never read directly. Owned only to keep `*executor` alive for `instance`.
@@ -41,9 +42,9 @@ impl Executor {
             .instance(app_exe)
             .map_err(|err| Error::Execute(VirtualMachineError::from(err).into()))?;
 
-        // SAFETY: `instance` borrows only into `*executor`. The executor is boxed,
-        // so its heap storage stays at a fixed address when the returned `Executor`
-        // is moved, and the `executor` field is dropped after `instance` by field
+        // SAFETY: `instance` borrows only the `SystemConfig` held in `*executor`,
+        // which lives in an `Arc` allocation that stays put while `*executor` is
+        // alive, and the `executor` field is dropped after `instance` by field
         // order. The borrow therefore never dangles and never outlives its referent,
         // so extending its lifetime to `'static` for co-storage is sound.
         let instance: RvrPureInstance<'static> = unsafe { std::mem::transmute(instance) };
