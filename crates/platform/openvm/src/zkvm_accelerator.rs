@@ -29,7 +29,12 @@
 use alloc::{vec, vec::Vec};
 use core::slice;
 
-use bls12_381::hash_to_curve::MapToCurve;
+use ark_bls12_381::{Fq, Fq2, G1Affine, G2Affine};
+use ark_ec::{
+    AffineRepr,
+    hashing::{curve_maps::wb::WBMap, map_to_curve_hasher::MapToCurve},
+};
+use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use openvm_curve_utils::SubgroupCheck;
 use openvm_ecc_guest::{
     AffinePoint, Group,
@@ -49,7 +54,7 @@ use openvm_pairing::{
     bn254::{self as bn, Bn254},
 };
 use openvm_sha2::{Digest, Sha256};
-use ripemd::Ripemd160;
+use ripemd::{Digest as _, Ripemd160};
 use zkvm_interface::{
     zkvm_blake2f_message, zkvm_blake2f_offset, zkvm_blake2f_state, zkvm_bls12_381_fp,
     zkvm_bls12_381_fp2, zkvm_bls12_381_g1_msm_pair, zkvm_bls12_381_g1_point,
@@ -78,22 +83,6 @@ const BLS_FP_LEN: usize = 48;
 const BLS_G1_LEN: usize = 96;
 const BLS_G2_LEN: usize = 192;
 const BLS_SCALAR_LEN: usize = 32;
-
-/// EIP-2537 image of `map_fp2_to_g2(0)`, in the C interface G2 encoding.
-const MAP_FP2_TO_G2_ZERO: [u8; BLS_G2_LEN] = [
-    0x01, 0x83, 0x20, 0x89, 0x6e, 0xc9, 0xee, 0xf9, 0xd5, 0xe6, 0x19, 0x84, 0x8d, 0xc2, 0x9c, 0xe2,
-    0x66, 0xf4, 0x13, 0xd0, 0x2d, 0xd3, 0x1d, 0x9b, 0x9d, 0x44, 0xec, 0x0c, 0x79, 0xcd, 0x61, 0xf1,
-    0x8b, 0x07, 0x5d, 0xdb, 0xa6, 0xd7, 0xbd, 0x20, 0xb7, 0xff, 0x27, 0xa4, 0xb3, 0x24, 0xbf, 0xce,
-    0x0a, 0x67, 0xd1, 0x21, 0x18, 0xb5, 0xa3, 0x5b, 0xb0, 0x2d, 0x2e, 0x86, 0xb3, 0xeb, 0xfa, 0x7e,
-    0x23, 0x41, 0x0d, 0xb9, 0x3d, 0xe3, 0x9f, 0xb0, 0x6d, 0x70, 0x25, 0xfa, 0x95, 0xe9, 0x6f, 0xfa,
-    0x42, 0x8a, 0x7a, 0x27, 0xc3, 0xae, 0x4d, 0xd4, 0xb4, 0x0b, 0xd2, 0x51, 0xac, 0x65, 0x88, 0x92,
-    0x02, 0x60, 0xe0, 0x36, 0x44, 0xd1, 0xa2, 0xc3, 0x21, 0x25, 0x6b, 0x32, 0x46, 0xba, 0xd2, 0xb8,
-    0x95, 0xca, 0xd1, 0x38, 0x90, 0xcb, 0xe6, 0xf8, 0x5d, 0xf5, 0x51, 0x06, 0xa0, 0xd3, 0x34, 0x60,
-    0x4f, 0xb1, 0x43, 0xc7, 0xa0, 0x42, 0xd8, 0x78, 0x00, 0x62, 0x71, 0x86, 0x5b, 0xc3, 0x59, 0x41,
-    0x04, 0xc6, 0x97, 0x77, 0xa4, 0x3f, 0x0b, 0xda, 0x07, 0x67, 0x9d, 0x58, 0x05, 0xe6, 0x3f, 0x18,
-    0xcf, 0x4e, 0x0e, 0x7c, 0x61, 0x12, 0xac, 0x7f, 0x70, 0x26, 0x6d, 0x19, 0x9b, 0x4f, 0x76, 0xae,
-    0x27, 0xc6, 0x26, 0x9a, 0x3c, 0xee, 0xbd, 0xae, 0x30, 0x80, 0x6e, 0x9a, 0x76, 0xaa, 0xdf, 0x5c,
-];
 
 #[unsafe(no_mangle)]
 unsafe extern "C" fn zkvm_keccak256(
@@ -436,15 +425,11 @@ unsafe extern "C" fn zkvm_bls12_map_fp_to_g1(
     field_element: *const zkvm_bls12_381_fp,
     result: *mut zkvm_bls12_381_g1_point,
 ) -> zkvm_status {
-    type Fp = <bls12_381::G1Projective as MapToCurve>::Field;
-
-    let Some(field_element) = Fp::from_bytes(unsafe { &(*field_element).data }).into_option()
-    else {
+    let Some(field_element) = read_bls12_fp(unsafe { &(*field_element).data }) else {
         return ZKVM_EFAIL;
     };
 
-    let point = bls12_381::G1Projective::map_to_curve(&field_element).clear_h();
-    unsafe { (*result).data = serialize_bls12_g1(&bls12_381::G1Affine::from(point)) };
+    unsafe { (*result).data = serialize_bls12_g1(&map_bls12_fp_to_g1(field_element)) };
     ZKVM_EOK
 }
 
@@ -453,28 +438,15 @@ unsafe extern "C" fn zkvm_bls12_map_fp2_to_g2(
     field_element: *const zkvm_bls12_381_fp2,
     result: *mut zkvm_bls12_381_g2_point,
 ) -> zkvm_status {
-    type Fp = <bls12_381::G1Projective as MapToCurve>::Field;
-    type Fp2 = <bls12_381::G2Projective as MapToCurve>::Field;
-
     let field_element = unsafe { &(*field_element).data };
-    let Some(c0) = Fp::from_bytes(field_element[..BLS_FP_LEN].try_into().unwrap()).into_option()
-    else {
+    let Some(c0) = read_bls12_fp(field_element[..BLS_FP_LEN].try_into().unwrap()) else {
         return ZKVM_EFAIL;
     };
-    let Some(c1) = Fp::from_bytes(field_element[BLS_FP_LEN..].try_into().unwrap()).into_option()
-    else {
+    let Some(c1) = read_bls12_fp(field_element[BLS_FP_LEN..].try_into().unwrap()) else {
         return ZKVM_EFAIL;
     };
 
-    // The `bls12_381` SWU map sends `u = 0`, and only `u = 0`, to infinity, so the finite image
-    // EIP-2537 expects is hardcoded.
-    if bool::from(c0.is_zero()) && bool::from(c1.is_zero()) {
-        unsafe { (*result).data = MAP_FP2_TO_G2_ZERO };
-        return ZKVM_EOK;
-    }
-
-    let point = bls12_381::G2Projective::map_to_curve(&Fp2 { c0, c1 }).clear_h();
-    unsafe { (*result).data = serialize_bls12_g2(&bls12_381::G2Affine::from(point)) };
+    unsafe { (*result).data = serialize_bls12_g2(&map_bls12_fp2_to_g2(Fq2::new(c0, c1))) };
     ZKVM_EOK
 }
 
@@ -695,28 +667,59 @@ fn encode_bls_g2_point(point: &bls::G2Affine) -> [u8; BLS_G2_LEN] {
     output
 }
 
-/// Serializes a `bls12_381` G1 point as `x || y`, each 48 big-endian bytes.
-fn serialize_bls12_g1(point: &bls12_381::G1Affine) -> [u8; BLS_G1_LEN] {
-    if bool::from(point.is_identity()) {
-        return [0u8; BLS_G1_LEN];
-    }
-    point.to_uncompressed()
+/// Reads a big-endian `Fp`, rejecting an encoding that is not the canonical representative.
+fn read_bls12_fp(input: &[u8; BLS_FP_LEN]) -> Option<Fq> {
+    let mut input_le = *input;
+    input_le.reverse();
+    Fq::deserialize_uncompressed(&input_le[..]).ok()
 }
 
-/// Serializes a `bls12_381` G2 point as `x_c0 || x_c1 || y_c0 || y_c1`, each 48 big-endian bytes.
-/// The crate emits the two Fp2 limbs in the opposite order, so each pair is swapped back to the
-/// EIP-2537 convention.
-fn serialize_bls12_g2(point: &bls12_381::G2Affine) -> [u8; BLS_G2_LEN] {
-    if bool::from(point.is_identity()) {
-        return [0u8; BLS_G2_LEN];
-    }
+/// Serializes an `Fp` as 48 big-endian bytes.
+fn encode_bls12_fp(fp: &Fq) -> [u8; BLS_FP_LEN] {
+    let mut output = [0u8; BLS_FP_LEN];
+    fp.serialize_uncompressed(&mut output[..])
+        .expect("a field element always serializes");
+    output.reverse();
+    output
+}
 
-    let raw = point.to_uncompressed();
+/// Maps an `Fp` onto G1 following EIP-2537, which is the simplified SWU map composed with the
+/// isogeny back to the curve, then cofactor clearing.
+fn map_bls12_fp_to_g1(fp: Fq) -> G1Affine {
+    WBMap::map_to_curve(fp)
+        .expect("map_to_curve is infallible")
+        .clear_cofactor()
+}
+
+/// Maps an `Fp2` onto G2 following EIP-2537.
+fn map_bls12_fp2_to_g2(fp2: Fq2) -> G2Affine {
+    WBMap::map_to_curve(fp2)
+        .expect("map_to_curve is infallible")
+        .clear_cofactor()
+}
+
+/// Serializes a G1 point as `x || y`, each 48 big-endian bytes, with infinity as all zeros.
+fn serialize_bls12_g1(point: &G1Affine) -> [u8; BLS_G1_LEN] {
+    let mut output = [0u8; BLS_G1_LEN];
+    let Some((x, y)) = point.xy() else {
+        return output;
+    };
+    output[..BLS_FP_LEN].copy_from_slice(&encode_bls12_fp(&x));
+    output[BLS_FP_LEN..].copy_from_slice(&encode_bls12_fp(&y));
+    output
+}
+
+/// Serializes a G2 point as `x_c0 || x_c1 || y_c0 || y_c1`, each 48 big-endian bytes, with
+/// infinity as all zeros.
+fn serialize_bls12_g2(point: &G2Affine) -> [u8; BLS_G2_LEN] {
     let mut output = [0u8; BLS_G2_LEN];
-    output[..BLS_FP_LEN].copy_from_slice(&raw[BLS_FP_LEN..2 * BLS_FP_LEN]);
-    output[BLS_FP_LEN..2 * BLS_FP_LEN].copy_from_slice(&raw[..BLS_FP_LEN]);
-    output[2 * BLS_FP_LEN..3 * BLS_FP_LEN].copy_from_slice(&raw[3 * BLS_FP_LEN..]);
-    output[3 * BLS_FP_LEN..].copy_from_slice(&raw[2 * BLS_FP_LEN..3 * BLS_FP_LEN]);
+    let Some((x, y)) = point.xy() else {
+        return output;
+    };
+    output[..BLS_FP_LEN].copy_from_slice(&encode_bls12_fp(&x.c0));
+    output[BLS_FP_LEN..2 * BLS_FP_LEN].copy_from_slice(&encode_bls12_fp(&x.c1));
+    output[2 * BLS_FP_LEN..3 * BLS_FP_LEN].copy_from_slice(&encode_bls12_fp(&y.c0));
+    output[3 * BLS_FP_LEN..].copy_from_slice(&encode_bls12_fp(&y.c1));
     output
 }
 

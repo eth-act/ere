@@ -19,8 +19,10 @@ openvm-pairing = { workspace = true, optional = true }
 openvm-sha2 = { workspace = true, optional = true }
 
 # zkvm-accelerator dependencies
+ark-bls12-381 = { workspace = true, optional = true }
+ark-ec = { workspace = true, optional = true }
+ark-serialize = { workspace = true, optional = true }
 aurora-engine-modexp = { workspace = true, optional = true }
-bls12_381 = { workspace = true, features = ["experimental"], optional = true }
 ripemd = { workspace = true, optional = true }
 zkvm-interface = { workspace = true, optional = true }
 
@@ -42,8 +44,10 @@ zkvm-accelerator = [
     "dep:openvm-p256",
     "dep:openvm-pairing",
     "dep:openvm-sha2",
+    "dep:ark-bls12-381",
+    "dep:ark-ec",
+    "dep:ark-serialize",
     "dep:aurora-engine-modexp",
-    "dep:bls12_381",
     "dep:ripemd",
     "dep:zkvm-interface",
 ]
