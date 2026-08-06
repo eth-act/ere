@@ -1,5 +1,3 @@
-#![allow(unexpected_cfgs)]
-
 use ere_platform_core::Platform;
 
 /// ZisK [`Platform`] implementation.

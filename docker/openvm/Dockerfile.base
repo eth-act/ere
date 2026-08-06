@@ -21,6 +21,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # `lld` or an absolute path, so the versioned packages need plain aliases.
     && ln -sf /usr/bin/lld-22 /usr/bin/lld \
     && ln -sf /usr/bin/ld.lld-22 /usr/bin/ld.lld \
+    # bindgen loads the newest libclang but probes the bare `clang` for builtin
+    # include paths, and that version skew breaks freestanding guest builds.
+    && ln -sf /usr/bin/clang-22 /usr/bin/clang \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Add nightly toolchain to provide cargo fallback for openvm toolchain
