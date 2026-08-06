@@ -1,5 +1,6 @@
 use std::{
     net::{Ipv4Addr, SocketAddr},
+    path::PathBuf,
     sync::Arc,
     time::{Duration, Instant},
 };
@@ -25,7 +26,7 @@ use tokio::{
 };
 use tower::ServiceBuilder;
 use tower_http::{catch_panic::CatchPanicLayer, trace::TraceLayer};
-use tracing::info;
+use tracing::{info, warn};
 use twirp::{
     Request, Response, Router, TwirpErrorResponse,
     async_trait::async_trait,
@@ -35,24 +36,40 @@ use twirp::{
     server::not_found_handler,
 };
 
-use crate::{metrics, otel};
+use crate::{gpu_metrics, metrics, otel};
 
 pub async fn run(
     port: u16,
     elf: Elf,
     resource: ProverResource,
     prove_timeout: Option<Duration>,
+    collect_gpu_metrics: bool,
+    gpu_metrics_dir: PathBuf,
 ) -> Result<(), Error> {
     let resource_kind = resource.kind();
-    let zkvm = crate::construct_zkvm(elf, resource)?;
+    let zkvm = crate::construct_zkvm(elf, resource.clone())?;
     info!("initialized zkVMProver with {resource_kind} prover");
+
+    // GPU metrics config
+    let gpu_metrics_config = if collect_gpu_metrics && resource == ProverResource::Gpu {
+        Some(gpu_metrics::GpuMetricsConfig {
+            zkvm_name: zkvm.name(),
+            output_dir: gpu_metrics_dir,
+        })
+    } else {
+        None
+    };
 
     let metrics_handle = metrics::init(zkvm.name(), zkvm.sdk_version())
         .context("failed to install metrics recorder")?;
     metrics::spawn_upkeep(metrics_handle.clone());
 
     let prove_state = Arc::new(ProveState::new(prove_timeout));
-    let server = Arc::new(zkVMServer::new(zkvm, Arc::clone(&prove_state)));
+    let server = Arc::new(zkVMServer::new(
+        zkvm,
+        Arc::clone(&prove_state),
+        gpu_metrics_config,
+    ));
 
     let api_middleware = ServiceBuilder::new()
         .layer(
@@ -146,14 +163,20 @@ pub struct zkVMServer<T> {
     zkvm: Arc<T>,
     prove_sem: Arc<Semaphore>,
     prove_state: Arc<ProveState>,
+    gpu_metrics_config: Option<gpu_metrics::GpuMetricsConfig>,
 }
 
 impl<T: 'static + zkVMProver + Send + Sync> zkVMServer<T> {
-    pub fn new(zkvm: T, prove_state: Arc<ProveState>) -> Self {
+    pub fn new(
+        zkvm: T,
+        prove_state: Arc<ProveState>,
+        gpu_metrics_config: Option<gpu_metrics::GpuMetricsConfig>,
+    ) -> Self {
         Self {
             zkvm: Arc::new(zkvm),
             prove_sem: Arc::new(Semaphore::new(1)),
             prove_state,
+            gpu_metrics_config,
         }
     }
 
@@ -176,15 +199,53 @@ impl<T: 'static + zkVMProver + Send + Sync> zkVMServer<T> {
             .await
             .context("prove semaphore closed unexpectedly")?;
 
+        // Start GPU metrics collection if enabled
+        let metrics_collector = if let Some(ref config) = self.gpu_metrics_config {
+            match gpu_metrics::GpuMetricsCollector::start(config) {
+                Ok(Some(collector)) => {
+                    info!(
+                        "Started GPU metrics collection: {}",
+                        collector.output_file().display()
+                    );
+                    Some(collector)
+                }
+                Ok(None) => {
+                    // nvidia-smi not available
+                    None
+                }
+                Err(e) => {
+                    warn!("Failed to start GPU metrics collection: {:#}", e);
+                    None
+                }
+            }
+        } else {
+            None
+        };
+
+        // Execute prove in blocking thread
         let zkvm = Arc::clone(&self.zkvm);
         let prove_state = Arc::clone(&self.prove_state);
-        tokio::task::spawn_blocking(move || {
+        let result = tokio::task::spawn_blocking(move || {
             let _permit = permit;
             let _in_flight = ProveInFlight::new(prove_state);
-            Ok(zkvm.prove(&input)?)
+            zkvm.prove(&input)
         })
         .await
-        .context("prove panicked")?
+        .context("prove panicked")?;
+
+        // Stop GPU metrics collection
+        if let Some(collector) = metrics_collector {
+            match collector.stop() {
+                Ok(path) => {
+                    info!("GPU metrics saved to: {}", path.display());
+                }
+                Err(e) => {
+                    warn!("Error stopping GPU metrics collection: {:#}", e);
+                }
+            }
+        }
+
+        result.map_err(Into::into)
     }
 
     async fn verify(&self, proof: Proof<T>) -> anyhow::Result<PublicValues> {
