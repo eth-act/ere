@@ -734,7 +734,7 @@ fn write_u64_le(words: &[u64], bytes: &mut [u8]) {
     }
 }
 
-/// BLAKE2b compression function F, vendored from [`revm-precompile`]
+/// BLAKE2b compression function F, copied and modified from [`revm-precompile`]
 ///
 /// [`revm-precompile`]: https://github.com/bluealloy/revm/blob/main/crates/precompile/src/blake2/portable.rs
 mod blake2 {
