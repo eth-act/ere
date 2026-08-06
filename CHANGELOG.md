@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.15.0](https://github.com/eth-act/ere/compare/v0.14.0...v0.15.0) (2026-08-06)
+
+
+### Features
+
+* add --ignore-rust-version support ([#396](https://github.com/eth-act/ere/issues/396)) ([7e8e2ba](https://github.com/eth-act/ere/commit/7e8e2ba1001f7776547f0576e4eb49bd0155e0d2))
+* add health_timeout to DockerizedzkVMConfig ([#398](https://github.com/eth-act/ere/issues/398)) ([c8d621d](https://github.com/eth-act/ere/commit/c8d621df229526fbab3c8012656c38213e079b50))
+* impl zkvm_accelerators.h by openvm guest libs ([#400](https://github.com/eth-act/ere/issues/400)) ([153b092](https://github.com/eth-act/ere/commit/153b092064a11e4c9c031a89940cbb232c98d59d))
+* improve openvm zkvm_accelerator impl ([#401](https://github.com/eth-act/ere/issues/401)) ([f50e1d9](https://github.com/eth-act/ere/commit/f50e1d9d7e9cdfef5511dd71018c907d217b7a48))
+* update openvm to v2.1.0-preview ([#397](https://github.com/eth-act/ere/issues/397)) ([6bc7dfc](https://github.com/eth-act/ere/commit/6bc7dfc4a02e7c82ca9667a9bd6b7c4723900a6b))
+
+
+### Bug Fixes
+
+* detect openvm version by crate openvm ([#399](https://github.com/eth-act/ere/issues/399)) ([a146b0c](https://github.com/eth-act/ere/commit/a146b0c65e80c4ac32d0520adfab41ff226b08a1))
+* sync Cargo.lock ([#394](https://github.com/eth-act/ere/issues/394)) ([5b038b2](https://github.com/eth-act/ere/commit/5b038b2725fcaff8cff2fef44f20d6457ebe2385))
+
 ## [0.14.0](https://github.com/eth-act/ere/compare/v0.13.0...v0.14.0) (2026-07-30)
 
 
