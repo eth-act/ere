@@ -54,7 +54,7 @@ use openvm_pairing::{
     bn254::{self as bn, Bn254},
 };
 use openvm_sha2::{Digest, Sha256};
-use ripemd::Ripemd160;
+use ripemd::{Digest as _, Ripemd160};
 use zkvm_interface::{
     zkvm_blake2f_message, zkvm_blake2f_offset, zkvm_blake2f_state, zkvm_bls12_381_fp,
     zkvm_bls12_381_fp2, zkvm_bls12_381_g1_msm_pair, zkvm_bls12_381_g1_point,
