@@ -1742,6 +1742,19 @@ dependencies = [
 [[package]]
 name = "bls12_381"
 version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7bc6d6292be3a19e6379786dac800f551e5865a5bb51ebbe3064ab80433f403"
+dependencies = [
+ "ff 0.13.1",
+ "group 0.13.0",
+ "pairing 0.23.0",
+ "rand_core 0.6.4",
+ "subtle",
+]
+
+[[package]]
+name = "bls12_381"
+version = "0.8.0"
 source = "git+https://github.com/sp1-patches/bls12_381?tag=patch-0.8.0-sp1-6.2.0#9e4e2ae4780d3d69cecbec000f5e814df2392468"
 dependencies = [
  "cfg-if",
@@ -1752,6 +1765,18 @@ dependencies = [
  "pairing 0.23.0",
  "rand_core 0.6.4",
  "sp1-lib 6.3.0",
+ "subtle",
+]
+
+[[package]]
+name = "bls12_381"
+version = "0.8.0"
+source = "git+https://github.com/zkcrypto/bls12_381?rev=6bb96951d5c2035caf4989b6e4a018435379590f#6bb96951d5c2035caf4989b6e4a018435379590f"
+dependencies = [
+ "digest 0.10.7",
+ "ff 0.13.1",
+ "group 0.13.0",
+ "rand_core 0.6.4",
  "subtle",
 ]
 
@@ -3353,8 +3378,21 @@ version = "0.14.0"
 name = "ere-platform-openvm"
 version = "0.14.0"
 dependencies = [
+ "aurora-engine-modexp",
+ "bls12_381 0.8.0 (git+https://github.com/zkcrypto/bls12_381?rev=6bb96951d5c2035caf4989b6e4a018435379590f)",
  "ere-platform-core",
+ "k256 0.13.4 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
  "openvm 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-algebra-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-curve-utils",
+ "openvm-ecc-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-keccak256",
+ "openvm-kzg",
+ "openvm-pairing",
+ "openvm-sha2",
+ "p256 0.13.2 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "ripemd",
+ "zkvm-interface 0.1.0",
 ]
 
 [[package]]
@@ -4863,6 +4901,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "k256"
+version = "0.13.4"
+source = "git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview#538c5488130da56c8442d33445efe3c1fe5ea8b8"
+dependencies = [
+ "ecdsa 0.16.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "elliptic-curve",
+ "ff 0.13.1",
+ "hex-literal",
+ "num-bigint 0.4.6",
+ "openvm 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-algebra-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-algebra-moduli-macros 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-ecc-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-ecc-sw-macros 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "serde",
+]
+
+[[package]]
 name = "keccak"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4886,7 +4942,7 @@ name = "kzg-rs"
 version = "0.2.8"
 source = "git+https://github.com/succinctlabs/kzg-rs?tag=v0.2.8-sp1-6.2.0#2d48f8b948746d5cfa62ce7421369278a1c2e405"
 dependencies = [
- "bls12_381 0.8.0",
+ "bls12_381 0.8.0 (git+https://github.com/sp1-patches/bls12_381?tag=patch-0.8.0-sp1-6.2.0)",
  "ff 0.13.1",
  "hex",
  "serde_arrays 0.2.0",
@@ -4999,7 +5055,7 @@ name = "libzkevm"
 version = "6.3.1"
 source = "git+https://github.com/succinctlabs/sp1?tag=v6.3.1#8252c2905ce32964df68248117015c61ebb854db"
 dependencies = [
- "bls12_381 0.8.0",
+ "bls12_381 0.8.0 (git+https://github.com/sp1-patches/bls12_381?tag=patch-0.8.0-sp1-6.2.0)",
  "k256 0.13.4 (git+https://github.com/sp1-patches/elliptic-curves?tag=patch-k256-13.4-sp1-6.2.0)",
  "kzg-rs",
  "num-bigint-dig",
@@ -5916,11 +5972,37 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-complex-macros"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview#538c5488130da56c8442d33445efe3c1fe5ea8b8"
 dependencies = [
- "openvm-macros-common",
+ "openvm-macros-common 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
  "quote",
  "syn 2.0.117",
+]
+
+[[package]]
+name = "openvm-algebra-complex-macros"
+version = "2.0.0"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+dependencies = [
+ "openvm-macros-common 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
+name = "openvm-algebra-guest"
+version = "2.0.0"
+source = "git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview#538c5488130da56c8442d33445efe3c1fe5ea8b8"
+dependencies = [
+ "halo2curves-axiom 0.7.3",
+ "num-bigint 0.4.6",
+ "once_cell",
+ "openvm-algebra-complex-macros 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-algebra-moduli-macros 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-riscv-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "serde-big-array",
+ "strum_macros 0.26.4",
 ]
 
 [[package]]
@@ -5931,8 +6013,8 @@ dependencies = [
  "halo2curves-axiom 0.7.3",
  "num-bigint 0.4.6",
  "once_cell",
- "openvm-algebra-complex-macros",
- "openvm-algebra-moduli-macros",
+ "openvm-algebra-complex-macros 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
+ "openvm-algebra-moduli-macros 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "openvm-custom-insn 0.1.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "openvm-riscv-guest 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "serde-big-array",
@@ -5942,11 +6024,23 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-moduli-macros"
 version = "2.0.0"
+source = "git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview#538c5488130da56c8442d33445efe3c1fe5ea8b8"
+dependencies = [
+ "num-bigint 0.4.6",
+ "num-prime",
+ "openvm-macros-common 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
+name = "openvm-algebra-moduli-macros"
+version = "2.0.0"
 source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
 dependencies = [
  "num-bigint 0.4.6",
  "num-prime",
- "openvm-macros-common",
+ "openvm-macros-common 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "quote",
  "syn 2.0.117",
 ]
@@ -5956,7 +6050,7 @@ name = "openvm-algebra-transpiler"
 version = "2.0.0"
 source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
 dependencies = [
- "openvm-algebra-guest",
+ "openvm-algebra-guest 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "openvm-decoder",
  "openvm-instructions",
  "openvm-instructions-derive",
@@ -6248,6 +6342,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "openvm-curve-utils"
+version = "0.4.0"
+source = "git+https://github.com/han0110/openvm-eth?branch=patch%2Fv2.1.0-preview#2ed8f057bf5dbc53bc75149af45010ec2327ff48"
+dependencies = [
+ "hex-literal",
+ "openvm-ecc-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-pairing",
+]
+
+[[package]]
 name = "openvm-custom-insn"
 version = "0.1.0"
 source = "git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview#538c5488130da56c8442d33445efe3c1fe5ea8b8"
@@ -6370,6 +6474,25 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-guest"
 version = "2.0.0"
+source = "git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview#538c5488130da56c8442d33445efe3c1fe5ea8b8"
+dependencies = [
+ "ecdsa 0.16.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "elliptic-curve",
+ "group 0.13.0",
+ "halo2curves-axiom 0.7.3",
+ "once_cell",
+ "openvm 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-algebra-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-ecc-sw-macros 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-riscv-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "serde",
+ "strum_macros 0.26.4",
+]
+
+[[package]]
+name = "openvm-ecc-guest"
+version = "2.0.0"
 source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
 dependencies = [
  "ecdsa 0.16.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -6378,9 +6501,9 @@ dependencies = [
  "halo2curves-axiom 0.7.3",
  "once_cell",
  "openvm 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
- "openvm-algebra-guest",
+ "openvm-algebra-guest 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "openvm-custom-insn 0.1.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
- "openvm-ecc-sw-macros",
+ "openvm-ecc-sw-macros 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "openvm-riscv-guest 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "serde",
  "strum_macros 0.26.4",
@@ -6389,9 +6512,19 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-sw-macros"
 version = "2.0.0"
+source = "git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview#538c5488130da56c8442d33445efe3c1fe5ea8b8"
+dependencies = [
+ "openvm-macros-common 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
+name = "openvm-ecc-sw-macros"
+version = "2.0.0"
 source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
 dependencies = [
- "openvm-macros-common",
+ "openvm-macros-common 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "quote",
  "syn 2.0.117",
 ]
@@ -6402,7 +6535,7 @@ version = "2.0.0"
 source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
 dependencies = [
  "openvm-decoder",
- "openvm-ecc-guest",
+ "openvm-ecc-guest 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "openvm-instructions",
  "openvm-instructions-derive",
  "openvm-stark-backend",
@@ -6434,6 +6567,16 @@ source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-previe
 dependencies = [
  "quote",
  "syn 2.0.117",
+]
+
+[[package]]
+name = "openvm-keccak256"
+version = "2.0.0"
+source = "git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview#538c5488130da56c8442d33445efe3c1fe5ea8b8"
+dependencies = [
+ "openvm-keccak256-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "spin 0.10.0",
+ "tiny-keccak 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -6469,6 +6612,14 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-guest"
 version = "2.0.0"
+source = "git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview#538c5488130da56c8442d33445efe3c1fe5ea8b8"
+dependencies = [
+ "openvm-platform 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+]
+
+[[package]]
+name = "openvm-keccak256-guest"
+version = "2.0.0"
 source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
 dependencies = [
  "openvm-platform 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
@@ -6482,10 +6633,35 @@ dependencies = [
  "openvm-decoder",
  "openvm-instructions",
  "openvm-instructions-derive",
- "openvm-keccak256-guest",
+ "openvm-keccak256-guest 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "openvm-stark-backend",
  "openvm-transpiler",
  "strum 0.26.3",
+]
+
+[[package]]
+name = "openvm-kzg"
+version = "0.4.0"
+source = "git+https://github.com/han0110/openvm-eth?branch=patch%2Fv2.1.0-preview#2ed8f057bf5dbc53bc75149af45010ec2327ff48"
+dependencies = [
+ "bls12_381 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hex",
+ "hex-literal",
+ "openvm-algebra-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-curve-utils",
+ "openvm-ecc-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-pairing",
+ "serde",
+ "serde-big-array",
+ "spin 0.10.0",
+]
+
+[[package]]
+name = "openvm-macros-common"
+version = "2.0.0"
+source = "git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview#538c5488130da56c8442d33445efe3c1fe5ea8b8"
+dependencies = [
+ "syn 2.0.117",
 ]
 
 [[package]]
@@ -6524,6 +6700,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "openvm-pairing"
+version = "2.0.0"
+source = "git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview#538c5488130da56c8442d33445efe3c1fe5ea8b8"
+dependencies = [
+ "group 0.13.0",
+ "hex-literal",
+ "itertools 0.14.0",
+ "num-bigint 0.4.6",
+ "num-traits",
+ "openvm 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-algebra-complex-macros 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-algebra-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-algebra-moduli-macros 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-ecc-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-ecc-sw-macros 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-pairing-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-platform 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-riscv-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "serde",
+]
+
+[[package]]
 name = "openvm-pairing-circuit"
 version = "2.0.0"
 source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
@@ -6542,10 +6741,10 @@ dependencies = [
  "openvm-cpu-backend",
  "openvm-cuda-backend",
  "openvm-ecc-circuit",
- "openvm-ecc-guest",
+ "openvm-ecc-guest 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "openvm-instructions",
  "openvm-mod-circuit-builder",
- "openvm-pairing-guest",
+ "openvm-pairing-guest 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "openvm-pairing-transpiler",
  "openvm-riscv-circuit",
  "openvm-stark-backend",
@@ -6555,6 +6754,25 @@ dependencies = [
  "rvr-openvm-lift",
  "serde",
  "strum 0.26.3",
+]
+
+[[package]]
+name = "openvm-pairing-guest"
+version = "2.0.0"
+source = "git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview#538c5488130da56c8442d33445efe3c1fe5ea8b8"
+dependencies = [
+ "hex-literal",
+ "itertools 0.14.0",
+ "lazy_static",
+ "num-bigint 0.4.6",
+ "num-traits",
+ "openvm 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-algebra-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-algebra-moduli-macros 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-ecc-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "serde",
+ "strum_macros 0.26.4",
 ]
 
 [[package]]
@@ -6570,10 +6788,10 @@ dependencies = [
  "num-bigint 0.4.6",
  "num-traits",
  "openvm 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
- "openvm-algebra-guest",
- "openvm-algebra-moduli-macros",
+ "openvm-algebra-guest 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
+ "openvm-algebra-moduli-macros 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "openvm-custom-insn 0.1.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
- "openvm-ecc-guest",
+ "openvm-ecc-guest 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "serde",
  "strum_macros 0.26.4",
 ]
@@ -6585,7 +6803,7 @@ source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-previe
 dependencies = [
  "openvm-decoder",
  "openvm-instructions",
- "openvm-pairing-guest",
+ "openvm-pairing-guest 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "openvm-stark-backend",
  "openvm-transpiler",
  "strum 0.26.3",
@@ -6825,6 +7043,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "openvm-sha2"
+version = "2.0.0"
+source = "git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview#538c5488130da56c8442d33445efe3c1fe5ea8b8"
+dependencies = [
+ "openvm-sha2-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "sha2 0.10.9 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "openvm-sha2-air"
 version = "2.0.0"
 source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
@@ -6872,6 +7099,14 @@ dependencies = [
 [[package]]
 name = "openvm-sha2-guest"
 version = "2.0.0"
+source = "git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview#538c5488130da56c8442d33445efe3c1fe5ea8b8"
+dependencies = [
+ "openvm-platform 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+]
+
+[[package]]
+name = "openvm-sha2-guest"
+version = "2.0.0"
 source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
 dependencies = [
  "openvm-platform 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
@@ -6885,7 +7120,7 @@ dependencies = [
  "openvm-decoder",
  "openvm-instructions",
  "openvm-instructions-derive",
- "openvm-sha2-guest",
+ "openvm-sha2-guest 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "openvm-stark-backend",
  "openvm-transpiler",
  "strum 0.26.3",
@@ -7080,6 +7315,24 @@ dependencies = [
  "primeorder 0.13.1",
  "sha2 0.10.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp1-lib 6.3.0",
+]
+
+[[package]]
+name = "p256"
+version = "0.13.2"
+source = "git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview#538c5488130da56c8442d33445efe3c1fe5ea8b8"
+dependencies = [
+ "ecdsa 0.16.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "elliptic-curve",
+ "ff 0.13.1",
+ "hex-literal",
+ "num-bigint 0.4.6",
+ "openvm 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-algebra-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-algebra-moduli-macros 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-ecc-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "openvm-ecc-sw-macros 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
+ "serde",
 ]
 
 [[package]]
@@ -13635,7 +13888,7 @@ dependencies = [
  "zisk-definitions",
  "zisk-stream",
  "zisk-verifier",
- "zkvm-interface",
+ "zkvm-interface 1.0.0-alpha",
 ]
 
 [[package]]
@@ -13661,7 +13914,7 @@ dependencies = [
  "sha2 0.10.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "tiny-keccak 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "zisk-verifier",
- "zkvm-interface",
+ "zkvm-interface 1.0.0-alpha",
 ]
 
 [[package]]
@@ -13689,6 +13942,14 @@ dependencies = [
  "sha2 0.10.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "sha3",
  "subtle",
+]
+
+[[package]]
+name = "zkvm-interface"
+version = "0.1.0"
+source = "git+https://github.com/eth-act/zkvm-standards?rev=282cd356c3a0498416bb0619f9c8a347ce9933fb#282cd356c3a0498416bb0619f9c8a347ce9933fb"
+dependencies = [
+ "bindgen 0.72.1",
 ]
 
 [[package]]

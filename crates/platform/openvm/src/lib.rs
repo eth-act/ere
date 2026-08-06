@@ -4,6 +4,8 @@
 extern crate alloc;
 
 mod platform;
+#[cfg(feature = "zkvm-accelerator")]
+mod zkvm_accelerator;
 
 pub use ere_platform_core::Platform;
 pub use openvm;

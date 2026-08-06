@@ -8,15 +8,45 @@ license.workspace = true
 [dependencies]
 # Openvm dependencies
 openvm.workspace = true
+openvm-algebra-guest = { workspace = true, optional = true }
+openvm-curve-utils = { workspace = true, optional = true }
+openvm-ecc-guest = { workspace = true, optional = true }
+openvm-k256 = { workspace = true, optional = true }
+openvm-keccak256 = { workspace = true, optional = true }
+openvm-kzg = { workspace = true, optional = true }
+openvm-p256 = { workspace = true, optional = true }
+openvm-pairing = { workspace = true, optional = true }
+openvm-sha2 = { workspace = true, optional = true }
+
+# zkvm-accelerator dependencies
+aurora-engine-modexp = { workspace = true, optional = true }
+bls12_381 = { workspace = true, features = ["experimental"], optional = true }
+ripemd = { workspace = true, optional = true }
+zkvm-interface = { workspace = true, optional = true }
 
 # Local dependencies
 ere-platform-core.workspace = true
 
 [features]
-default = ["getrandom-unsupported"]
+default = ["getrandom-unsupported", "zkvm-accelerator"]
 getrandom-unsupported = ["openvm/getrandom-unsupported"]
 heap-embedded-alloc = ["openvm/heap-embedded-alloc"]
 std = ["openvm/std"]
+zkvm-accelerator = [
+    "dep:openvm-algebra-guest",
+    "dep:openvm-curve-utils",
+    "dep:openvm-ecc-guest",
+    "dep:openvm-k256",
+    "dep:openvm-keccak256",
+    "dep:openvm-kzg",
+    "dep:openvm-p256",
+    "dep:openvm-pairing",
+    "dep:openvm-sha2",
+    "dep:aurora-engine-modexp",
+    "dep:bls12_381",
+    "dep:ripemd",
+    "dep:zkvm-interface",
+]
 
 [lints]
 workspace = true
