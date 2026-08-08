@@ -44,6 +44,7 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 mod error;
+mod estimator;
 mod prover;
 mod sdk;
 
@@ -51,3 +52,8 @@ pub use ere_prover_core::*;
 pub use ere_verifier_zisk::*;
 
 pub use crate::{error::Error, prover::ZiskProver};
+
+/// Cost kinds [`estimate_cost`](ere_prover_core::zkVMProver::estimate_cost) keys its map by.
+pub mod cost_kind {
+    pub use crate::estimator::{BASE, MAIN, MEMORY, OPCODES, PRECOMPILES, TOTAL};
+}

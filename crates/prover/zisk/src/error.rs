@@ -24,6 +24,13 @@ pub enum Error {
     #[error("Emulator panicked: {0}")]
     EmulatorPanic(String),
 
+    // Estimate cost
+    #[error("Emulator report is missing {missing}")]
+    IncompleteEmulatorReport { missing: String },
+
+    #[error("Cost kinds sum to {summed}, not the total of {total}")]
+    UnexpectedCostKindsSum { summed: u64, total: u64 },
+
     // SDK
     #[error("Build prover failed: {0}")]
     BuildProver(#[source] anyhow::Error),

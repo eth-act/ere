@@ -1,4 +1,5 @@
 use core::error::Error;
+use std::collections::BTreeMap;
 
 use crate::{Input, ProgramExecutionReport, ProgramProvingReport, PublicValues, zkVMVerifier};
 
@@ -23,6 +24,13 @@ pub trait zkVMProver: Sync {
     /// Executes the program with the given input.
     fn execute(&self, input: &Input)
     -> Result<(PublicValues, ProgramExecutionReport), Self::Error>;
+
+    /// Estimates what proving the program with the given input costs, keyed by the cost kinds the
+    /// zkVM charges for.
+    ///
+    /// The kinds are the zkVM's own, so the map is only comparable against estimates from the same
+    /// zkVM. Only [`Input::stdin`] is read; an input carrying proofs is rejected.
+    fn estimate_cost(&self, input: &Input) -> Result<BTreeMap<String, u64>, Self::Error>;
 
     /// Creates a proof of the program execution with given input.
     fn prove(

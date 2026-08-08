@@ -1,8 +1,10 @@
 use core::{ops::Deref, time::Duration};
+use std::collections::BTreeMap;
 
 use ere_prover_core::{Input, ProgramExecutionReport, ProgramProvingReport, PublicValues};
 use ere_server_api::{
-    ExecuteRequest, ProgramVkRequest, ProveRequest, VerifyRequest, ZkvmService,
+    EstimateCostRequest, ExecuteRequest, ProgramVkRequest, ProveRequest, VerifyRequest,
+    ZkvmService, estimate_cost_response::Result as EstimateCostResult,
     execute_response::Result as ExecuteResult, program_vk_response::Result as ProgramVkResult,
     prove_response::Result as ProveResult, verify_response::Result as VerifyResult,
 };
@@ -122,6 +124,20 @@ impl zkVMClient {
                     .0,
             )),
             ExecuteResult::Err(err) => Err(Error::zkVM(err)),
+        }
+    }
+
+    /// Estimates the cost of the program, reading only [`Input::stdin`].
+    pub async fn estimate_cost(&self, input: Input) -> Result<BTreeMap<String, u64>, Error> {
+        let request = Request::new(EstimateCostRequest {
+            input_stdin: input.stdin,
+        });
+
+        let response = self.client.estimate_cost(request).await?;
+
+        match response.into_body().result.ok_or_else(result_none_err)? {
+            EstimateCostResult::Ok(result) => Ok(result.cost),
+            EstimateCostResult::Err(err) => Err(Error::zkVM(err)),
         }
     }
 

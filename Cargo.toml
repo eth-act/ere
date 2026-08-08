@@ -72,6 +72,7 @@ clap = "4.5.42"
 criterion = "0.8"
 crossbeam-channel = "0.5.15"
 digest = { version = "0.10.7", default-features = false }
+enum-map = "2.7.3"
 eyre = "0.6.12"
 fnv = { version = "1.0.7", default-features = false }
 futures-util = "0.3"
@@ -141,6 +142,7 @@ openvm-verify-stark-host = { git = "https://github.com/han0110/openvm.git", bran
 
 # SP1 dependencies
 sp1-core-executor = { git = "https://github.com/succinctlabs/sp1", tag = "v6.3.1" }
+sp1-core-machine = { git = "https://github.com/succinctlabs/sp1", tag = "v6.3.1" }
 sp1-cuda = { git = "https://github.com/succinctlabs/sp1", tag = "v6.3.1" }
 sp1-hypercube = { git = "https://github.com/succinctlabs/sp1", tag = "v6.3.1" }
 sp1-primitives = { git = "https://github.com/succinctlabs/sp1", tag = "v6.3.1" }

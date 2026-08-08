@@ -29,6 +29,13 @@ pub enum Error {
     #[error("OpenVM execution failed: {0}")]
     Execute(#[source] SdkError),
 
+    // Estimate cost
+    #[error("Cost kinds do not partition the charged AIR widths")]
+    CostKindsDoNotPartitionAirWidths,
+
+    #[error("Cost kinds sum to {summed}, not the cost of {total}")]
+    UnexpectedCostKindsSum { summed: u64, total: u64 },
+
     // Prove
     #[error("OpenVM proving failed: {0}")]
     Prove(#[source] SdkError),

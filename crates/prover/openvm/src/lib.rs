@@ -35,6 +35,7 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 mod error;
+mod estimator;
 mod executor;
 mod prover;
 
@@ -42,3 +43,8 @@ pub use ere_prover_core::*;
 pub use ere_verifier_openvm::*;
 
 pub use crate::{error::Error, prover::OpenVMProver};
+
+/// Cost kinds [`estimate_cost`](ere_prover_core::zkVMProver::estimate_cost) keys its map by.
+pub mod cost_kind {
+    pub use crate::estimator::{COST, PRECOMPILE, RV64};
+}

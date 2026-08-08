@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::{collections::BTreeMap, time::Instant};
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{
@@ -47,6 +47,14 @@ impl zkVMProver for ZiskProver {
                 ..Default::default()
             },
         ))
+    }
+
+    fn estimate_cost(&self, input: &Input) -> Result<BTreeMap<String, u64>, Error> {
+        if input.proofs.is_some() {
+            Err(CommonError::unsupported_input("no dedicated proofs stream"))?
+        }
+
+        self.sdk.estimate_cost(input)
     }
 
     fn prove(

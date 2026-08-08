@@ -1,9 +1,9 @@
 use core::{future::Future, iter, pin::Pin, time::Duration};
-use std::time::Instant;
+use std::{collections::BTreeMap, time::Instant};
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{
-    Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues,
+    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues,
 };
 use ere_server_client::{EncodedProgramVk, EncodedProof, reqwest::Client, url::Url, zkVMClient};
 use ere_util_tokio::block_on;
@@ -263,6 +263,7 @@ const DEFAULT_HEALTH_TIMEOUT: Duration = Duration::from_secs(300);
 #[derive(Debug, Clone)]
 pub struct DockerizedzkVMConfig {
     pub execute_timeout: Option<Duration>,
+    pub estimate_cost_timeout: Option<Duration>,
     pub prove_timeout: Option<Duration>,
     pub verify_timeout: Option<Duration>,
     pub health_timeout: Duration,
@@ -272,6 +273,7 @@ impl Default for DockerizedzkVMConfig {
     fn default() -> Self {
         Self {
             execute_timeout: None,
+            estimate_cost_timeout: None,
             prove_timeout: None,
             verify_timeout: None,
             health_timeout: DEFAULT_HEALTH_TIMEOUT,
@@ -339,6 +341,10 @@ impl DockerizedzkVM {
         block_on(self.execute_async(input.clone()))
     }
 
+    pub fn estimate_cost(&self, input: &Input) -> anyhow::Result<BTreeMap<String, u64>> {
+        block_on(self.estimate_cost_async(input.clone()))
+    }
+
     pub fn prove(
         &self,
         input: &Input,
@@ -360,6 +366,25 @@ impl DockerizedzkVM {
                 Box::pin(async move { client.execute(input).await })
             },
             self.config.execute_timeout,
+        )
+        .await
+    }
+
+    /// Estimates the cost of the program, reading only [`Input::stdin`]. An input carrying proofs
+    /// is rejected the same way the underlying `zkVMProver` rejects it.
+    pub async fn estimate_cost_async(&self, input: Input) -> anyhow::Result<BTreeMap<String, u64>> {
+        if input.proofs.is_some() {
+            Err(Error::from(CommonError::unsupported_input(
+                "no dedicated proofs stream",
+            )))?
+        }
+
+        self.with_retry(
+            |client| {
+                let input = input.clone();
+                Box::pin(async move { client.estimate_cost(input).await })
+            },
+            self.config.estimate_cost_timeout,
         )
         .await
     }
@@ -576,6 +601,40 @@ mod tests {
         };
     }
 
+    macro_rules! test_estimate_cost {
+        ($zkvm_kind:ident, $compiler_kind:ident, $program:literal, $total:literal, $valid_test_cases:expr) => {
+            #[tokio::test(flavor = "multi_thread")]
+            async fn test_estimate_cost() {
+                let zkvm = zkvm(
+                    zkVMKind::$zkvm_kind,
+                    CompilerKind::$compiler_kind,
+                    $program,
+                    ProverResource::Cpu,
+                );
+
+                for test_case in $valid_test_cases {
+                    let cost = zkvm
+                        .estimate_cost(&test_case.input())
+                        .expect("estimate_cost should not fail with valid input");
+                    assert!(
+                        cost[$total] > 0,
+                        "Expect a positive {}, got {cost:?}",
+                        $total
+                    );
+                }
+
+                // Cost estimation reads stdin only, so an input carrying proofs is rejected
+                // before the request leaves the host.
+                let input = Input::new().with_proofs(&[0u8]).unwrap();
+                let err = zkvm.estimate_cost(&input).unwrap_err();
+                assert!(
+                    matches!(err.downcast_ref::<Error>().unwrap(), Error::CommonError(_)),
+                    "Expect error variant `Error::CommonError`, got {err:?}",
+                );
+            }
+        };
+    }
+
     macro_rules! test_prove {
         (@body $zkvm_kind:ident, $compiler_kind:ident, $program:literal, $resource:expr, $valid_test_cases:expr, $invalid_test_cases:expr) => {{
             let zkvm = zkvm(
@@ -687,6 +746,13 @@ mod tests {
                 BasicProgram::<BincodeLegacy>::invalid_test_case().input()
             ]
         );
+        test_estimate_cost!(
+            OpenVM,
+            RustCustomized,
+            "basic",
+            "cost",
+            [BasicProgram::<BincodeLegacy>::valid_test_case()]
+        );
         test_prove!(
             OpenVM,
             RustCustomized,
@@ -712,6 +778,13 @@ mod tests {
                 BasicProgram::<BincodeLegacy>::invalid_test_case().input()
             ]
         );
+        test_estimate_cost!(
+            SP1,
+            RustCustomized,
+            "basic",
+            "cost",
+            [BasicProgram::<BincodeLegacy>::valid_test_case()]
+        );
         test_prove!(
             SP1,
             RustCustomized,
@@ -736,6 +809,13 @@ mod tests {
                 Input::new(),
                 BasicProgram::<BincodeLegacy>::invalid_test_case().input()
             ]
+        );
+        test_estimate_cost!(
+            Zisk,
+            RustCustomized,
+            "basic_rust",
+            "total",
+            [BasicProgram::<BincodeLegacy>::valid_test_case()]
         );
         test_prove!(
             Zisk,

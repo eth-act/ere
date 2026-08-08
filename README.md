@@ -120,7 +120,7 @@ Host-side traits:
 
 - `zkVMProver` (from `ere-prover-core`)
 
-  Execute, prove and verify. A zkVM prover instance is created for an `Elf` produced by a `Compiler`. `Elf` specific verifying key generation happens in the constructor.
+  Execute, estimate cost, prove and verify. A zkVM prover instance is created for an `Elf` produced by a `Compiler`. `Elf` specific verifying key generation happens in the constructor.
 
 - `zkVMVerifier` (from `ere-verifier-core`)
 

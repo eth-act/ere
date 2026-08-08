@@ -26,13 +26,14 @@ const MAX_POOL_SIZE: usize = 32;
 /// [`MAX_POOL_SIZE`], and the `ERE_SP1_EXECUTOR_POOL_SIZE` environment variable
 /// overrides the bound.
 pub(crate) struct SP1ExecutorPool {
+    program: Arc<Program>,
     rx: Receiver<MinimalExecutorEnum>,
     tx: Sender<MinimalExecutorEnum>,
 }
 
 impl SP1ExecutorPool {
     pub(crate) fn new(elf: &[u8]) -> Result<Self, Error> {
-        let program = Program::from(elf)
+        let program: Arc<Program> = Program::from(elf)
             .map_err(|err| Error::setup(anyhow!("failed to disassemble program: {err}")))?
             .into();
         let size = execution_concurrency();
@@ -41,7 +42,12 @@ impl SP1ExecutorPool {
             tx.send(MinimalExecutorEnum::new(Arc::clone(&program), false, None))
                 .unwrap();
         }
-        Ok(Self { rx, tx })
+        Ok(Self { program, rx, tx })
+    }
+
+    /// The disassembled program the pooled executors run.
+    pub(crate) fn program(&self) -> &Arc<Program> {
+        &self.program
     }
 
     /// Runs `stdin` on a pooled executor, blocking until one is free. The
@@ -69,7 +75,7 @@ impl SP1ExecutorPool {
 
         let exit_code = executor.exit_code();
         if exit_code != StatusCode::SUCCESS.as_u32() {
-            return Err(Error::ExecutionFailed(exit_code));
+            return Err(Error::ExecutionFailed(exit_code.into()));
         }
 
         let public_values = executor.public_values_stream().as_slice().into();

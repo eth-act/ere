@@ -95,7 +95,7 @@ impl SP1Sdk {
 
         let exit_code = extract_exit_code(&proof)?;
         if exit_code != StatusCode::SUCCESS.as_u32() {
-            return Err(Error::ExecutionFailed(exit_code));
+            return Err(Error::ExecutionFailed(exit_code.into()));
         }
 
         Ok(ProofFromNetwork {

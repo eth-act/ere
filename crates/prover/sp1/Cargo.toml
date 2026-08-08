@@ -9,13 +9,16 @@ license.workspace = true
 anyhow.workspace = true
 bincode = { workspace = true, features = ["alloc", "serde"] }
 crossbeam-channel.workspace = true
+enum-map.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 
 # SP1 dependencies
 sp1-core-executor.workspace = true
+sp1-core-machine.workspace = true
 sp1-cuda = { workspace = true, optional = true }
 sp1-hypercube.workspace = true
+sp1-primitives.workspace = true
 sp1-recursion-executor.workspace = true
 sp1-sdk = { workspace = true, features = ["network"] }
 

@@ -1,18 +1,20 @@
-use std::time::Instant;
+use std::{collections::BTreeMap, sync::Arc, time::Instant};
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{
-    Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues, zkVMProver,
+    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues,
+    zkVMProver,
 };
 use ere_util_tokio::block_on;
 use ere_verifier_sp1::{SP1ProgramVk, SP1Proof, SP1Verifier};
 use sp1_sdk::{HashableKey, SP1Stdin};
 use tracing::info;
 
-use crate::{error::Error, executor::SP1ExecutorPool, sdk::SP1Sdk};
+use crate::{error::Error, estimator::CostEstimator, executor::SP1ExecutorPool, sdk::SP1Sdk};
 
 pub struct SP1Prover {
     executor: SP1ExecutorPool,
+    estimator: CostEstimator,
     sdk: SP1Sdk,
     verifier: SP1Verifier,
 }
@@ -20,11 +22,13 @@ pub struct SP1Prover {
 impl SP1Prover {
     pub fn new(elf: Elf, resource: ProverResource) -> Result<Self, Error> {
         let executor = SP1ExecutorPool::new(&elf.0)?;
+        let estimator = CostEstimator::new(Arc::clone(executor.program()));
         let sdk = block_on(SP1Sdk::new(elf.0, &resource))?;
         let program_vk = SP1ProgramVk(sdk.vk().hash_koalabear());
         let verifier = SP1Verifier::new(program_vk);
         Ok(Self {
             executor,
+            estimator,
             sdk,
             verifier,
         })
@@ -41,6 +45,14 @@ impl zkVMProver for SP1Prover {
 
     fn execute(&self, input: &Input) -> Result<(PublicValues, ProgramExecutionReport), Error> {
         self.executor.execute(input_to_stdin(input)?)
+    }
+
+    fn estimate_cost(&self, input: &Input) -> Result<BTreeMap<String, u64>, Error> {
+        if input.proofs.is_some() {
+            Err(CommonError::unsupported_input("no dedicated proofs stream"))?
+        }
+
+        self.estimator.estimate_cost(input.stdin())
     }
 
     fn prove(

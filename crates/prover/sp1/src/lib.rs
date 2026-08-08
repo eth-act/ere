@@ -29,6 +29,7 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 mod error;
+mod estimator;
 mod executor;
 mod prover;
 mod sdk;
@@ -37,3 +38,8 @@ pub use ere_prover_core::*;
 pub use ere_verifier_sp1::*;
 
 pub use crate::{error::Error, prover::SP1Prover};
+
+/// Cost kinds [`estimate_cost`](ere_prover_core::zkVMProver::estimate_cost) keys its map by.
+pub mod cost_kind {
+    pub use crate::estimator::{COST, OPCODE, SYSCALL, SYSTEM};
+}

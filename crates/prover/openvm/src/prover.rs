@@ -1,4 +1,4 @@
-use std::{path::PathBuf, sync::Arc, time::Instant};
+use std::{collections::BTreeMap, path::PathBuf, sync::Arc, time::Instant};
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{
@@ -8,6 +8,7 @@ use ere_prover_core::{
 use ere_verifier_openvm::{
     NUM_PUBLIC_VALUES_BYTES, OpenVMProgramVk, OpenVMProof, OpenVMVerifier, extract_public_values,
 };
+use once_cell::sync::OnceCell;
 use openvm_circuit::arch::{VmBuilder, VmExecutionConfig, instructions::exe::VmExe};
 use openvm_sdk::{
     CpuSdk, F, GenericSdk, SC, StdIn,
@@ -22,7 +23,7 @@ use openvm_stark_sdk::{
 };
 use openvm_transpiler::{FromElf, openvm_platform::memory::MEM_SIZE};
 
-use crate::{error::Error, executor::Executor};
+use crate::{error::Error, estimator::CostEstimator, executor::Executor};
 
 pub struct OpenVMProver {
     app_exe: Arc<VmExe<F>>,
@@ -30,6 +31,7 @@ pub struct OpenVMProver {
     agg_pk: AggProvingKey,
     resource: ProverResource,
     executor: Executor,
+    estimator: OnceCell<CostEstimator>,
     verifier: OpenVMVerifier,
 }
 
@@ -76,12 +78,32 @@ impl OpenVMProver {
             agg_pk,
             resource,
             executor,
+            estimator: OnceCell::new(),
             verifier,
         })
     }
 
     fn cpu_sdk(&self) -> Result<CpuSdk, Error> {
         sdk(self.app_pk.clone().into(), self.agg_pk.clone().into())
+    }
+
+    /// Builds the cost estimator on first use, since compiling one artifact per cost kind is
+    /// expensive and only cost estimation needs them.
+    fn estimator(&self) -> Result<&CostEstimator, Error> {
+        self.estimator.get_or_try_init(|| {
+            let sdk = self.cpu_sdk()?;
+            let app_prover = sdk
+                .app_prover(self.app_exe.clone())
+                .map_err(Error::ProverInit)?;
+            let vm = app_prover.vm();
+            CostEstimator::new(
+                sdk_vm_config(),
+                &self.app_exe,
+                vm.build_metered_cost_ctx(),
+                &vm.executor_idx_to_air_idx(),
+                &vm.air_names().collect::<Vec<_>>(),
+            )
+        })
     }
 
     #[cfg(feature = "cuda")]
@@ -107,6 +129,17 @@ impl zkVMProver for OpenVMProver {
         stdin.write_bytes(input.stdin());
 
         self.executor.execute(stdin)
+    }
+
+    fn estimate_cost(&self, input: &Input) -> Result<BTreeMap<String, u64>, Error> {
+        if input.proofs.is_some() {
+            Err(CommonError::unsupported_input("no dedicated proofs stream"))?
+        }
+
+        let mut stdin = StdIn::default();
+        stdin.write_bytes(input.stdin());
+
+        self.estimator()?.estimate_cost(stdin)
     }
 
     fn prove(

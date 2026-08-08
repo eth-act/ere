@@ -13,6 +13,7 @@ fn api_generation() {
     prost_build::Config::new()
         .out_dir(tempdir.path())
         .type_attribute(".", "#[derive(serde::Serialize, serde::Deserialize)]") // enable support for JSON encoding
+        .btree_map(["."]) // match the `BTreeMap` the `zkVMProver` trait speaks
         .service_generator(twirp_build::service_generator())
         .compile_protos(&[dir.join("proto").join("api.proto")], &[dir.join("proto")])
         .unwrap();

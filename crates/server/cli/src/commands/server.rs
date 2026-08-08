@@ -1,4 +1,5 @@
 use std::{
+    collections::BTreeMap,
     net::{Ipv4Addr, SocketAddr},
     sync::Arc,
     time::{Duration, Instant},
@@ -12,8 +13,10 @@ use ere_prover_core::{
     zkVMProver,
 };
 use ere_server_api::{
-    ExecuteOk, ExecuteRequest, ExecuteResponse, ProgramVkOk, ProgramVkRequest, ProgramVkResponse,
-    ProveOk, ProveRequest, ProveResponse, VerifyOk, VerifyRequest, VerifyResponse, ZkvmService,
+    EstimateCostOk, EstimateCostRequest, EstimateCostResponse, ExecuteOk, ExecuteRequest,
+    ExecuteResponse, ProgramVkOk, ProgramVkRequest, ProgramVkResponse, ProveOk, ProveRequest,
+    ProveResponse, VerifyOk, VerifyRequest, VerifyResponse, ZkvmService,
+    estimate_cost_response::Result as EstimateCostResult,
     execute_response::Result as ExecuteResult, program_vk_response::Result as ProgramVkResult,
     prove_response::Result as ProveResult, router, verify_response::Result as VerifyResult,
 };
@@ -140,7 +143,8 @@ impl Drop for ProveInFlight {
 /// FIFO order, dropping a request future before the permit is acquired removes that waiter from
 /// the queue.
 ///
-/// `execute` and `verify` are assumed concurrent-safe for the underlying implementation.
+/// `execute`, `estimate_cost` and `verify` are assumed concurrent-safe for the underlying
+/// implementation.
 #[allow(non_camel_case_types)]
 pub struct zkVMServer<T> {
     zkvm: Arc<T>,
@@ -165,6 +169,13 @@ impl<T: 'static + zkVMProver + Send + Sync> zkVMServer<T> {
         tokio::task::spawn_blocking(move || Ok(zkvm.execute(&input)?))
             .await
             .context("execute panicked")?
+    }
+
+    async fn estimate_cost(&self, input: Input) -> anyhow::Result<BTreeMap<String, u64>> {
+        let zkvm = Arc::clone(&self.zkvm);
+        tokio::task::spawn_blocking(move || Ok(zkvm.estimate_cost(&input)?))
+            .await
+            .context("estimate_cost panicked")?
     }
 
     async fn prove(
@@ -222,6 +233,31 @@ impl<T: 'static + zkVMProver + Send + Sync> ZkvmService for zkVMServer<T> {
         };
 
         Ok(Response::new(ExecuteResponse {
+            result: Some(result),
+        }))
+    }
+
+    async fn estimate_cost(
+        &self,
+        request: Request<EstimateCostRequest>,
+    ) -> twirp::Result<Response<EstimateCostResponse>> {
+        let EstimateCostRequest { input_stdin: stdin } = request.into_body();
+
+        let input = Input {
+            stdin,
+            proofs: None,
+        };
+
+        let start = Instant::now();
+        let result = self.estimate_cost(input).await;
+        metrics::record_estimate_cost(&result, start.elapsed());
+
+        let result = match result {
+            Ok(cost) => EstimateCostResult::Ok(EstimateCostOk { cost }),
+            Err(err) => EstimateCostResult::Err(err.to_string()),
+        };
+
+        Ok(Response::new(EstimateCostResponse {
             result: Some(result),
         }))
     }

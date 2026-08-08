@@ -20,7 +20,11 @@ pub enum Error {
     Execute(#[source] anyhow::Error),
 
     #[error("SP1 execution completed with non-success exit code: {0}")]
-    ExecutionFailed(u32),
+    ExecutionFailed(u64),
+
+    // Estimate cost
+    #[error("Cost kinds sum to {summed}, which exceeds the cost of {total}")]
+    UnexpectedCostKindsSum { summed: u64, total: u64 },
 
     // Prove
     #[error("SP1 SDK proving failed: {0}")]

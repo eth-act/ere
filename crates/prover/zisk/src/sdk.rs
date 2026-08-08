@@ -1,5 +1,6 @@
 use std::{
     any::Any,
+    collections::BTreeMap,
     env,
     panic::{self, AssertUnwindSafe},
     time::Duration,
@@ -14,7 +15,7 @@ use tokio::time::Instant;
 use zisk_core::{Riscv2zisk, ZiskRom};
 use ziskemu::{Emu, EmuOptions};
 
-use crate::{error::Error, sdk::local::LocalProver};
+use crate::{error::Error, estimator, sdk::local::LocalProver};
 
 mod local;
 
@@ -113,6 +114,11 @@ impl ZiskSdk {
         Ok((public_values, total_num_cycles))
     }
 
+    /// Estimate the cost of executing the ELF with the given `stdin`.
+    pub fn estimate_cost(&self, input: &Input) -> Result<BTreeMap<String, u64>, Error> {
+        estimator::estimate_cost(&self.rom, framed_stdin(input.stdin()))
+    }
+
     pub fn prove(&self, input: &Input) -> Result<(PublicValues, ZiskProof, Duration), Error> {
         if cfg!(not(feature = "cuda")) && self.resource == ProverResource::Gpu {
             return Err(Error::CudaFeatureDisabled);
@@ -149,7 +155,7 @@ fn framed_stdin(data: &[u8]) -> Vec<u8> {
     buf
 }
 
-fn panic_msg(err: Box<dyn Any + Send + 'static>) -> String {
+pub(crate) fn panic_msg(err: Box<dyn Any + Send + 'static>) -> String {
     None.or_else(|| err.downcast_ref::<String>().cloned())
         .or_else(|| err.downcast_ref::<&'static str>().map(ToString::to_string))
         .unwrap_or_else(|| "unknown panic msg".to_string())
