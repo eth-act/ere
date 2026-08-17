@@ -1,4 +1,4 @@
-/// Aggregation verifying key for VadcopFinalMinimal proofs in zisk v1.0.0-alpha, under the default
+/// Aggregation verifying key for VadcopFinalMinimal proofs in zisk v1.1.0-alpha, under the default
 /// Poseidon1 hash family.
 ///
 /// To reproduce:
@@ -7,10 +7,10 @@
 /// cat $HOME/.zisk/provingKey/zisk/vadcop_final_compressed/vadcop_final_compressed.verkey.json
 /// ```
 pub const VADCOP_FINAL_COMPRESSED_VK: [u64; 4] = [
-    9921056747671742317,
-    4797772910800160669,
-    12958514166857075847,
-    14532653792511329700,
+    7077556885608687133,
+    1422085596864190689,
+    2297137918351717267,
+    14362995833492506538,
 ];
 
 /// Hash family the [`VADCOP_FINAL_COMPRESSED_VK`] was generated under. Proofs from any other family

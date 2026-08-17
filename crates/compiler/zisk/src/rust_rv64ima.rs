@@ -35,8 +35,11 @@ const CARGO_BUILD_OPTIONS: &[&str] = &[
     "-Zjson-target-spec",
 ];
 
-/// Copied from https://github.com/0xPolygonHermez/rust/blob/c03068e/compiler/rustc_target/src/spec/targets/riscv64ima_zisk_zkvm_elf_linker_script.ld.
-const LINKER_SCRIPT: &str = include_str!("rust_rv64ima/link.x");
+/// Copied from https://github.com/0xPolygonHermez/zisk/blob/v1.1.0-alpha/ziskbuild/zisk_linker_script.ld.
+///
+/// The ZisK target carries no built-in link script, so both compilers pass this one explicitly,
+/// matching what `zisk-build` injects for its own guest builds.
+pub(crate) const LINKER_SCRIPT: &str = include_str!("rust_rv64ima/link.x");
 
 /// Compiler for Rust guest program to RV64IMA architecture, using a stock
 /// nightly Rust toolchain with ZisK's target specification.
