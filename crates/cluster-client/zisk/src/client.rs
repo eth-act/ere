@@ -290,6 +290,10 @@ fn parse_proof(bytes: &[u8]) -> Result<ZiskProof, Error> {
         Plonk,
     }
 
+    /// Mirrors `zisk_common::ProgramVK` up to its trailing `hash_mode`, which is
+    /// dropped because the hash family is already checked through `ProofBody`.
+    /// Bincode is positional, so omitting it is only sound while it stays last
+    /// in a `ProgramVK` that stays last in `Proof`.
     #[derive(Deserialize)]
     struct ProgramVK {
         vk: Vec<u64>,
