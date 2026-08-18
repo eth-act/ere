@@ -28,7 +28,10 @@ struct Config {
     setup_on_init: bool,
     unlock_mapped_memory: bool,
     minimal_memory: bool,
+    cpu_mops: bool,
+    packed: bool,
     max_streams: Option<usize>,
+    max_recursive_streams: Option<usize>,
     number_threads_witness: Option<usize>,
     max_witness_stored: Option<usize>,
 }
@@ -49,7 +52,10 @@ impl Config {
             setup_on_init: env::var_os("ERE_ZISK_SETUP_ON_INIT").is_some(),
             unlock_mapped_memory: env::var_os("ERE_ZISK_UNLOCK_MAPPED_MEMORY").is_some(),
             minimal_memory: env::var_os("ERE_ZISK_MINIMAL_MEMORY").is_some(),
+            cpu_mops: env::var_os("ERE_ZISK_CPU_MOPS").is_some(),
+            packed: env::var_os("ERE_ZISK_PACKED").is_some(),
             max_streams: parse_usize("ERE_ZISK_MAX_STREAMS")?,
+            max_recursive_streams: parse_usize("ERE_ZISK_MAX_RECURSIVE_STREAMS")?,
             number_threads_witness: parse_usize("ERE_ZISK_NUMBER_THREADS_WITNESS")?,
             max_witness_stored: parse_usize("ERE_ZISK_MAX_WITNESS_STORED")?,
         })
@@ -121,15 +127,21 @@ fn build_prover(config: &Config, resource: &ProverResource) -> Result<ZiskProver
     let mut opts = BackendProverOpts::default();
     if cfg!(feature = "cuda") && resource.is_gpu() {
         opts = opts.gpu();
-        // The memory-ops planner stays on the GPU. It caps a run at 1024 Main segments and aborts
-        // the process past that, which is a fair trade here because workloads large enough to reach
-        // the cap are proved through the cluster backend, whose worker plans on the CPU.
+    }
+    if config.cpu_mops {
+        opts = opts.cpu_mops();
     }
     if config.minimal_memory {
         opts = opts.minimal_memory();
     }
+    if config.packed {
+        opts = opts.packed();
+    }
     if let Some(max_streams) = config.max_streams {
         opts = opts.max_streams(max_streams);
+    }
+    if let Some(max_recursive_streams) = config.max_recursive_streams {
+        opts = opts.max_recursive_streams(max_recursive_streams);
     }
     if let Some(number_threads_witness) = config.number_threads_witness {
         opts = opts.number_threads_witness(number_threads_witness);

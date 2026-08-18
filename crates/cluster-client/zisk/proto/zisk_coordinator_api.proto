@@ -446,4 +446,3 @@ message CancelJobResponse {
   string job_id    = 1;
   bool   cancelled = 2; // true if cancelled; false if already terminal
 }
-
