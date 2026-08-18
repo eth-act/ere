@@ -36,11 +36,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Needed to run test of ere-server-api (proto generation test)
-      - name: Install protoc
+      # protoc is needed to run test of ere-server-api (proto generation test).
+      # The rest are needed to build `proofman-starks-lib-c`, which is pulled by
+      # `proofman-fields` unconditionally on x86_64.
+      - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y protobuf-compiler
+          sudo apt-get install -y protobuf-compiler nasm nlohmann-json3-dev libgmp-dev libsodium-dev libomp-dev libopenmpi-dev libssl-dev
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable

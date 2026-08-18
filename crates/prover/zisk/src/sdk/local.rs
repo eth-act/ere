@@ -121,10 +121,9 @@ fn build_prover(config: &Config, resource: &ProverResource) -> Result<ZiskProver
     let mut opts = BackendProverOpts::default();
     if cfg!(feature = "cuda") && resource.is_gpu() {
         opts = opts.gpu();
-        // Run the memory-ops planner on the CPU even though proof generation stays on the GPU. The
-        // GPU planner aborts the whole process with `exit(1)` on a degenerate or guest-rejected
-        // execution, which no in-process recovery can survive.
-        opts = opts.cpu_mops();
+        // The memory-ops planner stays on the GPU. It caps a run at 1024 Main segments and aborts
+        // the process past that, which is a fair trade here because workloads large enough to reach
+        // the cap are proved through the cluster backend, whose worker plans on the CPU.
     }
     if config.minimal_memory {
         opts = opts.minimal_memory();
