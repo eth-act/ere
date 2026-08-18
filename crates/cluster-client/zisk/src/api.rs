@@ -173,6 +173,51 @@ pub struct RegisterGuestProgramResponse {
     pub hash_id: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct NormalizeCircuit {
+    #[prost(string, tag = "1")]
+    pub body: ::prost::alloc::string::String,
+}
+/// A single 4-limb (Goldilocks) program verification key.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ProgramVk {
+    /// exactly 4 decimal limbs
+    #[prost(string, repeated, tag = "1")]
+    pub limbs: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AggregationProgramSpec {
+    #[prost(message, optional, tag = "1")]
+    pub normalize: ::core::option::Option<NormalizeCircuit>,
+    #[prost(string, tag = "2")]
+    pub aggregate_publics_body: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "3")]
+    pub n_free: u64,
+    /// Optional leaf allow-list (empty = VK-agnostic). Order is significant.
+    #[prost(message, repeated, tag = "4")]
+    pub program_vks: ::prost::alloc::vec::Vec<ProgramVk>,
+    /// Publics slots the aggregation populates; the rest are generator-zero-filled.
+    #[prost(uint64, tag = "5")]
+    pub n_publics_agg: u64,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RegisterAggregationProgramRequest {
+    /// SDK-computed content hash. The coordinator stores the spec under this
+    /// id and echoes it back. Re-registering an already-known id is idempotent.
+    /// Computed by both SDK and worker from the same `RecurserManifestInputs`,
+    /// so a misaligned zisk_vk surfaces here as a "recurser_id not found" at
+    /// dispatch time rather than a silent divergence.
+    #[prost(string, tag = "1")]
+    pub recurser_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub spec: ::core::option::Option<AggregationProgramSpec>,
+}
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct RegisterAggregationProgramResponse {
+    /// echo of the request's recurser_id
+    #[prost(string, tag = "1")]
+    pub recurser_id: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct JobRequestMessage {
     #[prost(message, optional, tag = "1")]
     pub job_kind: ::core::option::Option<JobKind>,
@@ -185,7 +230,7 @@ pub struct JobResponse {
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct JobKind {
-    #[prost(oneof = "job_kind::Kind", tags = "1, 2, 3, 5")]
+    #[prost(oneof = "job_kind::Kind", tags = "1, 2, 3, 4, 5, 6")]
     pub kind: ::core::option::Option<job_kind::Kind>,
 }
 /// Nested message and enum types in `JobKind`.
@@ -198,9 +243,12 @@ pub mod job_kind {
         Prove(super::ProveRequest),
         #[prost(message, tag = "3")]
         Wrap(super::WrapRequest),
-        /// AggregateRequest aggregate = 4; // TODO: not yet defined
+        #[prost(message, tag = "4")]
+        AggregateProofs(super::AggregateProofsRequest),
         #[prost(message, tag = "5")]
         Execute(super::ExecuteRequest),
+        #[prost(message, tag = "6")]
+        SetupAggregationProgram(super::SetupAggregationProgramRequest),
     }
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
@@ -256,6 +304,43 @@ pub struct WrapResponse {
     pub proof: ::core::option::Option<Proof>,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct SetupAggregationProgramRequest {
+    #[prost(string, tag = "1")]
+    pub recurser_id: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct SetupAggregationProgramResponse {
+    /// 32 bytes — 4 u64 little-endian limbs
+    #[prost(bytes = "vec", tag = "1")]
+    pub vk: ::prost::alloc::vec::Vec<u8>,
+    #[prost(string, tag = "2")]
+    pub hash_mode: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct AggregateProofsRequest {
+    #[prost(string, tag = "1")]
+    pub recurser_id: ::prost::alloc::string::String,
+    /// bincode-serialized VadcopFinalProof
+    #[prost(bytes = "vec", tag = "2")]
+    pub proof_a: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes = "vec", tag = "3")]
+    pub proof_b: ::prost::alloc::vec::Vec<u8>,
+    /// proof_a's normalization side inputs
+    #[prost(uint64, repeated, tag = "4")]
+    pub free_inputs_a: ::prost::alloc::vec::Vec<u64>,
+    /// proof_b's normalization side inputs
+    #[prost(uint64, repeated, tag = "5")]
+    pub free_inputs_b: ::prost::alloc::vec::Vec<u64>,
+    /// optional override; len 0 or 4
+    #[prost(uint64, repeated, tag = "6")]
+    pub root_c_recurser_agg: ::prost::alloc::vec::Vec<u64>,
+}
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct AggregateProofsResponse {
+    #[prost(message, optional, tag = "1")]
+    pub proof: ::core::option::Option<Proof>,
+}
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ExecuteRequest {
     #[prost(string, tag = "1")]
     pub hash_id: ::prost::alloc::string::String,
@@ -275,7 +360,7 @@ pub struct ExecuteResponse {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct JobKindResponse {
-    #[prost(oneof = "job_kind_response::Kind", tags = "1, 2, 3, 4")]
+    #[prost(oneof = "job_kind_response::Kind", tags = "1, 2, 3, 4, 5, 6")]
     pub kind: ::core::option::Option<job_kind_response::Kind>,
 }
 /// Nested message and enum types in `JobKindResponse`.
@@ -289,7 +374,11 @@ pub mod job_kind_response {
         #[prost(message, tag = "3")]
         Wrap(super::WrapResponse),
         #[prost(message, tag = "4")]
+        AggregateProofs(super::AggregateProofsResponse),
+        #[prost(message, tag = "5")]
         Execute(super::ExecuteResponse),
+        #[prost(message, tag = "6")]
+        SetupAggregationProgram(super::SetupAggregationProgramResponse),
     }
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
@@ -503,8 +592,8 @@ pub enum JobPhase {
     Contributions = 1,
     /// proof generation
     Prove = 2,
-    /// proof aggregation
-    Aggregate = 3,
+    /// recurser prove phase
+    Recurse = 3,
 }
 impl JobPhase {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -516,7 +605,7 @@ impl JobPhase {
             Self::Unspecified => "JOB_PHASE_UNSPECIFIED",
             Self::Contributions => "JOB_PHASE_CONTRIBUTIONS",
             Self::Prove => "JOB_PHASE_PROVE",
-            Self::Aggregate => "JOB_PHASE_AGGREGATE",
+            Self::Recurse => "JOB_PHASE_RECURSE",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
@@ -525,7 +614,7 @@ impl JobPhase {
             "JOB_PHASE_UNSPECIFIED" => Some(Self::Unspecified),
             "JOB_PHASE_CONTRIBUTIONS" => Some(Self::Contributions),
             "JOB_PHASE_PROVE" => Some(Self::Prove),
-            "JOB_PHASE_AGGREGATE" => Some(Self::Aggregate),
+            "JOB_PHASE_RECURSE" => Some(Self::Recurse),
             _ => None,
         }
     }
@@ -652,7 +741,38 @@ pub mod zisk_coordinator_api_client {
                 );
             self.inner.unary(req, path, codec).await
         }
-        /// Submit a new job (setup, prove, wrap, or execute).
+        /// Register a recurser spec. Idempotent: the same spec always
+        /// returns the same recurser_id (a content hash of the inputs).
+        pub async fn register_aggregation_program(
+            &mut self,
+            request: impl tonic::IntoRequest<super::RegisterAggregationProgramRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::RegisterAggregationProgramResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic_prost::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/zisk.coordinator.v1.ZiskCoordinatorApi/RegisterAggregationProgram",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "zisk.coordinator.v1.ZiskCoordinatorApi",
+                        "RegisterAggregationProgram",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        /// Submit a new job (setup, prove, wrap, execute, setup_aggregation_program, aggregate_proofs).
         pub async fn job_request(
             &mut self,
             request: impl tonic::IntoRequest<super::JobRequestMessage>,

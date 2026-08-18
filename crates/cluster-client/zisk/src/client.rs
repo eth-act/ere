@@ -1,11 +1,11 @@
 //! Remote ZisK cluster proving.
 
-use core::{iter, time::Duration};
+use core::time::Duration;
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{Input, RemoteProverConfig, zkVMVerifier};
 use ere_verifier_zisk::{
-    PROGRAM_VK_WORDS, PUBLIC_VALUES_BYTES, VADCOP_FINAL_HASH_FAMILY, VadcopFinalProof,
+    PROGRAM_VK_WORDS, PUBLIC_VALUES_WORDS, VADCOP_FINAL_HASH_FAMILY, VadcopFinalProof,
     ZiskProgramVk, ZiskProof, ZiskVerifier,
 };
 use serde::Deserialize;
@@ -266,22 +266,34 @@ fn framed_stdin(data: &[u8]) -> Vec<u8> {
 }
 
 fn parse_proof(bytes: &[u8]) -> Result<ZiskProof, Error> {
+    /// Mirrors `zisk_common::VadcopKind`, whose discriminant order fixes the
+    /// encoding. Only `Minimal` is accepted below.
+    #[derive(Deserialize, PartialEq)]
+    enum VadcopKind {
+        Final,
+        Recurser,
+        Minimal,
+    }
+
     #[derive(Deserialize)]
     enum ProofBody {
         Vadcop {
             proof: Vec<u64>,
             _zisk_vk: Vec<u64>,
-            minimal: bool,
+            kind: VadcopKind,
             hash: String,
+            /// Canonical flag-free `[program_vk(4) | inputs(64)]` at full u64
+            /// width. A minimal proof carries no `is_vadcop_final_proof` flag,
+            /// so this is already the vector the verifier commits to.
+            publics_full: Vec<u64>,
         },
         Plonk,
     }
 
-    #[derive(Deserialize)]
-    struct PublicValues {
-        data: Vec<u8>,
-    }
-
+    /// Mirrors `zisk_common::ProgramVK` up to its trailing `hash_mode`, which is
+    /// dropped because the hash family is already checked through `ProofBody`.
+    /// Bincode is positional, so omitting it is only sound while it stays last
+    /// in a `ProgramVK` that stays last in `Proof`.
     #[derive(Deserialize)]
     struct ProgramVK {
         vk: Vec<u64>,
@@ -290,7 +302,6 @@ fn parse_proof(bytes: &[u8]) -> Result<ZiskProof, Error> {
     #[derive(Deserialize)]
     struct Proof {
         body: ProofBody,
-        publics: PublicValues,
         program_vk: ProgramVK,
     }
 
@@ -303,37 +314,29 @@ fn parse_proof(bytes: &[u8]) -> Result<ZiskProof, Error> {
             got: proof.program_vk.vk.len() * 8,
         })?;
     };
-    if proof.publics.data.len() != PUBLIC_VALUES_BYTES {
-        Err(ere_verifier_zisk::Error::InvalidPublicValueLength {
-            expected: PUBLIC_VALUES_BYTES,
-            got: proof.publics.data.len(),
-        })?;
-    };
-
-    let public_values = {
-        let to_u64 = |bytes: &[u8; 4]| u32::from_le_bytes(*bytes) as u64;
-        iter::empty()
-            .chain(proof.program_vk.vk)
-            .chain(proof.publics.data.as_chunks::<4>().0.iter().map(to_u64))
-            .collect()
-    };
-
-    let proof = if let ProofBody::Vadcop {
+    let ProofBody::Vadcop {
         proof,
-        minimal: true,
+        kind,
         hash,
+        publics_full,
         ..
     } = proof.body
-        && hash == VADCOP_FINAL_HASH_FAMILY
-    {
-        proof
-    } else {
+    else {
         return Err(ere_verifier_zisk::Error::InvalidVadcopFinalProofKind)?;
+    };
+    if kind != VadcopKind::Minimal || hash != VADCOP_FINAL_HASH_FAMILY {
+        Err(ere_verifier_zisk::Error::InvalidVadcopFinalProofKind)?;
+    }
+    if publics_full.len() != PROGRAM_VK_WORDS + PUBLIC_VALUES_WORDS {
+        Err(ere_verifier_zisk::Error::InvalidPublicValueLength {
+            expected: PROGRAM_VK_WORDS + PUBLIC_VALUES_WORDS,
+            got: publics_full.len(),
+        })?;
     };
 
     Ok(ZiskProof(VadcopFinalProof::new(
         proof,
-        public_values,
+        publics_full,
         true,
         VADCOP_FINAL_HASH_FAMILY.to_string(),
     )))

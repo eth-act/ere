@@ -28,27 +28,12 @@ echo "Installing ZisK Toolchain and SDK using ziskup (prebuilt binaries)..."
 ensure_tool_installed "curl" "to download the ziskup installer"
 ensure_tool_installed "bash" "to run the ziskup installer"
 ensure_tool_installed "rustup" "for managing Rust toolchains (ZisK installs its own)"
-ensure_tool_installed "cargo" "to pre-build lib-c"
 
-# Step 1: Download and run the script that installs the ziskup binary itself.
+# Download and run the script that installs the ziskup binary itself.
 # Export USE_GPU to download pre-built cargo-zisk and zisk-worker with or without cuda support.
 # Export SETUP_KEY=proving-no-consttree to download proving key without doing setup.
-export ZISK_VERSION="1.0.0-alpha"
+export ZISK_VERSION="1.1.0-alpha"
 export USE_GPU=$([ -n "$CUDA" ] && echo true || echo false)
 export SETUP_KEY=${SETUP_KEY:=proving-no-consttree}
 curl "https://raw.githubusercontent.com/0xPolygonHermez/zisk/v$ZISK_VERSION/ziskup/ziskup" | bash
 unset SETUP_KEY
-
-# Step 2: Make sure `lib-c`'s build script is ran.
-#
-# `ziskos` provides guest program runtime, and `lib-c` is a dependency of `ziskos`,
-# when we need to compile guest, the `build.rs` of `lib-c` will need to be ran once,
-# but if there are multiple `build.rs` running at the same time, it will panic.
-# So here we make sure it's already ran, and the built thing will be stored in
-# `$CARGO_HOME/git/checkouts/zisk-{hash}/{rev}/lib-c/c/build`, so could be
-# re-used as long as the `ziskos` has the same version.
-WORKSPACE=$(mktemp -d)
-cargo init "$WORKSPACE" --name build-lib-c
-cargo add lib-c --git https://github.com/0xPolygonHermez/zisk.git --tag "v$ZISK_VERSION" --manifest-path "$WORKSPACE/Cargo.toml"
-cargo build --manifest-path "$WORKSPACE/Cargo.toml"
-rm -rf "$WORKSPACE"

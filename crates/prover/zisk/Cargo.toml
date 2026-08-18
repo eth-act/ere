@@ -21,6 +21,7 @@ zisk-core.workspace = true
 zisk-prover-backend.workspace = true
 zisk-rom-setup.workspace = true
 zisk-sm-rom.workspace = true
+zisk-transpiler-riscv.workspace = true
 ziskemu.workspace = true
 
 # Local dependencies

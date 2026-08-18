@@ -151,18 +151,19 @@ sp1-zkvm = { git = "https://github.com/succinctlabs/sp1", tag = "v6.3.1", defaul
 sp1-libzkevm = { git = "https://github.com/succinctlabs/sp1", tag = "v6.3.1", package = "libzkevm" }
 
 # ZisK dependencies
-proofman-fields = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v1.0.0-alpha", package = "fields" }
-proofman-starks-lib-c = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v1.0.0-alpha" }
-proofman-util = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v1.0.0-alpha" }
-proofman-verifier = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v1.0.0-alpha" }
-zisk-common = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v1.0.0-alpha" }
-zisk-core = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v1.0.0-alpha" }
-zisk-prover-backend = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v1.0.0-alpha" }
-zisk-rom-setup = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v1.0.0-alpha", package = "rom-setup" }
-zisk-sm-rom = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v1.0.0-alpha", package = "sm-rom" }
-zisk-verifier = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v1.0.0-alpha" }
-ziskemu = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v1.0.0-alpha" }
-ziskos = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v1.0.0-alpha", default-features = false }
+proofman-fields = "1.1.0-alpha"
+proofman-starks-lib-c = "1.1.0-alpha"
+proofman-util = "1.1.0-alpha"
+proofman-verifier = "1.1.0-alpha"
+zisk-common = "1.1.0-alpha"
+zisk-core = "1.1.0-alpha"
+zisk-prover-backend = "1.1.0-alpha"
+zisk-rom-setup = "1.1.0-alpha"
+zisk-sm-rom = "1.1.0-alpha"
+zisk-transpiler-riscv = "1.1.0-alpha"
+zisk-verifier = "1.1.0-alpha"
+ziskemu = "1.1.0-alpha"
+ziskos = { version = "1.1.0-alpha", default-features = false }
 
 # Local dependencies
 ere-compiler = { path = "crates/compiler/cli" }

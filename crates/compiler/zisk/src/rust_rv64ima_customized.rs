@@ -3,7 +3,7 @@ use std::path::Path;
 use ere_compiler_core::{Compiler, Elf};
 use ere_util_compile::{CargoBuildCmd, parse_cargo_build_options};
 
-use crate::Error;
+use crate::{Error, rust_rv64ima::LINKER_SCRIPT};
 
 const ZISK_TOOLCHAIN: &str = "zisk";
 const ZISK_TARGET: &str = "riscv64ima-zisk-zkvm-elf";
@@ -82,6 +82,7 @@ impl Compiler for ZiskRustRv64imaCustomized {
         let flags: Vec<&str> = [profile_flags(), RUSTFLAGS].concat();
         let options = parse_cargo_build_options(args)?;
         let elf = CargoBuildCmd::new()
+            .linker_script(Some(LINKER_SCRIPT))
             .toolchain(ZISK_TOOLCHAIN)
             .rustflags(&flags)
             .features(&options.features)

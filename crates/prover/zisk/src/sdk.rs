@@ -11,7 +11,8 @@ use ere_prover_core::{CommonError, Input, ProverResource, ProverResourceKind, Pu
 use ere_util_tokio::block_on;
 use ere_verifier_zisk::{ZiskProgramVk, ZiskProof, ensure_program_vk_matches};
 use tokio::time::Instant;
-use zisk_core::{Riscv2zisk, ZiskRom};
+use zisk_core::ZiskRom;
+use zisk_transpiler_riscv::Riscv2zisk;
 use ziskemu::{Emu, EmuOptions};
 
 use crate::{error::Error, sdk::local::LocalProver};
