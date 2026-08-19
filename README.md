@@ -159,7 +159,7 @@ Different zkVMs handles public values in different approaches:
 | zkVM   | Version                                                                    | ISA       |  GPU  | Multi GPU | Cluster |
 | ------ | -------------------------------------------------------------------------- | --------- | :---: | :-------: | :-----: |
 | OpenVM | [`2.1.0-preview`](https://github.com/openvm-org/openvm/tree/v2.1.0-preview) | `RV64IMA` |   V   |           |         |
-| SP1    | [`6.3.1`](https://github.com/succinctlabs/sp1/tree/v6.3.1)                 | `RV64IMA` |   V   |           |         |
+| SP1    | [`6.4.0`](https://github.com/succinctlabs/sp1/tree/v6.4.0)                 | `RV64IMA` |   V   |           |         |
 | ZisK   | [`1.1.0-alpha`](https://github.com/0xPolygonHermez/zisk/tree/v1.1.0-alpha) | `RV64IMA` |   V   |     V     |    V    |
 
 ## Examples
