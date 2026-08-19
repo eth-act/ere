@@ -117,7 +117,8 @@ impl ZiskClusterClient {
     ///
     /// Returns `Error::ProveTimeout` if the deadline expires before the job terminates.
     ///
-    /// Retries prove job submission on every 5 seconds until deadline.
+    /// Retries both job submission and polling every 5 seconds until deadline, so a transiently
+    /// unreachable coordinator does not abandon a job that is still running on the cluster.
     ///
     /// Returns `Error::CreateProveJobTimeout` if the deadline expires before the job submission.
     pub async fn prove(
@@ -125,29 +126,54 @@ impl ZiskClusterClient {
         input: &Input,
         deadline: Instant,
     ) -> Result<(ZiskProof, Duration), Error> {
-        let fut = async {
+        /// Pause between retries of a transiently failing coordinator call.
+        const RETRY_INTERVAL: Duration = Duration::from_secs(5);
+        /// Bound on the deadline cancellation, which the coordinator holds until the job reaches
+        /// a terminal state.
+        const CANCEL_TIMEOUT: Duration = Duration::from_secs(30);
+
+        let submit = async {
             loop {
-                match self.create_prove_job(input).await {
+                let err = match self.create_prove_job(input).await {
                     Ok(job_id) => return Ok(job_id),
-                    Err(Error::SetupNotDone) => self.setup().await?,
-                    Err(Error::ClusterUnavailable(status)) => {
-                        warn!(?status, "job submission failed, retrying...");
-                        sleep(Duration::from_secs(5)).await;
-                    }
-                    Err(err) => return Err(err),
+                    Err(Error::SetupNotDone) => match self.setup().await {
+                        Ok(()) => continue,
+                        Err(err) => err,
+                    },
+                    Err(err) => err,
                 };
+                match err {
+                    Error::ClusterUnavailable(status) => {
+                        warn!(?status, "job submission failed, retrying...");
+                        sleep(RETRY_INTERVAL).await;
+                    }
+                    err => return Err(err),
+                }
             }
         };
 
-        let job_id = match timeout_at(deadline, fut).await {
+        let job_id = match timeout_at(deadline, submit).await {
             Ok(result) => result?,
             Err(_) => Err(Error::CreateProveJobTimeout)?,
         };
 
-        match timeout_at(deadline, self.wait_prove_job(&job_id)).await {
+        let wait = async {
+            loop {
+                match self.wait_prove_job(&job_id).await {
+                    Err(Error::ClusterUnavailable(status)) => {
+                        warn!(?status, "job polling failed, retrying...");
+                        sleep(RETRY_INTERVAL).await;
+                    }
+                    result => return result,
+                }
+            }
+        };
+
+        let result = timeout_at(deadline, wait).await;
+        match result {
             Ok(result) => result,
             Err(_) => {
-                let _ = self.cancel_prove_job(&job_id).await;
+                let _ = timeout(CANCEL_TIMEOUT, self.cancel_prove_job(&job_id)).await;
                 Err(Error::ProveTimeout { job_id })
             }
         }
@@ -211,7 +237,13 @@ async fn wait_job(
         timeout_seconds: Some(TIMEOUT_SECS),
     };
     loop {
-        let resp = client.wait_job_result(req.clone()).await?.into_inner();
+        let resp = match client.wait_job_result(req.clone()).await {
+            Ok(resp) => resp.into_inner(),
+            Err(status) if matches!(status.code(), Code::Unavailable | Code::Internal) => {
+                Err(Error::ClusterUnavailable(status))?
+            }
+            Err(status) => Err(Error::Grpc(status))?,
+        };
 
         let status = resp
             .job_status
