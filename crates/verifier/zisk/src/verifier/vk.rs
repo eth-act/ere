@@ -7,10 +7,10 @@
 /// cat $HOME/.zisk/provingKey/zisk/vadcop_final_compressed/vadcop_final_compressed.verkey.json
 /// ```
 pub const VADCOP_FINAL_COMPRESSED_VK: [u64; 4] = [
-    7077556885608687133,
-    1422085596864190689,
-    2297137918351717267,
-    14362995833492506538,
+    16370293013691533579,
+    6864437907249201182,
+    12605075787481351281,
+    11365126049963943544,
 ];
 
 /// Hash family the [`VADCOP_FINAL_COMPRESSED_VK`] was generated under. Proofs from any other family
