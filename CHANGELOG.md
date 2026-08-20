@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.16.0](https://github.com/eth-act/ere/compare/v0.15.0...v0.16.0) (2026-08-19)
+
+
+### Features
+
+* add cancel timeout on the prove helper func ([#407](https://github.com/eth-act/ere/issues/407)) ([8295d94](https://github.com/eth-act/ere/commit/8295d94b4598ef14e6c35fff3dd4935f60f2f7ff))
+* udpate sp1 to v6.4.0 ([#406](https://github.com/eth-act/ere/issues/406)) ([0e27a37](https://github.com/eth-act/ere/commit/0e27a3759d1c31301890a5645b256cfaccd2fdd0))
+* update zisk to v1.1.0-alpha ([#404](https://github.com/eth-act/ere/issues/404)) ([4a5a1ab](https://github.com/eth-act/ere/commit/4a5a1ab822f496d5cefcd870adb74f9a91dbd6c9))
+
 ## [0.15.0](https://github.com/eth-act/ere/compare/v0.14.0...v0.15.0) (2026-08-06)
 
 
