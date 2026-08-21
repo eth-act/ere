@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.16.2](https://github.com/eth-act/ere/compare/v0.16.1...v0.16.2) (2026-08-21)
+
+
+### Bug Fixes
+
+* disable avx512 for zisk prover ([#410](https://github.com/eth-act/ere/issues/410)) ([2d1529a](https://github.com/eth-act/ere/commit/2d1529a965bae28ead531333bfae8c45300a3a13))
+* use arg for MAKEFLAGS for overriding ([#412](https://github.com/eth-act/ere/issues/412)) ([3f854dd](https://github.com/eth-act/ere/commit/3f854dd728fa9f9af7b299293338b3f79e104492))
+
 ## [0.16.1](https://github.com/eth-act/ere/compare/v0.16.0...v0.16.1) (2026-08-20)
 
 
