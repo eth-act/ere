@@ -17,6 +17,11 @@ ARG RUSTFLAGS
 # Env variable read by ZisK crate `proofman-starks-lib-c`, comma-separated numeric arch IDs (e.g. "120" or "89,120")
 ARG CUDA_ARCHS=120
 
+# proofman-starks-src reads /proc/cpuinfo to pick its SIMD flags, so a builder with AVX-512
+# produces an image that raises SIGILL on hosts without it. Pinning the baseline to AVX2 keeps
+# the published image runnable anywhere.
+ENV MAKEFLAGS="AVX512_SUPPORTED= AVX2_SUPPORTED=1"
+
 RUN cargo build --release --package ere-server --bin ere-server --features zisk${CUDA:+,cuda} \
     && mkdir bin && mv target/release/ere-server bin/ere-server \
     && cargo clean && rm -rf $CARGO_HOME/registry/
