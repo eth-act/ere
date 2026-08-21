@@ -18,9 +18,8 @@ ARG RUSTFLAGS
 ARG CUDA_ARCHS=120
 
 # proofman-starks-src reads /proc/cpuinfo to pick its SIMD flags, so a builder with AVX-512
-# produces an image that raises SIGILL on hosts without it. Pinning the baseline to AVX2 keeps
-# the published image runnable anywhere.
-ENV MAKEFLAGS="AVX512_SUPPORTED= AVX2_SUPPORTED=1"
+# produces an image that raises SIGILL on hosts without it. Disable the AVX-512 by default here.
+ARG MAKEFLAGS="AVX512_SUPPORTED="
 
 RUN cargo build --release --package ere-server --bin ere-server --features zisk${CUDA:+,cuda} \
     && mkdir bin && mv target/release/ere-server bin/ere-server \
