@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.3](https://github.com/eth-act/ere/compare/v0.16.2...v0.16.3) (2026-08-25)
+
+
+### Bug Fixes
+
+* openvm zkvm accelerator ([#413](https://github.com/eth-act/ere/issues/413)) ([a956a62](https://github.com/eth-act/ere/commit/a956a6239b9ee455345445aad8900334db43b2dc))
+
 ## [0.16.2](https://github.com/eth-act/ere/compare/v0.16.1...v0.16.2) (2026-08-21)
 
 
