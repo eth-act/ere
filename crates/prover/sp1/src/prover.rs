@@ -86,7 +86,7 @@ mod tests {
     use ere_util_test::{
         codec::BincodeLegacy,
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
-        program::basic::BasicProgram,
+        program::{basic::BasicProgram, zkvm_interface},
     };
 
     use crate::prover::SP1Prover;
@@ -196,5 +196,17 @@ mod tests {
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
+    }
+
+    #[test]
+    fn test_execute_zkvm_interface() {
+        let elf = SP1RustRv64imaCustomized
+            .compile(testing_guest_directory("sp1", "zkvm_interface"), &[])
+            .unwrap();
+        let zkvm = SP1Prover::new(elf, ProverResource::Cpu).unwrap();
+
+        for test_case in zkvm_interface::test_cases() {
+            run_zkvm_execute(&zkvm, &test_case);
+        }
     }
 }

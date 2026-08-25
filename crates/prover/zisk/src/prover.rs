@@ -77,7 +77,7 @@ pub(crate) mod tests {
     use ere_util_test::{
         codec::BincodeLegacy,
         host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
-        program::basic::BasicProgram,
+        program::{basic::BasicProgram, zkvm_interface},
     };
 
     use crate::prover::ZiskProver;
@@ -165,5 +165,17 @@ pub(crate) mod tests {
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
+    }
+
+    #[test]
+    fn test_execute_zkvm_interface() {
+        let elf = ZiskRustRv64imaCustomized
+            .compile(testing_guest_directory("zisk", "zkvm_interface"), &[])
+            .unwrap();
+        let zkvm = ZiskProver::new(elf, ProverResource::Cpu).unwrap();
+
+        for test_case in zkvm_interface::test_cases() {
+            run_zkvm_execute(&zkvm, &test_case);
+        }
     }
 }

@@ -75,6 +75,7 @@ digest = { version = "0.10.7", default-features = false }
 eyre = "0.6.12"
 fnv = { version = "1.0.7", default-features = false }
 futures-util = "0.3"
+hex = "0.4"
 http = "1"
 indexmap = "2.10.0"
 metrics = "0.24"

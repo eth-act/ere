@@ -1,0 +1,19 @@
+[package]
+name = "ere-test-sp1-zkvm-interface-guest"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+ere-platform-sp1 = { path = "../../../crates/platform/sp1" }
+ere-util-test = { path = "../../../crates/util/test" }
+
+[patch.crates-io]
+sp1-lib = { git = "https://github.com/han0110/sp1", rev = "7929b001303feb6803ce1214557d5ab1f17eee84" }
+
+[patch."https://github.com/succinctlabs/sp1"]
+sp1-lib = { git = "https://github.com/han0110/sp1", rev = "7929b001303feb6803ce1214557d5ab1f17eee84" }
+sp1-primitives = { git = "https://github.com/han0110/sp1", rev = "7929b001303feb6803ce1214557d5ab1f17eee84" }
+sp1-zkvm = { git = "https://github.com/han0110/sp1", rev = "7929b001303feb6803ce1214557d5ab1f17eee84" }
+libzkevm = { git = "https://github.com/han0110/sp1", rev = "7929b001303feb6803ce1214557d5ab1f17eee84" }

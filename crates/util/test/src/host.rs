@@ -7,7 +7,7 @@ use sha2::{Digest, Sha256};
 
 use crate::program::Program;
 
-fn workspace() -> PathBuf {
+pub(crate) fn workspace() -> PathBuf {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.pop();
     path.pop();

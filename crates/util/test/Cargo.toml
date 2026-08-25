@@ -9,19 +9,25 @@ license.workspace = true
 bincode = { workspace = true, features = ["alloc", "serde"] }
 ciborium = { workspace = true }
 ciborium-io = { workspace = true }
+hex = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }
 serde = { workspace = true, features = ["derive"] }
 serde_bytes = { workspace = true, features = ["alloc"] }
+serde_json = { workspace = true, optional = true }
 sha2.workspace = true
+strum = { workspace = true, features = ["derive"] }
 
 # Local dependencies
 ere-codec.workspace = true
 ere-platform-core.workspace = true
 ere-prover-core = { workspace = true, optional = true }
 
+[target.'cfg(target_arch = "riscv64")'.dependencies]
+zkvm-interface.workspace = true
+
 [lints]
 workspace = true
 
 [features]
 default = []
-host = ["dep:rand", "dep:ere-prover-core"]
+host = ["dep:rand", "dep:ere-prover-core", "dep:hex", "dep:serde_json"]

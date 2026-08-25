@@ -1,0 +1,10 @@
+[package]
+name = "ere-test-openvm-zkvm-interface-guest"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+ere-platform-openvm = { path = "../../../crates/platform/openvm", features = ["std"] }
+ere-util-test = { path = "../../../crates/util/test" }

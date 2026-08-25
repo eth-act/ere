@@ -6,6 +6,7 @@ use ere_platform_core::Platform;
 use sha2::{Digest, Sha256};
 
 pub mod basic;
+pub mod zkvm_interface;
 
 /// Program that can be run given [`Platform`] implementation.
 pub trait Program {

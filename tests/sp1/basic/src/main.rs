@@ -8,6 +8,6 @@ use ere_util_test::{
 
 sp1_zkvm::entrypoint!(main);
 
-pub fn main() {
+fn main() {
     BasicProgram::<BincodeLegacy>::run::<SP1Platform>();
 }
