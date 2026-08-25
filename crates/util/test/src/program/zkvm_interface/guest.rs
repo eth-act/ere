@@ -80,7 +80,8 @@ pub(crate) fn run(vector: &Vector) -> Outcome {
             let mut pubkey = zkvm_secp256k1_pubkey { data: [0; 64] };
             let status =
                 unsafe { zkvm_interface::zkvm_secp256k1_ecrecover(&msg, &sig, recid, &mut pubkey) };
-            // The reference backend returns the address the public key hashes to, left-padded.
+            // The reference implementation returns the address the public key hashes to,
+            // left-padded.
             let mut hash = keccak256(&pubkey.data);
             hash[..12].fill(0);
             Outcome::new(status, &hash)
@@ -132,7 +133,7 @@ pub(crate) fn run(vector: &Vector) -> Outcome {
             let status = unsafe {
                 zkvm_interface::zkvm_secp256r1_verify(&msg, &sig, &pubkey, &mut verified)
             };
-            // The reference backend reports one boolean, so a failed status folds into it.
+            // The reference implementation returns one boolean, so a failed status folds into it.
             Outcome::new(0, &[u8::from(status == 0 && verified)])
         }
         Accelerator::VerifyKzgProof => {
