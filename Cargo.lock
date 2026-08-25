@@ -3708,10 +3708,14 @@ dependencies = [
  "ere-codec",
  "ere-platform-core",
  "ere-prover-core",
+ "hex",
  "rand 0.9.4",
  "serde",
  "serde_bytes",
+ "serde_json",
  "sha2 0.10.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "strum 0.27.2",
+ "zkvm-interface",
 ]
 
 [[package]]
