@@ -524,7 +524,9 @@ fn accelerated_modexp_bn254_fr(base: &[u8], exp: &[u8]) -> Vec<u8> {
     padded[padded_len - base.len()..].copy_from_slice(base);
     let base_fr = bn::Scalar::reduce_be_bytes(&padded);
 
-    base_fr.exp_bytes(true, exp).to_be_bytes().as_ref().to_vec()
+    let result = base_fr.exp_bytes(true, exp);
+    result.assert_reduced();
+    result.to_be_bytes().as_ref().to_vec()
 }
 
 #[inline]
@@ -562,7 +564,8 @@ fn read_bn_g2_point(input: &[u8; BN_G2_LEN]) -> Option<bn::G2Affine> {
 #[inline]
 fn encode_bn_g1_point(point: bn::G1Affine) -> [u8; BN_G1_LEN] {
     let mut output = [0u8; BN_G1_LEN];
-
+    point.x().assert_reduced();
+    point.y().assert_reduced();
     let x_bytes: &[u8] = point.x().as_le_bytes();
     let y_bytes: &[u8] = point.y().as_le_bytes();
     for i in 0..BN_FQ_LEN {
@@ -636,6 +639,8 @@ fn encode_bls_g1_point(point: &bls::G1Affine) -> [u8; BLS_G1_LEN] {
     }
 
     let mut output = [0u8; BLS_G1_LEN];
+    point.x().assert_reduced();
+    point.y().assert_reduced();
     let x_bytes: &[u8] = point.x().as_le_bytes();
     let y_bytes: &[u8] = point.y().as_le_bytes();
     for i in 0..BLS_FP_LEN {
@@ -654,6 +659,10 @@ fn encode_bls_g2_point(point: &bls::G2Affine) -> [u8; BLS_G2_LEN] {
     let mut output = [0u8; BLS_G2_LEN];
     let x = point.x();
     let y = point.y();
+    x.c0.assert_reduced();
+    x.c1.assert_reduced();
+    y.c0.assert_reduced();
+    y.c1.assert_reduced();
     let x_c0 = x.c0.as_le_bytes();
     let x_c1 = x.c1.as_le_bytes();
     let y_c0 = y.c0.as_le_bytes();
