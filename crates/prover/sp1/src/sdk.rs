@@ -33,8 +33,8 @@ pub enum SP1Sdk {
 }
 
 impl SP1Sdk {
-    pub async fn new(elf: Vec<u8>, resource: &ProverResource) -> Result<Self, Error> {
-        let elf = Elf::Dynamic(Arc::from(elf));
+    pub async fn new(elf: Arc<[u8]>, resource: &ProverResource) -> Result<Self, Error> {
+        let elf = Elf::Dynamic(elf);
         Ok(match resource {
             ProverResource::Cpu => {
                 let prover = ProverClient::builder().cpu().build().await;

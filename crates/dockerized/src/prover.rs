@@ -3,7 +3,8 @@ use std::time::Instant;
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{
-    Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues,
+    CostEstimation, ERE_COST_ESTIMATION_HEAP_END, ERE_COST_ESTIMATION_HEAP_START, Input,
+    ProverResource, PublicValues,
 };
 use ere_server_client::{EncodedProgramVk, EncodedProof, reqwest::Client, url::Url, zkVMClient};
 use ere_util_tokio::block_on;
@@ -192,6 +193,8 @@ impl ServerContainer {
             .inherit_env("RUST_LOG")
             .inherit_env("RUST_BACKTRACE")
             .inherit_env("NO_COLOR")
+            .inherit_env(ERE_COST_ESTIMATION_HEAP_START)
+            .inherit_env(ERE_COST_ESTIMATION_HEAP_END)
             .publish(port.to_string(), port.to_string())
             .name(&name);
 
@@ -204,6 +207,7 @@ impl ServerContainer {
 
         // zkVM specific options
         cmd = match zkvm_kind {
+            zkVMKind::OpenVM => cmd.inherit_env("ERE_OPENVM_SEGMENT_MEMORY"),
             // SP1 uses shared memory to exchange data between processes, here
             // we set 32G for safety.
             zkVMKind::SP1 => cmd
@@ -224,7 +228,6 @@ impl ServerContainer {
                 .inherit_env("ERE_ZISK_NUMBER_THREADS_WITNESS")
                 .inherit_env("ERE_ZISK_MAX_WITNESS_STORED")
                 .inherit_env("ERE_ZISK_CLUSTER_PROVE_TIMEOUT_SECS"),
-            _ => cmd,
         };
 
         // zkVM specific options when using GPU
@@ -338,14 +341,18 @@ impl DockerizedzkVM {
         &self.program_vk
     }
 
-    pub fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+    pub fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, Duration)> {
         block_on(self.execute_async(input.clone()))
     }
 
-    pub fn prove(
+    pub fn execute_estimated_cost(
         &self,
         input: &Input,
-    ) -> anyhow::Result<(PublicValues, EncodedProof, ProgramProvingReport)> {
+    ) -> anyhow::Result<(PublicValues, CostEstimation)> {
+        block_on(self.execute_estimated_cost_async(input.clone()))
+    }
+
+    pub fn prove(&self, input: &Input) -> anyhow::Result<(PublicValues, EncodedProof, Duration)> {
         block_on(self.prove_async(input.clone()))
     }
 
@@ -353,10 +360,7 @@ impl DockerizedzkVM {
         block_on(self.verify_async(proof.clone()))
     }
 
-    pub async fn execute_async(
-        &self,
-        input: Input,
-    ) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+    pub async fn execute_async(&self, input: Input) -> anyhow::Result<(PublicValues, Duration)> {
         self.with_retry(
             |client| {
                 let input = input.clone();
@@ -367,10 +371,24 @@ impl DockerizedzkVM {
         .await
     }
 
+    pub async fn execute_estimated_cost_async(
+        &self,
+        input: Input,
+    ) -> anyhow::Result<(PublicValues, CostEstimation)> {
+        self.with_retry(
+            |client| {
+                let input = input.clone();
+                Box::pin(async move { client.estimate_cost(input).await })
+            },
+            self.config.execute_timeout,
+        )
+        .await
+    }
+
     pub async fn prove_async(
         &self,
         input: Input,
-    ) -> anyhow::Result<(PublicValues, EncodedProof, ProgramProvingReport)> {
+    ) -> anyhow::Result<(PublicValues, EncodedProof, Duration)> {
         self.with_retry(
             |client| {
                 let input = input.clone();

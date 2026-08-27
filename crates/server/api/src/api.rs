@@ -29,8 +29,43 @@ pub mod execute_response {
 pub struct ExecuteOk {
     #[prost(bytes = "vec", tag = "1")]
     pub public_values: ::prost::alloc::vec::Vec<u8>,
-    #[prost(bytes = "vec", tag = "2")]
-    pub report: ::prost::alloc::vec::Vec<u8>,
+    #[prost(uint64, tag = "2")]
+    pub duration_nanos: u64,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct EstimateCostRequest {
+    #[prost(bytes = "vec", tag = "1")]
+    pub input_stdin: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes = "vec", optional, tag = "2")]
+    pub input_proofs: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EstimateCostResponse {
+    #[prost(oneof = "estimate_cost_response::Result", tags = "1, 2")]
+    pub result: ::core::option::Option<estimate_cost_response::Result>,
+}
+/// Nested message and enum types in `EstimateCostResponse`.
+pub mod estimate_cost_response {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Result {
+        #[prost(message, tag = "1")]
+        Ok(super::EstimateCostOk),
+        #[prost(string, tag = "2")]
+        Err(::prost::alloc::string::String),
+    }
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EstimateCostOk {
+    #[prost(bytes = "vec", tag = "1")]
+    pub public_values: ::prost::alloc::vec::Vec<u8>,
+    #[prost(map = "string, uint64", tag = "2")]
+    pub cost: ::std::collections::HashMap<::prost::alloc::string::String, u64>,
+    #[prost(uint64, optional, tag = "3")]
+    pub peak_heap_bytes: ::core::option::Option<u64>,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
@@ -64,8 +99,8 @@ pub struct ProveOk {
     pub public_values: ::prost::alloc::vec::Vec<u8>,
     #[prost(bytes = "vec", tag = "2")]
     pub proof: ::prost::alloc::vec::Vec<u8>,
-    #[prost(bytes = "vec", tag = "3")]
-    pub report: ::prost::alloc::vec::Vec<u8>,
+    #[prost(uint64, tag = "3")]
+    pub duration_nanos: u64,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
@@ -129,6 +164,10 @@ pub trait ZkvmService: Send + Sync {
         &self,
         req: twirp::Request<ExecuteRequest>,
     ) -> twirp::Result<twirp::Response<ExecuteResponse>>;
+    async fn estimate_cost(
+        &self,
+        req: twirp::Request<EstimateCostRequest>,
+    ) -> twirp::Result<twirp::Response<EstimateCostResponse>>;
     async fn prove(
         &self,
         req: twirp::Request<ProveRequest>,
@@ -152,6 +191,12 @@ where
         req: twirp::Request<ExecuteRequest>,
     ) -> twirp::Result<twirp::Response<ExecuteResponse>> {
         T::execute(&*self, req).await
+    }
+    async fn estimate_cost(
+        &self,
+        req: twirp::Request<EstimateCostRequest>,
+    ) -> twirp::Result<twirp::Response<EstimateCostResponse>> {
+        T::estimate_cost(&*self, req).await
     }
     async fn prove(
         &self,
@@ -184,6 +229,12 @@ where
             },
         )
         .route(
+            "/EstimateCost",
+            |api: T, req: twirp::Request<EstimateCostRequest>| async move {
+                api.estimate_cost(req).await
+            },
+        )
+        .route(
             "/Prove",
             |api: T, req: twirp::Request<ProveRequest>| async move {
                 api.prove(req).await
@@ -210,6 +261,12 @@ impl ZkvmService for twirp::client::Client {
         req: twirp::Request<ExecuteRequest>,
     ) -> twirp::Result<twirp::Response<ExecuteResponse>> {
         self.request("api.ZkvmService/Execute", req).await
+    }
+    async fn estimate_cost(
+        &self,
+        req: twirp::Request<EstimateCostRequest>,
+    ) -> twirp::Result<twirp::Response<EstimateCostResponse>> {
+        self.request("api.ZkvmService/EstimateCost", req).await
     }
     async fn prove(
         &self,
@@ -260,6 +317,14 @@ pub mod handler {
                         self
                             .inner
                             .execute(twirp::details::decode_request(req).await?)
+                            .await?,
+                    )
+                }
+                "EstimateCost" => {
+                    twirp::details::encode_response(
+                        self
+                            .inner
+                            .estimate_cost(twirp::details::decode_request(req).await?)
                             .await?,
                     )
                 }

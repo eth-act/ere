@@ -6,12 +6,12 @@ use std::{
     ops::{Deref, DerefMut},
     sync::Arc,
     thread,
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 use anyhow::anyhow;
 use crossbeam_channel::{Receiver, Sender, bounded};
-use ere_prover_core::{ProgramExecutionReport, PublicValues};
+use ere_prover_core::PublicValues;
 use sp1_core_executor::{MinimalExecutorEnum, Program};
 use sp1_sdk::{SP1Stdin, StatusCode};
 
@@ -28,11 +28,12 @@ const MAX_POOL_SIZE: usize = 32;
 pub(crate) struct SP1ExecutorPool {
     rx: Receiver<MinimalExecutorEnum>,
     tx: Sender<MinimalExecutorEnum>,
+    program: Arc<Program>,
 }
 
 impl SP1ExecutorPool {
     pub(crate) fn new(elf: &[u8]) -> Result<Self, Error> {
-        let program = Program::from(elf)
+        let program: Arc<Program> = Program::from(elf)
             .map_err(|err| Error::setup(anyhow!("failed to disassemble program: {err}")))?
             .into();
         let size = execution_concurrency();
@@ -41,15 +42,16 @@ impl SP1ExecutorPool {
             tx.send(MinimalExecutorEnum::new(Arc::clone(&program), false, None))
                 .unwrap();
         }
-        Ok(Self { rx, tx })
+        Ok(Self { rx, tx, program })
+    }
+
+    pub(crate) fn program(&self) -> Arc<Program> {
+        Arc::clone(&self.program)
     }
 
     /// Runs `stdin` on a pooled executor, blocking until one is free. The
     /// executor rejoins the pool once the run completes.
-    pub(crate) fn execute(
-        &self,
-        stdin: SP1Stdin,
-    ) -> Result<(PublicValues, ProgramExecutionReport), Error> {
+    pub(crate) fn execute(&self, stdin: SP1Stdin) -> Result<(PublicValues, Duration), Error> {
         let mut executor = ExecutorGuard {
             executor: Some(self.rx.recv().unwrap()),
             tx: &self.tx,
@@ -73,18 +75,10 @@ impl SP1ExecutorPool {
         }
 
         let public_values = executor.public_values_stream().as_slice().into();
-        let total_num_cycles = executor.global_clk();
 
         drop(executor);
 
-        Ok((
-            public_values,
-            ProgramExecutionReport {
-                total_num_cycles,
-                execution_duration,
-                ..Default::default()
-            },
-        ))
+        Ok((public_values, execution_duration))
     }
 }
 
@@ -120,7 +114,7 @@ impl Drop for ExecutorGuard<'_> {
 ///
 /// Defaults to the host's available parallelism capped by [`MAX_POOL_SIZE`].
 /// `ERE_SP1_EXECUTOR_POOL_SIZE` overrides the bound with an explicit size.
-fn execution_concurrency() -> usize {
+pub(crate) fn execution_concurrency() -> usize {
     env::var("ERE_SP1_EXECUTOR_POOL_SIZE")
         .ok()
         .and_then(|value| value.parse::<usize>().ok())

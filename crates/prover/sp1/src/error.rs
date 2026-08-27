@@ -1,3 +1,5 @@
+use std::io;
+
 use ere_prover_core::CommonError;
 use thiserror::Error;
 
@@ -22,6 +24,9 @@ pub enum Error {
     #[error("SP1 execution completed with non-success exit code: {0}")]
     ExecutionFailed(u32),
 
+    #[error("SP1 cost estimation failed: {0}")]
+    EstimateCost(#[from] EstimateCostError),
+
     // Prove
     #[error("SP1 SDK proving failed: {0}")]
     Prove(#[source] anyhow::Error),
@@ -42,4 +47,19 @@ impl Error {
     pub fn prove(err: impl Into<anyhow::Error>) -> Self {
         Self::Prove(err.into())
     }
+}
+
+#[derive(Debug, Error)]
+pub enum EstimateCostError {
+    #[error("gas estimation failed: {0}")]
+    Gas(String),
+
+    #[error("execution failed: {0}")]
+    Execute(String),
+
+    #[error("priced chips exceed the total {0}")]
+    Mismatch(u64),
+
+    #[error("failed to read guest memory: {0}")]
+    Memory(#[from] io::Error),
 }

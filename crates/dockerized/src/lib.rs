@@ -56,12 +56,12 @@
 //! let input = Input::new().with_stdin(42u32.to_le_bytes().to_vec());
 //!
 //! // Execute program
-//! let (public_values, execution_report) = zkvm.execute(&input)?;
-//! println!("Execution cycles: {}", execution_report.total_num_cycles);
+//! let (public_values, execution_duration) = zkvm.execute(&input)?;
+//! println!("Execution duration: {execution_duration:?}");
 //!
 //! // Generate proof
-//! let (public_values, proof, proving_report) = zkvm.prove(&input)?;
-//! println!("Proof generated in: {:?}", proving_report.proving_time);
+//! let (public_values, proof, proving_time) = zkvm.prove(&input)?;
+//! println!("Proof generated in: {proving_time:?}");
 //!
 //! // Verify proof
 //! let public_values = zkvm.verify(&proof)?;

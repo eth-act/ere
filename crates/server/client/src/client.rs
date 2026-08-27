@@ -1,8 +1,9 @@
 use core::{ops::Deref, time::Duration};
 
-use ere_prover_core::{Input, ProgramExecutionReport, ProgramProvingReport, PublicValues};
+use ere_prover_core::{CostEstimation, Input, PublicValues};
 use ere_server_api::{
-    ExecuteRequest, ProgramVkRequest, ProveRequest, VerifyRequest, ZkvmService,
+    EstimateCostRequest, ExecuteRequest, ProgramVkRequest, ProveRequest, VerifyRequest,
+    ZkvmService, estimate_cost_response::Result as EstimateCostResult,
     execute_response::Result as ExecuteResult, program_vk_response::Result as ProgramVkResult,
     prove_response::Result as ProveResult, verify_response::Result as VerifyResult,
 };
@@ -103,10 +104,7 @@ impl zkVMClient {
             .is_ok_and(|r| r.status().is_success())
     }
 
-    pub async fn execute(
-        &self,
-        input: Input,
-    ) -> Result<(PublicValues, ProgramExecutionReport), Error> {
+    pub async fn execute(&self, input: Input) -> Result<(PublicValues, Duration), Error> {
         let request = Request::new(ExecuteRequest {
             input_stdin: input.stdin,
             input_proofs: input.proofs,
@@ -117,18 +115,39 @@ impl zkVMClient {
         match response.into_body().result.ok_or_else(result_none_err)? {
             ExecuteResult::Ok(result) => Ok((
                 result.public_values.into(),
-                bincode::serde::decode_from_slice(&result.report, bincode::config::legacy())
-                    .map_err(deserialize_report_err)?
-                    .0,
+                Duration::from_nanos(result.duration_nanos),
             )),
             ExecuteResult::Err(err) => Err(Error::zkVM(err)),
+        }
+    }
+
+    pub async fn estimate_cost(
+        &self,
+        input: Input,
+    ) -> Result<(PublicValues, CostEstimation), Error> {
+        let request = Request::new(EstimateCostRequest {
+            input_stdin: input.stdin,
+            input_proofs: input.proofs,
+        });
+
+        let response = self.client.estimate_cost(request).await?;
+
+        match response.into_body().result.ok_or_else(result_none_err)? {
+            EstimateCostResult::Ok(result) => Ok((
+                result.public_values.into(),
+                CostEstimation {
+                    cost: result.cost.into_iter().collect(),
+                    peak_heap_bytes: result.peak_heap_bytes,
+                },
+            )),
+            EstimateCostResult::Err(err) => Err(Error::zkVM(err)),
         }
     }
 
     pub async fn prove(
         &self,
         input: Input,
-    ) -> Result<(PublicValues, EncodedProof, ProgramProvingReport), Error> {
+    ) -> Result<(PublicValues, EncodedProof, Duration), Error> {
         let request = Request::new(ProveRequest {
             input_stdin: input.stdin,
             input_proofs: input.proofs,
@@ -140,9 +159,7 @@ impl zkVMClient {
             ProveResult::Ok(result) => Ok((
                 result.public_values.into(),
                 EncodedProof(result.proof),
-                bincode::serde::decode_from_slice(&result.report, bincode::config::legacy())
-                    .map_err(deserialize_report_err)?
-                    .0,
+                Duration::from_nanos(result.duration_nanos),
             )),
             ProveResult::Err(err) => Err(Error::zkVM(err)),
         }
@@ -173,10 +190,6 @@ impl zkVMClient {
 
 fn result_none_err() -> TwirpErrorResponse {
     twirp::internal("response result should always be Some")
-}
-
-fn deserialize_report_err(err: bincode::error::DecodeError) -> TwirpErrorResponse {
-    twirp::internal(format!("failed to deserialize report: {err}"))
 }
 
 #[cfg(feature = "otel")]

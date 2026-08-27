@@ -1,6 +1,7 @@
 use core::error::Error;
+use std::time::Duration;
 
-use crate::{Input, ProgramExecutionReport, ProgramProvingReport, PublicValues, zkVMVerifier};
+use crate::{Input, PublicValues, cost::CostEstimation, zkVMVerifier};
 
 /// zkVM prover trait to abstract away the differences between each zkVM.
 ///
@@ -21,14 +22,16 @@ pub trait zkVMProver: Sync {
     fn verifier(&self) -> &Self::Verifier;
 
     /// Executes the program with the given input.
-    fn execute(&self, input: &Input)
-    -> Result<(PublicValues, ProgramExecutionReport), Self::Error>;
+    fn execute(&self, input: &Input) -> Result<(PublicValues, Duration), Self::Error>;
 
-    /// Creates a proof of the program execution with given input.
-    fn prove(
+    /// Executes the program and estimates the cost of proving that run. It does not prove.
+    fn execute_estimated_cost(
         &self,
         input: &Input,
-    ) -> Result<(PublicValues, Proof<Self>, ProgramProvingReport), Self::Error>;
+    ) -> Result<(PublicValues, CostEstimation), Self::Error>;
+
+    /// Creates a proof of the program execution with given input.
+    fn prove(&self, input: &Input) -> Result<(PublicValues, Proof<Self>, Duration), Self::Error>;
 
     /// Verifies a proof of the program used to create this zkVM prover instance, then
     /// returns the public values extracted from the proof.

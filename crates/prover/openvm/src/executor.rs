@@ -1,19 +1,22 @@
 //! OpenVM execution instance.
 
-use std::{sync::Arc, time::Instant};
+use std::{
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
-use ere_prover_core::{ProgramExecutionReport, PublicValues};
+use ere_prover_core::PublicValues;
+use ere_verifier_openvm::NUM_PUBLIC_VALUES_BYTES;
 use openvm_circuit::{
     arch::{
-        U16_CELL_SIZE, VirtualMachineError, VmExecutor, instructions::exe::VmExe,
-        rvr::RvrPureInstance,
+        VirtualMachineError, VmExecutor, VmState, instructions::exe::VmExe, rvr::RvrPureInstance,
     },
-    system::memory::merkle::public_values::extract_public_values,
+    system::memory::{merkle::public_values, online::GuestMemory},
 };
 use openvm_sdk::{F, StdIn};
 use openvm_sdk_config::SdkVmConfig;
 
-use crate::error::Error;
+use crate::{error::Error, prover::sdk_vm_config};
 
 /// A precomputed execution instance with the executor it borrows from.
 ///
@@ -27,55 +30,38 @@ pub(crate) struct Executor {
     // Never read directly. Owned only to keep `*executor` alive for `instance`.
     #[allow(dead_code)]
     executor: Box<VmExecutor<F, SdkVmConfig>>,
-    num_public_values_bytes: usize,
 }
 
 impl Executor {
-    pub(crate) fn new(config: SdkVmConfig, app_exe: &Arc<VmExe<F>>) -> Result<Self, Error> {
+    pub(crate) fn new(app_exe: &Arc<VmExe<F>>) -> Result<Self, Error> {
         let executor = Box::new(
-            VmExecutor::new(config)
+            VmExecutor::new(sdk_vm_config())
                 .map_err(|err| Error::Execute(VirtualMachineError::from(err).into()))?,
         );
-        let num_public_values_bytes = executor.config.as_ref().num_public_values * U16_CELL_SIZE;
 
         let instance = executor
             .instance(app_exe)
             .map_err(|err| Error::Execute(VirtualMachineError::from(err).into()))?;
 
-        // SAFETY: `instance` borrows only the `SystemConfig` held in `*executor`,
-        // which lives in an `Arc` allocation that stays put while `*executor` is
-        // alive, and the `executor` field is dropped after `instance` by field
-        // order. The borrow therefore never dangles and never outlives its referent,
-        // so extending its lifetime to `'static` for co-storage is sound.
+        // SAFETY: `*executor` outlives every move of this struct, and `instance` drops first.
         let instance: RvrPureInstance<'static> = unsafe { std::mem::transmute(instance) };
 
-        Ok(Self {
-            instance,
-            executor,
-            num_public_values_bytes,
-        })
+        Ok(Self { instance, executor })
     }
 
     /// Runs `stdin` on the instance.
-    pub(crate) fn execute(
-        &self,
-        stdin: StdIn,
-    ) -> Result<(PublicValues, ProgramExecutionReport), Error> {
+    pub(crate) fn execute(&self, stdin: StdIn) -> Result<(PublicValues, Duration), Error> {
         let start = Instant::now();
-        let final_memory = self
+        let state = self
             .instance
             .execute(stdin)
-            .map_err(|err| Error::Execute(VirtualMachineError::from(err).into()))?
-            .memory;
+            .map_err(|err| Error::Execute(VirtualMachineError::from(err).into()))?;
         let execution_duration = start.elapsed();
-        let public_values =
-            extract_public_values(self.num_public_values_bytes, &final_memory.memory);
-        Ok((
-            public_values.into(),
-            ProgramExecutionReport {
-                execution_duration,
-                ..Default::default()
-            },
-        ))
+
+        Ok((extract_public_values(&state), execution_duration))
     }
+}
+
+pub(crate) fn extract_public_values(state: &VmState<GuestMemory>) -> PublicValues {
+    public_values::extract_public_values(NUM_PUBLIC_VALUES_BYTES, &state.memory.memory).into()
 }

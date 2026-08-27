@@ -26,23 +26,46 @@
 //! | `Network` |    No     |
 //! | `Cluster` |    Yes    |
 //!
+//! ## Cost estimation
+//!
+//! The unit is trace cells. A table costs its rows times its width.
+//!
+//! | Component    | Meaning                                     |
+//! | ------------ | ------------------------------------------- |
+//! | `base`       | Fixed cost of the ROM and the lookup tables |
+//! | `precompile` | Accelerated operations, such as hashes      |
+//! | `memory`     | Memory reads, writes and alignment work     |
+//! | `opcode`     | Plain RISC-V instructions                   |
+//! | `main`       | The main table, one entry per step          |
+//!
+//! The emulator runs with statistics turned on. That setting also prints its own
+//! report to stdout. ZisK sums the five components into the total, so a mismatch
+//! means the estimator misread the report and the estimate fails.
+//!
+//! `peak_heap_bytes` spans the non-zero bytes between the `_heap_bottom` and
+//! `_heap_top` symbols. The value is `None` if the guest carries no such symbols
+//! or if the range leaves emulator RAM.
+//!
 //! ## Environment variables
 //!
-//! | Variable                               | Type  | Default | Description                                                            |
-//! | -------------------------------------- | ----- | ------- | ---------------------------------------------------------------------- |
-//! | `ERE_ZISK_SETUP_ON_INIT`               | Flag  |         | Setup local prover on initialization instead of lazily                 |
-//! | `ERE_ZISK_UNLOCK_MAPPED_MEMORY`        | Flag  |         | Configure the prover to unlock mapped memory                           |
-//! | `ERE_ZISK_MINIMAL_MEMORY`              | Flag  |         | Configure the prover to use minimal memory                             |
-//! | `ERE_ZISK_MAX_STREAMS`                 | Value |         | Configure the prover max streams                                       |
-//! | `ERE_ZISK_NUMBER_THREADS_WITNESS`      | Value |         | Configure the prover number of witness threads                         |
-//! | `ERE_ZISK_MAX_WITNESS_STORED`          | Value |         | Configure the prover max witness stored                                |
-//! | `ERE_ZISK_CLUSTER_PROVE_TIMEOUT_SECS`  | Value |         | Timeout for the cluster client prove job                               |
+//! | Variable                               | Type  | Default        | Description                                            |
+//! | -------------------------------------- | ----- | -------------- | ------------------------------------------------------ |
+//! | `ERE_ZISK_SETUP_ON_INIT`               | Flag  |                | Setup local prover on initialization instead of lazily |
+//! | `ERE_ZISK_UNLOCK_MAPPED_MEMORY`        | Flag  |                | Configure the prover to unlock mapped memory           |
+//! | `ERE_ZISK_MINIMAL_MEMORY`              | Flag  |                | Configure the prover to use minimal memory             |
+//! | `ERE_ZISK_MAX_STREAMS`                 | Value |                | Configure the prover max streams                       |
+//! | `ERE_ZISK_NUMBER_THREADS_WITNESS`      | Value |                | Configure the prover number of witness threads         |
+//! | `ERE_ZISK_MAX_WITNESS_STORED`          | Value |                | Configure the prover max witness stored                |
+//! | `ERE_ZISK_CLUSTER_PROVE_TIMEOUT_SECS`  | Value |                | Timeout for the cluster client prove job               |
+//! | `ERE_COST_ESTIMATION_HEAP_START`       | Value | `_heap_bottom` | Symbol marking the bottom of the guest heap            |
+//! | `ERE_COST_ESTIMATION_HEAP_END`         | Value | `_heap_top`    | Symbol marking the top of the guest heap               |
 //!
 //! [`install_zisk_sdk.sh`]: https://github.com/eth-act/ere/blob/master/scripts/sdk_installers/install_zisk_sdk.sh
 //! [`ziskup`]: https://raw.githubusercontent.com/0xPolygonHermez/zisk/main/ziskup/install.sh
 
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
+mod cost;
 mod error;
 mod prover;
 mod sdk;

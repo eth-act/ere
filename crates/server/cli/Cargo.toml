@@ -7,7 +7,6 @@ license.workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
-bincode = { workspace = true, features = ["alloc", "serde"] }
 clap = { workspace = true, features = ["derive", "env"] }
 metrics = { workspace = true }
 metrics-exporter-prometheus = { workspace = true }

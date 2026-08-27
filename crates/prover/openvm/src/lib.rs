@@ -30,10 +30,29 @@
 //! | `Network` |    No     |
 //! | `Cluster` |    No     |
 //!
+//! ## Cost estimation
+//!
+//! The unit is trace cells. A table costs its rows times its width. The count is
+//! unpadded, because the prover rounds each table up to a power of two rows.
+//!
+//! | Component    | Meaning                                                         |
+//! | ------------ | --------------------------------------------------------------- |
+//! | `rv64`       | Plain RISC-V instructions                                       |
+//! | `precompile` | Accelerated chips, such as Keccak, SHA-2 and modular arithmetic |
+//! | `system`     | Tables both groups share, plus fixed VM overhead                |
+//!
+//! A long run splits into segments, and a table of fixed height is paid once per
+//! segment. `ERE_OPENVM_SEGMENT_MEMORY` sets the limit that starts a new segment,
+//! by default 14.5 GiB.
+//!
+//! `peak_heap_bytes` spans the non-zero bytes above the `_end` symbol, or is
+//! `None` when the estimator cannot read the heap.
+//!
 //! [`install_openvm_sdk.sh`]: https://github.com/eth-act/ere/blob/master/scripts/sdk_installers/install_openvm_sdk.sh
 
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
+mod cost;
 mod error;
 mod executor;
 mod prover;

@@ -1,33 +1,46 @@
-use std::time::Instant;
+use std::{
+    sync::{Arc, OnceLock},
+    time::{Duration, Instant},
+};
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{
-    Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues, zkVMProver,
+    CommonError, CostEstimation, Input, ProverResource, PublicValues, zkVMProver,
 };
 use ere_util_tokio::block_on;
 use ere_verifier_sp1::{SP1ProgramVk, SP1Proof, SP1Verifier};
 use sp1_sdk::{HashableKey, SP1Stdin};
 use tracing::info;
 
-use crate::{error::Error, executor::SP1ExecutorPool, sdk::SP1Sdk};
+use crate::{cost::SP1CostEstimator, error::Error, executor::SP1ExecutorPool, sdk::SP1Sdk};
 
 pub struct SP1Prover {
     executor: SP1ExecutorPool,
+    estimator: OnceLock<SP1CostEstimator>,
+    elf: Arc<[u8]>,
     sdk: SP1Sdk,
     verifier: SP1Verifier,
 }
 
 impl SP1Prover {
     pub fn new(elf: Elf, resource: ProverResource) -> Result<Self, Error> {
-        let executor = SP1ExecutorPool::new(&elf.0)?;
-        let sdk = block_on(SP1Sdk::new(elf.0, &resource))?;
+        let elf: Arc<[u8]> = Arc::from(elf.0);
+        let executor = SP1ExecutorPool::new(&elf)?;
+        let sdk = block_on(SP1Sdk::new(Arc::clone(&elf), &resource))?;
         let program_vk = SP1ProgramVk(sdk.vk().hash_koalabear());
         let verifier = SP1Verifier::new(program_vk);
         Ok(Self {
             executor,
+            estimator: OnceLock::new(),
+            elf,
             sdk,
             verifier,
         })
+    }
+
+    fn estimator(&self) -> &SP1CostEstimator {
+        self.estimator
+            .get_or_init(|| SP1CostEstimator::new(self.executor.program(), &self.elf))
     }
 }
 
@@ -39,14 +52,23 @@ impl zkVMProver for SP1Prover {
         &self.verifier
     }
 
-    fn execute(&self, input: &Input) -> Result<(PublicValues, ProgramExecutionReport), Error> {
+    fn execute(&self, input: &Input) -> Result<(PublicValues, Duration), Error> {
         self.executor.execute(input_to_stdin(input)?)
     }
 
-    fn prove(
+    fn execute_estimated_cost(
         &self,
         input: &Input,
-    ) -> Result<(PublicValues, SP1Proof, ProgramProvingReport), Error> {
+    ) -> Result<(PublicValues, CostEstimation), Error> {
+        // The gas estimator reads stdin only, so it cannot price a proofs stream.
+        if input.proofs.is_some() {
+            Err(CommonError::unsupported_input("no dedicated proofs stream"))?
+        }
+
+        self.estimator().estimate(input.stdin())
+    }
+
+    fn prove(&self, input: &Input) -> Result<(PublicValues, SP1Proof, Duration), Error> {
         info!("Generating proof...");
 
         let stdin = input_to_stdin(input)?;
@@ -57,11 +79,7 @@ impl zkVMProver for SP1Prover {
 
         let public_values = proof.public_values.as_slice().into();
 
-        Ok((
-            public_values,
-            SP1Proof(proof),
-            ProgramProvingReport::new(proving_time),
-        ))
+        Ok((public_values, SP1Proof(proof), proving_time))
     }
 }
 
@@ -85,7 +103,10 @@ mod tests {
     use ere_prover_core::{Input, ProverResource, RemoteProverConfig, zkVMProver};
     use ere_util_test::{
         codec::BincodeLegacy,
-        host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
+        host::{
+            TestCase, run_zkvm_execute, run_zkvm_execute_estimated_cost, run_zkvm_prove,
+            testing_guest_directory,
+        },
         program::{basic::BasicProgram, zkvm_interface},
     };
 
@@ -121,6 +142,15 @@ mod tests {
         ] {
             zkvm.execute(&input).unwrap_err();
         }
+    }
+
+    #[test]
+    fn test_execute_estimated_cost() {
+        let elf = basic_elf();
+        let zkvm = SP1Prover::new(elf, ProverResource::Cpu).unwrap();
+
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+        run_zkvm_execute_estimated_cost(&zkvm, &test_case);
     }
 
     #[test]

@@ -72,12 +72,14 @@ clap = "4.5.42"
 criterion = "0.8"
 crossbeam-channel = "0.5.15"
 digest = { version = "0.10.7", default-features = false }
+elf = "0.7"
 eyre = "0.6.12"
 fnv = { version = "1.0.7", default-features = false }
 futures-util = "0.3"
 hex = "0.4"
 http = "1"
-indexmap = "2.10.0"
+libc = "0.2"
+memmap2 = "0.9"
 metrics = "0.24"
 metrics-exporter-prometheus = { version = "0.18", default-features = false }
 mpi = "0.8.0"
@@ -103,6 +105,7 @@ serde_yaml = "0.9.34"
 sha2 = { version = "0.10.9", default-features = false }
 sha3 = { version = "0.10.8", default-features = false }
 strum = "0.27.2"
+sysinfo = "0.35.2"
 tempfile = "3.20.0"
 thiserror = { version = "2.0.12", default-features = false }
 tokio = "1.0"
@@ -144,6 +147,7 @@ openvm-verify-stark-host = { git = "https://github.com/han0110/openvm.git", bran
 sp1-core-executor = { git = "https://github.com/succinctlabs/sp1", tag = "v6.4.0" }
 sp1-cuda = { git = "https://github.com/succinctlabs/sp1", tag = "v6.4.0" }
 sp1-hypercube = { git = "https://github.com/succinctlabs/sp1", tag = "v6.4.0" }
+sp1-jit = { git = "https://github.com/succinctlabs/sp1", tag = "v6.4.0" }
 sp1-primitives = { git = "https://github.com/succinctlabs/sp1", tag = "v6.4.0" }
 sp1-recursion-executor = { git = "https://github.com/succinctlabs/sp1", tag = "v6.4.0" }
 sp1-sdk = { git = "https://github.com/succinctlabs/sp1", tag = "v6.4.0" }

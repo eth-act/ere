@@ -29,6 +29,25 @@ pub fn run_zkvm_execute(zkvm: &impl zkVMProver, test_case: &impl TestCase) -> Pu
     public_values
 }
 
+pub fn run_zkvm_execute_estimated_cost(
+    zkvm: &impl zkVMProver,
+    test_case: &impl TestCase,
+) -> PublicValues {
+    let (public_values, estimation) = zkvm
+        .execute_estimated_cost(&test_case.input())
+        .expect("execute_estimated_cost should not fail with valid input");
+
+    assert!(!estimation.cost.is_empty(), "cost must not be empty");
+    assert!(
+        estimation.peak_heap_bytes.is_some(),
+        "peak heap must be known"
+    );
+
+    test_case.assert_output(&public_values);
+
+    public_values
+}
+
 pub fn run_zkvm_prove(zkvm: &impl zkVMProver, test_case: &impl TestCase) -> PublicValues {
     let (prover_public_values, proof, _report) = zkvm
         .prove(&test_case.input())

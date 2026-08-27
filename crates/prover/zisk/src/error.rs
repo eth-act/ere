@@ -24,6 +24,9 @@ pub enum Error {
     #[error("Emulator panicked: {0}")]
     EmulatorPanic(String),
 
+    #[error("ZisK cost estimation failed: {0}")]
+    EstimateCost(#[from] EstimateCostError),
+
     // SDK
     #[error("Build prover failed: {0}")]
     BuildProver(#[source] anyhow::Error),
@@ -50,4 +53,13 @@ pub enum Error {
     // Verify
     #[error(transparent)]
     Verifier(#[from] ere_verifier_zisk::Error),
+}
+
+#[derive(Debug, Error)]
+pub enum EstimateCostError {
+    #[error("emulator report is missing {0}")]
+    MissingRows(String),
+
+    #[error("components sum to {summed}, not the total {total}")]
+    Mismatch { summed: u64, total: u64 },
 }

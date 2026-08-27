@@ -3542,9 +3542,9 @@ dependencies = [
  "auto_impl",
  "bincode 2.0.1",
  "clap",
+ "elf",
  "ere-codec",
  "ere-verifier-core",
- "indexmap 2.13.0",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -3563,6 +3563,7 @@ dependencies = [
  "ere-util-test",
  "ere-verifier-openvm",
  "eyre",
+ "once_cell",
  "openvm-circuit",
  "openvm-sdk",
  "openvm-sdk-config",
@@ -3585,11 +3586,16 @@ dependencies = [
  "ere-util-test",
  "ere-util-tokio",
  "ere-verifier-sp1",
+ "libc",
+ "memmap2",
  "sp1-core-executor",
  "sp1-cuda",
  "sp1-hypercube",
+ "sp1-jit",
+ "sp1-primitives 6.4.0",
  "sp1-recursion-executor",
  "sp1-sdk",
+ "sysinfo 0.35.2",
  "thiserror 2.0.18",
  "tokio",
  "tracing",
@@ -3629,7 +3635,6 @@ name = "ere-server"
 version = "0.16.3"
 dependencies = [
  "anyhow",
- "bincode 2.0.1",
  "clap",
  "ere-compiler-core",
  "ere-prover-core",
@@ -3670,7 +3675,6 @@ dependencies = [
 name = "ere-server-client"
 version = "0.16.3"
 dependencies = [
- "bincode 2.0.1",
  "ere-prover-core",
  "ere-server-api",
  "opentelemetry 0.31.0",

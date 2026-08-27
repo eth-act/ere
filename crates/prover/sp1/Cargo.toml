@@ -16,6 +16,7 @@ tracing.workspace = true
 sp1-core-executor.workspace = true
 sp1-cuda = { workspace = true, optional = true }
 sp1-hypercube.workspace = true
+sp1-jit.workspace = true
 sp1-recursion-executor.workspace = true
 sp1-sdk = { workspace = true, features = ["network"] }
 
@@ -24,6 +25,12 @@ ere-compiler-core.workspace = true
 ere-prover-core.workspace = true
 ere-util-tokio.workspace = true
 ere-verifier-sp1.workspace = true
+
+[target.'cfg(all(target_arch = "x86_64", target_os = "linux"))'.dependencies]
+libc.workspace = true
+memmap2.workspace = true
+sp1-primitives.workspace = true
+sysinfo.workspace = true
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

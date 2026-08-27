@@ -7,13 +7,15 @@ use std::{
 use anyhow::{Context, Error};
 use ere_compiler_core::Elf;
 use ere_prover_core::{
-    Input, ProgramExecutionReport, ProgramProvingReport, Proof, ProverResource, PublicValues,
+    CostEstimation, Input, Proof, ProverResource, PublicValues,
     codec::{Decode, Encode},
     zkVMProver,
 };
 use ere_server_api::{
-    ExecuteOk, ExecuteRequest, ExecuteResponse, ProgramVkOk, ProgramVkRequest, ProgramVkResponse,
-    ProveOk, ProveRequest, ProveResponse, VerifyOk, VerifyRequest, VerifyResponse, ZkvmService,
+    EstimateCostOk, EstimateCostRequest, EstimateCostResponse, ExecuteOk, ExecuteRequest,
+    ExecuteResponse, ProgramVkOk, ProgramVkRequest, ProgramVkResponse, ProveOk, ProveRequest,
+    ProveResponse, VerifyOk, VerifyRequest, VerifyResponse, ZkvmService,
+    estimate_cost_response::Result as EstimateCostResult,
     execute_response::Result as ExecuteResult, program_vk_response::Result as ProgramVkResult,
     prove_response::Result as ProveResult, router, verify_response::Result as VerifyResult,
 };
@@ -27,7 +29,7 @@ use tower::ServiceBuilder;
 use tower_http::{catch_panic::CatchPanicLayer, trace::TraceLayer};
 use tracing::info;
 use twirp::{
-    Request, Response, Router, TwirpErrorResponse,
+    Request, Response, Router,
     async_trait::async_trait,
     axum::{self, extract::State, middleware, routing::get},
     internal, invalid_argument,
@@ -140,7 +142,8 @@ impl Drop for ProveInFlight {
 /// FIFO order, dropping a request future before the permit is acquired removes that waiter from
 /// the queue.
 ///
-/// `execute` and `verify` are assumed concurrent-safe for the underlying implementation.
+/// `execute`, `estimate_cost` and `verify` are assumed concurrent-safe for the underlying
+/// implementation. A backend that needs a bound applies its own.
 #[allow(non_camel_case_types)]
 pub struct zkVMServer<T> {
     zkvm: Arc<T>,
@@ -157,20 +160,21 @@ impl<T: 'static + zkVMProver + Send + Sync> zkVMServer<T> {
         }
     }
 
-    async fn execute(
-        &self,
-        input: Input,
-    ) -> anyhow::Result<(PublicValues, ProgramExecutionReport)> {
+    async fn execute(&self, input: Input) -> anyhow::Result<(PublicValues, Duration)> {
         let zkvm = Arc::clone(&self.zkvm);
         tokio::task::spawn_blocking(move || Ok(zkvm.execute(&input)?))
             .await
             .context("execute panicked")?
     }
 
-    async fn prove(
-        &self,
-        input: Input,
-    ) -> anyhow::Result<(PublicValues, Proof<T>, ProgramProvingReport)> {
+    async fn estimate_cost(&self, input: Input) -> anyhow::Result<(PublicValues, CostEstimation)> {
+        let zkvm = Arc::clone(&self.zkvm);
+        tokio::task::spawn_blocking(move || Ok(zkvm.execute_estimated_cost(&input)?))
+            .await
+            .context("estimate_cost panicked")?
+    }
+
+    async fn prove(&self, input: Input) -> anyhow::Result<(PublicValues, Proof<T>, Duration)> {
         let permit = Arc::clone(&self.prove_sem)
             .acquire_owned()
             .await
@@ -213,15 +217,43 @@ impl<T: 'static + zkVMProver + Send + Sync> ZkvmService for zkVMServer<T> {
         metrics::record_execute(&result, start.elapsed());
 
         let result = match result {
-            Ok((public_values, report)) => ExecuteResult::Ok(ExecuteOk {
+            Ok((public_values, duration)) => ExecuteResult::Ok(ExecuteOk {
                 public_values: public_values.into(),
-                report: bincode::serde::encode_to_vec(&report, bincode::config::legacy())
-                    .map_err(serialize_report_err)?,
+                duration_nanos: duration.as_nanos() as u64,
             }),
             Err(err) => ExecuteResult::Err(err.to_string()),
         };
 
         Ok(Response::new(ExecuteResponse {
+            result: Some(result),
+        }))
+    }
+
+    async fn estimate_cost(
+        &self,
+        request: Request<EstimateCostRequest>,
+    ) -> twirp::Result<Response<EstimateCostResponse>> {
+        let EstimateCostRequest {
+            input_stdin: stdin,
+            input_proofs: proofs,
+        } = request.into_body();
+
+        let input = Input { stdin, proofs };
+
+        let start = Instant::now();
+        let result = self.estimate_cost(input).await;
+        metrics::record_estimate_cost(&result, start.elapsed());
+
+        let result = match result {
+            Ok((public_values, estimation)) => EstimateCostResult::Ok(EstimateCostOk {
+                public_values: public_values.into(),
+                cost: estimation.cost.into_iter().collect(),
+                peak_heap_bytes: estimation.peak_heap_bytes,
+            }),
+            Err(err) => EstimateCostResult::Err(err.to_string()),
+        };
+
+        Ok(Response::new(EstimateCostResponse {
             result: Some(result),
         }))
     }
@@ -242,7 +274,7 @@ impl<T: 'static + zkVMProver + Send + Sync> ZkvmService for zkVMServer<T> {
         metrics::record_prove(&result, start.elapsed());
 
         let result = match result {
-            Ok((public_values, proof, report)) => {
+            Ok((public_values, proof, duration)) => {
                 let proof = proof
                     .encode_to_vec()
                     .map_err(|err| internal(format!("failed to encode proof: {err:?}")))?;
@@ -250,8 +282,7 @@ impl<T: 'static + zkVMProver + Send + Sync> ZkvmService for zkVMServer<T> {
                 ProveResult::Ok(ProveOk {
                     public_values: public_values.into(),
                     proof,
-                    report: bincode::serde::encode_to_vec(&report, bincode::config::legacy())
-                        .map_err(serialize_report_err)?,
+                    duration_nanos: duration.as_nanos() as u64,
                 })
             }
             Err(err) => ProveResult::Err(err.to_string()),
@@ -317,8 +348,4 @@ async fn shutdown_signal() {
         _ = sigint.recv() => info!("received SIGINT"),
         _ = sigterm.recv() => info!("received SIGTERM"),
     }
-}
-
-fn serialize_report_err(err: bincode::error::EncodeError) -> TwirpErrorResponse {
-    internal(format!("failed to serialize report: {err}"))
 }

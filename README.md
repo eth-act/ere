@@ -46,7 +46,7 @@ This repository contains the following crates:
 
 - Traits
   - [`ere-compiler-core`] - `Compiler` trait and `Elf` type for compiling guest programs
-  - [`ere-prover-core`] - `zkVMProver` trait, `Input`, `ProverResource`, and execution/proving reports
+  - [`ere-prover-core`] - `zkVMProver` trait, `Input`, `ProverResource`, and `CostEstimation`
   - [`ere-platform-core`] - `Platform` trait for guest program
   - [`ere-verifier-core`] - `zkVMVerifier` trait and `PublicValues`
 - Per-zkVM implementations for [`ere-compiler-core`] (host)
@@ -268,14 +268,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let expected_output = [stdin, 55u64.to_le_bytes().to_vec()].concat();
 
     // Execute
-    let (public_values, report) = zkvm.execute(&input)?;
+    let (public_values, execution_duration) = zkvm.execute(&input)?;
     assert_eq!(public_values, expected_output);
-    println!("Execution cycles: {}", report.total_num_cycles);
+    println!("Execution duration: {execution_duration:?}");
 
     // Prove
-    let (public_values, proof, report) = zkvm.prove(&input)?;
+    let (public_values, proof, proving_time) = zkvm.prove(&input)?;
     assert_eq!(public_values, expected_output);
-    println!("Proving time: {:?}", report.proving_time);
+    println!("Proving time: {proving_time:?}");
 
     // Verify
     let public_values = zkvm.verify(&proof)?;
@@ -343,14 +343,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let expected_output = [stdin, 55u64.to_le_bytes().to_vec()].concat();
 
     // Execute
-    let (public_values, report) = zkvm.execute(&input)?;
+    let (public_values, execution_duration) = zkvm.execute(&input)?;
     assert_eq!(public_values, expected_output);
-    println!("Execution cycles: {}", report.total_num_cycles);
+    println!("Execution duration: {execution_duration:?}");
 
     // Prove
-    let (public_values, proof, report) = zkvm.prove(&input)?;
+    let (public_values, proof, proving_time) = zkvm.prove(&input)?;
     assert_eq!(public_values, expected_output);
-    println!("Proving time: {:?}", report.proving_time);
+    println!("Proving time: {proving_time:?}");
 
     // Verify
     let public_values = zkvm.verify(&proof)?;

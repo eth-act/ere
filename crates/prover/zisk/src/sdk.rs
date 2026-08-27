@@ -1,21 +1,29 @@
 use std::{
     any::Any,
     env,
+    ops::Range,
     panic::{self, AssertUnwindSafe},
     time::Duration,
 };
 
 use ere_cluster_client_zisk::ZiskClusterClient;
 use ere_compiler_core::Elf;
-use ere_prover_core::{CommonError, Input, ProverResource, ProverResourceKind, PublicValues};
+use ere_prover_core::{
+    CommonError, CostEstimation, Input, ProverResource, ProverResourceKind, PublicValues,
+};
 use ere_util_tokio::block_on;
 use ere_verifier_zisk::{ZiskProgramVk, ZiskProof, ensure_program_vk_matches};
 use tokio::time::Instant;
+use zisk_common::EmuTrace;
 use zisk_core::ZiskRom;
 use zisk_transpiler_riscv::Riscv2zisk;
 use ziskemu::{Emu, EmuOptions};
 
-use crate::{error::Error, sdk::local::LocalProver};
+use crate::{
+    cost::{self, peak_heap_bytes},
+    error::Error,
+    sdk::local::LocalProver,
+};
 
 mod local;
 
@@ -35,6 +43,7 @@ pub struct ZiskSdk {
     resource: ProverResource,
     backend: Backend,
     rom: ZiskRom,
+    heap_range: Option<Range<u64>>,
 }
 
 impl ZiskSdk {
@@ -43,6 +52,8 @@ impl ZiskSdk {
         let rom = Riscv2zisk::new(&elf)
             .run()
             .map_err(|err| Error::Riscv2zisk(err.to_string()))?;
+
+        let heap_range = cost::heap_range(&elf);
 
         // Initialize prover
         let backend = match &resource {
@@ -79,6 +90,7 @@ impl ZiskSdk {
             resource,
             backend,
             rom,
+            heap_range,
         })
     }
 
@@ -90,7 +102,7 @@ impl ZiskSdk {
     }
 
     /// Execute the ELF with the given `stdin`.
-    pub fn execute(&self, input: &Input) -> Result<(PublicValues, u64), Error> {
+    pub fn execute(&self, input: &Input) -> Result<PublicValues, Error> {
         let stdin = framed_stdin(input.stdin());
         let mut emu = Emu::new(&self.rom);
 
@@ -108,10 +120,49 @@ impl ZiskSdk {
             return Err(Error::EmulatorError);
         }
 
-        let public_values = emu.get_output_8().into();
-        let total_num_cycles = emu.number_of_steps();
+        Ok(emu.get_output_8().into())
+    }
 
-        Ok((public_values, total_num_cycles))
+    pub fn estimate_cost(&self, input: &Input) -> Result<(PublicValues, CostEstimation), Error> {
+        let stdin = framed_stdin(input.stdin());
+        let options = EmuOptions {
+            stats: true,
+            ..Default::default()
+        };
+        let mut emu = Emu::new(&self.rom);
+
+        panic::catch_unwind(AssertUnwindSafe(|| {
+            emu.run(stdin, &options, None::<Box<dyn Fn(EmuTrace)>>);
+        }))
+        .map_err(|err| Error::EmulatorPanic(panic_msg(err)))?;
+
+        if !emu.terminated() {
+            return Err(Error::EmulatorNotTerminated);
+        }
+
+        if emu.ctx.inst_ctx.error {
+            return Err(Error::EmulatorError);
+        }
+
+        emu.ctx.stats.set_use_thousands_sep(false);
+        let cost = cost::parse(&emu.ctx.stats.report(&self.rom))?;
+        let peak_heap_bytes = self.heap_range.as_ref().and_then(|range| {
+            let heap = emu
+                .ctx
+                .inst_ctx
+                .mem
+                .read_slice(range.start, range.end - range.start);
+            peak_heap_bytes(heap)
+        });
+        let public_values = emu.get_output_8();
+
+        Ok((
+            public_values.as_slice().into(),
+            CostEstimation {
+                cost,
+                peak_heap_bytes,
+            },
+        ))
     }
 
     pub fn prove(&self, input: &Input) -> Result<(PublicValues, ZiskProof, Duration), Error> {

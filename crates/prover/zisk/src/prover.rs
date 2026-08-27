@@ -1,9 +1,8 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{
-    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource, PublicValues,
-    zkVMProver,
+    CommonError, CostEstimation, Input, ProverResource, PublicValues, zkVMProver,
 };
 use ere_verifier_zisk::{ZiskProof, ZiskVerifier};
 
@@ -30,40 +29,37 @@ impl zkVMProver for ZiskProver {
         &self.verifier
     }
 
-    fn execute(&self, input: &Input) -> Result<(PublicValues, ProgramExecutionReport), Error> {
+    fn execute(&self, input: &Input) -> Result<(PublicValues, Duration), Error> {
         if input.proofs.is_some() {
             Err(CommonError::unsupported_input("no dedicated proofs stream"))?
         }
 
         let start = Instant::now();
-        let (public_values, total_num_cycles) = self.sdk.execute(input)?;
+        let public_values = self.sdk.execute(input)?;
         let execution_duration = start.elapsed();
 
-        Ok((
-            public_values,
-            ProgramExecutionReport {
-                total_num_cycles,
-                execution_duration,
-                ..Default::default()
-            },
-        ))
+        Ok((public_values, execution_duration))
     }
 
-    fn prove(
+    fn execute_estimated_cost(
         &self,
         input: &Input,
-    ) -> Result<(PublicValues, ZiskProof, ProgramProvingReport), Error> {
+    ) -> Result<(PublicValues, CostEstimation), Error> {
+        if input.proofs.is_some() {
+            Err(CommonError::unsupported_input("no dedicated proofs stream"))?
+        }
+
+        self.sdk.estimate_cost(input)
+    }
+
+    fn prove(&self, input: &Input) -> Result<(PublicValues, ZiskProof, Duration), Error> {
         if input.proofs.is_some() {
             Err(CommonError::unsupported_input("no dedicated proofs stream"))?
         }
 
         let (public_values, proof, proving_time) = self.sdk.prove(input)?;
 
-        Ok((
-            public_values,
-            proof,
-            ProgramProvingReport::new(proving_time),
-        ))
+        Ok((public_values, proof, proving_time))
     }
 }
 
@@ -76,7 +72,10 @@ pub(crate) mod tests {
     use ere_prover_core::{Input, ProverResource, RemoteProverConfig, zkVMProver};
     use ere_util_test::{
         codec::BincodeLegacy,
-        host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
+        host::{
+            TestCase, run_zkvm_execute, run_zkvm_execute_estimated_cost, run_zkvm_prove,
+            testing_guest_directory,
+        },
         program::{basic::BasicProgram, zkvm_interface},
     };
 
@@ -124,6 +123,14 @@ pub(crate) mod tests {
         ] {
             zkvm.execute(&input).unwrap_err();
         }
+    }
+
+    #[test]
+    fn test_execute_estimated_cost() {
+        let zkvm = &*basic_elf_zkvm();
+
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+        run_zkvm_execute_estimated_cost(&zkvm, &test_case);
     }
 
     #[test]

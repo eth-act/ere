@@ -1,9 +1,14 @@
-use std::{path::PathBuf, sync::Arc, time::Instant};
+use std::{
+    env,
+    path::PathBuf,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{
-    CommonError, Input, ProgramExecutionReport, ProgramProvingReport, ProverResource,
-    ProverResourceKind, PublicValues, zkVMProver,
+    CommonError, CostEstimation, Input, ProverResource, ProverResourceKind, PublicValues,
+    zkVMProver,
 };
 use ere_verifier_openvm::{
     NUM_PUBLIC_VALUES_BYTES, OpenVMProgramVk, OpenVMProof, OpenVMVerifier, extract_public_values,
@@ -22,7 +27,10 @@ use openvm_stark_sdk::{
 };
 use openvm_transpiler::{FromElf, openvm_platform::memory::MEM_SIZE};
 
-use crate::{error::Error, executor::Executor};
+use crate::{cost::CostEstimator, error::Error, executor::Executor};
+
+/// Segment memory limit, 14.5 GiB. Execution starts a new segment above it.
+const DEFAULT_SEGMENT_MEMORY: usize = 29 << 29;
 
 pub struct OpenVMProver {
     app_exe: Arc<VmExe<F>>,
@@ -30,6 +38,7 @@ pub struct OpenVMProver {
     agg_pk: AggProvingKey,
     resource: ProverResource,
     executor: Executor,
+    estimator: CostEstimator,
     verifier: OpenVMVerifier,
 }
 
@@ -42,14 +51,7 @@ impl OpenVMProver {
             ))?;
         }
 
-        let app_exe = Arc::new(
-            VmExe::from_elf(
-                openvm_transpiler::elf::Elf::decode(&elf.0, MEM_SIZE.try_into().unwrap())
-                    .map_err(Error::DecodeElf)?,
-                app_config().app_vm_config.transpiler(),
-            )
-            .map_err(Error::Transpile)?,
-        );
+        let app_exe = transpile(&elf.0)?;
 
         let sdk = cpu_sdk(None, None)?;
         let app_pk = sdk.app_pk().clone();
@@ -61,12 +63,14 @@ impl OpenVMProver {
             ),
         };
 
-        let baseline = cpu_sdk(app_pk.clone().into(), agg_pk.clone().into())?
+        let sdk = cpu_sdk(app_pk.clone().into(), agg_pk.clone().into())?;
+        let baseline = sdk
             .prover(app_exe.clone())
             .map_err(Error::ProverInit)?
             .generate_baseline();
 
-        let executor = Executor::new(sdk_vm_config(), &app_exe)?;
+        let executor = Executor::new(&app_exe)?;
+        let estimator = CostEstimator::new(&elf, &app_exe, &sdk)?;
 
         let verifier = OpenVMVerifier::new(OpenVMProgramVk::new(baseline.clone()));
 
@@ -76,6 +80,7 @@ impl OpenVMProver {
             agg_pk,
             resource,
             executor,
+            estimator,
             verifier,
         })
     }
@@ -98,7 +103,7 @@ impl zkVMProver for OpenVMProver {
         &self.verifier
     }
 
-    fn execute(&self, input: &Input) -> Result<(PublicValues, ProgramExecutionReport), Error> {
+    fn execute(&self, input: &Input) -> Result<(PublicValues, Duration), Error> {
         if input.proofs.is_some() {
             Err(CommonError::unsupported_input("no dedicated proofs stream"))?
         }
@@ -109,10 +114,21 @@ impl zkVMProver for OpenVMProver {
         self.executor.execute(stdin)
     }
 
-    fn prove(
+    fn execute_estimated_cost(
         &self,
         input: &Input,
-    ) -> Result<(PublicValues, OpenVMProof, ProgramProvingReport), Error> {
+    ) -> Result<(PublicValues, CostEstimation), Error> {
+        if input.proofs.is_some() {
+            Err(CommonError::unsupported_input("no dedicated proofs stream"))?
+        }
+
+        let mut stdin = StdIn::default();
+        stdin.write_bytes(input.stdin());
+
+        self.estimator.estimate(stdin)
+    }
+
+    fn prove(&self, input: &Input) -> Result<(PublicValues, OpenVMProof, Duration), Error> {
         if input.proofs.is_some() {
             Err(CommonError::unsupported_input("no dedicated proofs stream"))?
         }
@@ -138,12 +154,19 @@ impl zkVMProver for OpenVMProver {
         let public_values = extract_public_values(&proof.user_pvs_proof.public_values)?;
         let proof = OpenVMProof::new(proof);
 
-        Ok((
-            public_values,
-            proof,
-            ProgramProvingReport::new(proving_time),
-        ))
+        Ok((public_values, proof, proving_time))
     }
+}
+
+fn transpile(elf: &[u8]) -> Result<Arc<VmExe<F>>, Error> {
+    Ok(Arc::new(
+        VmExe::from_elf(
+            openvm_transpiler::elf::Elf::decode(elf, MEM_SIZE.try_into().unwrap())
+                .map_err(Error::DecodeElf)?,
+            app_config().app_vm_config.transpiler(),
+        )
+        .map_err(Error::Transpile)?,
+    ))
 }
 
 fn cpu_sdk(
@@ -178,12 +201,16 @@ where
         .map_err(Error::ProverInit)
 }
 
-fn sdk_vm_config() -> SdkVmConfig {
+pub(crate) fn sdk_vm_config() -> SdkVmConfig {
     let mut config = SdkVmConfig::standard();
     config.system.config = config
         .system
         .config
         .with_public_values_bytes(NUM_PUBLIC_VALUES_BYTES);
+    config.system.config.segmentation_max_memory = env::var("ERE_OPENVM_SEGMENT_MEMORY")
+        .ok()
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(DEFAULT_SEGMENT_MEMORY);
     config.optimize()
 }
 
@@ -207,7 +234,10 @@ mod tests {
     use ere_prover_core::{Input, ProverResource, zkVMProver};
     use ere_util_test::{
         codec::BincodeLegacy,
-        host::{TestCase, run_zkvm_execute, run_zkvm_prove, testing_guest_directory},
+        host::{
+            TestCase, run_zkvm_execute, run_zkvm_execute_estimated_cost, run_zkvm_prove,
+            testing_guest_directory,
+        },
         program::{basic::BasicProgram, zkvm_interface},
     };
 
@@ -243,6 +273,15 @@ mod tests {
         ] {
             zkvm.execute(&input).unwrap_err();
         }
+    }
+
+    #[test]
+    fn test_execute_estimated_cost() {
+        let elf = basic_elf();
+        let zkvm = OpenVMProver::new(elf, ProverResource::Cpu).unwrap();
+
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+        run_zkvm_execute_estimated_cost(&zkvm, &test_case);
     }
 
     #[test]
