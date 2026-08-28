@@ -14,8 +14,9 @@ const HTTP_REQUEST_DURATION_SECONDS: &str = "ere_server_http_request_duration_se
 const HTTP_REQUESTS_IN_FLIGHT: &str = "ere_server_http_requests_in_flight";
 const EXECUTE_TOTAL: &str = "ere_server_execute_total";
 const EXECUTE_DURATION_SECONDS: &str = "ere_server_execute_duration_seconds";
-const ESTIMATE_COST_TOTAL: &str = "ere_server_estimate_cost_total";
-const ESTIMATE_COST_DURATION_SECONDS: &str = "ere_server_estimate_cost_duration_seconds";
+const EXECUTE_ESTIMATED_COST_TOTAL: &str = "ere_server_execute_estimated_cost_total";
+const EXECUTE_ESTIMATED_COST_DURATION_SECONDS: &str =
+    "ere_server_execute_estimated_cost_duration_seconds";
 const PROVE_TOTAL: &str = "ere_server_prove_total";
 const PROVE_DURATION_SECONDS: &str = "ere_server_prove_duration_seconds";
 const PROVE_PROOF_BYTES: &str = "ere_server_prove_proof_bytes";
@@ -52,10 +53,10 @@ pub fn record_execute<T, E>(result: &Result<T, E>, elapsed: Duration) {
     record_call(EXECUTE_TOTAL, EXECUTE_DURATION_SECONDS, result, elapsed);
 }
 
-pub fn record_estimate_cost<T, E>(result: &Result<T, E>, elapsed: Duration) {
+pub fn record_execute_estimated_cost<T, E>(result: &Result<T, E>, elapsed: Duration) {
     record_call(
-        ESTIMATE_COST_TOTAL,
-        ESTIMATE_COST_DURATION_SECONDS,
+        EXECUTE_ESTIMATED_COST_TOTAL,
+        EXECUTE_ESTIMATED_COST_DURATION_SECONDS,
         result,
         elapsed,
     );
@@ -132,7 +133,7 @@ pub async fn handler(State(handle): State<PrometheusHandle>) -> String {
 pub fn path_to_method(path: &str) -> &'static str {
     match path {
         "/twirp/api.ZkvmService/Execute" => "execute",
-        "/twirp/api.ZkvmService/EstimateCost" => "estimate_cost",
+        "/twirp/api.ZkvmService/ExecuteEstimatedCost" => "execute_estimated_cost",
         "/twirp/api.ZkvmService/Prove" => "prove",
         "/twirp/api.ZkvmService/Verify" => "verify",
         _ => "unknown",

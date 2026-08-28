@@ -4,7 +4,7 @@ package api;
 
 service ZkvmService {
     rpc Execute(ExecuteRequest) returns (ExecuteResponse) {}
-    rpc EstimateCost(EstimateCostRequest) returns (EstimateCostResponse) {}
+    rpc ExecuteEstimatedCost(ExecuteEstimatedCostRequest) returns (ExecuteEstimatedCostResponse) {}
     rpc Prove(ProveRequest) returns (ProveResponse) {}
     rpc Verify(VerifyRequest) returns (VerifyResponse) {}
     rpc ProgramVk(ProgramVkRequest) returns (ProgramVkResponse) {}
@@ -27,19 +27,19 @@ message ExecuteOk {
     uint64 duration_nanos = 2;
 }
 
-message EstimateCostRequest {
+message ExecuteEstimatedCostRequest {
     bytes input_stdin = 1;
     optional bytes input_proofs = 2;
 }
 
-message EstimateCostResponse {
+message ExecuteEstimatedCostResponse {
     oneof result {
-        EstimateCostOk ok = 1;
+        ExecuteEstimatedCostOk ok = 1;
         string err = 2;
     }
 }
 
-message EstimateCostOk {
+message ExecuteEstimatedCostOk {
     bytes public_values = 1;
     map<string, uint64> cost = 2;
     optional uint64 peak_heap_bytes = 3;

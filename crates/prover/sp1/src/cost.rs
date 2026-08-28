@@ -45,7 +45,6 @@ impl SP1CostEstimator {
         Self {
             executor: Executor::new(Arc::clone(&program), symbol_address(elf, &start)),
             program,
-
             weights: weights(),
         }
     }

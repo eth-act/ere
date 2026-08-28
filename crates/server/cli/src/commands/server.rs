@@ -12,10 +12,10 @@ use ere_prover_core::{
     zkVMProver,
 };
 use ere_server_api::{
-    EstimateCostOk, EstimateCostRequest, EstimateCostResponse, ExecuteOk, ExecuteRequest,
-    ExecuteResponse, ProgramVkOk, ProgramVkRequest, ProgramVkResponse, ProveOk, ProveRequest,
-    ProveResponse, VerifyOk, VerifyRequest, VerifyResponse, ZkvmService,
-    estimate_cost_response::Result as EstimateCostResult,
+    ExecuteEstimatedCostOk, ExecuteEstimatedCostRequest, ExecuteEstimatedCostResponse, ExecuteOk,
+    ExecuteRequest, ExecuteResponse, ProgramVkOk, ProgramVkRequest, ProgramVkResponse, ProveOk,
+    ProveRequest, ProveResponse, VerifyOk, VerifyRequest, VerifyResponse, ZkvmService,
+    execute_estimated_cost_response::Result as ExecuteEstimatedCostResult,
     execute_response::Result as ExecuteResult, program_vk_response::Result as ProgramVkResult,
     prove_response::Result as ProveResult, router, verify_response::Result as VerifyResult,
 };
@@ -142,7 +142,7 @@ impl Drop for ProveInFlight {
 /// FIFO order, dropping a request future before the permit is acquired removes that waiter from
 /// the queue.
 ///
-/// `execute`, `estimate_cost` and `verify` are assumed concurrent-safe for the underlying
+/// `execute`, `execute_estimated_cost` and `verify` are assumed concurrent-safe for the underlying
 /// implementation. A backend that needs a bound applies its own.
 #[allow(non_camel_case_types)]
 pub struct zkVMServer<T> {
@@ -167,11 +167,14 @@ impl<T: 'static + zkVMProver + Send + Sync> zkVMServer<T> {
             .context("execute panicked")?
     }
 
-    async fn estimate_cost(&self, input: Input) -> anyhow::Result<(PublicValues, CostEstimation)> {
+    async fn execute_estimated_cost(
+        &self,
+        input: Input,
+    ) -> anyhow::Result<(PublicValues, CostEstimation)> {
         let zkvm = Arc::clone(&self.zkvm);
         tokio::task::spawn_blocking(move || Ok(zkvm.execute_estimated_cost(&input)?))
             .await
-            .context("estimate_cost panicked")?
+            .context("execute_estimated_cost panicked")?
     }
 
     async fn prove(&self, input: Input) -> anyhow::Result<(PublicValues, Proof<T>, Duration)> {
@@ -229,11 +232,11 @@ impl<T: 'static + zkVMProver + Send + Sync> ZkvmService for zkVMServer<T> {
         }))
     }
 
-    async fn estimate_cost(
+    async fn execute_estimated_cost(
         &self,
-        request: Request<EstimateCostRequest>,
-    ) -> twirp::Result<Response<EstimateCostResponse>> {
-        let EstimateCostRequest {
+        request: Request<ExecuteEstimatedCostRequest>,
+    ) -> twirp::Result<Response<ExecuteEstimatedCostResponse>> {
+        let ExecuteEstimatedCostRequest {
             input_stdin: stdin,
             input_proofs: proofs,
         } = request.into_body();
@@ -241,19 +244,21 @@ impl<T: 'static + zkVMProver + Send + Sync> ZkvmService for zkVMServer<T> {
         let input = Input { stdin, proofs };
 
         let start = Instant::now();
-        let result = self.estimate_cost(input).await;
-        metrics::record_estimate_cost(&result, start.elapsed());
+        let result = self.execute_estimated_cost(input).await;
+        metrics::record_execute_estimated_cost(&result, start.elapsed());
 
         let result = match result {
-            Ok((public_values, estimation)) => EstimateCostResult::Ok(EstimateCostOk {
-                public_values: public_values.into(),
-                cost: estimation.cost.into_iter().collect(),
-                peak_heap_bytes: estimation.peak_heap_bytes,
-            }),
-            Err(err) => EstimateCostResult::Err(err.to_string()),
+            Ok((public_values, estimation)) => {
+                ExecuteEstimatedCostResult::Ok(ExecuteEstimatedCostOk {
+                    public_values: public_values.into(),
+                    cost: estimation.cost.into_iter().collect(),
+                    peak_heap_bytes: estimation.peak_heap_bytes,
+                })
+            }
+            Err(err) => ExecuteEstimatedCostResult::Err(err.to_string()),
         };
 
-        Ok(Response::new(EstimateCostResponse {
+        Ok(Response::new(ExecuteEstimatedCostResponse {
             result: Some(result),
         }))
     }

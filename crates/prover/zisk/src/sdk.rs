@@ -123,7 +123,10 @@ impl ZiskSdk {
         Ok(emu.get_output_8().into())
     }
 
-    pub fn estimate_cost(&self, input: &Input) -> Result<(PublicValues, CostEstimation), Error> {
+    pub fn execute_estimated_cost(
+        &self,
+        input: &Input,
+    ) -> Result<(PublicValues, CostEstimation), Error> {
         let stdin = framed_stdin(input.stdin());
         let options = EmuOptions {
             stats: true,

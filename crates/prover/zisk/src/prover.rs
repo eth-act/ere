@@ -49,7 +49,7 @@ impl zkVMProver for ZiskProver {
             Err(CommonError::unsupported_input("no dedicated proofs stream"))?
         }
 
-        self.sdk.estimate_cost(input)
+        self.sdk.execute_estimated_cost(input)
     }
 
     fn prove(&self, input: &Input) -> Result<(PublicValues, ZiskProof, Duration), Error> {

@@ -34,7 +34,7 @@ pub struct ExecuteOk {
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct EstimateCostRequest {
+pub struct ExecuteEstimatedCostRequest {
     #[prost(bytes = "vec", tag = "1")]
     pub input_stdin: ::prost::alloc::vec::Vec<u8>,
     #[prost(bytes = "vec", optional, tag = "2")]
@@ -42,24 +42,24 @@ pub struct EstimateCostRequest {
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct EstimateCostResponse {
-    #[prost(oneof = "estimate_cost_response::Result", tags = "1, 2")]
-    pub result: ::core::option::Option<estimate_cost_response::Result>,
+pub struct ExecuteEstimatedCostResponse {
+    #[prost(oneof = "execute_estimated_cost_response::Result", tags = "1, 2")]
+    pub result: ::core::option::Option<execute_estimated_cost_response::Result>,
 }
-/// Nested message and enum types in `EstimateCostResponse`.
-pub mod estimate_cost_response {
+/// Nested message and enum types in `ExecuteEstimatedCostResponse`.
+pub mod execute_estimated_cost_response {
     #[derive(serde::Serialize, serde::Deserialize)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Result {
         #[prost(message, tag = "1")]
-        Ok(super::EstimateCostOk),
+        Ok(super::ExecuteEstimatedCostOk),
         #[prost(string, tag = "2")]
         Err(::prost::alloc::string::String),
     }
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct EstimateCostOk {
+pub struct ExecuteEstimatedCostOk {
     #[prost(bytes = "vec", tag = "1")]
     pub public_values: ::prost::alloc::vec::Vec<u8>,
     #[prost(map = "string, uint64", tag = "2")]
@@ -164,10 +164,10 @@ pub trait ZkvmService: Send + Sync {
         &self,
         req: twirp::Request<ExecuteRequest>,
     ) -> twirp::Result<twirp::Response<ExecuteResponse>>;
-    async fn estimate_cost(
+    async fn execute_estimated_cost(
         &self,
-        req: twirp::Request<EstimateCostRequest>,
-    ) -> twirp::Result<twirp::Response<EstimateCostResponse>>;
+        req: twirp::Request<ExecuteEstimatedCostRequest>,
+    ) -> twirp::Result<twirp::Response<ExecuteEstimatedCostResponse>>;
     async fn prove(
         &self,
         req: twirp::Request<ProveRequest>,
@@ -192,11 +192,11 @@ where
     ) -> twirp::Result<twirp::Response<ExecuteResponse>> {
         T::execute(&*self, req).await
     }
-    async fn estimate_cost(
+    async fn execute_estimated_cost(
         &self,
-        req: twirp::Request<EstimateCostRequest>,
-    ) -> twirp::Result<twirp::Response<EstimateCostResponse>> {
-        T::estimate_cost(&*self, req).await
+        req: twirp::Request<ExecuteEstimatedCostRequest>,
+    ) -> twirp::Result<twirp::Response<ExecuteEstimatedCostResponse>> {
+        T::execute_estimated_cost(&*self, req).await
     }
     async fn prove(
         &self,
@@ -229,9 +229,9 @@ where
             },
         )
         .route(
-            "/EstimateCost",
-            |api: T, req: twirp::Request<EstimateCostRequest>| async move {
-                api.estimate_cost(req).await
+            "/ExecuteEstimatedCost",
+            |api: T, req: twirp::Request<ExecuteEstimatedCostRequest>| async move {
+                api.execute_estimated_cost(req).await
             },
         )
         .route(
@@ -262,11 +262,11 @@ impl ZkvmService for twirp::client::Client {
     ) -> twirp::Result<twirp::Response<ExecuteResponse>> {
         self.request("api.ZkvmService/Execute", req).await
     }
-    async fn estimate_cost(
+    async fn execute_estimated_cost(
         &self,
-        req: twirp::Request<EstimateCostRequest>,
-    ) -> twirp::Result<twirp::Response<EstimateCostResponse>> {
-        self.request("api.ZkvmService/EstimateCost", req).await
+        req: twirp::Request<ExecuteEstimatedCostRequest>,
+    ) -> twirp::Result<twirp::Response<ExecuteEstimatedCostResponse>> {
+        self.request("api.ZkvmService/ExecuteEstimatedCost", req).await
     }
     async fn prove(
         &self,
@@ -320,11 +320,13 @@ pub mod handler {
                             .await?,
                     )
                 }
-                "EstimateCost" => {
+                "ExecuteEstimatedCost" => {
                     twirp::details::encode_response(
                         self
                             .inner
-                            .estimate_cost(twirp::details::decode_request(req).await?)
+                            .execute_estimated_cost(
+                                twirp::details::decode_request(req).await?,
+                            )
                             .await?,
                     )
                 }

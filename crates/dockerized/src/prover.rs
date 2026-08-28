@@ -379,7 +379,7 @@ impl DockerizedzkVM {
         self.with_retry(
             |client| {
                 let input = input.clone();
-                Box::pin(async move { client.estimate_cost(input).await })
+                Box::pin(async move { client.execute_estimated_cost(input).await })
             },
             self.config.execute_timeout,
         )

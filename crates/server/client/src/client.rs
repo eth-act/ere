@@ -2,8 +2,8 @@ use core::{ops::Deref, time::Duration};
 
 use ere_prover_core::{CostEstimation, Input, PublicValues};
 use ere_server_api::{
-    EstimateCostRequest, ExecuteRequest, ProgramVkRequest, ProveRequest, VerifyRequest,
-    ZkvmService, estimate_cost_response::Result as EstimateCostResult,
+    ExecuteEstimatedCostRequest, ExecuteRequest, ProgramVkRequest, ProveRequest, VerifyRequest,
+    ZkvmService, execute_estimated_cost_response::Result as ExecuteEstimatedCostResult,
     execute_response::Result as ExecuteResult, program_vk_response::Result as ProgramVkResult,
     prove_response::Result as ProveResult, verify_response::Result as VerifyResult,
 };
@@ -121,26 +121,26 @@ impl zkVMClient {
         }
     }
 
-    pub async fn estimate_cost(
+    pub async fn execute_estimated_cost(
         &self,
         input: Input,
     ) -> Result<(PublicValues, CostEstimation), Error> {
-        let request = Request::new(EstimateCostRequest {
+        let request = Request::new(ExecuteEstimatedCostRequest {
             input_stdin: input.stdin,
             input_proofs: input.proofs,
         });
 
-        let response = self.client.estimate_cost(request).await?;
+        let response = self.client.execute_estimated_cost(request).await?;
 
         match response.into_body().result.ok_or_else(result_none_err)? {
-            EstimateCostResult::Ok(result) => Ok((
+            ExecuteEstimatedCostResult::Ok(result) => Ok((
                 result.public_values.into(),
                 CostEstimation {
                     cost: result.cost.into_iter().collect(),
                     peak_heap_bytes: result.peak_heap_bytes,
                 },
             )),
-            EstimateCostResult::Err(err) => Err(Error::zkVM(err)),
+            ExecuteEstimatedCostResult::Err(err) => Err(Error::zkVM(err)),
         }
     }
 
