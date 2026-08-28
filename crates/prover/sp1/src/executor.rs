@@ -1,4 +1,4 @@
-//! A bounded pool of reusable SP1 execution instances.
+//! Bounded concurrent SP1 execution.
 
 use std::{
     env,
@@ -17,28 +17,24 @@ use sp1_sdk::{SP1Stdin, StatusCode};
 
 use crate::error::Error;
 
-/// Upper bound on the pool size when derived from available parallelism.
-const MAX_POOL_SIZE: usize = 32;
+/// Upper bound on the concurrency derived from available parallelism.
+const MAX_CONCURRENCY: usize = 32;
 
-/// A fixed-size pool of reusable SP1 execution instances.
-///
-/// The size defaults to the host's available parallelism capped by
-/// [`MAX_POOL_SIZE`], and the `ERE_SP1_EXECUTOR_POOL_SIZE` environment variable
-/// overrides the bound.
-pub(crate) struct SP1ExecutorPool {
+/// Runs a program on a fixed set of reusable execution instances.
+pub(crate) struct SP1Executor {
     rx: Receiver<MinimalExecutorEnum>,
     tx: Sender<MinimalExecutorEnum>,
     program: Arc<Program>,
 }
 
-impl SP1ExecutorPool {
+impl SP1Executor {
     pub(crate) fn new(elf: &[u8]) -> Result<Self, Error> {
         let program: Arc<Program> = Program::from(elf)
             .map_err(|err| Error::setup(anyhow!("failed to disassemble program: {err}")))?
             .into();
-        let size = execution_concurrency();
-        let (tx, rx) = bounded(size);
-        for _ in 0..size {
+        let concurrency = execution_concurrency();
+        let (tx, rx) = bounded(concurrency);
+        for _ in 0..concurrency {
             tx.send(MinimalExecutorEnum::new(Arc::clone(&program), false, None))
                 .unwrap();
         }
@@ -49,8 +45,7 @@ impl SP1ExecutorPool {
         Arc::clone(&self.program)
     }
 
-    /// Runs `stdin` on a pooled executor, blocking until one is free. The
-    /// executor rejoins the pool once the run completes.
+    /// Runs `stdin`, blocking until an instance is free.
     pub(crate) fn execute(&self, stdin: SP1Stdin) -> Result<(PublicValues, Duration), Error> {
         let mut executor = ExecutorGuard {
             executor: Some(self.rx.recv().unwrap()),
@@ -82,7 +77,7 @@ impl SP1ExecutorPool {
     }
 }
 
-/// An executor borrowed from an [`SP1ExecutorPool`], returned to it on drop.
+/// An instance borrowed from an [`SP1Executor`], returned to it on drop.
 pub(crate) struct ExecutorGuard<'a> {
     executor: Option<MinimalExecutorEnum>,
     tx: &'a Sender<MinimalExecutorEnum>,
@@ -110,18 +105,15 @@ impl Drop for ExecutorGuard<'_> {
     }
 }
 
-/// The executor pool size, bounding concurrent executions.
-///
-/// Defaults to the host's available parallelism capped by [`MAX_POOL_SIZE`].
-/// `ERE_SP1_EXECUTOR_POOL_SIZE` overrides the bound with an explicit size.
+/// Executions that may run at once, which `ERE_SP1_EXECUTOR_CONCURRENCY` states outright.
 pub(crate) fn execution_concurrency() -> usize {
-    env::var("ERE_SP1_EXECUTOR_POOL_SIZE")
+    env::var("ERE_SP1_EXECUTOR_CONCURRENCY")
         .ok()
         .and_then(|value| value.parse::<usize>().ok())
-        .filter(|&size| size > 0)
+        .filter(|&concurrency| concurrency > 0)
         .unwrap_or_else(|| {
             thread::available_parallelism()
                 .map_or(1, NonZeroUsize::get)
-                .min(MAX_POOL_SIZE)
+                .min(MAX_CONCURRENCY)
         })
 }

@@ -12,10 +12,10 @@ use ere_verifier_sp1::{SP1ProgramVk, SP1Proof, SP1Verifier};
 use sp1_sdk::{HashableKey, SP1Stdin};
 use tracing::info;
 
-use crate::{cost::SP1CostEstimator, error::Error, executor::SP1ExecutorPool, sdk::SP1Sdk};
+use crate::{cost::SP1CostEstimator, error::Error, executor::SP1Executor, sdk::SP1Sdk};
 
 pub struct SP1Prover {
-    executor: SP1ExecutorPool,
+    executor: SP1Executor,
     estimator: OnceLock<SP1CostEstimator>,
     elf: Arc<[u8]>,
     sdk: SP1Sdk,
@@ -25,7 +25,7 @@ pub struct SP1Prover {
 impl SP1Prover {
     pub fn new(elf: Elf, resource: ProverResource) -> Result<Self, Error> {
         let elf: Arc<[u8]> = Arc::from(elf.0);
-        let executor = SP1ExecutorPool::new(&elf)?;
+        let executor = SP1Executor::new(&elf)?;
         let sdk = block_on(SP1Sdk::new(Arc::clone(&elf), &resource))?;
         let program_vk = SP1ProgramVk(sdk.vk().hash_koalabear());
         let verifier = SP1Verifier::new(program_vk);

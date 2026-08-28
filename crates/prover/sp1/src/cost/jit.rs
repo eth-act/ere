@@ -1,4 +1,4 @@
-use std::{mem, ops::Range, os::fd::AsRawFd, sync::Arc};
+use std::{env, mem, ops::Range, os::fd::AsRawFd, sync::Arc};
 
 use crossbeam_channel::{Receiver, Sender, bounded};
 use memmap2::MmapMut;
@@ -214,9 +214,18 @@ fn read_guest_bytes(
     Ok(guest_bytes)
 }
 
-/// Each estimate holds a trace buffer and a guest image, where a plain execution holds neither, so
-/// free memory bounds the count as well as the core count.
+/// Estimates that may run at once, which `ERE_SP1_ESTIMATOR_CONCURRENCY` states outright.
+///
+/// Absent that, an estimate holds a trace buffer where a plain execution holds none, so free memory
+/// bounds the count as well as the core count.
 fn concurrency() -> usize {
+    if let Some(stated) = env::var("ERE_SP1_ESTIMATOR_CONCURRENCY")
+        .ok()
+        .and_then(|value| value.parse::<usize>().ok())
+        .filter(|&concurrency| concurrency > 0)
+    {
+        return stated;
+    }
     let per_run = trace_capacity(Some(GAS_TRACE_CHUNK_THRESHOLD)) as u64;
     let fits = (available_bytes() / per_run).max(1) as usize;
     execution_concurrency().min(fits)

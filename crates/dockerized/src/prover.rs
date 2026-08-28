@@ -212,7 +212,8 @@ impl ServerContainer {
             // we set 32G for safety.
             zkVMKind::SP1 => cmd
                 .option("shm-size", "32G")
-                .inherit_env("ERE_SP1_EXECUTOR_POOL_SIZE"),
+                .inherit_env("ERE_SP1_EXECUTOR_CONCURRENCY")
+                .inherit_env("ERE_SP1_ESTIMATOR_CONCURRENCY"),
             // ZisK uses shared memory to exchange data between processes, it
             // requires at least 16G shared memory, here we set 32G for safety.
             zkVMKind::Zisk => cmd
