@@ -35,7 +35,7 @@ const CARGO_BUILD_OPTIONS: &[&str] = &[
     "-Zjson-target-spec",
 ];
 
-/// Copied from https://github.com/0xPolygonHermez/zisk/blob/v1.1.0-alpha/ziskbuild/zisk_linker_script.ld.
+/// Copied from https://github.com/0xPolygonHermez/zisk/blob/v1.2.0-alpha/ziskbuild/zisk_linker_script.ld.
 ///
 /// The ZisK target carries no built-in link script, so both compilers pass this one explicitly,
 /// matching what `zisk-build` injects for its own guest builds.

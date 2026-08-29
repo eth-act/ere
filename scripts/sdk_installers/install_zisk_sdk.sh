@@ -32,7 +32,7 @@ ensure_tool_installed "rustup" "for managing Rust toolchains (ZisK installs its 
 # Download and run the script that installs the ziskup binary itself.
 # Export USE_GPU to download pre-built cargo-zisk and zisk-worker with or without cuda support.
 # Export SETUP_KEY=proving-no-consttree to download proving key without doing setup.
-export ZISK_VERSION="1.1.0-alpha"
+export ZISK_VERSION="1.2.0-alpha"
 export USE_GPU=$([ -n "$CUDA" ] && echo true || echo false)
 export SETUP_KEY=${SETUP_KEY:=proving-no-consttree}
 curl "https://raw.githubusercontent.com/0xPolygonHermez/zisk/v$ZISK_VERSION/ziskup/ziskup" | bash

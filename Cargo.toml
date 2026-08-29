@@ -156,19 +156,19 @@ sp1-zkvm = { git = "https://github.com/succinctlabs/sp1", tag = "v6.4.0", defaul
 sp1-libzkevm = { git = "https://github.com/succinctlabs/sp1", tag = "v6.4.0", package = "libzkevm" }
 
 # ZisK dependencies
-proofman-fields = "1.1.0-alpha"
-proofman-starks-lib-c = "1.1.0-alpha"
-proofman-util = "1.1.0-alpha"
-proofman-verifier = "1.1.0-alpha"
-zisk-common = "1.1.0-alpha"
-zisk-core = "1.1.0-alpha"
-zisk-prover-backend = "1.1.0-alpha"
-zisk-rom-setup = "1.1.0-alpha"
-zisk-sm-rom = "1.1.0-alpha"
-zisk-transpiler-riscv = "1.1.0-alpha"
-zisk-verifier = "1.1.0-alpha"
-ziskemu = "1.1.0-alpha"
-ziskos = { version = "1.1.0-alpha", default-features = false }
+proofman-fields = "1.2.0-alpha"
+proofman-starks-lib-c = "1.2.0-alpha"
+proofman-util = "1.2.0-alpha"
+proofman-verifier = "1.2.0-alpha"
+zisk-common = "1.2.0-alpha"
+zisk-core = "1.2.0-alpha"
+zisk-prover-backend = "1.2.0-alpha"
+zisk-rom-setup = "1.2.0-alpha"
+zisk-sm-rom = "1.2.0-alpha"
+zisk-transpiler-riscv = "1.2.0-alpha"
+zisk-verifier = "1.2.0-alpha"
+ziskemu = "1.2.0-alpha"
+ziskos = { version = "1.2.0-alpha", default-features = false }
 
 # Local dependencies
 ere-compiler = { path = "crates/compiler/cli" }

@@ -1,4 +1,4 @@
-/* Copied from https://github.com/0xPolygonHermez/zisk/blob/v1.1.0-alpha/ziskbuild/zisk_linker_script.ld */
+/* Copied from https://github.com/0xPolygonHermez/zisk/blob/v1.2.0-alpha/ziskbuild/zisk_linker_script.ld */
 
 OUTPUT_FORMAT("elf64-littleriscv")
 OUTPUT_ARCH("riscv")

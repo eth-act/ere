@@ -160,7 +160,7 @@ Different zkVMs handles public values in different approaches:
 | ------ | -------------------------------------------------------------------------- | --------- | :---: | :-------: | :-----: |
 | OpenVM | [`2.1.0-preview`](https://github.com/openvm-org/openvm/tree/v2.1.0-preview) | `RV64IMA` |   V   |           |         |
 | SP1    | [`6.4.0`](https://github.com/succinctlabs/sp1/tree/v6.4.0)                 | `RV64IMA` |   V   |           |         |
-| ZisK   | [`1.1.0-alpha`](https://github.com/0xPolygonHermez/zisk/tree/v1.1.0-alpha) | `RV64IMA` |   V   |     V     |    V    |
+| ZisK   | [`1.2.0-alpha`](https://github.com/0xPolygonHermez/zisk/tree/v1.2.0-alpha) | `RV64IMA` |   V   |     V     |    V    |
 
 ## Examples
 
