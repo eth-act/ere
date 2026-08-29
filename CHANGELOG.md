@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.0](https://github.com/eth-act/ere/compare/v0.16.3...v0.17.0) (2026-08-29)
+
+
+### Features
+
+* add zkVMProver::execute_estimated_cost with impls for all 3 zkVMs ([#416](https://github.com/eth-act/ere/issues/416)) ([9eff5dd](https://github.com/eth-act/ere/commit/9eff5dd1db4d33ae60d71e5e2d10ae8d7c191ff1))
+
 ## [0.16.3](https://github.com/eth-act/ere/compare/v0.16.2...v0.16.3) (2026-08-25)
 
 
