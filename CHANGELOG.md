@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.0](https://github.com/eth-act/ere/compare/v0.17.0...v0.18.0) (2026-09-03)
+
+
+### Features
+
+* update sp1 to v6.6.0 ([#421](https://github.com/eth-act/ere/issues/421)) ([5a7cce6](https://github.com/eth-act/ere/commit/5a7cce65d4257d815b6ebfa372168ad0bf0b7303))
+* update zisk to v1.2.0-alpha ([#418](https://github.com/eth-act/ere/issues/418)) ([4968be3](https://github.com/eth-act/ere/commit/4968be37328767597ea92fa943e27f739c30c555))
+
 ## [0.17.0](https://github.com/eth-act/ere/compare/v0.16.3...v0.17.0) (2026-08-29)
 
 
