@@ -81,6 +81,10 @@ macro_rules! impl_into_bytes_by_encode {
 /// Implements [`Encode`](crate::Encode) and [`Decode`](crate::Decode) for
 /// `$ty` via `bincode::serde` with `bincode::config::legacy()`.
 ///
+/// Decoding is bounded by [`MAX_DECODE_BYTES`](crate::MAX_DECODE_BYTES), so a length prefix in
+/// the input cannot drive an allocation larger than that. Encoding is unbounded, since it
+/// serializes a value this crate already holds.
+///
 /// Pass `reject_trailing_bytes` as the second argument to get a strict decode
 /// implementation that returns error when the input slice contains more bytes
 /// than the encoded value occupies.
@@ -102,8 +106,11 @@ macro_rules! impl_codec_by_bincode_legacy {
             type Error = bincode::error::DecodeError;
 
             fn decode_from_slice(slice: &[u8]) -> Result<Self, Self::Error> {
-                bincode::serde::decode_from_slice(slice, bincode::config::legacy())
-                    .map(|(value, _)| value)
+                bincode::serde::decode_from_slice(
+                    slice,
+                    bincode::config::legacy().with_limit::<{ $crate::MAX_DECODE_BYTES }>(),
+                )
+                .map(|(value, _)| value)
             }
         }
     };
@@ -120,8 +127,10 @@ macro_rules! impl_codec_by_bincode_legacy {
             type Error = bincode::error::DecodeError;
 
             fn decode_from_slice(slice: &[u8]) -> Result<Self, Self::Error> {
-                let (value, consumed) =
-                    bincode::serde::decode_from_slice(slice, bincode::config::legacy())?;
+                let (value, consumed) = bincode::serde::decode_from_slice(
+                    slice,
+                    bincode::config::legacy().with_limit::<{ $crate::MAX_DECODE_BYTES }>(),
+                )?;
                 if consumed != slice.len() {
                     return Err(bincode::error::DecodeError::Other(
                         "trailing bytes after decoded value",

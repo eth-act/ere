@@ -51,9 +51,11 @@ jobs:
           version: 0.16.0
 
       - name: Install cargo-zigbuild
+        # Avoid the 0.23.4 macOS linker regression until this fix is released:
+        # https://github.com/rust-cross/cargo-zigbuild/pull/480
         uses: taiki-e/install-action@v2
         with:
-          tool: cargo-zigbuild
+          tool: cargo-zigbuild@0.23.3
 
       - name: Install Go
         uses: actions/setup-go@v6

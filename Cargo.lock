@@ -3408,6 +3408,10 @@ dependencies = [
 [[package]]
 name = "ere-codec"
 version = "0.17.0"
+dependencies = [
+ "bincode 2.0.1",
+ "serde",
+]
 
 [[package]]
 name = "ere-compiler"
