@@ -2,7 +2,9 @@ name: Release
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master
+      - 'release/**'
 
 permissions:
   contents: write
@@ -16,6 +18,7 @@ jobs:
         id: release
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          target-branch: ${{ github.ref_name }}
 
       - uses: actions/checkout@v4
         if: steps.release.outputs.pr
