@@ -1,6 +1,6 @@
-//! The decode bound must not narrow what these implementations accept.
+//! Decoding accepts values within the bound and rejects lengths that exceed it.
 
-use ere_codec::{Decode, Encode, impl_codec_by_bincode_legacy};
+use ere_codec::{Decode, Encode, MAX_DECODE_BYTES, impl_codec_by_bincode_legacy};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -32,6 +32,23 @@ fn values_within_the_bound_round_trip() {
         Strict::decode_from_slice(&encoded).expect("decodes"),
         strict
     );
+}
+
+#[test]
+fn values_exceeding_the_bound_are_rejected() {
+    let values = vec![0u32; MAX_DECODE_BYTES / size_of::<u32>() + 1];
+    let strict_input = Strict(values.clone()).encode_to_vec().expect("encodes");
+    let message_input = Message::Body(values).encode_to_vec().expect("encodes");
+
+    for error in [
+        Message::decode_from_slice(&message_input).expect_err("decode must fail"),
+        Strict::decode_from_slice(&strict_input).expect_err("decode must fail"),
+    ] {
+        assert!(
+            matches!(error, bincode::error::DecodeError::LimitExceeded),
+            "expected the bound to reject the oversized value, got {error:?}"
+        );
+    }
 }
 
 #[test]
