@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.1](https://github.com/eth-act/ere/compare/v0.17.0...v0.17.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* bound the allocation a bincode decode may be asked for ([#423](https://github.com/eth-act/ere/issues/423)) ([c708726](https://github.com/eth-act/ere/commit/c708726293eb6fbe5c510951293f1c63f9c49f5f))
+
 ## [0.17.0](https://github.com/eth-act/ere/compare/v0.16.3...v0.17.0) (2026-08-29)
 
 
