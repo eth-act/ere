@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - 'release/**'
 
 env:
   CUDA_ARCHS: '80,86,89,90,100,120'
