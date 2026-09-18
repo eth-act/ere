@@ -4,6 +4,7 @@ pub const ERE_IMAGE_REGISTRY: &str = "ERE_IMAGE_REGISTRY";
 pub const ERE_FORCE_REBUILD_DOCKER_IMAGE: &str = "ERE_FORCE_REBUILD_DOCKER_IMAGE";
 pub const ERE_GPU_DEVICES: &str = "ERE_GPU_DEVICES";
 pub const ERE_DOCKER_NETWORK: &str = "ERE_DOCKER_NETWORK";
+pub const ERE_ZISK_PROVING_KEY_VOLUME: &str = "ERE_ZISK_PROVING_KEY_VOLUME";
 
 /// Returns image registry from env variable `ERE_IMAGE_REGISTRY`.
 ///

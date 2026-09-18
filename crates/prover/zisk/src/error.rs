@@ -28,6 +28,9 @@ pub enum Error {
     EstimateCost(#[from] EstimateCostError),
 
     // SDK
+    #[error("Proving key installation failed: {0:#}")]
+    ProvingKey(#[source] anyhow::Error),
+
     #[error("Build prover failed: {0}")]
     BuildProver(#[source] anyhow::Error),
 

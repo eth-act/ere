@@ -27,6 +27,7 @@ mod tests {
         ".zisk/provingKey/zisk/vadcop_final_compressed/vadcop_final_compressed.verkey.bin";
 
     #[test]
+    #[ignore = "needs the proving key installed at $HOME/.zisk/provingKey"]
     fn test_vk_correctness() {
         assert_eq!(
             VADCOP_FINAL_COMPRESSED_VK

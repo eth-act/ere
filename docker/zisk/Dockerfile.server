@@ -61,7 +61,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy ZisK SDK
 COPY --from=build_stage /root/.zisk/bin /root/.zisk/bin
 COPY --from=build_stage /root/.zisk/zisk /root/.zisk/zisk
-COPY --from=build_stage /root/.zisk/provingKey /root/.zisk/provingKey
 
 # Add ZisK SDK to path
 ENV PATH=/root/.zisk/bin:$PATH

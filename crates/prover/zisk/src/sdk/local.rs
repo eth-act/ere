@@ -17,7 +17,10 @@ use zisk_prover_backend::{
 use zisk_rom_setup::get_elf_bin_file_path_with_hash;
 use zisk_sm_rom::CustomRom;
 
-use crate::{error::Error, sdk::framed_stdin};
+use crate::{
+    error::Error,
+    sdk::{framed_stdin, proving_key::ensure_proving_key},
+};
 
 // Use a shared prover instance to avoid `MpiCtx` get initialized twice, to support multiple
 // `ZiskProver` instances creation (e.g. testing different ELFs).
@@ -124,6 +127,8 @@ impl LocalProver {
 }
 
 fn build_prover(config: &Config, resource: &ProverResource) -> Result<ZiskProver<Asm>, Error> {
+    ensure_proving_key().map_err(Error::ProvingKey)?;
+
     let mut opts = BackendProverOpts::default();
     if cfg!(feature = "cuda") && resource.is_gpu() {
         opts = opts.gpu();

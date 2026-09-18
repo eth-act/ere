@@ -1,4 +1,23 @@
 services:
+  # Fills the proving key volume once, with the same archive and `.md5` marker
+  # as crates/prover/zisk/src/sdk/proving_key.rs.
+  zisk-proving-key:
+    image: ghcr.io/eth-act/ere/ere-server-zisk:latest-cuda
+    entrypoint: bash
+    working_dir: /root/.zisk/provingKey
+    command:
+      - -ec
+      - |
+        MD5=51e142e7217b807bec25af465b7eeb71
+        grep -qx $$MD5 .md5 2>/dev/null && exit 0
+        curl -fsSL -o key.tar.gz https://storage.googleapis.com/zisk-setup/zisk-provingkey-1.2.0-alpha.tar.gz
+        echo "$$MD5  key.tar.gz" | md5sum -c
+        tar xzf key.tar.gz -C /root/.zisk
+        rm key.tar.gz
+        echo $$MD5 > .md5
+    volumes:
+      - zisk-proving-key-v1.2.0-alpha:/root/.zisk/provingKey
+
   zisk-coordinator:
     image: ghcr.io/eth-act/ere/ere-server-zisk:latest-cuda
     entrypoint: zisk-coordinator
@@ -23,10 +42,14 @@ services:
       - "--gpu"
     environment:
       - RUST_LOG=info
+    volumes:
+      - zisk-proving-key-v1.2.0-alpha:/root/.zisk/provingKey
     restart: unless-stopped
     depends_on:
       zisk-coordinator:
         condition: service_healthy
+      zisk-proving-key:
+        condition: service_completed_successfully
     shm_size: 32G
     ulimits:
       memlock:
@@ -56,6 +79,9 @@ services:
   #           - driver: nvidia
   #             device_ids: ['x']
   #             capabilities: [gpu]
+
+volumes:
+  zisk-proving-key-v1.2.0-alpha:
 
 networks:
   default:

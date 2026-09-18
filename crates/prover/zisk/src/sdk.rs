@@ -26,6 +26,7 @@ use crate::{
 };
 
 mod local;
+mod proving_key;
 
 /// Default ZisK cluster prove timeout seconds.
 const DEFAULT_ZISK_CLUSTER_PROVE_TIMEOUT_SECS: u64 = 600;
@@ -218,11 +219,16 @@ mod tests {
     use ere_verifier_zisk::ZiskProgramVk;
     use tempfile::tempdir;
 
-    use crate::prover::tests::{basic_elf, basic_elf_zkvm};
+    use crate::{
+        prover::tests::{basic_elf, basic_elf_zkvm},
+        sdk::proving_key::ensure_proving_key,
+    };
 
     #[test]
     fn program_vk_matches_cargo_zisk_program_setup() {
         let program_vk = {
+            ensure_proving_key().unwrap();
+
             let tempdir = tempdir().unwrap();
             let elf_path = tempdir.path().join("guest.elf");
             fs::write(&elf_path, &basic_elf().0).unwrap();

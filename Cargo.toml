@@ -74,11 +74,14 @@ crossbeam-channel = "0.5.15"
 digest = { version = "0.10.7", default-features = false }
 elf = "0.7"
 eyre = "0.6.12"
+flate2 = "1"
 fnv = { version = "1.0.7", default-features = false }
 futures-util = "0.3"
 hex = "0.4"
+hex-literal = "1.1"
 http = "1"
 libc = "0.2"
+md-5 = "0.10"
 memmap2 = "0.9"
 metrics = "0.24"
 metrics-exporter-prometheus = { version = "0.18", default-features = false }
@@ -106,6 +109,7 @@ sha2 = { version = "0.10.9", default-features = false }
 sha3 = { version = "0.10.8", default-features = false }
 strum = "0.27.2"
 sysinfo = "0.35.2"
+tar = "0.4"
 tempfile = "3.20.0"
 thiserror = { version = "2.0.12", default-features = false }
 tokio = "1.0"
