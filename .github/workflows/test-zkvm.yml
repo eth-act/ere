@@ -22,7 +22,7 @@ on:
         type: number
       # Remove if we use larger runners.
       skip_prove_test:
-        description: 'Whether to skip prove test and ere-dockerized test or not'
+        description: 'Whether to skip proof-generation tests'
         required: false
         type: boolean
         default: false
@@ -334,4 +334,4 @@ jobs:
           ERE_IMAGE_REGISTRY: ${{ needs.image_meta.outputs.image_registry }}
         run: |
           cargo test --release --package ere-dockerized \
-            -- ${{ inputs.zkvm }} ${{ inputs.skip_prove_test && '--skip prove' || ''  }} --test-threads=1
+            -- ${{ inputs.zkvm }} ${{ inputs.skip_prove_test && '--skip test_prove' || ''  }} --test-threads=1

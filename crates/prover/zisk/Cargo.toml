@@ -7,8 +7,15 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
+flate2.workspace = true
+hex.workspace = true
+hex-literal.workspace = true
+md-5.workspace = true
 once_cell.workspace = true
 parking_lot.workspace = true
+reqwest = { workspace = true, features = ["rustls-tls"] }
+tar.workspace = true
+tempfile.workspace = true
 thiserror.workspace = true
 tokio = { workspace = true, features = ["time"] }
 
@@ -32,8 +39,6 @@ ere-util-tokio.workspace = true
 ere-verifier-zisk.workspace = true
 
 [dev-dependencies]
-tempfile.workspace = true
-
 ere-compiler-zisk.workspace = true
 ere-util-test = { workspace = true, features = ["host"] }
 

@@ -7,6 +7,11 @@
 //!
 //! GPU proving requires the `cuda` Cargo feature and CUDA 12.9 installed.
 //!
+//! Local proving downloads the pinned proving key archive into
+//! `$HOME/.zisk/provingKey` before the first setup, unless a previous download
+//! left its `.md5` marker there. `ERE_ZISK_SETUP_ON_INIT` moves this into
+//! construction, so allow for the download time there.
+//!
 //! ## `zkVMProver` requirements
 //!
 //! - Installation via [`ziskup`]

@@ -22,7 +22,9 @@ use crate::{
             DockerBuildCmd, DockerRunCmd, docker_image_exists, docker_pull_image,
             docker_wait_for_exit, remove_docker_container,
         },
-        env::{docker_network, force_rebuild_docker_image, image_registry},
+        env::{
+            ERE_ZISK_PROVING_KEY_VOLUME, docker_network, force_rebuild_docker_image, image_registry,
+        },
         workspace_dir,
     },
     zkVMKind,
@@ -228,7 +230,8 @@ impl ServerContainer {
                 .inherit_env("ERE_ZISK_MAX_RECURSIVE_STREAMS")
                 .inherit_env("ERE_ZISK_NUMBER_THREADS_WITNESS")
                 .inherit_env("ERE_ZISK_MAX_WITNESS_STORED")
-                .inherit_env("ERE_ZISK_CLUSTER_PROVE_TIMEOUT_SECS"),
+                .inherit_env("ERE_ZISK_CLUSTER_PROVE_TIMEOUT_SECS")
+                .volume_from_env(ERE_ZISK_PROVING_KEY_VOLUME, "/root/.zisk/provingKey"),
         };
 
         // zkVM specific options when using GPU

@@ -156,11 +156,11 @@ Different zkVMs handles public values in different approaches:
 
 ## Supported zkVMs
 
-| zkVM   | Version                                                                    | ISA       |  GPU  | Multi GPU | Cluster |
-| ------ | -------------------------------------------------------------------------- | --------- | :---: | :-------: | :-----: |
+| zkVM   | Version                                                                     | ISA       |  GPU  | Multi GPU | Cluster |
+| ------ | --------------------------------------------------------------------------- | --------- | :---: | :-------: | :-----: |
 | OpenVM | [`2.1.0-preview`](https://github.com/openvm-org/openvm/tree/v2.1.0-preview) | `RV64IMA` |   V   |           |         |
-| SP1    | [`6.6.0`](https://github.com/succinctlabs/sp1/tree/v6.6.0)                 | `RV64IMA` |   V   |           |         |
-| ZisK   | [`1.2.0-alpha`](https://github.com/0xPolygonHermez/zisk/tree/v1.2.0-alpha) | `RV64IMA` |   V   |     V     |    V    |
+| SP1    | [`6.6.0`](https://github.com/succinctlabs/sp1/tree/v6.6.0)                  | `RV64IMA` |   V   |           |         |
+| ZisK   | [`1.2.0-alpha`](https://github.com/0xPolygonHermez/zisk/tree/v1.2.0-alpha)  | `RV64IMA` |   V   |     V     |    V    |
 
 ## Examples
 
@@ -369,6 +369,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 | `ERE_FORCE_REBUILD_DOCKER_IMAGE` | Force to rebuild docker images locally even they exist, it also prevents pulling image from registry.                                   | `false` |
 | `ERE_GPU_DEVICES`                | Specifies which GPU devices to use when running Docker containers for GPU-enabled zkVMs. The value is passed to Docker's `--gpus` flag. | `all`   |
 | `ERE_DOCKER_NETWORK`             | Specifies the Docker network being used (if any) so spawned `ere-server-*` containers will join that network.                           | ``      |
+| `ERE_ZISK_PROVING_KEY_VOLUME`    | Volume or absolute host path mounted at the ZisK proving key directory, so the downloaded key persists across containers.               | ``      |
 
 Example usage:
 

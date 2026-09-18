@@ -170,6 +170,14 @@ impl DockerRunCmd {
         }
     }
 
+    /// Mount the volume in environment variable `key` at `container` if it's set.
+    pub fn volume_from_env(self, key: impl AsRef<str>, container: impl AsRef<Path>) -> Self {
+        match env::var(key.as_ref()) {
+            Ok(val) => self.volume(val, container),
+            Err(_) => self,
+        }
+    }
+
     pub fn rm(self) -> Self {
         self.flag("rm")
     }
