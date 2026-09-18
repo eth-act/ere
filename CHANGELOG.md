@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.0](https://github.com/eth-act/ere/compare/v0.18.1...v0.19.0) (2026-09-18)
+
+
+### Features
+
+* avoid having zisk pk in image and download on demand ([#428](https://github.com/eth-act/ere/issues/428)) ([225ce84](https://github.com/eth-act/ere/commit/225ce841dbdc33f28e509c5516c907cb8e7a039f))
+
 ## [0.18.1](https://github.com/eth-act/ere/compare/v0.18.0...v0.18.1) (2026-09-15)
 
 
