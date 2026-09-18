@@ -19,6 +19,11 @@ zisk-verifier.workspace = true
 # Local dependencies
 ere-verifier-core.workspace = true
 
+[dev-dependencies]
+flate2.workspace = true
+reqwest = { workspace = true, features = ["blocking", "rustls-tls"] }
+tar.workspace = true
+
 [build-dependencies]
 ere-util-build.workspace = true
 

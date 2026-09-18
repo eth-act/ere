@@ -3828,9 +3828,12 @@ dependencies = [
  "bytemuck",
  "ere-util-build",
  "ere-verifier-core",
+ "flate2",
  "proofman-util",
  "proofman-verifier",
+ "reqwest",
  "serde",
+ "tar",
  "thiserror 2.0.18",
  "zisk-verifier",
 ]
