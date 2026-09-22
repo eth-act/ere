@@ -24,7 +24,7 @@ use crate::{
         },
         env::{
             ERE_OPENVM_CACHE_VOLUME, ERE_ZISK_CACHE_VOLUME, ERE_ZISK_PROVING_KEY_VOLUME,
-            docker_network, force_rebuild_docker_image, image_registry,
+            docker_memory, docker_network, force_rebuild_docker_image, image_registry,
         },
         workspace_dir,
     },
@@ -200,6 +200,10 @@ impl ServerContainer {
             .inherit_env(ERE_COST_ESTIMATION_HEAP_END)
             .publish(port.to_string(), port.to_string())
             .name(&name);
+
+        if let Some(memory) = docker_memory() {
+            cmd = cmd.option("memory", memory);
+        }
 
         let host = if let Some(network) = docker_network() {
             cmd = cmd.network(network);
