@@ -137,9 +137,9 @@ This guide records the encoding for each supported zkVM and gives the commands t
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     . "$HOME/.cargo/env"
 
-    ZKVM_VERSION="v1.2.0-alpha"
+    ZKVM_VERSION="v1.3.0-alpha"
     export ZISK_VERSION=${ZKVM_VERSION#v} SETUP_KEY=proving-no-consttree USE_GPU=false
-    curl -sSf "https://raw.githubusercontent.com/0xPolygonHermez/zisk/$ZKVM_VERSION/ziskup/ziskup" | bash
+    curl -sSf "https://raw.githubusercontent.com/0xPolygonHermez/zisk/$ZKVM_VERSION/ziskup/ziskup" | bash -s -- --blake3
     export PATH="$HOME/.zisk/bin:$PATH"
     ```
 2. Generate VK

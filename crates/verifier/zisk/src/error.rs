@@ -16,19 +16,23 @@ pub enum Error {
     #[error("Non-canonical ProgramVk")]
     NonCanonicalProgramVk,
 
-    /// Expected compressed VadcopFinalProof
-    #[error("Invalid kind of VadcopFinalProof, expected compressed")]
+    /// Expected uncompressed VadcopFinalProof
+    #[error("Invalid kind of VadcopFinalProof, expected uncompressed")]
     InvalidVadcopFinalProofKind,
 
-    /// Public values of VadcopFinalProof was not the expected 68 words.
+    /// Public values of VadcopFinalProof was not the expected length.
     #[error("Invalid public value length of VadcopFinalProof, expected: {expected}, got: {got}")]
     InvalidPublicValueLength { expected: usize, got: usize },
+
+    /// Expected leaf VadcopFinalProof
+    #[error("Invalid is_vadcop_final_proof flag of VadcopFinalProof, got: {got}")]
+    UnexpectedVadcopFinalFlag { got: u64 },
 
     /// User public values was not u32.
     #[error("Invalid word in user public values, expected u32")]
     InvalidPublicValue,
 
-    /// `verify_vadcop_final_compressed_u64` returned false.
+    /// `verify_vadcop_final` returned false.
     #[error("Invalid proof")]
     InvalidProof,
 

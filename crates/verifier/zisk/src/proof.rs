@@ -1,7 +1,8 @@
 use ere_verifier_core::PublicValues;
 pub use proofman_verifier::VadcopFinalProof;
 use serde::{Deserialize, Serialize};
-use zisk_verifier::{PROGRAM_VK_LEN, ZISK_PUBLICS};
+pub use zisk_verifier::IS_VADCOP_FINAL_PROOF;
+use zisk_verifier::{PROGRAM_VK_LEN, VADCOP_FINAL_FLAG_LEN, ZISK_PUBLICS};
 
 use crate::{Error, VADCOP_FINAL_HASH_FAMILY, ZiskProgramVk};
 
@@ -19,7 +20,7 @@ pub struct ZiskProof(pub VadcopFinalProof);
 
 impl ZiskProof {
     pub fn program_vk_and_public_values(&self) -> Result<(ZiskProgramVk, PublicValues), Error> {
-        if !self.0.compressed {
+        if self.0.compressed {
             return Err(Error::InvalidVadcopFinalProofKind);
         }
 
@@ -27,16 +28,25 @@ impl ZiskProof {
             return Err(Error::InvalidVadcopFinalProofKind);
         }
 
-        if self.0.public_values.len() != PROGRAM_VK_LEN + ZISK_PUBLICS {
+        if self.0.public_values.len() != VADCOP_FINAL_FLAG_LEN + PROGRAM_VK_LEN + ZISK_PUBLICS {
             return Err(Error::InvalidPublicValueLength {
-                expected: PROGRAM_VK_LEN + ZISK_PUBLICS,
+                expected: VADCOP_FINAL_FLAG_LEN + PROGRAM_VK_LEN + ZISK_PUBLICS,
                 got: self.0.public_values.len(),
             });
         }
 
-        let program_vk = self.0.public_values[..PROGRAM_VK_LEN].try_into().unwrap();
+        if self.0.public_values[0] != IS_VADCOP_FINAL_PROOF {
+            return Err(Error::UnexpectedVadcopFinalFlag {
+                got: self.0.public_values[0],
+            });
+        }
 
-        let public_values = self.0.public_values[PROGRAM_VK_LEN..]
+        let program_vk = self.0.public_values
+            [VADCOP_FINAL_FLAG_LEN..VADCOP_FINAL_FLAG_LEN + PROGRAM_VK_LEN]
+            .try_into()
+            .unwrap();
+
+        let public_values = self.0.public_values[VADCOP_FINAL_FLAG_LEN + PROGRAM_VK_LEN..]
             .iter()
             .map(|v| u32::try_from(*v).ok().map(|value| value.to_le_bytes()))
             .collect::<Option<Vec<_>>>()
