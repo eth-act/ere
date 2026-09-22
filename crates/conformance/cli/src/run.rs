@@ -249,9 +249,11 @@ pub fn run(args: RunArgs) -> anyhow::Result<()> {
         );
 
         let details = args.details_dir.join(format!(
-            "{zkvm}-{}-{}.json",
+            "{zkvm}-{}-{}-{}-{}.json",
             args.suite.as_str(),
-            revision.image_tag()
+            revision.image_tag(),
+            args.mode.as_str(),
+            run.date.replace(['-', ':'], ""),
         ));
         record::write_details(&details, &run, &results)?;
         info!("details: {}", details.display());

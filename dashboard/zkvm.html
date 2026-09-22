@@ -323,7 +323,7 @@
             }).join('');
 
             html += `<table>
-                <thead><tr><th>Date</th><th>zkVM</th><th>ere</th><th>ACT4</th><th>Suite</th><th>Execution</th><th>Prove</th><th>Verify</th><th>Details</th><th>Notes</th></tr></thead>
+                <thead><tr><th>Date</th><th>Version</th><th>ere</th><th>ACT4</th><th>Suite</th><th>Execution</th><th>Prove</th><th>Verify</th><th>Details</th><th>Notes</th></tr></thead>
                 <tbody>${rows}</tbody>
             </table>`;
 
@@ -375,7 +375,7 @@
 
             html += `<div class="suite-header">
                 <span><strong>Date:</strong> ${formatDate(run.date)}</span>
-                <span><strong>zkVM:</strong> ${link(sdkUrl(zkvm.repo_url, run), run.sdk_version)}</span>
+                <span><strong>Version:</strong> ${link(sdkUrl(zkvm.repo_url, run), run.sdk_version)}</span>
                 <span><strong>ere:</strong> ${link(ereUrl(run), `${run.ere_version} (${run.ere_rev})`)}</span>
                 <span><strong>Image:</strong> <code title="${run.ere_image}">${digest.substring(0, 19)}</code></span>
                 <span><strong>Stages:</strong> ${run.mode} on ${run.resource}</span>
