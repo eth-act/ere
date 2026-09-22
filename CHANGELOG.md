@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.2](https://github.com/eth-act/ere/compare/v0.17.1...v0.17.2) (2026-09-22)
+
+
+### Bug Fixes
+
+* localize symbols of ere-verifier ([#432](https://github.com/eth-act/ere/issues/432)) ([5682694](https://github.com/eth-act/ere/commit/56826942ab9b9e36ce34f4a961d7ec4e591bac11))
+
 ## [0.17.1](https://github.com/eth-act/ere/compare/v0.17.0...v0.17.1) (2026-09-15)
 
 
