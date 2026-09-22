@@ -373,6 +373,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 | `ERE_ZISK_PROVING_KEY_VOLUME`    | Volume or absolute host path mounted at the ZisK proving key directory, so the downloaded key persists across containers.               | ``      |
 | `ERE_ZISK_CACHE_VOLUME`          | Volume or absolute host path mounted at the ZisK cache directory, so the ROM setup of each program persists across containers.          | ``      |
 | `ERE_OPENVM_CACHE_VOLUME`        | Volume or absolute host path mounted at the OpenVM `rvr` cache directory, so each compiled program persists across containers.          | ``      |
+| `ERE_DOCKER_MEMORY`              | Memory limit of spawned `ere-server-*` containers. The value is passed to Docker's `--memory` flag.                                      | ``      |
 
 Example usage:
 

@@ -8,6 +8,7 @@ pub const ERE_DOCKER_NETWORK: &str = "ERE_DOCKER_NETWORK";
 pub const ERE_OPENVM_CACHE_VOLUME: &str = "ERE_OPENVM_CACHE_VOLUME";
 pub const ERE_ZISK_CACHE_VOLUME: &str = "ERE_ZISK_CACHE_VOLUME";
 pub const ERE_ZISK_PROVING_KEY_VOLUME: &str = "ERE_ZISK_PROVING_KEY_VOLUME";
+pub const ERE_DOCKER_MEMORY: &str = "ERE_DOCKER_MEMORY";
 
 /// Returns image registry from env variable `ERE_IMAGE_REGISTRY`.
 ///
@@ -46,4 +47,10 @@ pub fn gpu_devices() -> Option<String> {
 /// Returns env variable `ERE_DOCKER_NETWORK`.
 pub fn docker_network() -> Option<String> {
     env::var(ERE_DOCKER_NETWORK).ok()
+}
+
+/// Returns env variable `ERE_DOCKER_MEMORY`, the memory limit of spawned
+/// `ere-server-*` containers (passed to Docker's `--memory` flag).
+pub fn docker_memory() -> Option<String> {
+    env::var(ERE_DOCKER_MEMORY).ok()
 }
