@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ZKVM - ZKVM Test Monitor</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", monospace;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .nav-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        h1 { margin-bottom: 10px; color: #333; }
+        h2 { margin: 30px 0 15px; color: #333; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; }
+        h3 { margin: 20px 0 10px; color: #495057; }
+        .metadata {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            margin-bottom: 30px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+        .pass { color: #28a745; font-weight: 600; }
+        .fail { color: #dc3545; font-weight: 600; }
+        .none { color: #6c757d; }
+        .badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-fail { background: #f8d7da; color: #721c24; }
+        .badge-skip { background: #e2e3e5; color: #383d41; }
+        a { color: #007bff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .commit-link { font-family: monospace; }
+        .back-link { margin-bottom: 20px; display: inline-block; }
+        .breadcrumb { margin-bottom: 20px; color: #666; }
+        .breadcrumb a { margin: 0 4px; }
+        #loading { text-align: center; padding: 40px; color: #666; }
+        #error { text-align: center; padding: 40px; color: #dc3545; display: none; }
+        .suite-section { margin-bottom: 40px; }
+        .suite-header {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        .suite-header span { margin-right: 20px; }
+        .clickable-row { cursor: pointer; }
+        tr.group-hover { background: #e8f4fd; }
+        .pass-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .pass-list span {
+            background: #d4edda;
+            color: #155724;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+        .failure-detail {
+            background: #fff5f5;
+            border-left: 3px solid #dc3545;
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            border-radius: 0 4px 4px 0;
+        }
+        .failure-detail .test-name { font-weight: 600; }
+        .failure-detail .test-ext { color: #666; font-size: 0.9em; margin-left: 8px; }
+        .notes-cell { font-size: 0.85em; color: #555; max-width: 350px; vertical-align: middle; }
+        .notes-cell span { cursor: help; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .run-note { margin: 16px 0; padding: 12px 16px; background: #fff8e1; border: 1px solid #ffe082; border-left: 4px solid #ffb300; border-radius: 4px; font-size: 0.9em; line-height: 1.5; color: #5f4b00; }
+        .run-note strong { color: #4a3a00; }
+        .group-date { vertical-align: middle; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="breadcrumb" class="breadcrumb"></div>
+        <div class="nav-header">
+            <h1 id="title">Loading...</h1>
+        </div>
+
+        <div id="loading">Loading...</div>
+        <div id="error"></div>
+        <div id="content" style="display: none;"></div>
+    </div>
+
+    <script>
+    const params = new URLSearchParams(window.location.search);
+    const name = params.get('name');
+    const suite = params.get('suite');
+    const runParam = params.get('run');
+
+    if (!name) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').style.display = 'block';
+        document.getElementById('error').textContent = 'Missing ?name= parameter';
+    } else if (suite && runParam !== null) {
+        // Run results view
+        loadRunResults();
+    } else {
+        // Run history view
+        loadRunHistory();
+    }
+
+    function statusBadge(status) {
+        if (!status) return '<span class="badge badge-skip">skip</span>';
+        if (status === 'success') return '<span class="badge badge-success">success</span>';
+        return '<span class="badge badge-fail">fail</span>';
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return '&mdash;';
+        if (dateStr.includes('T')) return dateStr.split('T')[0];
+        return dateStr;
+    }
+
+    // Execution passed = passed + prove_failed + verify_failed (all executed OK)
+    function execPassedCount(run) {
+        if (!run) return null;
+        if (Array.isArray(run.passed)) {
+            return run.passed.length + (run.prove_failed?.length || 0) + (run.verify_failed?.length || 0);
+        }
+        return null;
+    }
+
+    // Fully passed = only tests with no failures at any stage
+    function fullyPassedCount(run) {
+        if (!run) return null;
+        return run.passed.length;
+    }
+
+    function link(url, text) {
+        if (!url || !text) return '<span class="none">&mdash;</span>';
+        return `<a href="${url}" class="commit-link" onclick="event.stopPropagation()">${text}</a>`;
+    }
+
+    function sdkUrl(repoUrl, run) {
+        return run?.sdk_version ? `${repoUrl}/tree/${run.sdk_version}` : null;
+    }
+
+    function ereUrl(run) {
+        return run?.ere_rev ? `https://github.com/eth-act/ere/commit/${run.ere_rev}` : null;
+    }
+
+    // Escape HTML, then turn URLs and GitHub owner/repo#N refs into clickable links.
+    function linkifyNote(text) {
+        const esc = String(text)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        return esc
+            .replace(/(https?:\/\/[^\s<]+[^\s<.,;:)])/g, '<a href="$1">$1</a>')
+            .replace(/\b([\w.-]+\/[\w.-]+)#(\d+)\b/g, '<a href="https://github.com/$1/issues/$2">$1#$2</a>');
+    }
+
+    function act4Label(run) {
+        const v = run?.act4_version;
+        if (v) return 'v' + v;
+        const c = run?.act4_commit;
+        if (c && c !== 'unknown') return c.substring(0, 8);
+        return null;
+    }
+
+    function act4Url(run) {
+        const v = run?.act4_version;
+        if (v) return `https://github.com/riscv/riscv-arch-test/releases/tag/${v}`;
+        const c = run?.act4_commit;
+        if (c && c !== 'unknown') return `https://github.com/riscv/riscv-arch-test/commit/${c}`;
+        return null;
+    }
+
+    function suiteLabel(s) {
+        if (s === 'act4-full') return 'Full ISA';
+        if (s === 'act4-standard') return 'Standard ISA';
+        return s;
+    }
+
+    // ---- Run History View ----
+
+    async function loadRunHistory() {
+        document.getElementById('title').textContent = `${name.toUpperCase()} - Run History`;
+        document.title = `${name.toUpperCase()} - ZKVM Test Monitor`;
+        document.getElementById('breadcrumb').innerHTML = `<a href="index.html">Dashboard</a> &rsaquo; ${name.toUpperCase()}`;
+
+        try {
+            const config = await fetch('config.json').then(r => r.json());
+            const zkvm = config.zkvms[name];
+            if (!zkvm) throw new Error(`Unknown ZKVM: ${name}`);
+
+            const fullHistory = await fetch(`data/history/${name}-act4-full.json`).then(r => r.json()).catch(() => null);
+            const stdHistory = await fetch(`data/history/${name}-act4-standard.json`).then(r => r.json()).catch(() => null);
+
+            let html = '';
+
+            html += `<div class="metadata">
+                <strong>Repository:</strong> <a href="${zkvm.repo_url}">${zkvm.repo_url}</a><br>
+                <strong>ISA:</strong> <code>${zkvm.isa}</code>
+            </div>`;
+
+            // Group runs by date+commit into paired rows (Full + Standard)
+            const allRuns = [];
+            if (fullHistory?.runs) {
+                fullHistory.runs.forEach((r, idx) => allRuns.push({ ...r, suite: 'act4-full', runIdx: idx }));
+            }
+            if (stdHistory?.runs) {
+                stdHistory.runs.forEach((r, idx) => allRuns.push({ ...r, suite: 'act4-standard', runIdx: idx }));
+            }
+
+            const groups = {};
+            for (const r of allRuns) {
+                const key = `${r.date}|${r.ere_rev}`;
+                if (!groups[key]) groups[key] = { date: r.date, run: r, runs: [] };
+                groups[key].runs.push(r);
+            }
+            const sortedGroups = Object.values(groups).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+            const rows = sortedGroups.map((g, gi) => {
+                const notes = [...new Set(g.runs.map(r => r.notes).filter(Boolean))].join(' ');
+                const suiteRows = g.runs.sort((a, b) => a.suite.localeCompare(b.suite)).map(r => {
+                    const p = execPassedCount(r);
+                    const cls = p === r.total ? 'pass' : 'fail';
+                    const hasData = p != null;
+                    const runUrl = `zkvm.html?name=${name}&suite=${r.suite}&run=${r.runIdx}`;
+                    const suiteBadge = r.suite === 'act4-full'
+                        ? '<span style="background:#e8f4fd;padding:2px 6px;border-radius:3px;font-size:0.85em">Full</span>'
+                        : '<span style="background:#f0e8fd;padding:2px 6px;border-radius:3px;font-size:0.85em">Standard</span>';
+
+                    let proveCell = '';
+                    let verifyCell = '';
+                    if (r.suite === 'act4-standard' && hasData) {
+                        if (r.has_proving) {
+                            const failed = r.failed?.length || 0;
+                            const proveFailed = r.prove_failed?.length || 0;
+                            const verifyFailed = r.verify_failed?.length || 0;
+                            const pOk = r.total - failed - proveFailed;
+                            const vOk = r.total - failed - proveFailed - verifyFailed;
+                            proveCell = `<td class="${pOk === r.total ? 'pass' : 'fail'}">${pOk}/${r.total}</td>`;
+                            verifyCell = `<td class="${vOk === r.total ? 'pass' : 'fail'}">${vOk}/${r.total}</td>`;
+                        } else {
+                            proveCell = '<td class="none">&mdash;</td>';
+                            verifyCell = '<td class="none">&mdash;</td>';
+                        }
+                    } else {
+                        proveCell = '<td></td>';
+                        verifyCell = '<td></td>';
+                    }
+
+                    return `<tr class="${hasData ? 'clickable-row' : ''}" data-group="${gi}" ${hasData ? `onclick="location.href='${runUrl}'"` : ''}>
+                        <td>${suiteBadge}</td>
+                        <td class="${cls}">${p}/${r.total}</td>
+                        ${proveCell}
+                        ${verifyCell}
+                        <td>${hasData ? '<a href="' + runUrl + '" onclick="event.stopPropagation()">View</a>' : '<span class="none">no data</span>'}</td>
+                    </tr>`;
+                });
+
+                const rowspan = suiteRows.length;
+                const first = suiteRows[0];
+                const rest = suiteRows.slice(1);
+                const notesHtml = notes ? '<span title="' + notes.replace(/"/g, '&quot;') + '">' + linkifyNote(notes) + '</span>' : '';
+
+                const actRun = g.runs[0];
+                const actLabel = act4Label(actRun);
+                const actUrl = act4Url(actRun);
+                let act4Html;
+                if (actLabel) {
+                    act4Html = actUrl
+                        ? `<a href="${actUrl}" class="commit-link" onclick="event.stopPropagation()">${actLabel}</a>`
+                        : `<span class="commit-link">${actLabel}</span>`;
+                } else {
+                    act4Html = '<span class="none">&mdash;</span>';
+                }
+
+                const firstRow = first.replace('<tr', `<tr`).replace(
+                    /<td>.*?<\/td>/,
+                    `<td rowspan="${rowspan}" class="group-date">${formatDate(g.date)}</td>` +
+                    `<td rowspan="${rowspan}">${link(sdkUrl(zkvm.repo_url, g.run), g.run.sdk_version)}</td>` +
+                    `<td rowspan="${rowspan}">${link(ereUrl(g.run), g.run.ere_rev)}</td>` +
+                    `<td rowspan="${rowspan}">${act4Html}</td>` +
+                    '$&'
+                );
+                const lastCol = `<td rowspan="${rowspan}" class="notes-cell">${notesHtml}</td>`;
+                const firstWithNotes = firstRow.replace('</tr>', lastCol + '</tr>');
+
+                return firstWithNotes + rest.join('');
+            }).join('');
+
+            html += `<table>
+                <thead><tr><th>Date</th><th>zkVM</th><th>ere</th><th>ACT4</th><th>Suite</th><th>Execution</th><th>Prove</th><th>Verify</th><th>Details</th><th>Notes</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>`;
+
+            document.getElementById('content').innerHTML = html;
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+
+            document.querySelectorAll('tr[data-group]').forEach(tr => {
+                tr.addEventListener('mouseenter', () => {
+                    document.querySelectorAll(`tr[data-group="${tr.dataset.group}"]`).forEach(r => r.classList.add('group-hover'));
+                });
+                tr.addEventListener('mouseleave', () => {
+                    document.querySelectorAll(`tr[data-group="${tr.dataset.group}"]`).forEach(r => r.classList.remove('group-hover'));
+                });
+            });
+        } catch (e) {
+            showError(e.message);
+        }
+    }
+
+    // ---- Run Results View ----
+
+    async function loadRunResults() {
+        document.getElementById('title').textContent = `${name.toUpperCase()} - ${suiteLabel(suite)}`;
+        document.title = `${name.toUpperCase()} ${suiteLabel(suite)} - ZKVM Test Monitor`;
+        document.getElementById('breadcrumb').innerHTML =
+            `<a href="index.html">Dashboard</a> &rsaquo; <a href="zkvm.html?name=${name}">${name.toUpperCase()}</a> &rsaquo; ${suiteLabel(suite)}`;
+
+        try {
+            const config = await fetch('config.json').then(r => r.json());
+            const zkvm = config.zkvms[name];
+            if (!zkvm) throw new Error(`Unknown ZKVM: ${name}`);
+
+            const history = await fetch(`data/history/${name}-${suite}.json`).then(r => r.json()).catch(() => null);
+            if (!history?.runs || history.runs.length === 0) throw new Error('No run data available');
+
+            const runIdx = runParam === 'latest' ? history.runs.length - 1 : parseInt(runParam, 10);
+            const run = history.runs[runIdx];
+            if (!run) throw new Error(`Run #${runIdx} not found`);
+
+            const p = fullyPassedCount(run);
+            const ep = execPassedCount(run);
+            const hasProveVerify = (run.prove_failed?.length > 0) || (run.verify_failed?.length > 0);
+
+            let html = '';
+
+            // Run metadata; the image digest pins exactly what was tested.
+            const digest = run.ere_image?.split('@')[1] || '';
+
+            html += `<div class="suite-header">
+                <span><strong>Date:</strong> ${formatDate(run.date)}</span>
+                <span><strong>zkVM:</strong> ${link(sdkUrl(zkvm.repo_url, run), run.sdk_version)}</span>
+                <span><strong>ere:</strong> ${link(ereUrl(run), `${run.ere_version} (${run.ere_rev})`)}</span>
+                <span><strong>Image:</strong> <code title="${run.ere_image}">${digest.substring(0, 19)}</code></span>
+                <span><strong>Stages:</strong> ${run.mode} on ${run.resource}</span>
+                <span class="${p === run.total ? 'pass' : 'fail'}"><strong>${p}/${run.total}</strong> passed</span>
+            </div>`;
+
+            // Note for this run (clickable links), if present.
+            if (run.notes) {
+                html += `<div class="run-note"><strong>Note:</strong> ${linkifyNote(run.notes)}</div>`;
+            }
+
+            const failed = run.failed || [];
+            const proveFailed = run.prove_failed || [];
+            const verifyFailed = run.verify_failed || [];
+            const passed = Array.isArray(run.passed) ? run.passed : [];
+            const totalFailures = failed.length + proveFailed.length + verifyFailed.length;
+
+            if (ep == null) {
+                html += '<p class="none" style="margin-top: 20px;">No per-test data available for this run.</p>';
+            } else {
+                // Failures section — unified table with execute/prove/verify columns
+                if (totalFailures > 0) {
+                    const showProveVerify = hasProveVerify || run.has_proving;
+                    const skip = '<span class="badge badge-skip">skip</span>';
+                    const pass = '<span class="badge badge-success">pass</span>';
+                    const fail = '<span class="badge badge-fail">fail</span>';
+
+                    html += `<h2>Failures (${totalFailures})</h2>`;
+                    html += '<table><thead><tr><th>Test</th><th>Execute</th>';
+                    if (showProveVerify) html += '<th>Prove</th><th>Verify</th>';
+                    html += '</tr></thead><tbody>';
+
+                    // Execution failures: execute=fail, prove=skip, verify=skip
+                    html += failed.map(n => {
+                        let row = `<tr><td><strong>${n}</strong></td><td>${fail}</td>`;
+                        if (showProveVerify) row += `<td>${skip}</td><td>${skip}</td>`;
+                        return row + '</tr>';
+                    }).join('');
+
+                    // Prove failures: execute=pass, prove=fail, verify=skip
+                    html += proveFailed.map(n => {
+                        let row = `<tr><td><strong>${n}</strong></td><td>${pass}</td>`;
+                        if (showProveVerify) row += `<td>${fail}</td><td>${skip}</td>`;
+                        return row + '</tr>';
+                    }).join('');
+
+                    // Verify failures: execute=pass, prove=pass, verify=fail
+                    html += verifyFailed.map(n => {
+                        let row = `<tr><td><strong>${n}</strong></td><td>${pass}</td>`;
+                        if (showProveVerify) row += `<td>${pass}</td><td>${fail}</td>`;
+                        return row + '</tr>';
+                    }).join('');
+
+                    html += '</tbody></table>';
+                }
+
+                // Passing tests section (compact)
+                if (passed.length > 0) {
+                    html += `<h2>Passing (${passed.length})</h2>`;
+                    html += '<div class="pass-list">';
+                    html += passed.map(n => `<span>${n}</span>`).join('');
+                    html += '</div>';
+                }
+            }
+
+            // Navigation between runs
+            html += '<div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #e0e0e0;">';
+            if (runIdx > 0) {
+                html += `<a href="zkvm.html?name=${name}&suite=${suite}&run=${runIdx - 1}">&larr; Older run</a>`;
+            }
+            if (runIdx < history.runs.length - 1) {
+                html += `<a href="zkvm.html?name=${name}&suite=${suite}&run=${runIdx + 1}" style="float: right;">Newer run &rarr;</a>`;
+            }
+            html += '</div>';
+
+            document.getElementById('content').innerHTML = html;
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+        } catch (e) {
+            showError(e.message);
+        }
+    }
+
+
+    function showError(msg) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').style.display = 'block';
+        document.getElementById('error').textContent = `Failed to load data: ${msg}`;
+    }
+    </script>
+</body>
+</html>

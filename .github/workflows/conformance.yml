@@ -1,0 +1,118 @@
+name: Conformance
+
+# Runs the ACT4 RISC-V architectural tests against the images published for an
+# ere revision, commits the result to dashboard/data/history, and mirrors the
+# dashboard to https://eth-act.github.io/zkevm-test-monitor/.
+#
+# `release` runs use the workflow file at the released commit, so they start
+# once this workflow is on master.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      rev:
+        description: ere revision to test (commit, tag or branch)
+        required: true
+        default: master
+      zkvm:
+        description: zkVMs to test
+        default: openvm,sp1,zisk
+      mode:
+        description: Last stage to run
+        type: choice
+        options: [verify, prove, execute]
+        default: verify
+      monitor_ref:
+        description: zkevm-test-monitor ref that generates the test ELFs
+        default: main
+      publish:
+        description: Mirror the dashboard to zkevm-test-monitor
+        type: boolean
+        default: false
+
+# Server containers are named per zkVM, so runs must not overlap.
+concurrency:
+  group: conformance
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  REV: ${{ github.event.release.tag_name || inputs.rev }}
+  ZKVM: ${{ inputs.zkvm || 'openvm,sp1,zisk' }}
+  MODE: ${{ inputs.mode || 'verify' }}
+  MONITOR_REF: ${{ inputs.monitor_ref || 'main' }}
+  PUBLISH: ${{ github.event_name == 'release' || inputs.publish }}
+
+jobs:
+  conformance:
+    name: Run ACT4 suite
+    # Proving needs an NVIDIA GPU; hosted runners have none.
+    runs-on: [self-hosted, gpu]
+    timeout-minutes: 720
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Results are committed to the branch that holds the dashboard.
+          ref: ${{ github.event_name == 'release' && github.event.repository.default_branch || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Checkout zkevm-test-monitor
+        uses: actions/checkout@v4
+        with:
+          repository: eth-act/zkevm-test-monitor
+          ref: ${{ env.MONITOR_REF }}
+          path: .monitor
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Run conformance
+        env:
+          ERE_DOCKER_MEMORY: 64g
+        run: |
+          cargo run --release -p ere-conformance -- run \
+            --rev "$REV" --zkvm "$ZKVM" --mode "$MODE" \
+            --monitor-path .monitor
+
+      - name: Upload per-test details
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-details
+          path: target/conformance/
+
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dashboard
+          git diff --cached --quiet && exit 0
+          git commit -m "chore(conformance): record $REV ($MODE)"
+          git pull --rebase
+          git push
+
+      - name: Checkout zkevm-test-monitor for publishing
+        if: env.PUBLISH == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: eth-act/zkevm-test-monitor
+          token: ${{ secrets.MONITOR_PUSH_TOKEN }}
+          path: .publish
+
+      # The monitor's Pages workflow deploys docs/ on every push to its main.
+      - name: Mirror dashboard to zkevm-test-monitor
+        if: env.PUBLISH == 'true'
+        run: |
+          cd .publish
+          rm -rf docs/index.html docs/zkvm.html docs/config.json docs/data
+          cp -r ../dashboard/index.html ../dashboard/zkvm.html ../dashboard/config.json ../dashboard/data docs/
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A docs
+          git diff --cached --quiet && exit 0
+          git commit -m "Publish conformance dashboard from eth-act/ere@${GITHUB_SHA::7}"
+          git push
