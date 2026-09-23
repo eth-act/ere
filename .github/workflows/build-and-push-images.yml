@@ -35,6 +35,7 @@ jobs:
       fail-fast: false
       matrix:
         zkvm:
+          - lambdavm
           - openvm
           - sp1
           - zisk
