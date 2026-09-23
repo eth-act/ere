@@ -3,16 +3,16 @@
   "act4_version": "4.0.0",
   "zkvms": {
     "openvm": {
-      "repo_url": "https://github.com/openvm-org/openvm",
-      "isa": "RV64IMA"
+      "isa": "RV64IMA",
+      "repo_url": "https://github.com/openvm-org/openvm"
     },
     "sp1": {
-      "repo_url": "https://github.com/succinctlabs/sp1",
-      "isa": "RV64IMA"
+      "isa": "RV64IMA",
+      "repo_url": "https://github.com/succinctlabs/sp1"
     },
     "zisk": {
-      "repo_url": "https://github.com/0xPolygonHermez/zisk",
-      "isa": "RV64IMA"
+      "isa": "RV64IMA",
+      "repo_url": "https://github.com/0xPolygonHermez/zisk"
     }
   }
 }
