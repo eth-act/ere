@@ -2,8 +2,8 @@
 
 A static site that shows ACT4 RISC-V architectural test results for each zkVM.
 Every result comes from the `ere-server-{zkvm}` images that ere CI publishes to
-`ghcr.io/eth-act/ere`. The site is published at
-<https://eth-act.github.io/zkevm-test-monitor/>.
+`ghcr.io/eth-act/ere`. Serve this directory with any static file server, for
+example `python3 -m http.server -d dashboard`.
 
 - `index.html`, `zkvm.html`: the site; there is no build step.
 - `config.json`: zkVM metadata and the ACT4 version in use.
