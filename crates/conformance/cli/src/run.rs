@@ -2,9 +2,14 @@
 
 use std::{
     collections::BTreeSet,
-    env, fs,
+    env, fmt, fs,
     path::{Path, PathBuf},
     process::{Command, Stdio},
+    sync::{
+        Arc, Mutex,
+        mpsc::{self, RecvTimeoutError},
+    },
+    thread,
     time::{Duration, Instant},
 };
 
@@ -14,7 +19,7 @@ use ere_dockerized::{
     DockerizedzkVM, DockerizedzkVMConfig, Elf, Input, ProverResource, PublicValues,
     image::server_zkvm_image, zkVMKind,
 };
-use tracing::{info, warn};
+use tracing::{debug, info, warn};
 
 use crate::{
     elfs,
@@ -66,6 +71,18 @@ pub struct RunArgs {
     /// Seconds to wait for a server container to become healthy.
     #[arg(long, default_value_t = 120)]
     health_timeout: u64,
+    /// Seconds allowed to start a server, including program key generation.
+    #[arg(long, default_value_t = 900)]
+    setup_timeout: u64,
+    /// Seconds allowed to execute one test.
+    #[arg(long, default_value_t = 600)]
+    execute_timeout: u64,
+    /// Seconds allowed to prove one test.
+    #[arg(long, default_value_t = 3600)]
+    prove_timeout: u64,
+    /// Seconds allowed to verify one proof.
+    #[arg(long, default_value_t = 600)]
+    verify_timeout: u64,
 }
 
 #[derive(Clone, Copy, Debug, ValueEnum)]
@@ -154,9 +171,12 @@ pub fn run(args: RunArgs) -> anyhow::Result<()> {
         resource.kind(),
     );
 
-    let config = DockerizedzkVMConfig {
-        health_timeout: Duration::from_secs(args.health_timeout),
-        ..Default::default()
+    let timeouts = Timeouts {
+        health: Duration::from_secs(args.health_timeout),
+        setup: Duration::from_secs(args.setup_timeout),
+        execute: Duration::from_secs(args.execute_timeout),
+        prove: Duration::from_secs(args.prove_timeout),
+        verify: Duration::from_secs(args.verify_timeout),
     };
 
     for &zkvm_kind in &args.zkvm {
@@ -185,30 +205,8 @@ pub fn run(args: RunArgs) -> anyhow::Result<()> {
             continue;
         }
 
-        let started = Instant::now();
-        let total = elf_paths.len();
-        let results = Vec::from_iter(elf_paths.iter().enumerate().map(|(idx, path)| {
-            let result = run_elf(zkvm_kind, path, &resource, args.mode, config.clone());
-            let status = match result.outcome {
-                Outcome::Passed => "PASS",
-                Outcome::Failed => "FAIL",
-                Outcome::ProveFailed => "PROVE-FAIL",
-                Outcome::VerifyFailed => "VERIFY-FAIL",
-            };
-            info!(
-                "[{:>3}/{total}] {status} {} ({})",
-                idx + 1,
-                result.name,
-                timings(&result)
-            );
-            if let Some(error) = &result.error {
-                warn!("  {error}");
-            }
-            result
-        }));
-
         let isa = record::isa(&args.dashboard, zkvm);
-        let run = Run {
+        let template = Run {
             date: chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
             ere_rev: revision.image_tag().to_string(),
             ere_version: revision.ere_version.clone(),
@@ -235,8 +233,41 @@ pub fn run(args: RunArgs) -> anyhow::Result<()> {
             prove_failed: Vec::new(),
             verify_failed: Vec::new(),
             has_proving: args.mode >= Mode::Prove,
+        };
+        let details = args.details_dir.join(format!(
+            "{zkvm}-{}-{}-{}-{}.json",
+            args.suite.as_str(),
+            revision.image_tag(),
+            args.mode.as_str(),
+            template.date.replace(['-', ':'], ""),
+        ));
+        info!("details: {}", details.display());
+
+        let started = Instant::now();
+        let total = elf_paths.len();
+        let mut results = Vec::with_capacity(total);
+        for (idx, path) in elf_paths.iter().enumerate() {
+            let result = run_elf(zkvm_kind, path, &resource, args.mode, timeouts);
+            let status = match result.outcome {
+                Outcome::Passed => "PASS",
+                Outcome::Failed => "FAIL",
+                Outcome::ProveFailed => "PROVE-FAIL",
+                Outcome::VerifyFailed => "VERIFY-FAIL",
+            };
+            info!(
+                "[{:>3}/{total}] {status} {} ({})",
+                idx + 1,
+                result.name,
+                timings(&result)
+            );
+            if let Some(error) = &result.error {
+                warn!("  {error}");
+            }
+            results.push(result);
+            // Save after every test, so an interrupted run keeps its results.
+            record::write_details(&details, &template.clone().with_results(&results), &results)?;
         }
-        .with_results(&results);
+        let run = template.with_results(&results);
 
         info!(
             "{zkvm}: {}/{} passed ({} failed, {} prove failed, {} verify failed) in {:.0?}",
@@ -247,16 +278,6 @@ pub fn run(args: RunArgs) -> anyhow::Result<()> {
             run.verify_failed.len(),
             started.elapsed(),
         );
-
-        let details = args.details_dir.join(format!(
-            "{zkvm}-{}-{}-{}-{}.json",
-            args.suite.as_str(),
-            revision.image_tag(),
-            args.mode.as_str(),
-            run.date.replace(['-', ':'], ""),
-        ));
-        record::write_details(&details, &run, &results)?;
-        info!("details: {}", details.display());
 
         if record {
             let history = record::append(&args.dashboard, zkvm, args.suite.as_str(), &run)?;
@@ -341,29 +362,152 @@ fn test_name(path: &Path) -> String {
         .into_owned()
 }
 
+/// Test stages, in order.
+#[derive(Clone, Copy, Debug)]
+enum Stage {
+    Setup,
+    Execute,
+    Prove,
+    Verify,
+}
+
+impl Stage {
+    /// Outcome of a test that does not get past this stage.
+    fn failure(self) -> Outcome {
+        match self {
+            Self::Setup | Self::Execute => Outcome::Failed,
+            Self::Prove => Outcome::ProveFailed,
+            Self::Verify => Outcome::VerifyFailed,
+        }
+    }
+}
+
+impl fmt::Display for Stage {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Self::Setup => "setup",
+            Self::Execute => "execute",
+            Self::Prove => "prove",
+            Self::Verify => "verify",
+        })
+    }
+}
+
+/// Time limits per stage. `ere-dockerized` enforces the RPC ones itself; the
+/// watchdog in [`run_elf`] enforces all of them, with some slack.
+#[derive(Clone, Copy, Debug)]
+struct Timeouts {
+    health: Duration,
+    setup: Duration,
+    execute: Duration,
+    prove: Duration,
+    verify: Duration,
+}
+
+impl Timeouts {
+    const SLACK: Duration = Duration::from_secs(60);
+
+    fn config(&self) -> DockerizedzkVMConfig {
+        DockerizedzkVMConfig {
+            execute_timeout: Some(self.execute),
+            prove_timeout: Some(self.prove),
+            verify_timeout: Some(self.verify),
+            health_timeout: self.health,
+        }
+    }
+
+    fn watchdog(&self, stage: Stage) -> Duration {
+        Self::SLACK
+            + match stage {
+                Stage::Setup => self.setup,
+                Stage::Execute => self.execute,
+                Stage::Prove => self.prove,
+                Stage::Verify => self.verify,
+            }
+    }
+}
+
+/// Where a test thread is, shared with the watchdog in [`run_elf`].
+struct Progress {
+    stage: Stage,
+    deadline: Instant,
+    abandoned: bool,
+}
+
 /// Runs one ELF up to `mode`, in a fresh server container.
+///
+/// The test runs on its own thread. If a stage outlives its deadline, the
+/// test is recorded as failed at that stage and abandoned: the thread is left
+/// behind, stops at the next stage boundary, and the next test's container
+/// replaces its container, which has the same name.
 fn run_elf(
     zkvm_kind: zkVMKind,
     path: &Path,
     resource: &ProverResource,
     mode: Mode,
-    config: DockerizedzkVMConfig,
+    timeouts: Timeouts,
 ) -> TestResult {
-    let mut result = TestResult {
-        name: test_name(path),
-        outcome: Outcome::Passed,
-        error: None,
-        setup_secs: 0.0,
-        execute_secs: None,
-        prove_secs: None,
-        verify_secs: None,
+    let name = test_name(path);
+    let progress = Arc::new(Mutex::new(Progress {
+        stage: Stage::Setup,
+        deadline: Instant::now() + timeouts.watchdog(Stage::Setup),
+        abandoned: false,
+    }));
+
+    let (tx, rx) = mpsc::channel();
+    let spawned = {
+        let (path, resource, progress) = (path.to_path_buf(), resource.clone(), progress.clone());
+        thread::Builder::new()
+            .name(format!("test {name}"))
+            .spawn(move || {
+                let mut result = TestResult::new(test_name(&path));
+                if let Err((outcome, error)) = run_stages(
+                    zkvm_kind,
+                    &path,
+                    &resource,
+                    mode,
+                    timeouts,
+                    &progress,
+                    &mut result,
+                ) {
+                    result.outcome = outcome;
+                    result.error = Some(error);
+                }
+                let _ = tx.send(result);
+            })
     };
-    if let Err((outcome, error)) = run_stages(zkvm_kind, path, resource, mode, config, &mut result)
-    {
-        result.outcome = outcome;
-        result.error = Some(error);
+    if let Err(err) = spawned {
+        let mut result = TestResult::new(name);
+        result.outcome = Outcome::Failed;
+        result.error = Some(format!("failed to spawn test thread: {err}"));
+        return result;
     }
-    result
+
+    loop {
+        match rx.recv_timeout(Duration::from_secs(1)) {
+            Ok(result) => return result,
+            Err(RecvTimeoutError::Disconnected) => {
+                let mut result = TestResult::new(name);
+                result.outcome = progress.lock().unwrap().stage.failure();
+                result.error = Some("test thread panicked".to_string());
+                return result;
+            }
+            Err(RecvTimeoutError::Timeout) => {
+                let mut progress = progress.lock().unwrap();
+                if Instant::now() >= progress.deadline {
+                    progress.abandoned = true;
+                    let mut result = TestResult::new(name);
+                    result.outcome = progress.stage.failure();
+                    result.error = Some(format!(
+                        "abandoned: {} stage exceeded {:?}",
+                        progress.stage,
+                        timeouts.watchdog(progress.stage)
+                    ));
+                    return result;
+                }
+            }
+        }
+    }
 }
 
 /// Runs the stages up to `mode` in order, stopping at the first stage that
@@ -373,16 +517,30 @@ fn run_stages(
     path: &Path,
     resource: &ProverResource,
     mode: Mode,
-    config: DockerizedzkVMConfig,
+    timeouts: Timeouts,
+    progress: &Mutex<Progress>,
     result: &mut TestResult,
 ) -> Result<(), (Outcome, String)> {
+    let enter = |stage: Stage| {
+        let mut progress = progress.lock().unwrap();
+        if progress.abandoned {
+            return Err((stage.failure(), "abandoned".to_string()));
+        }
+        progress.stage = stage;
+        progress.deadline = Instant::now() + timeouts.watchdog(stage);
+        debug!("{}: {stage}", result.name);
+        Ok(())
+    };
+
+    enter(Stage::Setup)?;
     let elf =
         fs::read(path).map_err(|err| (Outcome::Failed, format!("failed to read ELF: {err}")))?;
-
-    let (zkvm, secs) = timed(|| DockerizedzkVM::new(zkvm_kind, Elf(elf), resource.clone(), config));
+    let (zkvm, secs) =
+        timed(|| DockerizedzkVM::new(zkvm_kind, Elf(elf), resource.clone(), timeouts.config()));
     result.setup_secs = secs;
     let zkvm = zkvm.map_err(|err| (Outcome::Failed, format!("server did not start: {err:#}")))?;
 
+    enter(Stage::Execute)?;
     let input = Input::new();
     let (executed, secs) = timed(|| zkvm.execute(&input));
     result.execute_secs = Some(secs);
@@ -392,6 +550,7 @@ fn run_stages(
         return Ok(());
     }
 
+    enter(Stage::Prove)?;
     let (proved, secs) = timed(|| zkvm.prove(&input));
     result.prove_secs = Some(secs);
     let (public_values, proof, _) =
@@ -401,6 +560,7 @@ fn run_stages(
         return Ok(());
     }
 
+    enter(Stage::Verify)?;
     let (verified, secs) = timed(|| zkvm.verify(&proof));
     result.verify_secs = Some(secs);
     verdict(zkvm_kind, verified).map_err(|error| (Outcome::VerifyFailed, error))

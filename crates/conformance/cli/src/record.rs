@@ -40,8 +40,23 @@ pub struct TestResult {
     pub verify_secs: Option<f64>,
 }
 
+impl TestResult {
+    /// A passing result with no timings yet.
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            outcome: Outcome::Passed,
+            error: None,
+            setup_secs: 0.0,
+            execute_secs: None,
+            prove_secs: None,
+            verify_secs: None,
+        }
+    }
+}
+
 /// One history entry.
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Run {
     pub date: String,
     pub ere_rev: String,
