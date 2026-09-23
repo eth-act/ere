@@ -9,7 +9,8 @@ use tracing_subscriber::EnvFilter;
 // Compile-time check to ensure exactly one zkVM feature is enabled for `ere-compiler`
 const _: () = {
     assert!(
-        (cfg!(feature = "openvm") as u8
+        (cfg!(feature = "lambdavm") as u8
+            + cfg!(feature = "openvm") as u8
             + cfg!(feature = "sp1") as u8
             + cfg!(feature = "zisk") as u8)
             == 1,
@@ -61,6 +62,17 @@ fn main() -> Result<(), Error> {
 }
 
 fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind, args: &[String]) -> Result<Elf, Error> {
+    #[cfg(feature = "lambdavm")]
+    let elf = {
+        use ere_compiler_lambdavm::*;
+        match compiler_kind {
+            CompilerKind::Rust => LambdaVMRustRv64ima.compile(guest_dir, args)?,
+            CompilerKind::RustCustomized => {
+                LambdaVMRustRv64imaCustomized.compile(guest_dir, args)?
+            }
+        }
+    };
+
     #[cfg(feature = "openvm")]
     let elf = {
         use ere_compiler_openvm::*;

@@ -17,6 +17,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Skip lambdavm because we are using a specific revision instead of released tag
+          # - zkvm: lambdavm
+          #   crate: lambda-vm-prover
           # - zkvm: openvm
           #   crate: openvm-sdk
           - zkvm: sp1

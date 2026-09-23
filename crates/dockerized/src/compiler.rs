@@ -238,6 +238,13 @@ pub(crate) mod tests {
         };
     }
 
+    mod lambdavm {
+        test_compile!(LambdaVM, RustCustomized, "basic");
+        test_compile!(LambdaVM, Rust, "stock_nightly_no_std");
+        test_reproducible_elf!(LambdaVM, RustCustomized, "basic");
+        test_reproducible_elf!(LambdaVM, Rust, "stock_nightly_no_std");
+    }
+
     mod openvm {
         test_compile!(OpenVM, RustCustomized, "basic");
         test_compile!(OpenVM, Rust, "stock_nightly_no_std");
