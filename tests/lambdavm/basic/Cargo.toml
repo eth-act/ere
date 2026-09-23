@@ -1,0 +1,10 @@
+[package]
+name = "ere-test-lambdavm-guest"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+ere-platform-lambdavm = { path = "../../../crates/platform/lambdavm" }
+ere-util-test = { path = "../../../crates/util/test" }

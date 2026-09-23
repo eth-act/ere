@@ -3,22 +3,26 @@ members = [
     # Compiler
     "crates/compiler/cli",
     "crates/compiler/core",
+    "crates/compiler/lambdavm",
     "crates/compiler/openvm",
     "crates/compiler/sp1",
     "crates/compiler/zisk",
     # Platform
     "crates/platform/core",
+    "crates/platform/lambdavm",
     "crates/platform/openvm",
     "crates/platform/sp1",
     "crates/platform/zisk",
     # Prover
     "crates/prover/core",
+    "crates/prover/lambdavm",
     "crates/prover/openvm",
     "crates/prover/sp1",
     "crates/prover/zisk",
     # Verifier
     "crates/verifier/verifier",
     "crates/verifier/core",
+    "crates/verifier/lambdavm",
     "crates/verifier/openvm",
     "crates/verifier/sp1",
     "crates/verifier/zisk",
@@ -100,6 +104,7 @@ prost-types = "0.14"
 rand = "0.9.2"
 reqwest = { version = "0.12", default-features = false }
 ripemd = { version = "0.2", default-features = false }
+rkyv = { version = "0.8.10", default-features = false, features = ["alloc", "bytecheck", "aligned", "pointer_width_64"] }
 serde = { version = "1.0.219", default-features = false }
 serde-big-array = "0.5.1"
 serde_bytes = { version = "0.11.19", default-features = false }
@@ -126,6 +131,11 @@ twirp = "0.10"
 twirp-build = "0.10"
 uuid = "1"
 zkvm-interface = { git = "https://github.com/eth-act/zkvm-standards", rev = "282cd356c3a0498416bb0619f9c8a347ce9933fb" }
+
+# LambdaVM dependencies
+lambda-vm-executor = { git = "https://github.com/yetanotherco/lambda_vm", rev = "ffc4ac19e755d93ed631ace71f17577478d8d21b", package = "executor" }
+lambda-vm-prover = { git = "https://github.com/yetanotherco/lambda_vm", rev = "ffc4ac19e755d93ed631ace71f17577478d8d21b", default-features = false, features = ["parallel"] }
+lambda-vm-syscalls = { git = "https://github.com/yetanotherco/lambda_vm", rev = "ffc4ac19e755d93ed631ace71f17577478d8d21b" }
 
 # OpenVM dependencies
 openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v2.1.0-preview", default-features = false }
@@ -177,19 +187,23 @@ ziskos = { version = "1.3.0-alpha", default-features = false }
 # Local dependencies
 ere-compiler = { path = "crates/compiler/cli" }
 ere-compiler-core = { path = "crates/compiler/core" }
+ere-compiler-lambdavm = { path = "crates/compiler/lambdavm" }
 ere-compiler-openvm = { path = "crates/compiler/openvm" }
 ere-compiler-sp1 = { path = "crates/compiler/sp1" }
 ere-compiler-zisk = { path = "crates/compiler/zisk" }
 ere-platform-core = { path = "crates/platform/core" }
+ere-platform-lambdavm = { path = "crates/platform/lambdavm" }
 ere-platform-openvm = { path = "crates/platform/openvm" }
 ere-platform-sp1 = { path = "crates/platform/sp1" }
 ere-platform-zisk = { path = "crates/platform/zisk" }
 ere-prover-core = { path = "crates/prover/core" }
+ere-prover-lambdavm = { path = "crates/prover/lambdavm" }
 ere-prover-openvm = { path = "crates/prover/openvm" }
 ere-prover-sp1 = { path = "crates/prover/sp1" }
 ere-prover-zisk = { path = "crates/prover/zisk" }
 ere-verifier = { path = "crates/verifier/verifier" }
 ere-verifier-core = { path = "crates/verifier/core" }
+ere-verifier-lambdavm = { path = "crates/verifier/lambdavm" }
 ere-verifier-openvm = { path = "crates/verifier/openvm" }
 ere-verifier-sp1 = { path = "crates/verifier/sp1" }
 ere-verifier-zisk = { path = "crates/verifier/zisk" }
