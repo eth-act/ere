@@ -8,15 +8,15 @@ services:
     command:
       - -ec
       - |
-        MD5=51e142e7217b807bec25af465b7eeb71
+        MD5=879b7f726cf48e8a53be877020068548
         grep -qx $$MD5 .md5 2>/dev/null && exit 0
-        curl -fsSL -o key.tar.gz https://storage.googleapis.com/zisk-setup/zisk-provingkey-1.2.0-alpha.tar.gz
+        curl -fsSL -o key.tar.gz https://storage.googleapis.com/zisk-setup/zisk-provingkey-1.3.0-alpha-blake3.tar.gz
         echo "$$MD5  key.tar.gz" | md5sum -c
         tar xzf key.tar.gz -C /root/.zisk
         rm key.tar.gz
         echo $$MD5 > .md5
     volumes:
-      - zisk-proving-key-v1.2.0-alpha:/root/.zisk/provingKey
+      - zisk-proving-key-v1.3.0-alpha:/root/.zisk/provingKey
 
   zisk-coordinator:
     image: ghcr.io/eth-act/ere/ere-server-zisk:latest-cuda
@@ -43,7 +43,7 @@ services:
     environment:
       - RUST_LOG=info
     volumes:
-      - zisk-proving-key-v1.2.0-alpha:/root/.zisk/provingKey
+      - zisk-proving-key-v1.3.0-alpha:/root/.zisk/provingKey
     restart: unless-stopped
     depends_on:
       zisk-coordinator:
@@ -81,7 +81,7 @@ services:
   #             capabilities: [gpu]
 
 volumes:
-  zisk-proving-key-v1.2.0-alpha:
+  zisk-proving-key-v1.3.0-alpha:
 
 networks:
   default:

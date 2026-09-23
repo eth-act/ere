@@ -1,7 +1,7 @@
 use ere_verifier_core::{PublicValues, zkVMVerifier};
-use proofman_verifier::{Poseidon1Verifier, Verifier};
+use zisk_verifier::verify_vadcop_final;
 
-use crate::{Error, ZiskProgramVk, ZiskProof, verifier::vk::VADCOP_FINAL_COMPRESSED_VK};
+use crate::{Error, ZiskProgramVk, ZiskProof, verifier::vk::VADCOP_FINAL_VK};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
@@ -39,8 +39,7 @@ impl zkVMVerifier for ZiskVerifier {
 
         ensure_program_vk_matches(self.program_vk, program_vk)?;
 
-        if !Poseidon1Verifier.verify_vadcop_final_compressed(&proof.0, &VADCOP_FINAL_COMPRESSED_VK)
-        {
+        if !verify_vadcop_final(&proof.0, &VADCOP_FINAL_VK) {
             return Err(Error::InvalidProof);
         }
 

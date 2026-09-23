@@ -85,7 +85,7 @@ fn test_invalid_proof_verify() {
 
 fn proof_with_unexpected_public_values() -> ZiskProof {
     let mut proof = ZiskProof::decode_from_slice(PROOF).unwrap();
-    proof.0.public_values[4] ^= 0xFF;
+    proof.0.public_values[5] ^= 0xFF;
     proof
 }
 
