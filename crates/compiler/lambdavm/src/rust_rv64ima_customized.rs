@@ -16,24 +16,28 @@ const TARGET: RustTarget = RustTarget::SpecJson {
     json: include_str!("./rust_rv64ima_customized/riscv64im-lambda-vm-elf.json"),
 };
 
-/// According to https://github.com/yetanotherco/lambda_vm/blob/ffc4ac19e755d93ed631ace71f17577478d8d21b/executor/programs/rust/panic/.cargo/config.toml.
+/// Rust flags according to https://github.com/yetanotherco/lambda_vm/blob/ffc4ac19e755d93ed631ace71f17577478d8d21b/executor/programs/rust/panic/.cargo/config.toml
 const RUSTFLAGS: &[&str] = &[
+    // https://docs.rs/getrandom/0.3.2/getrandom/index.html#opt-in-backends
     "--cfg",
     "getrandom_backend=\"custom\"",
+    // Replace atomic ops with nonatomic versions since the guest is single threaded.
     "-C",
     "passes=lower-atomic",
 ];
-
-/// According to https://github.com/yetanotherco/lambda_vm/blob/ffc4ac19e755d93ed631ace71f17577478d8d21b/Makefile#L197-L209.
+/// Cargo build options according to https://github.com/yetanotherco/lambda_vm/blob/ffc4ac19e755d93ed631ace71f17577478d8d21b/Makefile#L197-L209
 const CARGO_BUILD_OPTIONS: &[&str] = &[
+    // The target has no prebuilt standard library, so build it with `std`
     "-Zbuild-std=core,alloc,std,compiler_builtins,panic_abort",
+    // Take `memcpy` and friends from `compiler_builtins` when building the
+    // standard library crates from source.
     "-Zbuild-std-features=compiler-builtins-mem",
     // For using json target spec
     "-Zjson-target-spec",
 ];
 
-/// Compiler for Rust guest program to RV64IMA architecture, using the target spec and nightly
-/// toolchain of LambdaVM.
+/// Compiler for Rust guest program to RV64IMA architecture, using the Rust
+/// toolchain pinned by LambdaVM and target `riscv64im-lambda-vm-elf`.
 pub struct LambdaVMRustRv64imaCustomized;
 
 impl Compiler for LambdaVMRustRv64imaCustomized {

@@ -10,13 +10,19 @@ const LENGTH_PREFIX_SIZE: usize = size_of::<u64>();
 
 /// Verifying key that identifies a specific compiled guest program.
 ///
-/// LambdaVM has no verifying key separate from the program: the verifier binds the proof to
-/// `keccak256(elf)` and recomputes the decode and page commitments from the ELF itself. So the
-/// program vk is the ELF bytes.
+/// Wraps the ELF of the guest program. LambdaVM has no verifying key separate
+/// from the program: the verifier binds the proof to `keccak256(elf)` and
+/// recomputes the decode and page commitments from the ELF itself.
 ///
 /// Encodes to the ELF length as `u64` little endian, followed by the ELF bytes.
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct LambdaVMProgramVk(pub Vec<u8>);
+
+impl LambdaVMProgramVk {
+    pub fn new(elf: Vec<u8>) -> Self {
+        Self(elf)
+    }
+}
 
 impl Encode for LambdaVMProgramVk {
     type Error = Infallible;

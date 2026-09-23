@@ -23,8 +23,7 @@ ere-util-test = { workspace = true, features = ["host"] }
 
 [features]
 default = []
-# GPU proving is not supported yet. The feature exists because `ere-server` forwards its `cuda`
-# feature to every prover.
+# Not supported yet, declared for the `cuda` feature of `ere-server`.
 cuda = []
 
 [lints]

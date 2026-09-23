@@ -3,7 +3,8 @@
 use ere_verifier_core::codec::{Decode, MAX_DECODE_BYTES};
 use ere_verifier_lambdavm::{Error, LambdaVMProof};
 
-/// A proof longer than the decode limit is rejected before it is copied or validated.
+/// A proof longer than the decode limit is rejected before it is copied or
+/// validated.
 #[test]
 fn an_input_beyond_the_limit_is_rejected() {
     let input = vec![0u8; MAX_DECODE_BYTES + 1];

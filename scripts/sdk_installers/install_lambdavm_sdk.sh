@@ -22,19 +22,24 @@ ensure_tool_installed() {
 }
 # --- End of Utility functions ---
 
-echo "Installing the LambdaVM guest toolchain..."
+echo "Installing LambdaVM Toolchain..."
 
-ensure_tool_installed "rustup" "to install the LambdaVM guest toolchain"
+ensure_tool_installed "rustup" "to manage Rust toolchains"
 
-# LambdaVM has no CLI to install, because Ere links the LambdaVM crates directly. Guest programs
-# are built with a pinned nightly toolchain and `-Z build-std`, which needs `rust-src`.
-# According to https://github.com/yetanotherco/lambda_vm/blob/ffc4ac19e755d93ed631ace71f17577478d8d21b/Makefile#L201
-LAMBDAVM_GUEST_TOOLCHAIN="nightly-2026-02-01"
+# LambdaVM has no CLI, Ere links the LambdaVM crates directly. Guest programs
+# are built with this nightly toolchain and `-Z build-std`, which needs
+# `rust-src`, according to https://github.com/yetanotherco/lambda_vm/blob/ffc4ac19e755d93ed631ace71f17577478d8d21b/Makefile#L201
+LAMBDAVM_TOOLCHAIN_VERSION="nightly-2026-02-01"
 
-rustup toolchain install "$LAMBDAVM_GUEST_TOOLCHAIN" --profile minimal --component rust-src
+# Install the Rust toolchain LambdaVM builds guest programs with
+echo "Installing LambdaVM Rust toolchain (${LAMBDAVM_TOOLCHAIN_VERSION})..."
+rustup toolchain install "${LAMBDAVM_TOOLCHAIN_VERSION}" --profile minimal --component rust-src
 
-# The stock compiler builds with the unpinned nightly toolchain by default.
-rustup toolchain install nightly --profile minimal --component rust-src
-
-echo "Verifying the LambdaVM guest toolchain..."
-rustup run "$LAMBDAVM_GUEST_TOOLCHAIN" rustc --version
+# Verify the toolchain installation
+echo "Verifying LambdaVM Rust toolchain installation..."
+if rustup run "${LAMBDAVM_TOOLCHAIN_VERSION}" rustc --version; then
+    echo "LambdaVM Rust toolchain installation verified successfully."
+else
+    echo "Error: 'rustup run ${LAMBDAVM_TOOLCHAIN_VERSION} rustc --version' failed." >&2
+    exit 1
+fi

@@ -8,12 +8,15 @@ pub enum Error {
     CommonError(#[from] CommonError),
 
     // Common
-    #[error("Load elf failed: {0}")]
-    LoadElf(#[from] ElfError),
+    #[error("Decode elf failed: {0}")]
+    DecodeElf(ElfError),
+
+    #[error("Invalid proof options: {0}")]
+    InvalidProofOptions(String),
 
     // Execute
     #[error("LambdaVM execution failed: {0}")]
-    Execute(#[from] ExecutorError),
+    Execute(#[source] ExecutorError),
 
     #[error("LambdaVM execution exceeded {0} cycles")]
     CycleLimitExceeded(u64),
@@ -22,9 +25,6 @@ pub enum Error {
     EstimateCost(#[source] lambda_vm_prover::Error),
 
     // Prove
-    #[error("Invalid proof options: {0}")]
-    ProofOptions(String),
-
     #[error("LambdaVM proving failed: {0}")]
     Prove(#[source] lambda_vm_prover::Error),
 

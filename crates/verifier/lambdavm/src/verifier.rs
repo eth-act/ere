@@ -7,12 +7,16 @@ include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
 /// FRI blowup factor that proofs are generated and verified with.
 ///
-/// A proof does not carry its proof options, so the prover and the verifier must agree on them.
+/// A proof does not carry its proof options, so the prover and the verifier
+/// must agree on them.
 ///
 /// According to https://github.com/yetanotherco/lambda_vm/blob/ffc4ac19e755d93ed631ace71f17577478d8d21b/bin/cli/src/main.rs#L214-L216.
 pub const BLOWUP_FACTOR: u8 = 2;
 
 /// Verifier bound to a specific compiled guest program.
+///
+/// Implements [`zkVMVerifier`]. Holds the [`LambdaVMProgramVk`], the guest ELF
+/// needed to authenticate proofs.
 #[derive(Clone, Debug)]
 pub struct LambdaVMVerifier {
     program_vk: LambdaVMProgramVk,
@@ -36,7 +40,7 @@ impl zkVMVerifier for LambdaVMVerifier {
 
     fn verify(&self, proof: &LambdaVMProof) -> Result<PublicValues, Error> {
         let options = GoldilocksCubicProofOptions::with_blowup(BLOWUP_FACTOR)
-            .map_err(|err| Error::ProofOptions(err.to_string()))?;
+            .map_err(|err| Error::InvalidProofOptions(err.to_string()))?;
 
         if !verify_with_options(&proof.0, &self.program_vk.0, &options, None, None)? {
             return Err(Error::InvalidProof);

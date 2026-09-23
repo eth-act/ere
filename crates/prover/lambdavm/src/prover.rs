@@ -1,6 +1,5 @@
 use std::{
-    collections::BTreeMap,
-    ops::Range,
+    sync::Arc,
     time::{Duration, Instant},
 };
 
@@ -10,15 +9,13 @@ use ere_prover_core::{
     zkVMProver, zkVMVerifier,
 };
 use ere_verifier_lambdavm::{BLOWUP_FACTOR, LambdaVMProgramVk, LambdaVMProof, LambdaVMVerifier};
-use lambda_vm_prover::{
-    GoldilocksCubicProofOptions, MaxRowsConfig, count_elements, prove_with_options_and_inputs,
-};
+use lambda_vm_prover::{GoldilocksCubicProofOptions, MaxRowsConfig, prove_with_options_and_inputs};
 
-use crate::{cost::heap_range, error::Error, executor::execute};
+use crate::{cost::CostEstimator, error::Error, executor::Executor};
 
 pub struct LambdaVMProver {
-    program: lambda_vm_executor::elf::Elf,
-    heap_range: Option<Range<u64>>,
+    executor: Executor,
+    estimator: CostEstimator,
     verifier: LambdaVMVerifier,
 }
 
@@ -31,19 +28,19 @@ impl LambdaVMProver {
             ))?;
         }
 
-        let program = lambda_vm_executor::elf::Elf::load(&elf.0)?;
-        let heap_range = heap_range(&elf.0);
-        let verifier = LambdaVMVerifier::new(LambdaVMProgramVk(elf.0));
+        let program =
+            Arc::new(lambda_vm_executor::elf::Elf::load(&elf.0).map_err(Error::DecodeElf)?);
+
+        let executor = Executor::new(&program);
+        let estimator = CostEstimator::new(&elf, &program);
+
+        let verifier = LambdaVMVerifier::new(LambdaVMProgramVk::new(elf.0));
 
         Ok(Self {
-            program,
-            heap_range,
+            executor,
+            estimator,
             verifier,
         })
-    }
-
-    fn elf(&self) -> &[u8] {
-        &self.verifier.program_vk().0
     }
 }
 
@@ -60,11 +57,7 @@ impl zkVMProver for LambdaVMProver {
             Err(CommonError::unsupported_input("no dedicated proofs stream"))?
         }
 
-        let start = Instant::now();
-        let execution = execute(&self.program, input.stdin(), None)?;
-        let execution_duration = start.elapsed();
-
-        Ok((execution.public_values, execution_duration))
+        self.executor.execute(input.stdin())
     }
 
     fn execute_estimated_cost(
@@ -75,23 +68,7 @@ impl zkVMProver for LambdaVMProver {
             Err(CommonError::unsupported_input("no dedicated proofs stream"))?
         }
 
-        let execution = execute(&self.program, input.stdin(), self.heap_range.as_ref())?;
-        let (main_elements, aux_elements) =
-            count_elements(self.elf(), input.stdin()).map_err(Error::EstimateCost)?;
-
-        let cost = BTreeMap::from([
-            ("cycles".to_owned(), execution.cycles),
-            ("main_elements".to_owned(), main_elements),
-            ("aux_elements".to_owned(), aux_elements),
-        ]);
-
-        Ok((
-            execution.public_values,
-            CostEstimation {
-                cost,
-                peak_heap_bytes: execution.peak_heap_bytes,
-            },
-        ))
+        self.estimator.estimate(input.stdin())
     }
 
     fn prove(&self, input: &Input) -> Result<(PublicValues, LambdaVMProof, Duration), Error> {
@@ -100,11 +77,11 @@ impl zkVMProver for LambdaVMProver {
         }
 
         let options = GoldilocksCubicProofOptions::with_blowup(BLOWUP_FACTOR)
-            .map_err(|err| Error::ProofOptions(err.to_string()))?;
+            .map_err(|err| Error::InvalidProofOptions(err.to_string()))?;
 
         let start = Instant::now();
         let proof = prove_with_options_and_inputs(
-            self.elf(),
+            &self.verifier.program_vk().0,
             input.stdin(),
             &options,
             &MaxRowsConfig::default(),
@@ -113,8 +90,9 @@ impl zkVMProver for LambdaVMProver {
         let proving_time = start.elapsed();
 
         let public_values = proof.public_output.as_slice().into();
+        let proof = LambdaVMProof::new(proof);
 
-        Ok((public_values, LambdaVMProof(proof), proving_time))
+        Ok((public_values, proof, proving_time))
     }
 }
 
@@ -213,6 +191,6 @@ mod tests {
         ));
     }
 
-    // TODO: Add `test_execute_zkvm_interface` when LambdaVM exports the `zkvm_*` accelerator
-    // symbols.
+    // TODO: Add `test_execute_zkvm_interface` when LambdaVM exports the `zkvm_*`
+    // accelerator symbols.
 }

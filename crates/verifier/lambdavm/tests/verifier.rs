@@ -48,19 +48,19 @@ fn test_invalid_program_vk_decode() {
     let mut invalid_elf = PROGRAM_VK.to_vec();
     invalid_elf[8] ^= 0xFF;
     let err = LambdaVMProgramVk::decode_from_slice(&invalid_elf).unwrap_err();
-    assert!(matches!(err, Error::InvalidProgramVkElf(_)));
+    assert!(matches!(err, Error::DecodeProgramVk(_)));
 }
 
 #[test]
 fn test_invalid_proof_decode() {
     let truncated = &PROOF[..PROOF.len() - 1];
     let err = LambdaVMProof::decode_from_slice(truncated).unwrap_err();
-    assert!(matches!(err, Error::Deserialize(_)));
+    assert!(matches!(err, Error::DecodeProof(_)));
 
     let mut extended = PROOF.to_vec();
     extended.push(0xFF);
     let err = LambdaVMProof::decode_from_slice(&extended).unwrap_err();
-    assert!(matches!(err, Error::Deserialize(_)));
+    assert!(matches!(err, Error::DecodeProof(_)));
 }
 
 #[test]
@@ -71,18 +71,18 @@ fn test_invalid_proof_verify() {
     // Unexpected public values
     let proof = proof_with_unexpected_public_values();
     let err = verifier.verify(&proof).unwrap_err();
-    assert!(matches!(err, Error::InvalidProof | Error::Verify(_)));
+    assert!(matches!(err, Error::InvalidProof));
 
     // Invalid STARK proof
-    let proof = proof_with_byte_flipped();
+    let proof = proof_with_invalid_stark_proof();
     let err = verifier.verify(&proof).unwrap_err();
-    assert!(matches!(err, Error::InvalidProof | Error::Verify(_)));
+    assert!(matches!(err, Error::InvalidProof));
 
     // Unexpected program vk
     let verifier = verifier_with_unexpected_program_vk();
     let proof = LambdaVMProof::decode_from_slice(PROOF).unwrap();
     let err = verifier.verify(&proof).unwrap_err();
-    assert!(matches!(err, Error::InvalidProof | Error::Verify(_)));
+    assert!(matches!(err, Error::InvalidProof));
 }
 
 fn proof_with_unexpected_public_values() -> LambdaVMProof {
@@ -91,7 +91,7 @@ fn proof_with_unexpected_public_values() -> LambdaVMProof {
     proof
 }
 
-fn proof_with_byte_flipped() -> LambdaVMProof {
+fn proof_with_invalid_stark_proof() -> LambdaVMProof {
     let mut bytes = PROOF.to_vec();
     let i = bytes.len() / 2;
     bytes[i] ^= 0xFF;
@@ -117,52 +117,33 @@ fn test_malleable_proof() {
     assert_eq!(&*public_values, PUBLIC_VALUES);
 }
 
-/// Adds the Goldilocks modulus to a main trace opening small enough that the sum fits a `u64`.
 fn proof_bytes_with_aliased_field_element() -> Vec<u8> {
     const GOLDILOCKS_MODULUS: u64 = 0xFFFF_FFFF_0000_0001;
     const MARKER: u64 = 0x1234_5678_9ABC_DEF1;
 
-    let proof = LambdaVMProof::decode_from_slice(PROOF).unwrap();
-    let (table, query, column, value) = proof
+    // Small trace values repeat all over the proof, so locate one by encoding a
+    // marker in its place.
+    let mut proof = LambdaVMProof::decode_from_slice(PROOF).unwrap();
+    let value = proof
         .0
         .proof
         .proofs
-        .iter()
-        .enumerate()
-        .find_map(|(table, proof)| {
-            proof
-                .deep_poly_openings
-                .iter()
-                .enumerate()
-                .find_map(|(query, opening)| {
-                    opening
-                        .main_trace_polys
-                        .evaluations
-                        .iter()
-                        .enumerate()
-                        .find_map(|(column, value)| {
-                            let value = *value.value();
-                            (value < u64::MAX - GOLDILOCKS_MODULUS)
-                                .then_some((table, query, column, value))
-                        })
-                })
-        })
+        .iter_mut()
+        .flat_map(|proof| &mut proof.deep_poly_openings)
+        .flat_map(|opening| &mut opening.main_trace_polys.evaluations)
+        .find(|value| value.value().checked_add(GOLDILOCKS_MODULUS).is_some())
+        .unwrap();
+    *value = MARKER.into();
+    let marked = proof.encode_to_vec().unwrap();
+    let offset = subslice_positions(&marked, &MARKER.to_le_bytes())
+        .next()
         .unwrap();
 
-    // Find the offset of the value by encoding a proof that holds a marker in its place.
-    let mut marked = proof.clone();
-    marked.0.proof.proofs[table].deep_poly_openings[query]
-        .main_trace_polys
-        .evaluations[column] = MARKER.into();
-    let marked = marked.encode_to_vec().unwrap();
-    let marker = MARKER.to_le_bytes();
-    let mut offsets = subslice_positions(&marked, &marker);
-    let offset = offsets.next().unwrap();
-    assert!(offsets.next().is_none());
-    assert_eq!(PROOF[offset..offset + 8], value.to_le_bytes());
+    let value = u64::from_le_bytes(PROOF[offset..offset + 8].try_into().unwrap());
+    let aliased = value.checked_add(GOLDILOCKS_MODULUS).unwrap();
 
     let mut proof_aliased = PROOF.to_vec();
-    proof_aliased[offset..offset + 8].copy_from_slice(&(value + GOLDILOCKS_MODULUS).to_le_bytes());
+    proof_aliased[offset..offset + 8].copy_from_slice(&aliased.to_le_bytes());
     assert_ne!(PROOF, proof_aliased);
     proof_aliased
 }

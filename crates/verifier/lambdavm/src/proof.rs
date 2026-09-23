@@ -4,16 +4,23 @@ use rkyv::{rancor, util::AlignedVec};
 
 use crate::Error;
 
-/// Alignment of the buffer the archived proof is validated in, which is the alignment
-/// `lambda-vm-prover` requires for its archives.
+/// Alignment of the buffer the archived proof is validated in, which is the
+/// alignment `lambda-vm-prover` requires for its archives.
 const ARCHIVE_ALIGNMENT: usize = 16;
 
 /// Proof produced by the LambdaVM host prover, wrapping the upstream [`VmProof`].
 ///
-/// Encoded via `rkyv`, the same as `lambda-vm-cli prove` writes a proof. Decoding validates the
-/// archive, and rejects inputs longer than [`MAX_DECODE_BYTES`].
+/// Encoded via `rkyv`, the same as `lambda-vm-cli prove` writes a proof.
+/// Decoding validates the archive, and rejects inputs longer than
+/// [`MAX_DECODE_BYTES`].
 #[derive(Clone, Debug)]
 pub struct LambdaVMProof(pub VmProof);
+
+impl LambdaVMProof {
+    pub fn new(inner: VmProof) -> Self {
+        Self(inner)
+    }
+}
 
 impl Encode for LambdaVMProof {
     type Error = Error;
@@ -33,7 +40,7 @@ impl Decode for LambdaVMProof {
                 got: slice.len(),
             });
         }
-        // The archive must be aligned, so copy it out of the possibly unaligned input.
+        // The archive must be aligned, so copy it out of the input.
         let mut aligned = AlignedVec::<ARCHIVE_ALIGNMENT>::with_capacity(slice.len());
         aligned.extend_from_slice(slice);
         Ok(Self(rkyv::from_bytes::<VmProof, rancor::Error>(&aligned)?))

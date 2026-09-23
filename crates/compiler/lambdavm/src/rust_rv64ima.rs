@@ -20,19 +20,20 @@ const TARGET: RustTarget = RustTarget::SpecJson {
 };
 
 const RUSTFLAGS: &[&str] = &[
-    // LambdaVM implements RV64IM without the A extension, so atomics are lowered.
+    // Replace atomic ops with nonatomic versions since the guest is single threaded.
     "-C",
     "passes=lower-atomic",
     "-C",
     "panic=abort",
+    // https://docs.rs/getrandom/0.3.2/getrandom/index.html#opt-in-backends
     "--cfg",
     "getrandom_backend=\"custom\"",
 ];
-
 const CARGO_BUILD_OPTIONS: &[&str] = &[
     // For bare metal we have to build core and alloc
     "-Zbuild-std=core,alloc",
-    // For the `memcpy` family, which a bare metal target has no libc to provide
+    // Take `memcpy` and friends from `compiler_builtins` when building the
+    // standard library crates from source.
     "-Zbuild-std-features=compiler-builtins-mem",
     // For using json target spec
     "-Zjson-target-spec",

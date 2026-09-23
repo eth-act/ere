@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     clang \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copy Rust, which includes the LambdaVM guest toolchain
+# Copy Rust
 COPY --from=base_zkvm /usr/local/cargo /usr/local/cargo
 COPY --from=base_zkvm /usr/local/rustup /usr/local/rustup
 
