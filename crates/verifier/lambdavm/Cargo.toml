@@ -1,0 +1,23 @@
+[package]
+name = "ere-verifier-lambdavm"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+rkyv.workspace = true
+thiserror.workspace = true
+
+# LambdaVM dependencies
+lambda-vm-executor.workspace = true
+lambda-vm-prover.workspace = true
+
+# Local dependencies
+ere-verifier-core.workspace = true
+
+[build-dependencies]
+ere-util-build.workspace = true
+
+[lints]
+workspace = true

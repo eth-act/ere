@@ -1,0 +1,31 @@
+[package]
+name = "ere-prover-lambdavm"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+
+# LambdaVM dependencies
+lambda-vm-executor.workspace = true
+lambda-vm-prover.workspace = true
+
+# Local dependencies
+ere-compiler-core.workspace = true
+ere-prover-core.workspace = true
+ere-verifier-lambdavm.workspace = true
+
+[dev-dependencies]
+ere-compiler-lambdavm.workspace = true
+ere-util-test = { workspace = true, features = ["host"] }
+
+[features]
+default = []
+# GPU proving is not supported yet. The feature exists because `ere-server` forwards its `cuda`
+# feature to every prover.
+cuda = []
+
+[lints]
+workspace = true
