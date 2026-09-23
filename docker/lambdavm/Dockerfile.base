@@ -1,0 +1,22 @@
+ARG BASE_IMAGE=ere-base:latest
+
+FROM $BASE_IMAGE
+
+# Whether to enable CUDA feature or not.
+ARG CUDA
+
+# Set default toolchain to the one LambdaVM pins and uninstall the original one.
+# According to https://github.com/yetanotherco/lambda_vm/blob/ffc4ac19e755d93ed631ace71f17577478d8d21b/rust-toolchain.toml
+RUN rustup default 1.94.0 && \
+    rustup toolchain list | grep -v default | xargs -r rustup toolchain uninstall
+
+# Copy the LambdaVM SDK installer script from the workspace context
+COPY --chmod=755 scripts/sdk_installers/install_lambdavm_sdk.sh /tmp/install_lambdavm_sdk.sh
+
+# Run the LambdaVM SDK installation script.
+# This script installs the nightly toolchain LambdaVM builds guest programs with, and the
+# unpinned nightly toolchain the stock compiler uses.
+RUN /tmp/install_lambdavm_sdk.sh && \
+    rm /tmp/install_lambdavm_sdk.sh
+
+CMD ["/bin/bash"]
