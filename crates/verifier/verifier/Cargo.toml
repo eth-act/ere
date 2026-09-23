@@ -11,6 +11,7 @@ thiserror = { workspace = true }
 # Local dependencies
 ere-catalog = { workspace = true }
 ere-verifier-core = { workspace = true }
+ere-verifier-lambdavm = { workspace = true }
 ere-verifier-openvm = { workspace = true }
 ere-verifier-sp1 = { workspace = true }
 ere-verifier-zisk = { workspace = true }

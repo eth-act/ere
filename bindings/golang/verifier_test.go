@@ -17,6 +17,7 @@ type fixture struct {
 }
 
 var fixtures = []fixture{
+	{"lambdavm", LambdaVM},
 	{"openvm", OpenVM},
 	{"sp1", SP1},
 	{"zisk", Zisk},

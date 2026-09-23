@@ -26,7 +26,9 @@ pub type OtelLayer = OpenTelemetryLayer<Registry, SdkTracer>;
 
 pub fn init() -> (Option<SdkTracerProvider>, Option<OtelLayer>) {
     let service_name = env::var("OTEL_SERVICE_NAME").unwrap_or_else(|_| {
-        if cfg!(feature = "openvm") {
+        if cfg!(feature = "lambdavm") {
+            "ere-server-lambdavm"
+        } else if cfg!(feature = "openvm") {
             "ere-server-openvm"
         } else if cfg!(feature = "sp1") {
             "ere-server-sp1"

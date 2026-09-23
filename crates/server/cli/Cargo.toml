@@ -27,6 +27,7 @@ twirp = { workspace = true }
 # Local dependencies
 ere-compiler-core = { workspace = true }
 ere-prover-core = { workspace = true, features = ["clap"] }
+ere-prover-lambdavm = { workspace = true, optional = true }
 ere-prover-openvm = { workspace = true, optional = true }
 ere-prover-sp1 = { workspace = true, optional = true }
 ere-prover-zisk = { workspace = true, optional = true }
@@ -36,12 +37,14 @@ ere-server-api.workspace = true
 default = []
 
 # zkVM
+lambdavm = ["dep:ere-prover-lambdavm"]
 openvm = ["dep:ere-prover-openvm"]
 sp1 = ["dep:ere-prover-sp1"]
 zisk = ["dep:ere-prover-zisk"]
 
 # Cuda
 cuda = [
+    "ere-prover-lambdavm?/cuda",
     "ere-prover-openvm?/cuda",
     "ere-prover-sp1?/cuda",
     "ere-prover-zisk?/cuda",

@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	kindName := flag.String("kind", "openvm", "zkvm kind, one of openvm, sp1, zisk")
+	kindName := flag.String("kind", "openvm", "zkvm kind, one of lambdavm, openvm, sp1, zisk")
 	encodedProgramVKPath := flag.String("vk", "", "path to the encoded program verifying key")
 	encodedProofPath := flag.String("proof", "", "path to the encoded proof")
 	publicValuesPath := flag.String("pub", "", "path to the expected public values")
@@ -47,6 +47,8 @@ func main() {
 
 func parseKind(name string) (ereverifier.ZkVMKind, error) {
 	switch name {
+	case "lambdavm":
+		return ereverifier.LambdaVM, nil
 	case "openvm":
 		return ereverifier.OpenVM, nil
 	case "sp1":
