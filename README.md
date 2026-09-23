@@ -50,18 +50,22 @@ This repository contains the following crates:
   - [`ere-platform-core`] - `Platform` trait for guest program
   - [`ere-verifier-core`] - `zkVMVerifier` trait and `PublicValues`
 - Per-zkVM implementations for [`ere-compiler-core`] (host)
+  - [`ere-compiler-lambdavm`]
   - [`ere-compiler-openvm`]
   - [`ere-compiler-sp1`]
   - [`ere-compiler-zisk`]
 - Per-zkVM implementations for [`ere-prover-core`] (host)
+  - [`ere-prover-lambdavm`]
   - [`ere-prover-openvm`]
   - [`ere-prover-sp1`]
   - [`ere-prover-zisk`]
 - Per-zkVM implementations for [`ere-platform-core`] (guest)
+  - [`ere-platform-lambdavm`]
   - [`ere-platform-openvm`]
   - [`ere-platform-sp1`]
   - [`ere-platform-zisk`]
 - Per-zkVM implementations for [`ere-verifier-core`] (lightweight host verifier)
+  - [`ere-verifier-lambdavm`]
   - [`ere-verifier-openvm`]
   - [`ere-verifier-sp1`]
   - [`ere-verifier-zisk`]
@@ -83,10 +87,14 @@ This repository contains the following crates:
 [`ere-prover-core`]: https://github.com/eth-act/ere/tree/master/crates/prover/core
 [`ere-platform-core`]: https://github.com/eth-act/ere/tree/master/crates/platform/core
 [`ere-verifier-core`]: https://github.com/eth-act/ere/tree/master/crates/verifier/core
+[`ere-compiler-lambdavm`]: https://github.com/eth-act/ere/tree/master/crates/compiler/lambdavm
 [`ere-compiler-openvm`]: https://github.com/eth-act/ere/tree/master/crates/compiler/openvm
 [`ere-compiler-sp1`]: https://github.com/eth-act/ere/tree/master/crates/compiler/sp1
 [`ere-compiler-zisk`]: https://github.com/eth-act/ere/tree/master/crates/compiler/zisk
 [`ere-cluster-client-zisk`]: https://github.com/eth-act/ere/tree/master/crates/cluster-client/zisk
+[`ere-prover-lambdavm`]: https://github.com/eth-act/ere/tree/master/crates/prover/lambdavm
+[`ere-platform-lambdavm`]: https://github.com/eth-act/ere/tree/master/crates/platform/lambdavm
+[`ere-verifier-lambdavm`]: https://github.com/eth-act/ere/tree/master/crates/verifier/lambdavm
 [`ere-prover-openvm`]: https://github.com/eth-act/ere/tree/master/crates/prover/openvm
 [`ere-platform-openvm`]: https://github.com/eth-act/ere/tree/master/crates/platform/openvm
 [`ere-verifier-openvm`]: https://github.com/eth-act/ere/tree/master/crates/verifier/openvm
@@ -148,19 +156,21 @@ Public values written in the guest program (via `Platform::write_output()` or zk
 
 Different zkVMs handles public values in different approaches:
 
-| zkVM   | Size Limit | Note                           |
-| ------ | ---------- | ------------------------------ |
-| OpenVM | 256 bytes  | Padded to 256 bytes with zeros |
-| SP1    | unlimited  | Hashed internally              |
-| ZisK   | 256 bytes  |                                |
+| zkVM     | Size Limit | Note                           |
+| -------- | ---------- | ------------------------------ |
+| LambdaVM | 1 MiB      |                                |
+| OpenVM   | 256 bytes  | Padded to 256 bytes with zeros |
+| SP1      | unlimited  | Hashed internally              |
+| ZisK     | 256 bytes  |                                |
 
 ## Supported zkVMs
 
-| zkVM   | Version                                                                     | ISA       |  GPU  | Multi GPU | Cluster |
-| ------ | --------------------------------------------------------------------------- | --------- | :---: | :-------: | :-----: |
-| OpenVM | [`2.1.0-preview`](https://github.com/openvm-org/openvm/tree/v2.1.0-preview) | `RV64IMA` |   V   |           |         |
-| SP1    | [`6.6.0`](https://github.com/succinctlabs/sp1/tree/v6.6.0)                  | `RV64IMA` |   V   |           |         |
-| ZisK   | [`1.3.0-alpha`](https://github.com/0xPolygonHermez/zisk/tree/v1.3.0-alpha)  | `RV64IMA` |   V   |     V     |    V    |
+| zkVM     | Version                                                                                                 | ISA       |  GPU  | Multi GPU | Cluster |
+| -------- | ------------------------------------------------------------------------------------------------------- | --------- | :---: | :-------: | :-----: |
+| LambdaVM | [`ffc4ac1`](https://github.com/yetanotherco/lambda_vm/tree/ffc4ac19e755d93ed631ace71f17577478d8d21b) | `RV64IM`  |       |           |         |
+| OpenVM   | [`2.1.0-preview`](https://github.com/openvm-org/openvm/tree/v2.1.0-preview)                             | `RV64IMA` |   V   |           |         |
+| SP1      | [`6.6.0`](https://github.com/succinctlabs/sp1/tree/v6.6.0)                                              | `RV64IMA` |   V   |           |         |
+| ZisK     | [`1.3.0-alpha`](https://github.com/0xPolygonHermez/zisk/tree/v1.3.0-alpha)                              | `RV64IMA` |   V   |     V     |    V    |
 
 ## Examples
 

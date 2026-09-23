@@ -4,6 +4,37 @@ Ere checks a proof against a program VK that identifies one specific compiled gu
 
 This guide records the encoding for each supported zkVM and gives the commands that produce a matching VK from the upstream zkVM toolchain alone, without an Ere checkout.
 
+## LambdaVM
+
+### Format
+
+LambdaVM has no verifying key separate from the program: its verifier binds a proof to the keccak256 digest of the ELF and recomputes the program commitments from the ELF itself. So the VK is the guest ELF, prefixed with its length in bytes as a `u64` little endian. The VK size is the ELF size plus 8 bytes.
+
+### Instructions
+
+1. Setup
+
+    Build the guest ELF with the customized compiler (`LambdaVMRustRv64imaCustomized`, or the `ere-compiler-lambdavm` image with `--compiler-kind rust-customized`). The VK only needs `coreutils`.
+
+2. Generate VK
+
+    ```bash
+    set -euo pipefail
+    GUEST_NAME="<guest-name>"
+    ELF_PATH="<elf-path>"
+    ZKVM_VERSION="ffc4ac1"
+    VK="stateless-validator-$GUEST_NAME-lambdavm-$ZKVM_VERSION.vk"
+    printf '%016X' "$(stat -c%s "$ELF_PATH")" | fold -w2 | tac | tr -d '\n' | basenc --base16 -d > "$VK"
+    cat "$ELF_PATH" >> "$VK"
+    ```
+3. Sanity check
+
+    ```bash
+    [ "$(stat -c%s "$VK")" -eq "$(( $(stat -c%s "$ELF_PATH") + 8 ))" ] || { echo "expected ELF size + 8 bytes, got $(stat -c%s "$VK")" >&2; exit 1; }
+    tail -c +9 "$VK" | cmp -s - "$ELF_PATH" || { echo "VK does not end with the ELF" >&2; exit 1; }
+    printf 'Generated LambdaVM VK: %s bytes\n' "$(stat -c%s "$VK")"
+    ```
+
 ## OpenVM
 
 ### Format
