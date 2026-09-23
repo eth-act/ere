@@ -26,9 +26,10 @@ pub struct EreVerifier(Verifier);
 ///
 /// `zkvm_kind` selects the target zkVM.
 ///
-/// - `0` - [`zkVMKind::OpenVM`]
-/// - `1` - [`zkVMKind::SP1`]
-/// - `2` - [`zkVMKind::Zisk`]
+/// - `0` - [`zkVMKind::LambdaVM`]
+/// - `1` - [`zkVMKind::OpenVM`]
+/// - `2` - [`zkVMKind::SP1`]
+/// - `3` - [`zkVMKind::Zisk`]
 ///
 /// On success, writes the new handle into `*output` and returns [`ERE_OK`]. The
 /// caller owns the handle and must release it with [`ere_verifier_free`]. On

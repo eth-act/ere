@@ -77,6 +77,8 @@ macro_rules! test_verifier {
     };
 }
 
+test_verifier!(LambdaVM);
+
 test_verifier!(OpenVM);
 
 test_verifier!(SP1);

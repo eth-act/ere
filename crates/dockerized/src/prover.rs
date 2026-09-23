@@ -209,6 +209,7 @@ impl ServerContainer {
 
         // zkVM specific options
         cmd = match zkvm_kind {
+            zkVMKind::LambdaVM => cmd,
             zkVMKind::OpenVM => cmd.inherit_env("ERE_OPENVM_SEGMENT_MEMORY"),
             // SP1 uses shared memory to exchange data between processes, here
             // we set 32G for safety.
@@ -237,6 +238,7 @@ impl ServerContainer {
         // zkVM specific options when using GPU
         if gpu {
             cmd = match zkvm_kind {
+                zkVMKind::LambdaVM => cmd,
                 zkVMKind::OpenVM => cmd.gpus(),
                 zkVMKind::SP1 => cmd.gpus(),
                 zkVMKind::Zisk => cmd.gpus(),
@@ -698,6 +700,31 @@ mod tests {
                 );
             )*
         };
+    }
+
+    mod lambdavm {
+        use super::*;
+        test_execute!(
+            LambdaVM,
+            RustCustomized,
+            "basic",
+            [BasicProgram::<BincodeLegacy>::valid_test_case()],
+            [
+                Input::new(),
+                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
+            ]
+        );
+        test_prove!(
+            LambdaVM,
+            RustCustomized,
+            "basic",
+            [Cpu],
+            [BasicProgram::<BincodeLegacy>::valid_test_case()],
+            [
+                Input::new(),
+                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
+            ]
+        );
     }
 
     mod openvm {
