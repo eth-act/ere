@@ -1,4 +1,4 @@
-use core::{future::Future, iter, mem, pin::Pin, time::Duration};
+use core::{future::Future, iter, pin::Pin, time::Duration};
 use std::time::Instant;
 
 use ere_compiler_core::Elf;
@@ -372,33 +372,55 @@ impl DockerizedzkVM {
         block_on(self.verify_async(proof.clone()))
     }
 
-    /// A timeout (`health_timeout`) or an RPC failure removes the container.
+    /// A timeout (`health_timeout`), an RPC failure or a cancel removes the container.
     pub async fn setup_async(&mut self, elf: Elf) -> anyhow::Result<()> {
         if self.elf == elf {
             return Ok(());
         }
 
-        // A container that `with_retry` recreates starts with the new ELF.
-        let old_elf = mem::replace(&mut self.elf, elf);
-        let result = self
-            .with_retry(
-                |client| {
-                    let elf = self.elf.clone();
-                    Box::pin(async move { client.setup(elf).await })
-                },
-                Some(self.config.health_timeout),
+        // Out of `self` until the server state is known, so a cancel drops and removes it.
+        let container = self.container.get_mut().take();
+        let is_healthy = match &container {
+            Some(container) => container.client.is_healthy().await,
+            None => false,
+        };
+        let (container, program_vk) = if is_healthy {
+            let container = container.unwrap();
+            let program_vk = timeout(
+                self.config.health_timeout,
+                container.client.setup(elf.clone()),
             )
-            .await;
-        if let Err(err) = &result {
-            // After an RPC failure the server can already hold the new ELF.
-            if matches!(err.downcast_ref::<Error>(), Some(Error::Rpc(_))) {
-                drop(self.container.get_mut().take());
+            .await
+            .map_err(|_| Error::Timeout {
+                timeout: self.config.health_timeout,
+            })?
+            .map_err(Error::from);
+            match program_vk {
+                Ok(program_vk) => (container, program_vk),
+                Err(err) => {
+                    // After an RPC failure the server can already hold the new ELF.
+                    if !matches!(err, Error::Rpc(_)) {
+                        *self.container.get_mut() = Some(container);
+                    }
+                    return Err(err.into());
+                }
             }
-            self.elf = old_elf;
-        }
+        } else {
+            info!("Server not healthy, recreating...");
+            drop(container);
+            let container = ServerContainer::new(
+                self.zkvm_kind,
+                &elf,
+                &self.resource,
+                self.config.health_timeout,
+            )?;
+            let program_vk = container.client.program_vk().await?;
+            (container, program_vk)
+        };
 
-        self.program_vk = result?;
-
+        *self.container.get_mut() = Some(container);
+        self.program_vk = program_vk;
+        self.elf = elf;
         Ok(())
     }
 

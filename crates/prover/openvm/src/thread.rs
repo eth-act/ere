@@ -126,8 +126,8 @@ fn serve<E, VB>(
     }
 }
 
-/// Runs `f` on the prover of `app_exe`, which replaces the prover of another program. A panic drops
-/// the prover.
+/// Runs `f` on the prover of `app_exe`, which replaces the prover of another program. An error or
+/// a panic drops the prover, because it can leave the prover without its execution state.
 fn with_prover<E, VB, T>(
     prover: &mut Option<StarkProver<E, VB>>,
     app_pk: &AppProvingKey<SdkVmConfig>,
@@ -139,7 +139,7 @@ where
     E: StarkEngine<SC = SC>,
     VB: Default + ContinuationProverBuilder<E, VmConfig = SdkVmConfig>,
 {
-    catch_unwind(AssertUnwindSafe(|| {
+    let result = catch_unwind(AssertUnwindSafe(|| {
         if prover
             .as_ref()
             .is_none_or(|prover| !Arc::ptr_eq(prover.app_prover.instance().exe(), app_exe))
@@ -150,10 +150,11 @@ where
         }
         f(prover.as_mut().unwrap())
     }))
-    .unwrap_or_else(|_| {
+    .unwrap_or_else(|_| Err(Error::ProverThreadPanicked));
+    if result.is_err() {
         *prover = None;
-        Err(Error::ProverThreadPanicked)
-    })
+    }
+    result
 }
 
 /// Builds a prover of `app_exe` on the shared aggregation prover.
