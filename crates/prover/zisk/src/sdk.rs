@@ -49,10 +49,7 @@ pub struct ZiskSdk {
 
 impl ZiskSdk {
     pub fn new(elf: Elf, resource: ProverResource) -> Result<Self, Error> {
-        // Convert ELF to ZisK ROM
-        let rom = Riscv2zisk::new(&elf)
-            .run()
-            .map_err(|err| Error::Riscv2zisk(err.to_string()))?;
+        let rom = rom(&elf)?;
 
         let heap_range = cost::heap_range(&elf);
 
@@ -93,6 +90,26 @@ impl ZiskSdk {
             rom,
             heap_range,
         })
+    }
+
+    /// Replaces the program.
+    pub fn setup(&mut self, elf: Elf) -> Result<(), Error> {
+        let rom = rom(&elf)?;
+        let heap_range = cost::heap_range(&elf);
+
+        match &mut self.backend {
+            Backend::Local(local) => local.setup(elf)?,
+            Backend::Cluster { client, .. } => {
+                let ProverResource::Cluster(config) = &self.resource else {
+                    unreachable!("a cluster backend runs on a cluster resource")
+                };
+                *client = block_on(ZiskClusterClient::new(config, elf))?;
+            }
+        }
+
+        self.rom = rom;
+        self.heap_range = heap_range;
+        Ok(())
     }
 
     pub fn program_vk(&self) -> ZiskProgramVk {
@@ -191,6 +208,13 @@ impl ZiskSdk {
 
         Ok((public_values, proof, proving_time))
     }
+}
+
+/// Converts `elf` to the ZisK ROM.
+fn rom(elf: &Elf) -> Result<ZiskRom, Error> {
+    Riscv2zisk::new(elf)
+        .run()
+        .map_err(|err| Error::Riscv2zisk(err.to_string()))
 }
 
 /// Returns `data` with a LE u64 length prefix and padding to multiple of 8.

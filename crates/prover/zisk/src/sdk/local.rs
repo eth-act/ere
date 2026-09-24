@@ -7,14 +7,14 @@ use ere_compiler_core::Elf;
 use ere_prover_core::{CommonError, Input, ProverResource};
 use ere_verifier_zisk::{VADCOP_FINAL_HASH_FAMILY, ZiskProgramVk, ZiskProof};
 use once_cell::sync::OnceCell;
-use parking_lot::Mutex;
+use parking_lot::{Mutex, MutexGuard};
 use proofman_fields::{Field, Goldilocks, PrimeField64};
 use proofman_util::DeviceBuffer;
 use zisk_common::{HashMode, ZiskPaths, io::ZiskStdin};
 use zisk_prover_backend::{
-    Asm, AsmOptions, BackendProverOpts, GuestProgram, ProverClientBuilder, ZiskProver,
+    Asm, AsmOptions, BackendProverOpts, GuestProgram, ProgramId, ProverClientBuilder, ZiskProver,
 };
-use zisk_rom_setup::get_elf_bin_file_path_with_hash;
+use zisk_rom_setup::{get_elf_bin_file_path_with_hash, get_elf_bin_verkey_file_path_with_hash};
 use zisk_sm_rom::CustomRom;
 
 use crate::{
@@ -24,7 +24,37 @@ use crate::{
 
 // Use a shared prover instance to avoid `MpiCtx` get initialized twice, to support multiple
 // `ZiskProver` instances creation (e.g. testing different ELFs).
-static LOCAL_PROVER: OnceCell<ZiskProver<Asm>> = OnceCell::new();
+static SHARED_PROVER: OnceCell<Mutex<SharedProver>> = OnceCell::new();
+
+/// The upstream prover and its one program, which keeps ASM services and shmem until removed.
+struct SharedProver {
+    prover: ZiskProver<Asm>,
+    program_id: Option<ProgramId>,
+}
+
+impl SharedProver {
+    /// Sets up `program` in place of the current one.
+    fn setup(&mut self, program: &GuestProgram) -> Result<(), Error> {
+        if self.program_id.as_ref() == Some(&program.program_id) {
+            return Ok(());
+        }
+        self.remove_program()?;
+        self.prover.setup(program).run().map_err(Error::Setup)?;
+        self.program_id = Some(program.program_id.clone());
+        Ok(())
+    }
+
+    /// Stops the ASM services of the current program and releases its shmem.
+    fn remove_program(&mut self) -> Result<(), Error> {
+        if let Some(program_id) = &self.program_id {
+            self.prover
+                .remove_program(program_id)
+                .map_err(Error::Setup)?;
+        }
+        self.program_id = None;
+        Ok(())
+    }
+}
 
 #[derive(Clone, Copy)]
 struct Config {
@@ -70,7 +100,6 @@ pub struct LocalProver {
     config: Config,
     program: GuestProgram,
     program_vk: ZiskProgramVk,
-    initialized: Mutex<bool>,
 }
 
 impl LocalProver {
@@ -80,18 +109,38 @@ impl LocalProver {
         let program = GuestProgram::from_bytes("guest", elf.0);
         let program_vk = compute_program_vk(resource, &program)?;
 
-        if config.setup_on_init {
-            let prover = LOCAL_PROVER.get_or_try_init(|| build_prover(&config, resource))?;
-            prover.setup(&program).run().map_err(Error::Setup)?;
-        }
-
-        Ok(Self {
+        let local = Self {
             resource: resource.clone(),
             config,
             program,
             program_vk,
-            initialized: Mutex::new(config.setup_on_init),
-        })
+        };
+
+        if config.setup_on_init {
+            local.shared_prover()?.setup(&local.program)?;
+        }
+
+        Ok(local)
+    }
+
+    /// Replaces the program and removes the old one from the shared prover.
+    pub fn setup(&mut self, elf: Elf) -> Result<(), Error> {
+        let program = GuestProgram::from_bytes("guest", elf.0);
+        if program.program_id == self.program.program_id {
+            return Ok(());
+        }
+
+        let program_vk = compute_program_vk(&self.resource, &program)?;
+
+        if self.config.setup_on_init {
+            self.shared_prover()?.setup(&program)?;
+        } else if let Some(shared_prover) = SHARED_PROVER.get() {
+            shared_prover.lock().remove_program()?;
+        }
+
+        self.program = program;
+        self.program_vk = program_vk;
+        Ok(())
     }
 
     pub fn program_vk(&self) -> ZiskProgramVk {
@@ -99,18 +148,14 @@ impl LocalProver {
     }
 
     pub fn prove(&self, input: &Input) -> Result<(ZiskProof, Duration), Error> {
-        let prover = LOCAL_PROVER.get_or_try_init(|| build_prover(&self.config, &self.resource))?;
-
-        let mut initialized = self.initialized.lock();
-        if !*initialized {
-            prover.setup(&self.program).run().map_err(Error::Setup)?;
-            *initialized = true;
-        }
+        let mut shared_prover = self.shared_prover()?;
+        shared_prover.setup(&self.program)?;
 
         let stdin = ZiskStdin::from_vec(framed_stdin(input.stdin()));
 
         let started = Instant::now();
-        let output = prover
+        let output = shared_prover
+            .prover
             .prove(&self.program, stdin)
             .run()
             .map_err(Error::Prove)?;
@@ -122,6 +167,18 @@ impl LocalProver {
             .map_err(|err| Error::Prove(err.into()))?;
 
         Ok((ZiskProof(proof), proving_time))
+    }
+
+    fn shared_prover(&self) -> Result<MutexGuard<'static, SharedProver>, Error> {
+        SHARED_PROVER
+            .get_or_try_init(|| {
+                let prover = build_prover(&self.config, &self.resource)?;
+                Ok(Mutex::new(SharedProver {
+                    prover,
+                    program_id: None,
+                }))
+            })
+            .map(Mutex::lock)
     }
 }
 
@@ -169,6 +226,7 @@ fn build_prover(config: &Config, resource: &ProverResource) -> Result<ZiskProver
 
 /// Vendored from [`zisk_rom_setup::rom_merkle_setup`] to do program setup without creating
 /// `ProofCtx` or generating assembly, which can only be created once due to mpi initialization.
+/// Shares the cache files of `rom_merkle_setup` with the prover setup.
 fn compute_program_vk(
     resource: &ProverResource,
     program: &GuestProgram,
@@ -195,15 +253,16 @@ fn compute_program_vk(
     let n_cols = custom_rom_trace.num_cols() as u64;
     let mut root = [F::ZERO; 4];
 
+    let gpu = cfg!(feature = "cuda") && resource.is_gpu();
     let cache_dir = &ZiskPaths::global().cache;
     fs::create_dir_all(cache_dir)
         .map_err(|err| CommonError::create_dir("cache", cache_dir, err))?;
-    let elf_bin_path = get_elf_bin_file_path_with_hash(program.hash(), cache_dir, false, hash_mode)
+    let elf_bin_path = get_elf_bin_file_path_with_hash(program.hash(), cache_dir, gpu, hash_mode)
         .expect("infallable");
 
     proofman_starks_lib_c::set_hash_family_c(VADCOP_FINAL_HASH_FAMILY);
 
-    let _guard = Guard(cfg!(feature = "cuda") && resource.is_gpu());
+    let _guard = Guard(gpu);
     proofman_starks_lib_c::set_gpu_mode_c(false);
 
     proofman_starks_lib_c::write_custom_commit_c(
@@ -217,5 +276,12 @@ fn compute_program_vk(
         &elf_bin_path.to_string_lossy(),
     );
 
-    Ok(ZiskProgramVk(root.map(|field| field.as_canonical_u64())))
+    let vk = root.map(|field| field.as_canonical_u64());
+    let elf_verkey_bin_path =
+        get_elf_bin_verkey_file_path_with_hash(program.hash(), cache_dir, hash_mode)
+            .expect("infallable");
+    fs::write(&elf_verkey_bin_path, vk.map(u64::to_le_bytes).concat())
+        .map_err(|err| CommonError::write_file("cache", &elf_verkey_bin_path, err))?;
+
+    Ok(ZiskProgramVk(vk))
 }

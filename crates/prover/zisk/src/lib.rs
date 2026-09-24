@@ -55,7 +55,7 @@
 //!
 //! | Variable                               | Type  | Default        | Description                                            |
 //! | -------------------------------------- | ----- | -------------- | ------------------------------------------------------ |
-//! | `ERE_ZISK_SETUP_ON_INIT`               | Flag  |                | Setup local prover on initialization instead of lazily |
+//! | `ERE_ZISK_SETUP_ON_INIT`               | Flag  |                | Setup local prover on `new` and `setup`, not lazily    |
 //! | `ERE_ZISK_UNLOCK_MAPPED_MEMORY`        | Flag  |                | Configure the prover to unlock mapped memory           |
 //! | `ERE_ZISK_MINIMAL_MEMORY`              | Flag  |                | Configure the prover to use minimal memory             |
 //! | `ERE_ZISK_MAX_STREAMS`                 | Value |                | Configure the prover max streams                       |

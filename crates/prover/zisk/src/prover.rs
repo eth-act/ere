@@ -29,6 +29,12 @@ impl zkVMProver for ZiskProver {
         &self.verifier
     }
 
+    fn setup(&mut self, elf: Elf) -> Result<(), Error> {
+        self.sdk.setup(elf)?;
+        self.verifier = ZiskVerifier::new(self.sdk.program_vk());
+        Ok(())
+    }
+
     fn execute(&self, input: &Input) -> Result<(PublicValues, Duration), Error> {
         if input.proofs.is_some() {
             Err(CommonError::unsupported_input("no dedicated proofs stream"))?
@@ -69,14 +75,17 @@ pub(crate) mod tests {
 
     use ere_compiler_core::{Compiler, Elf};
     use ere_compiler_zisk::ZiskRustRv64imaCustomized;
-    use ere_prover_core::{Input, ProverResource, RemoteProverConfig, zkVMProver};
+    use ere_prover_core::{Input, ProverResource, RemoteProverConfig, codec::Encode, zkVMProver};
     use ere_util_test::{
         codec::BincodeLegacy,
         host::{
             TestCase, run_zkvm_execute, run_zkvm_execute_estimated_cost, run_zkvm_prove,
             testing_guest_directory,
         },
-        program::{basic::BasicProgram, zkvm_interface},
+        program::{
+            basic::BasicProgram,
+            zkvm_interface::{self, Accelerator},
+        },
     };
 
     use crate::prover::ZiskProver;
@@ -89,6 +98,49 @@ pub(crate) mod tests {
                 .unwrap()
         })
         .clone()
+    }
+
+    fn zkvm_interface_elf() -> Elf {
+        static ELF: OnceLock<Elf> = OnceLock::new();
+        ELF.get_or_init(|| {
+            ZiskRustRv64imaCustomized
+                .compile(testing_guest_directory("zisk", "zkvm_interface"), &[])
+                .unwrap()
+        })
+        .clone()
+    }
+
+    /// Switches from the basic program to `zkvm_interface` and back, then runs both again.
+    fn run_switchable(zkvm: &mut ZiskProver, prove: bool) {
+        let basic_vk = zkvm.program_vk().encode_to_vec().unwrap();
+        zkvm.setup(zkvm_interface_elf()).unwrap();
+        let zkvm_interface_vk = zkvm.program_vk().encode_to_vec().unwrap();
+
+        zkvm.setup(basic_elf()).unwrap();
+        assert_eq!(zkvm.program_vk().encode_to_vec().unwrap(), basic_vk);
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+        if prove {
+            run_zkvm_prove(&*zkvm, &test_case);
+        } else {
+            run_zkvm_execute(&*zkvm, &test_case);
+        }
+
+        zkvm.setup(zkvm_interface_elf()).unwrap();
+        assert_eq!(
+            zkvm.program_vk().encode_to_vec().unwrap(),
+            zkvm_interface_vk
+        );
+        let test_case = zkvm_interface::test_cases()
+            .into_iter()
+            .find(|test_case| test_case.0[0].accelerator == Accelerator::Sha256)
+            .unwrap();
+        if prove {
+            run_zkvm_prove(&*zkvm, &test_case);
+        } else {
+            run_zkvm_execute(&*zkvm, &test_case);
+        }
+
+        zkvm.setup(basic_elf()).unwrap();
     }
 
     pub(crate) fn basic_elf_zkvm() -> MutexGuard<'static, ZiskProver> {
@@ -110,7 +162,7 @@ pub(crate) mod tests {
         let zkvm = &*basic_elf_zkvm();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
-        run_zkvm_execute(&zkvm, &test_case);
+        run_zkvm_execute(zkvm, &test_case);
     }
 
     #[test]
@@ -130,7 +182,7 @@ pub(crate) mod tests {
         let zkvm = &*basic_elf_zkvm();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
-        run_zkvm_execute_estimated_cost(&zkvm, &test_case);
+        run_zkvm_execute_estimated_cost(zkvm, &test_case);
     }
 
     #[test]
@@ -138,7 +190,7 @@ pub(crate) mod tests {
         let zkvm = &*basic_elf_zkvm();
 
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
-        run_zkvm_prove(&zkvm, &test_case);
+        run_zkvm_prove(zkvm, &test_case);
     }
 
     #[test]
@@ -154,7 +206,17 @@ pub(crate) mod tests {
 
         // Should be able to recover
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
-        run_zkvm_prove(&zkvm, &test_case);
+        run_zkvm_prove(zkvm, &test_case);
+    }
+
+    #[test]
+    fn test_execute_switchable() {
+        run_switchable(&mut basic_elf_zkvm(), false);
+    }
+
+    #[test]
+    fn test_prove_switchable() {
+        run_switchable(&mut basic_elf_zkvm(), true);
     }
 
     #[test]
