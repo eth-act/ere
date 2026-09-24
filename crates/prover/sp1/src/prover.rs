@@ -3,19 +3,23 @@ use std::{
     time::{Duration, Instant},
 };
 
+use anyhow::anyhow;
 use ere_compiler_core::Elf;
 use ere_prover_core::{
     CommonError, CostEstimation, Input, ProverResource, PublicValues, zkVMProver,
 };
 use ere_util_tokio::block_on;
 use ere_verifier_sp1::{SP1ProgramVk, SP1Proof, SP1Verifier};
+use sp1_core_executor::Program;
 use sp1_sdk::{HashableKey, SP1Stdin};
 use tracing::info;
 
 use crate::{cost::SP1CostEstimator, error::Error, executor::SP1Executor, sdk::SP1Sdk};
 
+/// `executor` is lazy, because two pools of its 2 TiB instances exceed the address space.
 pub struct SP1Prover {
-    executor: SP1Executor,
+    program: Arc<Program>,
+    executor: OnceLock<SP1Executor>,
     estimator: OnceLock<SP1CostEstimator>,
     elf: Arc<[u8]>,
     sdk: SP1Sdk,
@@ -25,12 +29,13 @@ pub struct SP1Prover {
 impl SP1Prover {
     pub fn new(elf: Elf, resource: ProverResource) -> Result<Self, Error> {
         let elf: Arc<[u8]> = Arc::from(elf.0);
-        let executor = SP1Executor::new(&elf)?;
+        let program = transpile(&elf)?;
         let sdk = block_on(SP1Sdk::new(Arc::clone(&elf), &resource))?;
         let program_vk = SP1ProgramVk(sdk.vk().hash_koalabear());
         let verifier = SP1Verifier::new(program_vk);
         Ok(Self {
-            executor,
+            program,
+            executor: OnceLock::new(),
             estimator: OnceLock::new(),
             elf,
             sdk,
@@ -38,9 +43,14 @@ impl SP1Prover {
         })
     }
 
+    fn executor(&self) -> &SP1Executor {
+        self.executor
+            .get_or_init(|| SP1Executor::new(Arc::clone(&self.program)))
+    }
+
     fn estimator(&self) -> &SP1CostEstimator {
         self.estimator
-            .get_or_init(|| SP1CostEstimator::new(self.executor.program(), &self.elf))
+            .get_or_init(|| SP1CostEstimator::new(Arc::clone(&self.program), &self.elf))
     }
 }
 
@@ -52,8 +62,25 @@ impl zkVMProver for SP1Prover {
         &self.verifier
     }
 
+    fn setup(&mut self, elf: Elf) -> Result<(), Error> {
+        // For the same ELF, the destroy of the old GPU key also removes the new one.
+        if *self.elf == *elf.0 {
+            return Ok(());
+        }
+
+        let elf: Arc<[u8]> = Arc::from(elf.0);
+        let program = transpile(&elf)?;
+        block_on(self.sdk.setup(Arc::clone(&elf)))?;
+        self.verifier = SP1Verifier::new(SP1ProgramVk(self.sdk.vk().hash_koalabear()));
+        self.program = program;
+        self.executor = OnceLock::new();
+        self.estimator = OnceLock::new();
+        self.elf = elf;
+        Ok(())
+    }
+
     fn execute(&self, input: &Input) -> Result<(PublicValues, Duration), Error> {
-        self.executor.execute(input_to_stdin(input)?)
+        self.executor().execute(input_to_stdin(input)?)
     }
 
     fn execute_estimated_cost(
@@ -83,6 +110,12 @@ impl zkVMProver for SP1Prover {
     }
 }
 
+fn transpile(elf: &[u8]) -> Result<Arc<Program>, Error> {
+    Program::from(elf)
+        .map(Arc::new)
+        .map_err(|err| Error::setup(anyhow!("failed to disassemble program: {err}")))
+}
+
 fn input_to_stdin(input: &Input) -> Result<SP1Stdin, Error> {
     let mut stdin = SP1Stdin::new();
     stdin.write_slice(input.stdin());
@@ -100,14 +133,17 @@ mod tests {
 
     use ere_compiler_core::{Compiler, Elf};
     use ere_compiler_sp1::SP1RustRv64imaCustomized;
-    use ere_prover_core::{Input, ProverResource, RemoteProverConfig, zkVMProver};
+    use ere_prover_core::{Input, ProverResource, RemoteProverConfig, codec::Encode, zkVMProver};
     use ere_util_test::{
         codec::BincodeLegacy,
         host::{
             TestCase, run_zkvm_execute, run_zkvm_execute_estimated_cost, run_zkvm_prove,
             testing_guest_directory,
         },
-        program::{basic::BasicProgram, zkvm_interface},
+        program::{
+            basic::BasicProgram,
+            zkvm_interface::{self, Accelerator},
+        },
     };
 
     use crate::prover::SP1Prover;
@@ -120,6 +156,47 @@ mod tests {
                 .unwrap()
         })
         .clone()
+    }
+
+    fn zkvm_interface_elf() -> Elf {
+        static ELF: OnceLock<Elf> = OnceLock::new();
+        ELF.get_or_init(|| {
+            SP1RustRv64imaCustomized
+                .compile(testing_guest_directory("sp1", "zkvm_interface"), &[])
+                .unwrap()
+        })
+        .clone()
+    }
+
+    /// Switches from the basic program to `zkvm_interface` and back, then runs both again.
+    fn run_switchable(zkvm: &mut SP1Prover, prove: bool) {
+        let basic_vk = zkvm.program_vk().encode_to_vec().unwrap();
+        zkvm.setup(zkvm_interface_elf()).unwrap();
+        let zkvm_interface_vk = zkvm.program_vk().encode_to_vec().unwrap();
+
+        zkvm.setup(basic_elf()).unwrap();
+        assert_eq!(zkvm.program_vk().encode_to_vec().unwrap(), basic_vk);
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+        if prove {
+            run_zkvm_prove(&*zkvm, &test_case);
+        } else {
+            run_zkvm_execute(&*zkvm, &test_case);
+        }
+
+        zkvm.setup(zkvm_interface_elf()).unwrap();
+        assert_eq!(
+            zkvm.program_vk().encode_to_vec().unwrap(),
+            zkvm_interface_vk
+        );
+        let test_case = zkvm_interface::test_cases()
+            .into_iter()
+            .find(|test_case| test_case.0[0].accelerator == Accelerator::Sha256)
+            .unwrap();
+        if prove {
+            run_zkvm_prove(&*zkvm, &test_case);
+        } else {
+            run_zkvm_execute(&*zkvm, &test_case);
+        }
     }
 
     #[test]
@@ -177,6 +254,25 @@ mod tests {
         // Should be able to recover
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
+    }
+
+    #[test]
+    fn test_execute_switchable() {
+        let mut zkvm = SP1Prover::new(basic_elf(), ProverResource::Cpu).unwrap();
+        run_switchable(&mut zkvm, false);
+    }
+
+    #[test]
+    fn test_prove_switchable() {
+        let mut zkvm = SP1Prover::new(basic_elf(), ProverResource::Cpu).unwrap();
+        run_switchable(&mut zkvm, true);
+    }
+
+    #[cfg(feature = "cuda")]
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_prove_switchable_gpu() {
+        let mut zkvm = SP1Prover::new(basic_elf(), ProverResource::Gpu).unwrap();
+        run_switchable(&mut zkvm, true);
     }
 
     #[cfg(feature = "cuda")]
