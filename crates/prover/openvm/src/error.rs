@@ -25,6 +25,9 @@ pub enum Error {
     #[error("Initialize prover failed: {0}")]
     ProverInit(SdkError),
 
+    #[error("OpenVM prover thread panicked")]
+    ProverThreadPanicked,
+
     // Execute
     #[error("OpenVM execution failed: {0}")]
     Execute(#[source] SdkError),

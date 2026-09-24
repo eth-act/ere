@@ -13,32 +13,36 @@ use ere_prover_core::{
 use ere_verifier_openvm::{
     NUM_PUBLIC_VALUES_BYTES, OpenVMProgramVk, OpenVMProof, OpenVMVerifier, extract_public_values,
 };
-use openvm_circuit::arch::{VmBuilder, VmExecutionConfig, instructions::exe::VmExe};
+use once_cell::sync::OnceCell;
+use openvm_circuit::arch::instructions::exe::VmExe;
 use openvm_sdk::{
-    CpuSdk, F, GenericSdk, SC, StdIn,
+    CpuSdk, F, GenericSdk, StdIn,
     config::{AggregationSystemParams, AppConfig},
     fs::read_object_from_file,
     keygen::{AggProvingKey, AppProvingKey},
 };
 use openvm_sdk_config::{SdkVmConfig, TranspilerConfig};
-use openvm_stark_sdk::{
-    config::{MAX_APP_LOG_STACKED_HEIGHT, app_params_with_100_bits_security},
-    openvm_stark_backend::StarkEngine,
-};
+use openvm_stark_sdk::config::{MAX_APP_LOG_STACKED_HEIGHT, app_params_with_100_bits_security};
 use openvm_transpiler::{FromElf, openvm_platform::memory::MEM_SIZE};
 
-use crate::{cost::CostEstimator, error::Error, executor::Executor};
+use crate::{
+    cost::CostEstimator,
+    error::Error,
+    executor::Executor,
+    thread::{ProverThread, Request},
+};
 
 /// Segment memory limit, 14.5 GiB. Execution starts a new segment above it.
 const DEFAULT_SEGMENT_MEMORY: usize = 29 << 29;
 
+/// `executor` and `estimator` are lazy, because two `rvr` libraries crash the process at exit.
 pub struct OpenVMProver {
-    app_exe: Arc<VmExe<F>>,
     app_pk: AppProvingKey<SdkVmConfig>,
-    agg_pk: AggProvingKey,
-    resource: ProverResource,
-    executor: Executor,
-    estimator: CostEstimator,
+    prover_thread: ProverThread,
+    elf: Elf,
+    app_exe: Arc<VmExe<F>>,
+    executor: OnceCell<Executor>,
+    estimator: OnceCell<CostEstimator>,
     verifier: OpenVMVerifier,
 }
 
@@ -50,8 +54,10 @@ impl OpenVMProver {
                 [ProverResourceKind::Cpu, ProverResourceKind::Gpu],
             ))?;
         }
-
-        let app_exe = transpile(&elf.0)?;
+        #[cfg(not(feature = "cuda"))]
+        if matches!(resource, ProverResource::Gpu) {
+            Err(Error::CudaFeatureDisabled)?;
+        }
 
         let sdk = cpu_sdk(None, None)?;
         let app_pk = sdk.app_pk().clone();
@@ -62,36 +68,33 @@ impl OpenVMProver {
                     .map_err(Error::ReadInternalRecursivePkFailed)?,
             ),
         };
+        let agg_prover = cpu_sdk(app_pk.clone().into(), agg_pk.into())?.agg_prover();
 
-        let sdk = cpu_sdk(app_pk.clone().into(), agg_pk.clone().into())?;
-        let baseline = sdk
-            .prover(app_exe.clone())
-            .map_err(Error::ProverInit)?
-            .generate_baseline();
+        let prover_thread = ProverThread::spawn(&resource, app_pk.clone(), agg_prover);
 
-        let executor = Executor::new(&app_exe)?;
-        let estimator = CostEstimator::new(&elf, &app_exe, &sdk)?;
-
-        let verifier = OpenVMVerifier::new(OpenVMProgramVk::new(baseline.clone()));
+        let app_exe = transpile(&elf.0)?;
+        let baseline = prover_thread.request(|reply| Request::Setup(app_exe.clone(), reply))?;
+        let verifier = OpenVMVerifier::new(OpenVMProgramVk::new(baseline));
 
         Ok(Self {
-            app_exe,
             app_pk,
-            agg_pk,
-            resource,
-            executor,
-            estimator,
+            prover_thread,
+            elf,
+            app_exe,
+            executor: OnceCell::new(),
+            estimator: OnceCell::new(),
             verifier,
         })
     }
 
-    fn cpu_sdk(&self) -> Result<CpuSdk, Error> {
-        sdk(self.app_pk.clone().into(), self.agg_pk.clone().into())
+    fn executor(&self) -> Result<&Executor, Error> {
+        self.executor
+            .get_or_try_init(|| Executor::new(&self.app_exe))
     }
 
-    #[cfg(feature = "cuda")]
-    fn gpu_sdk(&self) -> Result<openvm_sdk::GpuSdk, Error> {
-        sdk(self.app_pk.clone().into(), self.agg_pk.clone().into())
+    fn estimator(&self) -> Result<&CostEstimator, Error> {
+        self.estimator
+            .get_or_try_init(|| CostEstimator::new(&self.elf, &self.app_exe, &self.app_pk))
     }
 }
 
@@ -103,6 +106,24 @@ impl zkVMProver for OpenVMProver {
         &self.verifier
     }
 
+    fn setup(&mut self, elf: Elf) -> Result<(), Error> {
+        if self.elf == elf {
+            return Ok(());
+        }
+
+        let app_exe = transpile(&elf.0)?;
+        let baseline = self
+            .prover_thread
+            .request(|reply| Request::Setup(app_exe.clone(), reply))?;
+        let verifier = OpenVMVerifier::new(OpenVMProgramVk::new(baseline));
+        self.executor = OnceCell::new();
+        self.estimator = OnceCell::new();
+        self.elf = elf;
+        self.app_exe = app_exe;
+        self.verifier = verifier;
+        Ok(())
+    }
+
     fn execute(&self, input: &Input) -> Result<(PublicValues, Duration), Error> {
         if input.proofs.is_some() {
             Err(CommonError::unsupported_input("no dedicated proofs stream"))?
@@ -111,7 +132,7 @@ impl zkVMProver for OpenVMProver {
         let mut stdin = StdIn::default();
         stdin.write_bytes(input.stdin());
 
-        self.executor.execute(stdin)
+        self.executor()?.execute(stdin)
     }
 
     fn execute_estimated_cost(
@@ -125,7 +146,7 @@ impl zkVMProver for OpenVMProver {
         let mut stdin = StdIn::default();
         stdin.write_bytes(input.stdin());
 
-        self.estimator.estimate(stdin)
+        self.estimator()?.estimate(stdin)
     }
 
     fn prove(&self, input: &Input) -> Result<(PublicValues, OpenVMProof, Duration), Error> {
@@ -137,18 +158,9 @@ impl zkVMProver for OpenVMProver {
         stdin.write_bytes(input.stdin());
 
         let start = Instant::now();
-        let (proof, _) = match self.resource {
-            ProverResource::Cpu => self.cpu_sdk()?.prove(self.app_exe.clone(), stdin, &[]),
-            #[cfg(feature = "cuda")]
-            ProverResource::Gpu => self.gpu_sdk()?.prove(self.app_exe.clone(), stdin, &[]),
-            #[cfg(not(feature = "cuda"))]
-            ProverResource::Gpu => return Err(Error::CudaFeatureDisabled),
-            _ => Err(CommonError::unsupported_prover_resource_kind(
-                self.resource.kind(),
-                [ProverResourceKind::Cpu, ProverResourceKind::Gpu],
-            ))?,
-        }
-        .map_err(Error::Prove)?;
+        let proof = self
+            .prover_thread
+            .request(|reply| Request::Prove(self.app_exe.clone(), stdin, reply))?;
         let proving_time = start.elapsed();
 
         let public_values = extract_public_values(&proof.user_pvs_proof.public_values)?;
@@ -173,18 +185,6 @@ fn cpu_sdk(
     app_pk: Option<AppProvingKey<SdkVmConfig>>,
     agg_pk: Option<AggProvingKey>,
 ) -> Result<CpuSdk, Error> {
-    sdk(app_pk, agg_pk)
-}
-
-fn sdk<E, VB>(
-    app_pk: Option<AppProvingKey<SdkVmConfig>>,
-    agg_pk: Option<AggProvingKey>,
-) -> Result<GenericSdk<E, VB>, Error>
-where
-    E: StarkEngine<SC = SC>,
-    VB: Default + VmBuilder<E, VmConfig = SdkVmConfig>,
-    VB::VmConfig: VmExecutionConfig<F>,
-{
     let mut builder = GenericSdk::builder();
     builder = if let Some(app_pk) = app_pk {
         builder.app_pk(app_pk)
@@ -231,14 +231,17 @@ mod tests {
 
     use ere_compiler_core::{Compiler, Elf};
     use ere_compiler_openvm::OpenVMRustRv64imaCustomized;
-    use ere_prover_core::{Input, ProverResource, zkVMProver};
+    use ere_prover_core::{Input, ProverResource, codec::Encode, zkVMProver};
     use ere_util_test::{
         codec::BincodeLegacy,
         host::{
             TestCase, run_zkvm_execute, run_zkvm_execute_estimated_cost, run_zkvm_prove,
             testing_guest_directory,
         },
-        program::{basic::BasicProgram, zkvm_interface},
+        program::{
+            basic::BasicProgram,
+            zkvm_interface::{self, Accelerator},
+        },
     };
 
     use crate::prover::OpenVMProver;
@@ -251,6 +254,47 @@ mod tests {
                 .unwrap()
         })
         .clone()
+    }
+
+    fn zkvm_interface_elf() -> Elf {
+        static ELF: OnceLock<Elf> = OnceLock::new();
+        ELF.get_or_init(|| {
+            OpenVMRustRv64imaCustomized
+                .compile(testing_guest_directory("openvm", "zkvm_interface"), &[])
+                .unwrap()
+        })
+        .clone()
+    }
+
+    /// Switches from the basic program to `zkvm_interface` and back, then runs both again.
+    fn run_switchable(zkvm: &mut OpenVMProver, prove: bool) {
+        let basic_vk = zkvm.program_vk().encode_to_vec().unwrap();
+        zkvm.setup(zkvm_interface_elf()).unwrap();
+        let zkvm_interface_vk = zkvm.program_vk().encode_to_vec().unwrap();
+
+        zkvm.setup(basic_elf()).unwrap();
+        assert_eq!(zkvm.program_vk().encode_to_vec().unwrap(), basic_vk);
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+        if prove {
+            run_zkvm_prove(&*zkvm, &test_case);
+        } else {
+            run_zkvm_execute(&*zkvm, &test_case);
+        }
+
+        zkvm.setup(zkvm_interface_elf()).unwrap();
+        assert_eq!(
+            zkvm.program_vk().encode_to_vec().unwrap(),
+            zkvm_interface_vk
+        );
+        let test_case = zkvm_interface::test_cases()
+            .into_iter()
+            .find(|test_case| test_case.0[0].accelerator == Accelerator::Sha256)
+            .unwrap();
+        if prove {
+            run_zkvm_prove(&*zkvm, &test_case);
+        } else {
+            run_zkvm_execute(&*zkvm, &test_case);
+        }
     }
 
     #[test]
@@ -308,6 +352,25 @@ mod tests {
         // Should be able to recover
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
+    }
+
+    #[test]
+    fn test_execute_switchable() {
+        let mut zkvm = OpenVMProver::new(basic_elf(), ProverResource::Cpu).unwrap();
+        run_switchable(&mut zkvm, false);
+    }
+
+    #[test]
+    fn test_prove_switchable() {
+        let mut zkvm = OpenVMProver::new(basic_elf(), ProverResource::Cpu).unwrap();
+        run_switchable(&mut zkvm, true);
+    }
+
+    #[cfg(feature = "cuda")]
+    #[test]
+    fn test_prove_switchable_gpu() {
+        let mut zkvm = OpenVMProver::new(basic_elf(), ProverResource::Gpu).unwrap();
+        run_switchable(&mut zkvm, true);
     }
 
     #[cfg(feature = "cuda")]

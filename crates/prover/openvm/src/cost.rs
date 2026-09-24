@@ -11,8 +11,9 @@ use openvm_circuit::arch::{
     instructions::{exe::VmExe, riscv::RV64_MEMORY_AS},
     rvr::RvrMeteredInstance,
 };
-use openvm_sdk::{CpuSdk, F, StdIn};
-use openvm_sdk_config::SdkVmConfig;
+use openvm_sdk::{F, StdIn, keygen::AppProvingKey, prover::AppProver};
+use openvm_sdk_config::{SdkVmConfig, SdkVmCpuBuilder};
+use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2CpuEngine;
 use openvm_transpiler::openvm_platform::memory::MEM_SIZE;
 
 use crate::{error::Error, executor::extract_public_values, prover::sdk_vm_config};
@@ -83,13 +84,22 @@ pub(crate) struct CostEstimator {
 }
 
 impl CostEstimator {
-    pub(crate) fn new(elf: &Elf, app_exe: &Arc<VmExe<F>>, sdk: &CpuSdk) -> Result<Self, Error> {
+    pub(crate) fn new(
+        elf: &Elf,
+        app_exe: &Arc<VmExe<F>>,
+        app_pk: &AppProvingKey<SdkVmConfig>,
+    ) -> Result<Self, Error> {
         let executor = Box::new(
             VmExecutor::new(sdk_vm_config())
                 .map_err(|err| Error::Execute(VirtualMachineError::from(err).into()))?,
         );
 
-        let app_prover = sdk.app_prover(app_exe.clone()).map_err(Error::ProverInit)?;
+        let app_prover = AppProver::<BabyBearPoseidon2CpuEngine, SdkVmCpuBuilder>::new(
+            SdkVmCpuBuilder,
+            &app_pk.app_vm_pk,
+            app_exe.clone(),
+        )
+        .map_err(|err| Error::ProverInit(err.into()))?;
         let vm = app_prover.vm();
         let ctx = vm.build_metered_ctx(app_exe);
         let widths = vm.build_metered_cost_ctx().widths;

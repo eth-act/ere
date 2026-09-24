@@ -13,7 +13,7 @@
 //! - `cargo-openvm`
 //! - Setup via `cargo openvm setup` - Setup aggregation keys used by `zkVMProver::prove`
 //! - LLVM clang 19 or newer, `lld` and `make`, used by OpenVM's `rvr` backend to compile each guest
-//!   program to a shared library when the prover is constructed
+//!   program to a shared library the first time it executes or proves
 //!
 //! # `Compiler` implementation
 //!
@@ -56,6 +56,7 @@ mod cost;
 mod error;
 mod executor;
 mod prover;
+mod thread;
 
 pub use ere_prover_core::*;
 pub use ere_verifier_openvm::*;
