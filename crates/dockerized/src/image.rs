@@ -1,4 +1,4 @@
-use crate::{DOCKER_IMAGE_TAG, util::env::image_registry, zkVMKind};
+use crate::{util::env, zkVMKind};
 
 /// Returns tag of images in format of `{version}{suffix}`.
 pub fn image_tag(zkvm_kind: zkVMKind, gpu: bool) -> String {
@@ -8,7 +8,7 @@ pub fn image_tag(zkvm_kind: zkVMKind, gpu: bool) -> String {
         (zkVMKind::OpenVM | zkVMKind::SP1 | zkVMKind::Zisk, true) => "-cuda",
         _ => "",
     };
-    format!("{DOCKER_IMAGE_TAG}{suffix}")
+    format!("{}{suffix}", env::image_tag())
 }
 
 /// Returns `ere-base:{image_tag}`
@@ -36,7 +36,7 @@ pub fn compiler_zkvm_image(zkvm_kind: zkVMKind) -> String {
 }
 
 fn with_image_registry(image: String) -> String {
-    image_registry()
+    env::image_registry()
         .map(|registry| format!("{}/{image}", registry.trim_end_matches('/')))
         .unwrap_or_else(|| image)
 }
