@@ -1,11 +1,13 @@
 use core::{ops::Deref, time::Duration};
 
-use ere_prover_core::{CostEstimation, Input, PublicValues};
+use ere_prover_core::{CostEstimation, Elf, Input, PublicValues};
 use ere_server_api::{
-    ExecuteEstimatedCostRequest, ExecuteRequest, ProgramVkRequest, ProveRequest, VerifyRequest,
-    ZkvmService, execute_estimated_cost_response::Result as ExecuteEstimatedCostResult,
+    ExecuteEstimatedCostRequest, ExecuteRequest, ProgramVkRequest, ProveRequest, SetupRequest,
+    VerifyRequest, ZkvmService,
+    execute_estimated_cost_response::Result as ExecuteEstimatedCostResult,
     execute_response::Result as ExecuteResult, program_vk_response::Result as ProgramVkResult,
-    prove_response::Result as ProveResult, verify_response::Result as VerifyResult,
+    prove_response::Result as ProveResult, setup_response::Result as SetupResult,
+    verify_response::Result as VerifyResult,
 };
 #[cfg(feature = "otel")]
 pub use otel_propagation::OtelPropagation;
@@ -102,6 +104,17 @@ impl zkVMClient {
             .send()
             .await
             .is_ok_and(|r| r.status().is_success())
+    }
+
+    pub async fn setup(&self, elf: Elf) -> Result<EncodedProgramVk, Error> {
+        let request = Request::new(SetupRequest { elf: elf.0 });
+
+        let response = self.client.setup(request).await?;
+
+        match response.into_body().result.ok_or_else(result_none_err)? {
+            SetupResult::Ok(result) => Ok(EncodedProgramVk(result.program_vk)),
+            SetupResult::Err(err) => Err(Error::zkVM(err)),
+        }
     }
 
     pub async fn execute(&self, input: Input) -> Result<(PublicValues, Duration), Error> {

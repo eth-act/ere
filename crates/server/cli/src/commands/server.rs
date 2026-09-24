@@ -14,16 +14,18 @@ use ere_prover_core::{
 use ere_server_api::{
     ExecuteEstimatedCostOk, ExecuteEstimatedCostRequest, ExecuteEstimatedCostResponse, ExecuteOk,
     ExecuteRequest, ExecuteResponse, ProgramVkOk, ProgramVkRequest, ProgramVkResponse, ProveOk,
-    ProveRequest, ProveResponse, VerifyOk, VerifyRequest, VerifyResponse, ZkvmService,
+    ProveRequest, ProveResponse, SetupOk, SetupRequest, SetupResponse, VerifyOk, VerifyRequest,
+    VerifyResponse, ZkvmService,
     execute_estimated_cost_response::Result as ExecuteEstimatedCostResult,
     execute_response::Result as ExecuteResult, program_vk_response::Result as ProgramVkResult,
-    prove_response::Result as ProveResult, router, verify_response::Result as VerifyResult,
+    prove_response::Result as ProveResult, router, setup_response::Result as SetupResult,
+    verify_response::Result as VerifyResult,
 };
 use parking_lot::Mutex;
 use tokio::{
     net::TcpListener,
     signal::unix::{SignalKind, signal},
-    sync::Semaphore,
+    sync::{RwLock, Semaphore},
 };
 use tower::ServiceBuilder;
 use tower_http::{catch_panic::CatchPanicLayer, trace::TraceLayer};
@@ -146,7 +148,7 @@ impl Drop for ProveInFlight {
 /// implementation. A backend that needs a bound applies its own.
 #[allow(non_camel_case_types)]
 pub struct zkVMServer<T> {
-    zkvm: Arc<T>,
+    zkvm: Arc<RwLock<T>>,
     prove_sem: Arc<Semaphore>,
     prove_state: Arc<ProveState>,
 }
@@ -154,14 +156,26 @@ pub struct zkVMServer<T> {
 impl<T: 'static + zkVMProver + Send + Sync> zkVMServer<T> {
     pub fn new(zkvm: T, prove_state: Arc<ProveState>) -> Self {
         Self {
-            zkvm: Arc::new(zkvm),
+            zkvm: Arc::new(RwLock::new(zkvm)),
             prove_sem: Arc::new(Semaphore::new(1)),
             prove_state,
         }
     }
 
+    async fn setup(&self, elf: Elf) -> anyhow::Result<Vec<u8>> {
+        let mut zkvm = Arc::clone(&self.zkvm).write_owned().await;
+        tokio::task::spawn_blocking(move || {
+            zkvm.setup(elf)?;
+            zkvm.program_vk()
+                .encode_to_vec()
+                .map_err(|err| anyhow::anyhow!("failed to encode program_vk: {err:?}"))
+        })
+        .await
+        .context("setup panicked")?
+    }
+
     async fn execute(&self, input: Input) -> anyhow::Result<(PublicValues, Duration)> {
-        let zkvm = Arc::clone(&self.zkvm);
+        let zkvm = Arc::clone(&self.zkvm).read_owned().await;
         tokio::task::spawn_blocking(move || Ok(zkvm.execute(&input)?))
             .await
             .context("execute panicked")?
@@ -171,7 +185,7 @@ impl<T: 'static + zkVMProver + Send + Sync> zkVMServer<T> {
         &self,
         input: Input,
     ) -> anyhow::Result<(PublicValues, CostEstimation)> {
-        let zkvm = Arc::clone(&self.zkvm);
+        let zkvm = Arc::clone(&self.zkvm).read_owned().await;
         tokio::task::spawn_blocking(move || Ok(zkvm.execute_estimated_cost(&input)?))
             .await
             .context("execute_estimated_cost panicked")?
@@ -183,7 +197,7 @@ impl<T: 'static + zkVMProver + Send + Sync> zkVMServer<T> {
             .await
             .context("prove semaphore closed unexpectedly")?;
 
-        let zkvm = Arc::clone(&self.zkvm);
+        let zkvm = Arc::clone(&self.zkvm).read_owned().await;
         let prove_state = Arc::clone(&self.prove_state);
         tokio::task::spawn_blocking(move || {
             let _permit = permit;
@@ -195,7 +209,7 @@ impl<T: 'static + zkVMProver + Send + Sync> zkVMServer<T> {
     }
 
     async fn verify(&self, proof: Proof<T>) -> anyhow::Result<PublicValues> {
-        let zkvm = Arc::clone(&self.zkvm);
+        let zkvm = Arc::clone(&self.zkvm).read_owned().await;
         tokio::task::spawn_blocking(move || Ok(zkvm.verify(&proof)?))
             .await
             .context("verify panicked")?
@@ -204,6 +218,26 @@ impl<T: 'static + zkVMProver + Send + Sync> zkVMServer<T> {
 
 #[async_trait]
 impl<T: 'static + zkVMProver + Send + Sync> ZkvmService for zkVMServer<T> {
+    async fn setup(
+        &self,
+        request: Request<SetupRequest>,
+    ) -> twirp::Result<Response<SetupResponse>> {
+        let SetupRequest { elf } = request.into_body();
+
+        let start = Instant::now();
+        let result = self.setup(Elf(elf)).await;
+        metrics::record_setup(&result, start.elapsed());
+
+        let result = match result {
+            Ok(program_vk) => SetupResult::Ok(SetupOk { program_vk }),
+            Err(err) => SetupResult::Err(err.to_string()),
+        };
+
+        Ok(Response::new(SetupResponse {
+            result: Some(result),
+        }))
+    }
+
     async fn execute(
         &self,
         request: Request<ExecuteRequest>,
@@ -327,7 +361,7 @@ impl<T: 'static + zkVMProver + Send + Sync> ZkvmService for zkVMServer<T> {
         &self,
         _: Request<ProgramVkRequest>,
     ) -> twirp::Result<Response<ProgramVkResponse>> {
-        let result = match self.zkvm.program_vk().encode_to_vec() {
+        let result = match self.zkvm.read().await.program_vk().encode_to_vec() {
             Ok(program_vk) => ProgramVkResult::Ok(ProgramVkOk { program_vk }),
             Err(err) => ProgramVkResult::Err(format!("failed to encode program_vk: {err:?}")),
         };

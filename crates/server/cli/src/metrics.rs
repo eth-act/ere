@@ -12,6 +12,8 @@ const INFO: &str = "ere_server_info";
 const HTTP_REQUESTS_TOTAL: &str = "ere_server_http_requests_total";
 const HTTP_REQUEST_DURATION_SECONDS: &str = "ere_server_http_request_duration_seconds";
 const HTTP_REQUESTS_IN_FLIGHT: &str = "ere_server_http_requests_in_flight";
+const SETUP_TOTAL: &str = "ere_server_setup_total";
+const SETUP_DURATION_SECONDS: &str = "ere_server_setup_duration_seconds";
 const EXECUTE_TOTAL: &str = "ere_server_execute_total";
 const EXECUTE_DURATION_SECONDS: &str = "ere_server_execute_duration_seconds";
 const EXECUTE_ESTIMATED_COST_TOTAL: &str = "ere_server_execute_estimated_cost_total";
@@ -47,6 +49,10 @@ pub fn spawn_upkeep(handle: PrometheusHandle) {
             handle.run_upkeep();
         }
     });
+}
+
+pub fn record_setup<T, E>(result: &Result<T, E>, elapsed: Duration) {
+    record_call(SETUP_TOTAL, SETUP_DURATION_SECONDS, result, elapsed);
 }
 
 pub fn record_execute<T, E>(result: &Result<T, E>, elapsed: Duration) {
@@ -132,6 +138,7 @@ pub async fn handler(State(handle): State<PrometheusHandle>) -> String {
 
 pub fn path_to_method(path: &str) -> &'static str {
     match path {
+        "/twirp/api.ZkvmService/Setup" => "setup",
         "/twirp/api.ZkvmService/Execute" => "execute",
         "/twirp/api.ZkvmService/ExecuteEstimatedCost" => "execute_estimated_cost",
         "/twirp/api.ZkvmService/Prove" => "prove",

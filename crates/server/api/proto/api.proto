@@ -3,11 +3,27 @@ syntax = "proto3";
 package api;
 
 service ZkvmService {
+    rpc Setup(SetupRequest) returns (SetupResponse) {}
     rpc Execute(ExecuteRequest) returns (ExecuteResponse) {}
     rpc ExecuteEstimatedCost(ExecuteEstimatedCostRequest) returns (ExecuteEstimatedCostResponse) {}
     rpc Prove(ProveRequest) returns (ProveResponse) {}
     rpc Verify(VerifyRequest) returns (VerifyResponse) {}
     rpc ProgramVk(ProgramVkRequest) returns (ProgramVkResponse) {}
+}
+
+message SetupRequest {
+    bytes elf = 1;
+}
+
+message SetupResponse {
+    oneof result {
+        SetupOk ok = 1;
+        string err = 2;
+    }
+}
+
+message SetupOk {
+    bytes program_vk = 1;
 }
 
 message ExecuteRequest {

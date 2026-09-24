@@ -1,4 +1,4 @@
-use core::{future::Future, iter, pin::Pin, time::Duration};
+use core::{future::Future, iter, mem, pin::Pin, time::Duration};
 use std::time::Instant;
 
 use ere_compiler_core::Elf;
@@ -23,7 +23,8 @@ use crate::{
             docker_wait_for_exit, remove_docker_container,
         },
         env::{
-            ERE_ZISK_PROVING_KEY_VOLUME, docker_network, force_rebuild_docker_image, image_registry,
+            ERE_OPENVM_CACHE_VOLUME, ERE_ZISK_CACHE_VOLUME, ERE_ZISK_PROVING_KEY_VOLUME,
+            docker_network, force_rebuild_docker_image, image_registry,
         },
         workspace_dir,
     },
@@ -209,7 +210,9 @@ impl ServerContainer {
 
         // zkVM specific options
         cmd = match zkvm_kind {
-            zkVMKind::OpenVM => cmd.inherit_env("ERE_OPENVM_SEGMENT_MEMORY"),
+            zkVMKind::OpenVM => cmd
+                .inherit_env("ERE_OPENVM_SEGMENT_MEMORY")
+                .volume_from_env(ERE_OPENVM_CACHE_VOLUME, "/root/.openvm/cache"),
             // SP1 uses shared memory to exchange data between processes, here
             // we set 32G for safety.
             zkVMKind::SP1 => cmd
@@ -231,6 +234,7 @@ impl ServerContainer {
                 .inherit_env("ERE_ZISK_NUMBER_THREADS_WITNESS")
                 .inherit_env("ERE_ZISK_MAX_WITNESS_STORED")
                 .inherit_env("ERE_ZISK_CLUSTER_PROVE_TIMEOUT_SECS")
+                .volume_from_env(ERE_ZISK_CACHE_VOLUME, "/root/.zisk/cache")
                 .volume_from_env(ERE_ZISK_PROVING_KEY_VOLUME, "/root/.zisk/provingKey"),
         };
 
@@ -345,6 +349,10 @@ impl DockerizedzkVM {
         &self.program_vk
     }
 
+    pub fn setup(&mut self, elf: Elf) -> anyhow::Result<()> {
+        block_on(self.setup_async(elf))
+    }
+
     pub fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, Duration)> {
         block_on(self.execute_async(input.clone()))
     }
@@ -362,6 +370,36 @@ impl DockerizedzkVM {
 
     pub fn verify(&self, proof: &EncodedProof) -> anyhow::Result<PublicValues> {
         block_on(self.verify_async(proof.clone()))
+    }
+
+    /// A timeout (`health_timeout`) or an RPC failure removes the container.
+    pub async fn setup_async(&mut self, elf: Elf) -> anyhow::Result<()> {
+        if self.elf == elf {
+            return Ok(());
+        }
+
+        // A container that `with_retry` recreates starts with the new ELF.
+        let old_elf = mem::replace(&mut self.elf, elf);
+        let result = self
+            .with_retry(
+                |client| {
+                    let elf = self.elf.clone();
+                    Box::pin(async move { client.setup(elf).await })
+                },
+                Some(self.config.health_timeout),
+            )
+            .await;
+        if let Err(err) = &result {
+            // After an RPC failure the server can already hold the new ELF.
+            if matches!(err.downcast_ref::<Error>(), Some(Error::Rpc(_))) {
+                drop(self.container.get_mut().take());
+            }
+            self.elf = old_elf;
+        }
+
+        self.program_vk = result?;
+
+        Ok(())
     }
 
     pub async fn execute_async(&self, input: Input) -> anyhow::Result<(PublicValues, Duration)> {
@@ -570,6 +608,32 @@ mod tests {
         .unwrap()
     }
 
+    macro_rules! test_setup {
+        ($zkvm_kind:ident, $compiler_kind:ident, $program:literal) => {
+            #[tokio::test(flavor = "multi_thread")]
+            async fn test_setup() {
+                let mut zkvm = zkvm(
+                    zkVMKind::$zkvm_kind,
+                    CompilerKind::$compiler_kind,
+                    "zkvm_interface",
+                    ProverResource::Cpu,
+                );
+                let program_vk = zkvm.program_vk().clone();
+
+                let elf = compile(zkVMKind::$zkvm_kind, CompilerKind::$compiler_kind, $program);
+                zkvm.setup(elf.clone()).expect("setup should not fail");
+                assert_ne!(zkvm.program_vk(), &program_vk);
+                assert_eq!(zkvm.elf(), &elf);
+
+                let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+                let (public_values, _report) = zkvm
+                    .execute(&test_case.input())
+                    .expect("execute should not fail with valid input");
+                test_case.assert_output(&public_values);
+            }
+        };
+    }
+
     macro_rules! test_execute {
         ($zkvm_kind:ident, $compiler_kind:ident, $program:literal, $valid_test_cases:expr, $invalid_test_cases:expr) => {
             #[tokio::test(flavor = "multi_thread")]
@@ -702,6 +766,7 @@ mod tests {
 
     mod openvm {
         use super::*;
+        test_setup!(OpenVM, RustCustomized, "basic");
         test_execute!(
             OpenVM,
             RustCustomized,
@@ -727,6 +792,7 @@ mod tests {
 
     mod sp1 {
         use super::*;
+        test_setup!(SP1, RustCustomized, "basic");
         test_execute!(
             SP1,
             RustCustomized,
@@ -752,6 +818,7 @@ mod tests {
 
     mod zisk {
         use super::*;
+        test_setup!(Zisk, RustCustomized, "basic_rust");
         test_execute!(
             Zisk,
             RustCustomized,
