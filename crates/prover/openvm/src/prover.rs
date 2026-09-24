@@ -354,25 +354,6 @@ mod tests {
         run_zkvm_prove(&zkvm, &test_case);
     }
 
-    #[test]
-    fn test_execute_switchable() {
-        let mut zkvm = OpenVMProver::new(basic_elf(), ProverResource::Cpu).unwrap();
-        run_switchable(&mut zkvm, false);
-    }
-
-    #[test]
-    fn test_prove_switchable() {
-        let mut zkvm = OpenVMProver::new(basic_elf(), ProverResource::Cpu).unwrap();
-        run_switchable(&mut zkvm, true);
-    }
-
-    #[cfg(feature = "cuda")]
-    #[test]
-    fn test_prove_switchable_gpu() {
-        let mut zkvm = OpenVMProver::new(basic_elf(), ProverResource::Gpu).unwrap();
-        run_switchable(&mut zkvm, true);
-    }
-
     #[cfg(feature = "cuda")]
     #[test]
     fn test_prove_gpu() {
@@ -411,5 +392,24 @@ mod tests {
         for test_case in zkvm_interface::test_cases() {
             run_zkvm_execute(&zkvm, &test_case);
         }
+    }
+
+    #[test]
+    fn test_execute_switchable() {
+        let mut zkvm = OpenVMProver::new(basic_elf(), ProverResource::Cpu).unwrap();
+        run_switchable(&mut zkvm, false);
+    }
+
+    #[test]
+    fn test_prove_switchable() {
+        let mut zkvm = OpenVMProver::new(basic_elf(), ProverResource::Cpu).unwrap();
+        run_switchable(&mut zkvm, true);
+    }
+
+    #[cfg(feature = "cuda")]
+    #[test]
+    fn test_prove_switchable_gpu() {
+        let mut zkvm = OpenVMProver::new(basic_elf(), ProverResource::Gpu).unwrap();
+        run_switchable(&mut zkvm, true);
     }
 }

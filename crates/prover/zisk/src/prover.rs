@@ -210,16 +210,6 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn test_execute_switchable() {
-        run_switchable(&mut basic_elf_zkvm(), false);
-    }
-
-    #[test]
-    fn test_prove_switchable() {
-        run_switchable(&mut basic_elf_zkvm(), true);
-    }
-
-    #[test]
     #[ignore = "Requires ZisK cluster running"]
     fn test_cluster_prove() {
         let elf = basic_elf();
@@ -246,5 +236,15 @@ pub(crate) mod tests {
         for test_case in zkvm_interface::test_cases() {
             run_zkvm_execute(&zkvm, &test_case);
         }
+    }
+
+    #[test]
+    fn test_execute_switchable() {
+        run_switchable(&mut basic_elf_zkvm(), false);
+    }
+
+    #[test]
+    fn test_prove_switchable() {
+        run_switchable(&mut basic_elf_zkvm(), true);
     }
 }
