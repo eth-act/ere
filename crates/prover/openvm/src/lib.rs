@@ -30,6 +30,13 @@
 //! | `Network` |    No     |
 //! | `Cluster` |    No     |
 //!
+//! ## Setup
+//!
+//! The prover sets up a program when it first proves. When `ERE_OPENVM_SETUP_ON_INIT` is set, `new`
+//! and `setup` do this work instead. If
+//! `OPENVM_RVR_NATIVE_CACHE_DIR` is also set, they build the `rvr` libraries of the prove in
+//! parallel into that cache, so the first prove only loads them.
+//!
 //! ## Cost estimation
 //!
 //! The unit is trace cells. A table costs its rows times its width. The count is
@@ -52,6 +59,7 @@
 
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
+mod baseline;
 mod cost;
 mod error;
 mod executor;

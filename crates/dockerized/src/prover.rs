@@ -212,6 +212,7 @@ impl ServerContainer {
         cmd = match zkvm_kind {
             zkVMKind::OpenVM => cmd
                 .inherit_env("ERE_OPENVM_SEGMENT_MEMORY")
+                .inherit_env("ERE_OPENVM_SETUP_ON_INIT")
                 .volume_from_env(ERE_OPENVM_CACHE_VOLUME, "/root/.openvm/cache"),
             // SP1 uses shared memory to exchange data between processes, here
             // we set 32G for safety.

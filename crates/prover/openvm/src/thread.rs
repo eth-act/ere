@@ -1,4 +1,5 @@
 use std::{
+    env,
     panic::{AssertUnwindSafe, catch_unwind},
     sync::{
         Arc,
@@ -8,7 +9,10 @@ use std::{
 };
 
 use ere_prover_core::ProverResource;
-use openvm_circuit::arch::{ContinuationProverBuilder, instructions::exe::VmExe};
+use openvm_circuit::arch::{
+    ContinuationProverBuilder, VirtualMachineError,
+    instructions::{VM_DIGEST_WIDTH, exe::VmExe},
+};
 use openvm_sdk::{
     DeferralSetup, F, SC, StdIn,
     keygen::AppProvingKey,
@@ -18,15 +22,17 @@ use openvm_sdk_config::{SdkVmConfig, SdkVmCpuBuilder};
 use openvm_stark_sdk::{
     config::baby_bear_poseidon2::BabyBearPoseidon2CpuEngine, openvm_stark_backend::StarkEngine,
 };
-use openvm_verify_stark_host::{VmStarkProof, vk::VerificationBaseline};
+use openvm_verify_stark_host::VmStarkProof;
 
-use crate::error::Error;
+use crate::{baseline::app_exe_commit, error::Error};
 
 pub(crate) enum Request {
-    Setup(
+    Commit(
         Arc<VmExe<F>>,
-        SyncSender<Result<VerificationBaseline, Error>>,
+        SyncSender<Result<[F; VM_DIGEST_WIDTH], Error>>,
     ),
+    Setup(Arc<VmExe<F>>, SyncSender<Result<(), Error>>),
+    Reset(SyncSender<Result<(), Error>>),
     Prove(
         Arc<VmExe<F>>,
         StdIn,
@@ -51,11 +57,13 @@ impl ProverThread {
             #[cfg(feature = "cuda")]
             ProverResource::Gpu => thread::spawn(move || {
                 serve::<openvm_sdk::DefaultStarkEngine, openvm_sdk_config::SdkVmGpuBuilder>(
-                    app_pk, agg_prover, receiver,
+                    app_pk, agg_prover, receiver, true,
                 )
             }),
             _ => thread::spawn(move || {
-                serve::<BabyBearPoseidon2CpuEngine, SdkVmCpuBuilder>(app_pk, agg_prover, receiver)
+                serve::<BabyBearPoseidon2CpuEngine, SdkVmCpuBuilder>(
+                    app_pk, agg_prover, receiver, false,
+                )
             }),
         };
         Self {
@@ -92,21 +100,35 @@ fn serve<E, VB>(
     app_pk: AppProvingKey<SdkVmConfig>,
     agg_prover: Arc<AggProver>,
     requests: Receiver<Request>,
+    gpu: bool,
 ) where
     E: StarkEngine<SC = SC>,
     VB: Default + ContinuationProverBuilder<E, VmConfig = SdkVmConfig>,
 {
+    let engine = E::new(app_pk.app_vm_pk.get_params());
     let mut prover: Option<StarkProver<E, VB>> = None;
     for request in requests {
         match request {
+            Request::Commit(app_exe, reply) => {
+                let _ = reply.send(
+                    catch_unwind(AssertUnwindSafe(|| {
+                        app_exe_commit(&engine, &app_pk, &app_exe)
+                    }))
+                    .map_err(|_| Error::ProverThreadPanicked),
+                );
+            }
             Request::Setup(app_exe, reply) => {
                 let _ = reply.send(with_prover(
                     &mut prover,
                     &app_pk,
                     &agg_prover,
                     &app_exe,
-                    |prover| Ok(prover.generate_baseline()),
+                    |prover| build_rvr_libraries(prover, &app_exe, gpu),
                 ));
+            }
+            Request::Reset(reply) => {
+                prover = None;
+                let _ = reply.send(Ok(()));
             }
             Request::Prove(app_exe, stdin, reply) => {
                 let _ = reply.send(with_prover(
@@ -175,4 +197,28 @@ where
         DeferralSetup::Disabled,
     )
     .map_err(|err| Error::ProverInit(err.into()))
+}
+
+/// Builds the rvr libraries that a prove uses in parallel, so the first prove loads them from the
+/// cache. The GPU prove builds its own preflight library, while the CPU one interprets preflight.
+fn build_rvr_libraries<E, VB>(
+    prover: &StarkProver<E, VB>,
+    app_exe: &VmExe<F>,
+    gpu: bool,
+) -> Result<(), Error>
+where
+    E: StarkEngine<SC = SC>,
+    VB: ContinuationProverBuilder<E, VmConfig = SdkVmConfig>,
+{
+    if env::var_os("OPENVM_RVR_NATIVE_CACHE_DIR").is_none() {
+        return Ok(());
+    }
+    let vm = &prover.app_prover.instance().vm;
+    let (executor, executor_idx_to_air_idx) = (vm.executor(), vm.executor_idx_to_air_idx());
+    thread::scope(|scope| {
+        let preflight = gpu.then(|| scope.spawn(|| executor.preflight_instance(app_exe).map(drop)));
+        executor.metered_instance(app_exe, &executor_idx_to_air_idx, vm.num_airs())?;
+        preflight.map_or(Ok(()), |preflight| preflight.join().unwrap())
+    })
+    .map_err(|err| Error::ProverInit(VirtualMachineError::from(err).into()))
 }

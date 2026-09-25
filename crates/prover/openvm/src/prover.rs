@@ -24,8 +24,10 @@ use openvm_sdk::{
 use openvm_sdk_config::{SdkVmConfig, TranspilerConfig};
 use openvm_stark_sdk::config::{MAX_APP_LOG_STACKED_HEIGHT, app_params_with_100_bits_security};
 use openvm_transpiler::{FromElf, openvm_platform::memory::MEM_SIZE};
+use openvm_verify_stark_host::vk::VerificationBaseline;
 
 use crate::{
+    baseline::baseline,
     cost::CostEstimator,
     error::Error,
     executor::Executor,
@@ -39,6 +41,7 @@ const DEFAULT_SEGMENT_MEMORY: usize = 29 << 29;
 pub struct OpenVMProver {
     app_pk: AppProvingKey<SdkVmConfig>,
     prover_thread: ProverThread,
+    setup_on_init: bool,
     elf: Elf,
     app_exe: Arc<VmExe<F>>,
     executor: OnceCell<Executor>,
@@ -59,6 +62,8 @@ impl OpenVMProver {
             Err(Error::CudaFeatureDisabled)?;
         }
 
+        let app_exe = transpile(&elf.0)?;
+
         let sdk = cpu_sdk(None, None)?;
         let app_pk = sdk.app_pk().clone();
         let agg_pk = AggProvingKey {
@@ -70,15 +75,25 @@ impl OpenVMProver {
         };
         let agg_prover = cpu_sdk(app_pk.clone().into(), agg_pk.into())?.agg_prover();
 
-        let prover_thread = ProverThread::spawn(&resource, app_pk.clone(), agg_prover);
+        let prover_thread = ProverThread::spawn(&resource, app_pk.clone(), agg_prover.clone());
 
-        let app_exe = transpile(&elf.0)?;
-        let baseline = prover_thread.request(|reply| Request::Setup(app_exe.clone(), reply))?;
-        let verifier = OpenVMVerifier::new(OpenVMProgramVk::new(baseline));
+        let app_exe_commit =
+            prover_thread.request(|reply| Request::Commit(app_exe.clone(), reply))?;
+        let verifier = OpenVMVerifier::new(OpenVMProgramVk::new(baseline(
+            &app_pk,
+            &agg_prover,
+            app_exe_commit,
+        )));
+
+        let setup_on_init = env::var_os("ERE_OPENVM_SETUP_ON_INIT").is_some();
+        if setup_on_init {
+            prover_thread.request(|reply| Request::Setup(app_exe.clone(), reply))?;
+        }
 
         Ok(Self {
             app_pk,
             prover_thread,
+            setup_on_init,
             elf,
             app_exe,
             executor: OnceCell::new(),
@@ -112,12 +127,21 @@ impl zkVMProver for OpenVMProver {
         }
 
         let app_exe = transpile(&elf.0)?;
-        let baseline = self
-            .prover_thread
-            .request(|reply| Request::Setup(app_exe.clone(), reply))?;
-        let verifier = OpenVMVerifier::new(OpenVMProgramVk::new(baseline));
+        let verifier = OpenVMVerifier::new(OpenVMProgramVk::new(VerificationBaseline {
+            app_exe_commit: self
+                .prover_thread
+                .request(|reply| Request::Commit(app_exe.clone(), reply))?,
+            ..self.program_vk().0.clone()
+        }));
+        // Unloads the rvr libraries of the old program before the setup loads new ones.
         self.executor = OnceCell::new();
         self.estimator = OnceCell::new();
+        if self.setup_on_init {
+            self.prover_thread
+                .request(|reply| Request::Setup(app_exe.clone(), reply))?;
+        } else {
+            self.prover_thread.request(Request::Reset)?;
+        }
         self.elf = elf;
         self.app_exe = app_exe;
         self.verifier = verifier;
@@ -170,7 +194,7 @@ impl zkVMProver for OpenVMProver {
     }
 }
 
-fn transpile(elf: &[u8]) -> Result<Arc<VmExe<F>>, Error> {
+pub(crate) fn transpile(elf: &[u8]) -> Result<Arc<VmExe<F>>, Error> {
     Ok(Arc::new(
         VmExe::from_elf(
             openvm_transpiler::elf::Elf::decode(elf, MEM_SIZE.try_into().unwrap())
@@ -181,7 +205,7 @@ fn transpile(elf: &[u8]) -> Result<Arc<VmExe<F>>, Error> {
     ))
 }
 
-fn cpu_sdk(
+pub(crate) fn cpu_sdk(
     app_pk: Option<AppProvingKey<SdkVmConfig>>,
     agg_pk: Option<AggProvingKey>,
 ) -> Result<CpuSdk, Error> {
@@ -226,7 +250,7 @@ fn internal_recursive_pk_path() -> PathBuf {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use std::sync::OnceLock;
 
     use ere_compiler_core::{Compiler, Elf};
@@ -246,7 +270,7 @@ mod tests {
 
     use crate::prover::OpenVMProver;
 
-    fn basic_elf() -> Elf {
+    pub(crate) fn basic_elf() -> Elf {
         static ELF: OnceLock<Elf> = OnceLock::new();
         ELF.get_or_init(|| {
             OpenVMRustRv64imaCustomized
