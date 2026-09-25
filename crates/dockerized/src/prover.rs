@@ -1,5 +1,5 @@
 use core::{future::Future, iter, pin::Pin, time::Duration};
-use std::time::Instant;
+use std::{process::Child, time::Instant};
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{
@@ -24,7 +24,7 @@ use crate::{
         },
         env::{
             ERE_OPENVM_CACHE_VOLUME, ERE_ZISK_CACHE_VOLUME, ERE_ZISK_PROVING_KEY_VOLUME,
-            docker_network, force_rebuild_docker_image, image_registry,
+            docker_memory, docker_network, force_rebuild_docker_image, image_registry,
         },
         workspace_dir,
     },
@@ -166,6 +166,8 @@ fn build_server_image(zkvm_kind: zkVMKind, gpu: bool) -> Result<(), Error> {
 struct ServerContainer {
     id: String,
     client: zkVMClient,
+    /// `docker container start --attach` process, reaped on drop.
+    attach: Child,
 }
 
 impl Drop for ServerContainer {
@@ -173,6 +175,10 @@ impl Drop for ServerContainer {
         if let Err(err) = remove_docker_container(&self.id) {
             error!("Failed to remove docker container: {err}");
         }
+        // The attach process ends with the container; kill it in case removal
+        // failed, then reap it so it does not linger as a zombie.
+        let _ = self.attach.kill();
+        let _ = self.attach.wait();
     }
 }
 
@@ -200,6 +206,10 @@ impl ServerContainer {
             .inherit_env(ERE_COST_ESTIMATION_HEAP_END)
             .publish(port.to_string(), port.to_string())
             .name(&name);
+
+        if let Some(memory) = docker_memory() {
+            cmd = cmd.option("memory", memory);
+        }
 
         let host = if let Some(network) = docker_network() {
             cmd = cmd.network(network);
@@ -248,7 +258,7 @@ impl ServerContainer {
             }
         }
 
-        let (_, container_id) = cmd.spawn(
+        let (attach, container_id) = cmd.spawn(
             iter::empty()
                 .chain(["--port", &port.to_string()])
                 .chain(resource.to_args()),
@@ -266,6 +276,7 @@ impl ServerContainer {
         Ok(ServerContainer {
             id: container_id,
             client: zkVMClient::new(endpoint, http_client, vec![])?,
+            attach,
         })
     }
 }

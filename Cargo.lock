@@ -3497,6 +3497,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "ere-conformance"
+version = "0.18.1"
+dependencies = [
+ "anyhow",
+ "cargo_metadata 0.19.2",
+ "chrono",
+ "clap",
+ "ere-dockerized",
+ "ere-util-build",
+ "serde",
+ "serde_json",
+ "toml 0.8.23",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "ere-dockerized"
 version = "0.18.1"
 dependencies = [

@@ -66,6 +66,7 @@ This repository contains the following crates:
   - [`ere-verifier-sp1`]
   - [`ere-verifier-zisk`]
 - [`ere-dockerized`] - Docker wrapper that spawns [`ere-server`] containers to run zkVM operations without local SDK installation
+- [`ere-conformance`] - Runs the ACT4 RISC-V architectural tests against the images published for an ere revision and records results for the [conformance dashboard](dashboard/)
 - [`ere-cluster-client-zisk`] - ZisK distributed-cluster client used by [`ere-prover-zisk`] when `ProverResource::Cluster` is selected
 - [`ere-codec`] - Canonical byte codec (`Encode`/`Decode` + macros) shared across crates
 - [`ere-catalog`] - Catalog of supported zkVMs and compilers (`zkVMKind`, `CompilerKind`, SDK versions, Docker image tag)
@@ -97,6 +98,7 @@ This repository contains the following crates:
 [`ere-platform-zisk`]: https://github.com/eth-act/ere/tree/master/crates/platform/zisk
 [`ere-verifier-zisk`]: https://github.com/eth-act/ere/tree/master/crates/verifier/zisk
 [`ere-dockerized`]: https://github.com/eth-act/ere/tree/master/crates/dockerized
+[`ere-conformance`]: https://github.com/eth-act/ere/tree/master/crates/conformance/cli
 [`ere-compiler`]: https://github.com/eth-act/ere/tree/master/crates/compiler/cli
 [`ere-server`]: https://github.com/eth-act/ere/tree/master/crates/server/cli
 [`ere-server-api`]: https://github.com/eth-act/ere/tree/master/crates/server/api
@@ -373,6 +375,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 | `ERE_ZISK_PROVING_KEY_VOLUME`    | Volume or absolute host path mounted at the ZisK proving key directory, so the downloaded key persists across containers.               | ``      |
 | `ERE_ZISK_CACHE_VOLUME`          | Volume or absolute host path mounted at the ZisK cache directory, so the ROM setup of each program persists across containers.          | ``      |
 | `ERE_OPENVM_CACHE_VOLUME`        | Volume or absolute host path mounted at the OpenVM `rvr` cache directory, so each compiled program persists across containers.          | ``      |
+| `ERE_DOCKER_MEMORY`              | Memory limit of spawned `ere-server-*` containers. The value is passed to Docker's `--memory` flag.                                      | ``      |
 
 Example usage:
 
@@ -407,6 +410,8 @@ ere/
 │   │   ├── core/                  # ere-verifier-core
 │   │   └── {zkvm}/                # ere-verifier-{zkvm}
 │   ├── dockerized/                # ere-dockerized
+│   ├── conformance/
+│   │   └── cli/                   # ere-conformance
 │   ├── compiler/
 │   │   ├── cli/                   # ere-compiler
 │   │   ├── core/                  # ere-compiler-core
@@ -430,6 +435,7 @@ ere/
 │       ├── Dockerfile.compiler    # ere-compiler-{zkvm}
 │       └── Dockerfile.server      # ere-server-{zkvm}
 │
+├── dashboard/                     # Conformance dashboard (static site and run history)
 ├── scripts/                       # SDK installation scripts per zkVM
 └── tests/                         # Guest programs per zkVM for integration test
 ```
