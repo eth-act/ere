@@ -67,6 +67,18 @@ impl SP1Sdk {
         })
     }
 
+    /// Replaces the proving key with the one of `elf`.
+    pub async fn setup(&mut self, elf: Arc<[u8]>) -> Result<(), Error> {
+        let elf = Elf::Dynamic(elf);
+        match self {
+            Self::Cpu { prover, pk } => *pk = prover.setup(elf).await.map_err(Error::setup)?,
+            #[cfg(feature = "cuda")]
+            Self::Gpu { prover, pk } => *pk = prover.setup(elf).await.map_err(Error::setup)?,
+            Self::Network { prover, pk } => *pk = prover.setup(elf).await.map_err(Error::setup)?,
+        }
+        Ok(())
+    }
+
     pub fn vk(&self) -> &SP1VerifyingKey {
         match self {
             Self::Cpu { pk, .. } => pk.verifying_key(),

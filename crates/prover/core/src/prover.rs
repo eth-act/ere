@@ -1,7 +1,7 @@
 use core::error::Error;
 use std::time::Duration;
 
-use crate::{Input, PublicValues, cost::CostEstimation, zkVMVerifier};
+use crate::{Elf, Input, PublicValues, cost::CostEstimation, zkVMVerifier};
 
 /// zkVM prover trait to abstract away the differences between each zkVM.
 ///
@@ -13,13 +13,16 @@ use crate::{Input, PublicValues, cost::CostEstimation, zkVMVerifier};
 /// Note that a zkVM prover instance is created for specific program, each zkVM prover
 /// implementation will have their own construction function.
 #[allow(non_camel_case_types)]
-#[auto_impl::auto_impl(&, Arc, Box)]
+#[auto_impl::auto_impl(Box)]
 pub trait zkVMProver: Sync {
     type Verifier: zkVMVerifier;
     type Error: 'static + Send + Sync + Error + From<<Self::Verifier as zkVMVerifier>::Error>;
 
     /// Returns a reference to the verifier.
     fn verifier(&self) -> &Self::Verifier;
+
+    /// Switches to the program `elf` and drops the old one. On error, the old one stays.
+    fn setup(&mut self, elf: Elf) -> Result<(), Self::Error>;
 
     /// Executes the program with the given input.
     fn execute(&self, input: &Input) -> Result<(PublicValues, Duration), Self::Error>;
@@ -33,7 +36,7 @@ pub trait zkVMProver: Sync {
     /// Creates a proof of the program execution with given input.
     fn prove(&self, input: &Input) -> Result<(PublicValues, Proof<Self>, Duration), Self::Error>;
 
-    /// Verifies a proof of the program used to create this zkVM prover instance, then
+    /// Verifies a proof of the current program of this zkVM prover instance, then
     /// returns the public values extracted from the proof.
     #[must_use = "Public values must be used"]
     fn verify(&self, proof: &Proof<Self>) -> Result<PublicValues, Self::Error> {

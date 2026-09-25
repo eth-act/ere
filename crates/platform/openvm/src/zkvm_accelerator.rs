@@ -263,6 +263,13 @@ unsafe extern "C" fn zkvm_blake2f(
     t: *const zkvm_blake2f_offset,
     f: u8,
 ) -> zkvm_status {
+    // EIP-152 rejects a final block indicator other than 0 or 1.
+    let final_block = match f {
+        0 => false,
+        1 => true,
+        _ => return ZKVM_EFAIL,
+    };
+
     let mut state = [0u64; 8];
     let mut message = [0u64; 16];
     let mut offset = [0u64; 2];
@@ -272,7 +279,7 @@ unsafe extern "C" fn zkvm_blake2f(
         read_u64_le(&(*t).data, &mut offset);
     }
 
-    blake2::compress(rounds, &mut state, &message, &offset, f != 0);
+    blake2::compress(rounds, &mut state, &message, &offset, final_block);
 
     unsafe { write_u64_le(&state, &mut (*h).data) };
     ZKVM_EOK

@@ -164,14 +164,14 @@ proofman-fields = "1.3.0-alpha"
 proofman-starks-lib-c = "1.3.0-alpha"
 proofman-util = "1.3.0-alpha"
 proofman-verifier = "1.3.0-alpha"
-zisk-common = "1.3.0-alpha"
-zisk-core = "1.3.0-alpha"
-zisk-prover-backend = "1.3.0-alpha"
-zisk-rom-setup = "1.3.0-alpha"
-zisk-sm-rom = "1.3.0-alpha"
-zisk-transpiler-riscv = "1.3.0-alpha"
+zisk-common = { git = "https://github.com/han0110/zisk.git", branch = "patch/v1.3.0-alpha" }
+zisk-core = { git = "https://github.com/han0110/zisk.git", branch = "patch/v1.3.0-alpha" }
+zisk-prover-backend = { git = "https://github.com/han0110/zisk.git", branch = "patch/v1.3.0-alpha" }
+zisk-rom-setup = { git = "https://github.com/han0110/zisk.git", branch = "patch/v1.3.0-alpha" }
+zisk-sm-rom = { git = "https://github.com/han0110/zisk.git", branch = "patch/v1.3.0-alpha" }
+zisk-transpiler-riscv = { git = "https://github.com/han0110/zisk.git", branch = "patch/v1.3.0-alpha" }
+ziskemu = { git = "https://github.com/han0110/zisk.git", branch = "patch/v1.3.0-alpha" }
 zisk-verifier = "1.3.0-alpha"
-ziskemu = "1.3.0-alpha"
 ziskos = { version = "1.3.0-alpha", default-features = false }
 
 # Local dependencies

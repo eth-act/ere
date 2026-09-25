@@ -120,7 +120,7 @@ Host-side traits:
 
 - `zkVMProver` (from `ere-prover-core`)
 
-  Execute, prove and verify. A zkVM prover instance is created for an `Elf` produced by a `Compiler`. `Elf` specific verifying key generation happens in the constructor.
+  Execute, prove and verify. A zkVM prover instance is created for an `Elf` produced by a `Compiler`. `Elf` specific verifying key generation happens in the constructor. `setup` switches an instance to another `Elf` and keeps the state that does not depend on the program.
 
 - `zkVMVerifier` (from `ere-verifier-core`)
 
@@ -366,10 +366,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 | Variable                         | Description                                                                                                                             | Default |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------- |
 | `ERE_IMAGE_REGISTRY`             | Specifies docker image registry of the images. When specified, it will try to pull image from the registry and possibly skip building.  | ``      |
+| `ERE_IMAGE_TAG`                  | Overrides the image tag, by default the short git revision of `ere`. GPU images still get the `-cuda` suffix.                           | ``      |
 | `ERE_FORCE_REBUILD_DOCKER_IMAGE` | Force to rebuild docker images locally even they exist, it also prevents pulling image from registry.                                   | `false` |
 | `ERE_GPU_DEVICES`                | Specifies which GPU devices to use when running Docker containers for GPU-enabled zkVMs. The value is passed to Docker's `--gpus` flag. | `all`   |
 | `ERE_DOCKER_NETWORK`             | Specifies the Docker network being used (if any) so spawned `ere-server-*` containers will join that network.                           | ``      |
 | `ERE_ZISK_PROVING_KEY_VOLUME`    | Volume or absolute host path mounted at the ZisK proving key directory, so the downloaded key persists across containers.               | ``      |
+| `ERE_ZISK_CACHE_VOLUME`          | Volume or absolute host path mounted at the ZisK cache directory, so the ROM setup of each program persists across containers.          | ``      |
+| `ERE_OPENVM_CACHE_VOLUME`        | Volume or absolute host path mounted at the OpenVM `rvr` cache directory, so each compiled program persists across containers.          | ``      |
 
 Example usage:
 

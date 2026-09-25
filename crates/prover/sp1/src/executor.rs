@@ -9,7 +9,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-use anyhow::anyhow;
 use crossbeam_channel::{Receiver, Sender, bounded};
 use ere_prover_core::PublicValues;
 use sp1_core_executor::{MinimalExecutorEnum, Program};
@@ -24,25 +23,17 @@ const MAX_CONCURRENCY: usize = 32;
 pub(crate) struct SP1Executor {
     rx: Receiver<MinimalExecutorEnum>,
     tx: Sender<MinimalExecutorEnum>,
-    program: Arc<Program>,
 }
 
 impl SP1Executor {
-    pub(crate) fn new(elf: &[u8]) -> Result<Self, Error> {
-        let program: Arc<Program> = Program::from(elf)
-            .map_err(|err| Error::setup(anyhow!("failed to disassemble program: {err}")))?
-            .into();
+    pub(crate) fn new(program: Arc<Program>) -> Self {
         let concurrency = execution_concurrency();
         let (tx, rx) = bounded(concurrency);
         for _ in 0..concurrency {
             tx.send(MinimalExecutorEnum::new(Arc::clone(&program), false, None))
                 .unwrap();
         }
-        Ok(Self { rx, tx, program })
-    }
-
-    pub(crate) fn program(&self) -> Arc<Program> {
-        Arc::clone(&self.program)
+        Self { rx, tx }
     }
 
     /// Runs `stdin`, blocking until an instance is free.

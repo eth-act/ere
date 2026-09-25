@@ -37,3 +37,8 @@ export USE_GPU=$([ -n "$CUDA" ] && echo true || echo false)
 export SETUP_KEY=none
 curl "https://raw.githubusercontent.com/0xPolygonHermez/zisk/v$ZISK_VERSION/ziskup/ziskup" | bash
 unset SETUP_KEY
+
+# The ASM services build from this source. The patched one makes them exit with the prover.
+# Keep the revision equal to the zisk git revision in Cargo.lock.
+curl -fsSL "https://raw.githubusercontent.com/han0110/zisk/de8d48e9e24965e82732463d807efaf2a739c54d/emulator-asm/src/main.c" \
+    -o "$HOME/.zisk/zisk/emulator-asm/src/main.c"
