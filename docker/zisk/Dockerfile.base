@@ -58,6 +58,9 @@ RUN /tmp/install_zisk_sdk.sh && \
 # For the image environment, we need to ensure /root/.zisk/bin is persistently in PATH.
 ENV PATH=/root/.zisk/bin:$PATH
 
+# Build the ASM services from the SDK, which has the patched `main.c`, not from the cargo checkout of the ZisK crates.
+ENV ZISK_USE_INSTALLED=1
+
 # Verify cargo-zisk is accessible
 RUN echo "Verifying ZisK installation in Dockerfile ..." && cargo-zisk --version
 

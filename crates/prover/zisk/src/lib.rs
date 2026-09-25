@@ -12,6 +12,11 @@
 //! left its `.md5` marker there. `ERE_ZISK_SETUP_ON_INIT` moves this into
 //! construction, so allow for the download time there.
 //!
+//! Set `ZISK_USE_INSTALLED=1`, so the setup of a program builds its ASM
+//! services from the SDK that [`install_zisk_sdk.sh`] installs. Otherwise, when
+//! `cargo` is on `PATH`, the setup builds them in the cargo checkout of the ZisK
+//! crates.
+//!
 //! ## `zkVMProver` requirements
 //!
 //! - Installation via [`ziskup`]
