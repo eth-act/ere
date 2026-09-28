@@ -22,7 +22,7 @@ LambdaVM has no verifying key separate from the program: its verifier binds a pr
     set -euo pipefail
     GUEST_NAME="<guest-name>"
     ELF_PATH="<elf-path>"
-    ZKVM_VERSION="ffc4ac1"
+    ZKVM_VERSION="v0.1.0"
     VK="stateless-validator-$GUEST_NAME-lambdavm-$ZKVM_VERSION.vk"
     printf '%016X' "$(stat -c%s "$ELF_PATH")" | fold -w2 | tac | tr -d '\n' | basenc --base16 -d > "$VK"
     cat "$ELF_PATH" >> "$VK"

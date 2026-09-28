@@ -133,9 +133,9 @@ uuid = "1"
 zkvm-interface = { git = "https://github.com/eth-act/zkvm-standards", rev = "282cd356c3a0498416bb0619f9c8a347ce9933fb" }
 
 # LambdaVM dependencies
-lambda-vm-executor = { git = "https://github.com/yetanotherco/lambda_vm", rev = "ffc4ac19e755d93ed631ace71f17577478d8d21b", package = "executor" }
-lambda-vm-prover = { git = "https://github.com/yetanotherco/lambda_vm", rev = "ffc4ac19e755d93ed631ace71f17577478d8d21b", default-features = false, features = ["parallel"] }
-lambda-vm-syscalls = { git = "https://github.com/yetanotherco/lambda_vm", rev = "ffc4ac19e755d93ed631ace71f17577478d8d21b" }
+lambda-vm-executor = { git = "https://github.com/yetanotherco/lambda_vm", tag = "v0.1.0", package = "executor" }
+lambda-vm-prover = { git = "https://github.com/yetanotherco/lambda_vm", tag = "v0.1.0", default-features = false, features = ["parallel"] }
+lambda-vm-syscalls = { git = "https://github.com/yetanotherco/lambda_vm", tag = "v0.1.0" }
 
 # OpenVM dependencies
 openvm = { git = "https://github.com/openvm-org/openvm.git", tag = "v2.1.0-preview", default-features = false }

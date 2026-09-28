@@ -16,7 +16,7 @@ const DEFAULT_HEAP_START: &str = "_end";
 
 /// Top of the guest heap.
 ///
-/// According to https://github.com/yetanotherco/lambda_vm/blob/ffc4ac19e755d93ed631ace71f17577478d8d21b/syscalls/src/allocator.rs#L3.
+/// According to https://github.com/yetanotherco/lambda_vm/blob/v0.1.0/syscalls/src/allocator.rs#L3.
 const HEAP_END: u64 = 0xC000_0000;
 
 pub(crate) struct CostEstimator {

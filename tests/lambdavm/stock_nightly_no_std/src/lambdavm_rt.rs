@@ -3,7 +3,7 @@ use core::alloc::{GlobalAlloc, Layout};
 use crate::main;
 
 // Call __start function defined below. The executor already sets the stack pointer.
-// According to https://github.com/yetanotherco/lambda_vm/blob/ffc4ac19e755d93ed631ace71f17577478d8d21b/executor/src/vm/registers.rs#L3-L16
+// According to https://github.com/yetanotherco/lambda_vm/blob/v0.1.0/executor/src/vm/registers.rs#L3-L16
 core::arch::global_asm!(
     r#"
 .section .text._start;
@@ -24,7 +24,7 @@ fn __start(_argc: isize, _argv: *const *const u8) -> isize {
     unreachable!()
 }
 
-// According to https://github.com/yetanotherco/lambda_vm/blob/ffc4ac19e755d93ed631ace71f17577478d8d21b/syscalls/src/syscalls.rs#L141-L153
+// According to https://github.com/yetanotherco/lambda_vm/blob/v0.1.0/syscalls/src/syscalls.rs#L141-L153
 #[inline(always)]
 fn terminate() {
     unsafe {
@@ -36,7 +36,7 @@ fn terminate() {
     }
 }
 
-// According to https://github.com/yetanotherco/lambda_vm/blob/ffc4ac19e755d93ed631ace71f17577478d8d21b/syscalls/src/syscalls.rs#L21-L26
+// According to https://github.com/yetanotherco/lambda_vm/blob/v0.1.0/syscalls/src/syscalls.rs#L21-L26
 #[panic_handler]
 fn panic_impl(_panic_info: &core::panic::PanicInfo) -> ! {
     unsafe {
@@ -69,7 +69,7 @@ unsafe impl GlobalAlloc for SimpleAlloc {
 #[global_allocator]
 static HEAP: SimpleAlloc = SimpleAlloc;
 
-// According to https://github.com/yetanotherco/lambda_vm/blob/ffc4ac19e755d93ed631ace71f17577478d8d21b/syscalls/src/allocator.rs#L3
+// According to https://github.com/yetanotherco/lambda_vm/blob/v0.1.0/syscalls/src/allocator.rs#L3
 pub const MAX_MEMORY: usize = 0xC000_0000;
 static mut HEAP_POS: usize = 0;
 #[allow(clippy::missing_safety_doc)]

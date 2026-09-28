@@ -6,7 +6,7 @@ FROM $BASE_IMAGE
 # We operate as root for SDK installation.
 
 # Set default toolchain to the one LambdaVM pins, according to
-# https://github.com/yetanotherco/lambda_vm/blob/ffc4ac19e755d93ed631ace71f17577478d8d21b/rust-toolchain.toml
+# https://github.com/yetanotherco/lambda_vm/blob/v0.1.0/rust-toolchain.toml
 RUN rustup default 1.94.0 && \
     rustup toolchain list | grep -v default | xargs -r rustup toolchain uninstall
 

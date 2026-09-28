@@ -28,7 +28,7 @@ ensure_tool_installed "rustup" "to manage Rust toolchains"
 
 # LambdaVM has no CLI, Ere links the LambdaVM crates directly. Guest programs
 # are built with this nightly toolchain and `-Z build-std`, which needs
-# `rust-src`, according to https://github.com/yetanotherco/lambda_vm/blob/ffc4ac19e755d93ed631ace71f17577478d8d21b/Makefile#L201
+# `rust-src`, according to https://github.com/yetanotherco/lambda_vm/blob/v0.1.0/Makefile#L201
 LAMBDAVM_TOOLCHAIN_VERSION="nightly-2026-02-01"
 
 # Install the Rust toolchain LambdaVM builds guest programs with

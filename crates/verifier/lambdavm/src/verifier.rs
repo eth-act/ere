@@ -10,7 +10,7 @@ include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 /// A proof does not carry its proof options, so the prover and the verifier
 /// must agree on them.
 ///
-/// According to https://github.com/yetanotherco/lambda_vm/blob/ffc4ac19e755d93ed631ace71f17577478d8d21b/bin/cli/src/main.rs#L214-L216.
+/// According to https://github.com/yetanotherco/lambda_vm/blob/v0.1.0/bin/cli/src/main.rs#L214-L216.
 pub const BLOWUP_FACTOR: u8 = 2;
 
 /// Verifier bound to a specific compiled guest program.

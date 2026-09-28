@@ -5,18 +5,18 @@ use ere_util_compile::{CargoBuildCmd, RustTarget, parse_cargo_build_options};
 
 use crate::Error;
 
-/// According to https://github.com/yetanotherco/lambda_vm/blob/ffc4ac19e755d93ed631ace71f17577478d8d21b/Makefile#L201.
+/// According to https://github.com/yetanotherco/lambda_vm/blob/v0.1.0/Makefile#L201.
 const LAMBDAVM_TOOLCHAIN: &str = "nightly-2026-02-01";
 
 /// Target spec of LambdaVM, copied verbatim.
 ///
-/// According to https://github.com/yetanotherco/lambda_vm/blob/ffc4ac19e755d93ed631ace71f17577478d8d21b/executor/programs/riscv64im-lambda-vm-elf.json.
+/// According to https://github.com/yetanotherco/lambda_vm/blob/v0.1.0/executor/programs/riscv64im-lambda-vm-elf.json.
 const TARGET: RustTarget = RustTarget::SpecJson {
     name: "riscv64im-lambda-vm-elf",
     json: include_str!("./rust_rv64ima_customized/riscv64im-lambda-vm-elf.json"),
 };
 
-/// Rust flags according to https://github.com/yetanotherco/lambda_vm/blob/ffc4ac19e755d93ed631ace71f17577478d8d21b/executor/programs/rust/panic/.cargo/config.toml
+/// Rust flags according to https://github.com/yetanotherco/lambda_vm/blob/v0.1.0/executor/programs/rust/panic/.cargo/config.toml
 const RUSTFLAGS: &[&str] = &[
     // https://docs.rs/getrandom/0.3.2/getrandom/index.html#opt-in-backends
     "--cfg",
@@ -25,7 +25,7 @@ const RUSTFLAGS: &[&str] = &[
     "-C",
     "passes=lower-atomic",
 ];
-/// Cargo build options according to https://github.com/yetanotherco/lambda_vm/blob/ffc4ac19e755d93ed631ace71f17577478d8d21b/Makefile#L197-L209
+/// Cargo build options according to https://github.com/yetanotherco/lambda_vm/blob/v0.1.0/Makefile#L197-L209
 const CARGO_BUILD_OPTIONS: &[&str] = &[
     // The target has no prebuilt standard library, so build it with `std`
     "-Zbuild-std=core,alloc,std,compiler_builtins,panic_abort",

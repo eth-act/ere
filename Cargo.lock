@@ -2594,7 +2594,7 @@ checksum = "460fbee9c2c2f33933d720630a6a0bac33ba7053db5344fac858d4b8952d77d5"
 [[package]]
 name = "crypto"
 version = "0.1.0"
-source = "git+https://github.com/yetanotherco/lambda_vm?rev=ffc4ac19e755d93ed631ace71f17577478d8d21b#ffc4ac19e755d93ed631ace71f17577478d8d21b"
+source = "git+https://github.com/yetanotherco/lambda_vm?tag=v0.1.0#ffc4ac19e755d93ed631ace71f17577478d8d21b"
 dependencies = [
  "digest 0.10.7",
  "lambda-vm-syscalls",
@@ -3295,7 +3295,7 @@ dependencies = [
 [[package]]
 name = "ecsm"
 version = "0.1.0"
-source = "git+https://github.com/yetanotherco/lambda_vm?rev=ffc4ac19e755d93ed631ace71f17577478d8d21b#ffc4ac19e755d93ed631ace71f17577478d8d21b"
+source = "git+https://github.com/yetanotherco/lambda_vm?tag=v0.1.0#ffc4ac19e755d93ed631ace71f17577478d8d21b"
 dependencies = [
  "k256 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-bigint 0.4.6",
@@ -3967,7 +3967,7 @@ dependencies = [
 [[package]]
 name = "executor"
 version = "0.1.0"
-source = "git+https://github.com/yetanotherco/lambda_vm?rev=ffc4ac19e755d93ed631ace71f17577478d8d21b#ffc4ac19e755d93ed631ace71f17577478d8d21b"
+source = "git+https://github.com/yetanotherco/lambda_vm?tag=v0.1.0#ffc4ac19e755d93ed631ace71f17577478d8d21b"
 dependencies = [
  "ecsm",
  "k256 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5280,7 +5280,7 @@ dependencies = [
 [[package]]
 name = "lambda-vm-prover"
 version = "0.1.0"
-source = "git+https://github.com/yetanotherco/lambda_vm?rev=ffc4ac19e755d93ed631ace71f17577478d8d21b#ffc4ac19e755d93ed631ace71f17577478d8d21b"
+source = "git+https://github.com/yetanotherco/lambda_vm?tag=v0.1.0#ffc4ac19e755d93ed631ace71f17577478d8d21b"
 dependencies = [
  "crypto",
  "digest 0.10.7",
@@ -5297,7 +5297,7 @@ dependencies = [
 [[package]]
 name = "lambda-vm-syscalls"
 version = "0.1.0"
-source = "git+https://github.com/yetanotherco/lambda_vm?rev=ffc4ac19e755d93ed631ace71f17577478d8d21b#ffc4ac19e755d93ed631ace71f17577478d8d21b"
+source = "git+https://github.com/yetanotherco/lambda_vm?tag=v0.1.0#ffc4ac19e755d93ed631ace71f17577478d8d21b"
 dependencies = [
  "getrandom 0.2.17",
  "getrandom 0.3.4",
@@ -5517,7 +5517,7 @@ checksum = "47e1ffaa40ddd1f3ed91f717a33c8c0ee23fff369e3aa8772b9605cc1d22f4c3"
 [[package]]
 name = "math"
 version = "0.1.0"
-source = "git+https://github.com/yetanotherco/lambda_vm?rev=ffc4ac19e755d93ed631ace71f17577478d8d21b#ffc4ac19e755d93ed631ace71f17577478d8d21b"
+source = "git+https://github.com/yetanotherco/lambda_vm?tag=v0.1.0#ffc4ac19e755d93ed631ace71f17577478d8d21b"
 dependencies = [
  "getrandom 0.2.17",
  "num-bigint 0.4.6",
@@ -11768,7 +11768,7 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 [[package]]
 name = "stark"
 version = "0.1.0"
-source = "git+https://github.com/yetanotherco/lambda_vm?rev=ffc4ac19e755d93ed631ace71f17577478d8d21b#ffc4ac19e755d93ed631ace71f17577478d8d21b"
+source = "git+https://github.com/yetanotherco/lambda_vm?tag=v0.1.0#ffc4ac19e755d93ed631ace71f17577478d8d21b"
 dependencies = [
  "crypto",
  "digest 0.10.7",

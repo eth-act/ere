@@ -165,12 +165,12 @@ Different zkVMs handles public values in different approaches:
 
 ## Supported zkVMs
 
-| zkVM     | Version                                                                                                 | ISA       |  GPU  | Multi GPU | Cluster |
-| -------- | ------------------------------------------------------------------------------------------------------- | --------- | :---: | :-------: | :-----: |
-| LambdaVM | [`ffc4ac1`](https://github.com/yetanotherco/lambda_vm/tree/ffc4ac19e755d93ed631ace71f17577478d8d21b) | `RV64IM`  |       |           |         |
-| OpenVM   | [`2.1.0-preview`](https://github.com/openvm-org/openvm/tree/v2.1.0-preview)                             | `RV64IMA` |   V   |           |         |
-| SP1      | [`6.6.0`](https://github.com/succinctlabs/sp1/tree/v6.6.0)                                              | `RV64IMA` |   V   |           |         |
-| ZisK     | [`1.3.0-alpha`](https://github.com/0xPolygonHermez/zisk/tree/v1.3.0-alpha)                              | `RV64IMA` |   V   |     V     |    V    |
+| zkVM     | Version                                                                     | ISA       |  GPU  | Multi GPU | Cluster |
+| -------- | --------------------------------------------------------------------------- | --------- | :---: | :-------: | :-----: |
+| LambdaVM | [`0.1.0`](https://github.com/yetanotherco/lambda_vm/tree/v0.1.0)            | `RV64IM`  |       |           |         |
+| OpenVM   | [`2.1.0-preview`](https://github.com/openvm-org/openvm/tree/v2.1.0-preview) | `RV64IMA` |   V   |           |         |
+| SP1      | [`6.6.0`](https://github.com/succinctlabs/sp1/tree/v6.6.0)                  | `RV64IMA` |   V   |           |         |
+| ZisK     | [`1.3.0-alpha`](https://github.com/0xPolygonHermez/zisk/tree/v1.3.0-alpha)  | `RV64IMA` |   V   |     V     |    V    |
 
 ## Examples
 
