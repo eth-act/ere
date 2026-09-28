@@ -25,8 +25,8 @@ pub enum Error {
     ParseUrl(#[from] url::ParseError),
     #[error("zkVM method error: {0}")]
     zkVM(String),
-    #[error("Connection to zkVM server timeout after 5 minutes")]
-    ConnectionTimeout,
+    #[error("Connection to zkVM server timeout after {timeout:?}")]
+    ConnectionTimeout { timeout: Duration },
     #[error("RPC to zkVM server error: {0}")]
     Rpc(TwirpErrorResponse),
     #[error("Server container '{container_id}' exited during request: {exit_info}")]

@@ -321,7 +321,7 @@ impl DockerizedzkVM {
         build_server_image(zkvm_kind, resource.is_gpu())?;
 
         let container = ServerContainer::new(zkvm_kind, &elf, &resource, config.health_timeout)?;
-        let program_vk = block_on(container.client.program_vk())?;
+        let program_vk = block_on(fetch_program_vk(&container.client, config.health_timeout))?;
 
         Ok(Self {
             zkvm_kind,
@@ -422,7 +422,8 @@ impl DockerizedzkVM {
                 &self.resource,
                 self.config.health_timeout,
             )?;
-            let program_vk = container.client.program_vk().await?;
+            let program_vk =
+                fetch_program_vk(&container.client, self.config.health_timeout).await?;
             (container, program_vk)
         };
 
@@ -587,21 +588,36 @@ impl DockerizedzkVM {
     }
 }
 
+/// Fetches the program verifying key, failing with [`Error::Timeout`] after
+/// `limit` so that a server that stops answering cannot block forever.
+async fn fetch_program_vk(client: &zkVMClient, limit: Duration) -> Result<EncodedProgramVk, Error> {
+    timeout(limit, client.program_vk())
+        .await
+        .map_err(|_| Error::Timeout { timeout: limit })?
+        .map_err(Error::from)
+}
+
 async fn wait_until_healthy(
     endpoint: &Url,
     http_client: Client,
     timeout: Duration,
 ) -> Result<(), Error> {
     const INTERVAL: Duration = Duration::from_millis(500);
+    /// Limit of each `/health` request, so one request that does not return
+    /// cannot outlive `timeout`.
+    const REQUEST_TIMEOUT: Duration = Duration::from_secs(3);
 
     let http_client = http_client.clone();
     let start = Instant::now();
     loop {
         if start.elapsed() > timeout {
-            return Err(Error::ConnectionTimeout);
+            return Err(Error::ConnectionTimeout { timeout });
         }
 
-        match http_client.get(endpoint.join("health")?).send().await {
+        let request = http_client
+            .get(endpoint.join("health")?)
+            .timeout(REQUEST_TIMEOUT);
+        match request.send().await {
             Ok(response) if response.status().is_success() => break Ok(()),
             _ => sleep(INTERVAL).await,
         }
@@ -621,6 +637,26 @@ mod tests {
         prover::{DockerizedzkVM, Error},
         zkVMKind,
     };
+
+    /// A server that accepts connections but never answers must not stall
+    /// `wait_until_healthy` beyond its time limit.
+    #[tokio::test]
+    async fn wait_until_healthy_times_out_on_silent_server() {
+        use super::{Client, Url, wait_until_healthy};
+
+        // Bound but never accepted: connections queue, requests get no answer.
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let endpoint = Url::parse(&format!("http://{}", listener.local_addr().unwrap())).unwrap();
+        let limit = Duration::from_secs(1);
+
+        let started = std::time::Instant::now();
+        let err = wait_until_healthy(&endpoint, Client::new(), limit)
+            .await
+            .unwrap_err();
+
+        assert!(matches!(err, Error::ConnectionTimeout { timeout } if timeout == limit));
+        assert!(started.elapsed() < Duration::from_secs(10));
+    }
 
     fn zkvm(
         zkvm_kind: zkVMKind,
