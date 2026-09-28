@@ -19,8 +19,8 @@ use crate::{
     util::{
         cuda::cuda_archs,
         docker::{
-            DockerBuildCmd, DockerRunCmd, docker_image_exists, docker_pull_image,
-            docker_wait_for_exit, remove_docker_container,
+            DockerBuildCmd, DockerRunCmd, docker_image_exists, docker_inspect_exit_info,
+            docker_pull_image, docker_wait_for_exit, remove_docker_container,
         },
         env::{
             ERE_OPENVM_CACHE_VOLUME, ERE_ZISK_CACHE_VOLUME, ERE_ZISK_PROVING_KEY_VOLUME,
@@ -254,7 +254,7 @@ impl ServerContainer {
             }
         }
 
-        let (attach, container_id) = cmd.spawn(
+        let (mut attach, container_id) = cmd.spawn(
             iter::empty()
                 .chain(["--port", &port.to_string()])
                 .chain(resource.to_args()),
@@ -263,11 +263,21 @@ impl ServerContainer {
 
         let endpoint = Url::parse(&format!("http://{host}:{port}"))?;
         let http_client = Client::new();
-        block_on(wait_until_healthy(
+        if let Err(err) = block_on(wait_until_healthy(
             &endpoint,
             http_client.clone(),
             health_timeout,
-        ))?;
+            &container_id,
+            &mut attach,
+        )) {
+            // Do not leave the container or the attach process behind.
+            if let Err(err) = remove_docker_container(&container_id) {
+                error!("Failed to remove docker container: {err}");
+            }
+            let _ = attach.kill();
+            let _ = attach.wait();
+            return Err(err);
+        }
 
         Ok(ServerContainer {
             id: container_id,
@@ -597,10 +607,16 @@ async fn fetch_program_vk(client: &zkVMClient, limit: Duration) -> Result<Encode
         .map_err(Error::from)
 }
 
+/// Polls `/health` until the server answers, `timeout` passes, or the server
+/// container exits (for example, the server cannot load the ELF). `attach` is
+/// the `docker container start --attach` process of `container_id`; it exits
+/// together with the container.
 async fn wait_until_healthy(
     endpoint: &Url,
     http_client: Client,
     timeout: Duration,
+    container_id: &str,
+    attach: &mut Child,
 ) -> Result<(), Error> {
     const INTERVAL: Duration = Duration::from_millis(500);
     /// Limit of each `/health` request, so one request that does not return
@@ -612,6 +628,15 @@ async fn wait_until_healthy(
     loop {
         if start.elapsed() > timeout {
             return Err(Error::ConnectionTimeout { timeout });
+        }
+
+        // A server that has exited never becomes healthy, so fail now instead of
+        // polling until `timeout`.
+        if let Ok(Some(_)) = attach.try_wait() {
+            return Err(Error::ContainerExited {
+                container_id: container_id.to_string(),
+                exit_info: docker_inspect_exit_info(container_id)?,
+            });
         }
 
         let request = http_client
@@ -648,13 +673,50 @@ mod tests {
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let endpoint = Url::parse(&format!("http://{}", listener.local_addr().unwrap())).unwrap();
         let limit = Duration::from_secs(1);
+        // Stands in for the attach process of a container that keeps running.
+        let mut attach = std::process::Command::new("sleep")
+            .arg("60")
+            .spawn()
+            .unwrap();
 
         let started = std::time::Instant::now();
-        let err = wait_until_healthy(&endpoint, Client::new(), limit)
+        let err = wait_until_healthy(&endpoint, Client::new(), limit, "unused", &mut attach)
             .await
             .unwrap_err();
+        let _ = attach.kill();
+        let _ = attach.wait();
 
         assert!(matches!(err, Error::ConnectionTimeout { timeout } if timeout == limit));
+        assert!(started.elapsed() < Duration::from_secs(10));
+    }
+
+    /// A server container that exits must end `wait_until_healthy` at once,
+    /// not after its time limit.
+    #[tokio::test]
+    async fn wait_until_healthy_stops_when_container_exits() {
+        use super::{Client, Url, wait_until_healthy};
+
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let endpoint = Url::parse(&format!("http://{}", listener.local_addr().unwrap())).unwrap();
+        let limit = Duration::from_secs(60);
+        // Stands in for the attach process of a container that has exited.
+        let mut attach = std::process::Command::new("true").spawn().unwrap();
+        std::thread::sleep(Duration::from_millis(200));
+
+        let started = std::time::Instant::now();
+        let err = wait_until_healthy(
+            &endpoint,
+            Client::new(),
+            limit,
+            "ere-test-no-such-container",
+            &mut attach,
+        )
+        .await
+        .unwrap_err();
+
+        // The container does not exist, so looking up its exit code fails; what
+        // matters is that the wait ends without the time limit.
+        assert!(!matches!(err, Error::ConnectionTimeout { .. }));
         assert!(started.elapsed() < Duration::from_secs(10));
     }
 
