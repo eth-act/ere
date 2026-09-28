@@ -732,11 +732,12 @@ mod tests {
                 test_case.assert_output(&verifier_public_values);
             }
 
-            // Timeout
+            // Timeout, with a valid input because an invalid one can fail before the timer fires
             let mut zkvm = zkvm;
             let prove_timeout = Duration::ZERO;
             zkvm.config.prove_timeout = Some(prove_timeout);
-            let err = zkvm.prove(&Input::new()).unwrap_err();
+            let input = $valid_test_cases.into_iter().next().unwrap().input();
+            let err = zkvm.prove(&input).unwrap_err();
             assert!(
                 matches!(
                     err.downcast_ref::<Error>().unwrap(),
