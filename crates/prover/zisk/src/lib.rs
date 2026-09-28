@@ -12,7 +12,7 @@
 //! left its `.md5` marker there. `ERE_ZISK_SETUP_ON_INIT` moves this into
 //! construction, so allow for the download time there.
 //!
-//! Set `ZISK_USE_INSTALLED=1`, so the setup of a program builds its ASM
+//! Set `ZISK_USE_INSTALLED=1`, so the setup and the first execution of a program build its ASM
 //! services from the SDK that [`install_zisk_sdk.sh`] installs. Otherwise, when
 //! `cargo` is on `PATH`, the setup builds them in the cargo checkout of the ZisK
 //! crates.
@@ -35,6 +35,22 @@
 //! | `Gpu`     |    Yes    |
 //! | `Network` |    No     |
 //! | `Cluster` |    Yes    |
+//!
+//! ## Execution
+//!
+//! On x86_64 Linux, execution runs the guest as native x86-64 code that ZisK generates from the ELF
+//! (the ASM emulator in Fast mode). This is much faster than the Rust emulator for long runs.
+//!
+//! - The first execution of a program compiles it, which takes seconds. Later executions use the
+//!   cached binary.
+//! - Each program runs as a service that takes one execution at a time and uses up to 1.4 GiB of
+//!   `/dev/shm`. In Docker, raise the 64 MiB default with `--shm-size`.
+//! - There is no step limit. A guest that never stops blocks all executions of its program.
+//! - Guest prints do not appear.
+//! - Other targets and guests with the `cycle-scope` feature use the Rust emulator.
+//!
+//! Execution, cost estimation and proving reject a stdin above 768 MiB - 16 bytes, because the ASM
+//! emulator maps its control input over the rest of the input region.
 //!
 //! ## Cost estimation
 //!
@@ -77,6 +93,7 @@
 
 mod cost;
 mod error;
+mod executor;
 mod prover;
 mod sdk;
 

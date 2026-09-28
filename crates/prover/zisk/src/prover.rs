@@ -1,4 +1,4 @@
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{
@@ -40,11 +40,7 @@ impl zkVMProver for ZiskProver {
             Err(CommonError::unsupported_input("no dedicated proofs stream"))?
         }
 
-        let start = Instant::now();
-        let public_values = self.sdk.execute(input)?;
-        let execution_duration = start.elapsed();
-
-        Ok((public_values, execution_duration))
+        self.sdk.execute(input)
     }
 
     fn execute_estimated_cost(

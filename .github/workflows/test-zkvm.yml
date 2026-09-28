@@ -236,6 +236,7 @@ jobs:
           DOCKER_CMD="docker run \
             --rm \
             --interactive \
+            --shm-size 16G \
             --volume ${{ github.workspace }}:/ere \
             --volume $HOME/.cargo/registry:/usr/local/cargo/registry \
             --volume $HOME/.cargo/git:/usr/local/cargo/git \

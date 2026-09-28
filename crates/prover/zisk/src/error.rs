@@ -1,3 +1,5 @@
+use std::io;
+
 use ere_prover_core::CommonError;
 use thiserror::Error;
 use zisk_sm_rom::RomError;
@@ -23,6 +25,12 @@ pub enum Error {
 
     #[error("Emulator panicked: {0}")]
     EmulatorPanic(String),
+
+    #[error("Build ASM emulator failed: {0:#}")]
+    BuildAsmEmulator(#[source] anyhow::Error),
+
+    #[error("ASM emulator failed: {0}, stderr: {1}")]
+    AsmEmulatorFailed(#[source] io::Error, String),
 
     #[error("ZisK cost estimation failed: {0}")]
     EstimateCost(#[from] EstimateCostError),

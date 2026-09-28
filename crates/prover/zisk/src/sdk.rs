@@ -15,18 +15,27 @@ use ere_util_tokio::block_on;
 use ere_verifier_zisk::{ZiskProgramVk, ZiskProof, ensure_program_vk_matches};
 use tokio::time::Instant;
 use zisk_common::EmuTrace;
-use zisk_core::ZiskRom;
+use zisk_core::{INPUT_ADDR, ZiskRom};
 use zisk_transpiler_riscv::Riscv2zisk;
 use ziskemu::{Emu, EmuOptions};
 
 use crate::{
     cost::{self, peak_heap_bytes},
     error::Error,
+    executor::ZiskExecutor,
     sdk::local::LocalProver,
 };
 
 mod local;
 mod proving_key;
+
+/// Address of the control input that the ASM emulator maps over the input region, from
+/// `emulator-asm/src/constants.hpp`.
+const CONTROL_INPUT_ADDR: u64 = 0x7000_0000;
+
+/// Largest stdin that fits in the input region before the control input, after the free-input word
+/// and the length prefix.
+const MAX_STDIN_SIZE: u64 = CONTROL_INPUT_ADDR - INPUT_ADDR - 16;
 
 /// Default ZisK cluster prove timeout seconds.
 const DEFAULT_ZISK_CLUSTER_PROVE_TIMEOUT_SECS: u64 = 600;
@@ -45,6 +54,7 @@ pub struct ZiskSdk {
     backend: Backend,
     rom: ZiskRom,
     heap_range: Option<Range<u64>>,
+    executor: ZiskExecutor,
 }
 
 impl ZiskSdk {
@@ -52,6 +62,8 @@ impl ZiskSdk {
         let rom = rom(&elf)?;
 
         let heap_range = cost::heap_range(&elf);
+
+        let executor = ZiskExecutor::new(&elf, &rom);
 
         // Initialize prover
         let backend = match &resource {
@@ -89,6 +101,7 @@ impl ZiskSdk {
             backend,
             rom,
             heap_range,
+            executor,
         })
     }
 
@@ -96,6 +109,7 @@ impl ZiskSdk {
     pub fn setup(&mut self, elf: Elf) -> Result<(), Error> {
         let rom = rom(&elf)?;
         let heap_range = cost::heap_range(&elf);
+        let executor = ZiskExecutor::new(&elf, &rom);
 
         match &mut self.backend {
             Backend::Local(local) => local.setup(elf)?,
@@ -109,6 +123,7 @@ impl ZiskSdk {
 
         self.rom = rom;
         self.heap_range = heap_range;
+        self.executor = executor;
         Ok(())
     }
 
@@ -120,31 +135,17 @@ impl ZiskSdk {
     }
 
     /// Execute the ELF with the given `stdin`.
-    pub fn execute(&self, input: &Input) -> Result<PublicValues, Error> {
-        let stdin = framed_stdin(input.stdin());
-        let mut emu = Emu::new(&self.rom);
-
-        panic::catch_unwind(AssertUnwindSafe(|| {
-            emu.ctx = emu.create_emu_context(stdin, &EmuOptions::default());
-            emu.run_fast(&EmuOptions::default());
-        }))
-        .map_err(|err| Error::EmulatorPanic(panic_msg(err)))?;
-
-        if !emu.ctx.inst_ctx.end {
-            return Err(Error::EmulatorNotTerminated);
-        }
-
-        if emu.ctx.inst_ctx.error {
-            return Err(Error::EmulatorError);
-        }
-
-        Ok(emu.get_output_8().into())
+    pub fn execute(&self, input: &Input) -> Result<(PublicValues, Duration), Error> {
+        ensure_stdin_fits(input)?;
+        self.executor
+            .execute(&self.rom, framed_stdin(input.stdin()))
     }
 
     pub fn execute_estimated_cost(
         &self,
         input: &Input,
     ) -> Result<(PublicValues, CostEstimation), Error> {
+        ensure_stdin_fits(input)?;
         let stdin = framed_stdin(input.stdin());
         let options = EmuOptions {
             stats: true,
@@ -187,6 +188,7 @@ impl ZiskSdk {
     }
 
     pub fn prove(&self, input: &Input) -> Result<(PublicValues, ZiskProof, Duration), Error> {
+        ensure_stdin_fits(input)?;
         if cfg!(not(feature = "cuda")) && self.resource == ProverResource::Gpu {
             return Err(Error::CudaFeatureDisabled);
         }
@@ -217,6 +219,18 @@ fn rom(elf: &Elf) -> Result<ZiskRom, Error> {
         .map_err(|err| Error::Riscv2zisk(err.to_string()))
 }
 
+/// Rejects a stdin that ZisK cannot read intact, the same for execution, cost estimation and
+/// proving.
+fn ensure_stdin_fits(input: &Input) -> Result<(), Error> {
+    if input.stdin().len() as u64 > MAX_STDIN_SIZE {
+        Err(CommonError::unsupported_input(format!(
+            "stdin of {} bytes exceeds {MAX_STDIN_SIZE} bytes",
+            input.stdin().len()
+        )))?
+    }
+    Ok(())
+}
+
 /// Returns `data` with a LE u64 length prefix and padding to multiple of 8.
 ///
 /// The length prefix and padding is expected by ZisK emulator/prover runtime.
@@ -229,7 +243,7 @@ fn framed_stdin(data: &[u8]) -> Vec<u8> {
     buf
 }
 
-fn panic_msg(err: Box<dyn Any + Send + 'static>) -> String {
+pub(crate) fn panic_msg(err: Box<dyn Any + Send + 'static>) -> String {
     None.or_else(|| err.downcast_ref::<String>().cloned())
         .or_else(|| err.downcast_ref::<&'static str>().map(ToString::to_string))
         .unwrap_or_else(|| "unknown panic msg".to_string())
