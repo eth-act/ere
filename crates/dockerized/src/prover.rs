@@ -791,6 +791,7 @@ mod tests {
 
     mod lambdavm {
         use super::*;
+        // TODO: Add `test_setup!` when LambdaVM supports the `zkvm_interface` program.
         test_execute!(
             LambdaVM,
             RustCustomized,
