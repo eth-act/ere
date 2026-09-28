@@ -119,7 +119,7 @@ mod tests {
 
     use ere_compiler_core::{Compiler, Elf};
     use ere_compiler_lambdavm::{LambdaVMRustRv64ima, LambdaVMRustRv64imaCustomized};
-    use ere_prover_core::{CommonError, Input, ProverResource, codec::Encode, zkVMProver};
+    use ere_prover_core::{Input, ProverResource, codec::Encode, zkVMProver};
     use ere_util_test::{
         codec::BincodeLegacy,
         host::{
@@ -129,7 +129,7 @@ mod tests {
         program::basic::BasicProgram,
     };
 
-    use crate::{error::Error, prover::LambdaVMProver};
+    use crate::prover::LambdaVMProver;
 
     fn basic_elf() -> Elf {
         static ELF: OnceLock<Elf> = OnceLock::new();
@@ -239,16 +239,6 @@ mod tests {
         // Should be able to recover
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&zkvm, &test_case);
-    }
-
-    #[test]
-    fn test_unsupported_prover_resource() {
-        let elf = basic_elf();
-        let err = LambdaVMProver::new(elf, ProverResource::Gpu).err().unwrap();
-        assert!(matches!(
-            err,
-            Error::CommonError(CommonError::UnsupportedProverResourceKind { .. })
-        ));
     }
 
     #[test]

@@ -31,9 +31,9 @@
 //! | `main_elements` | Field elements of the main traces of all tables              |
 //! | `aux_elements`  | Field elements of the auxiliary (LogUp) traces of all tables |
 //!
-//! Execution fails after 2^32 cycles. It runs in chunks, so its memory use does
-//! not grow with the cycle count, but the element counts and proving keep one
-//! log per cycle in memory, because `lambda-vm-prover` executes at once.
+//! Execution runs in chunks, so its memory use does not grow with the cycle
+//! count, but the element counts and proving keep one log per cycle in memory,
+//! because `lambda-vm-prover` executes at once.
 //!
 //! `peak_heap_bytes` spans from the `_end` symbol up to the highest non-zero
 //! byte below the top of the guest heap at `0xC0000000`, or is `None` when the

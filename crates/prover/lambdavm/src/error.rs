@@ -18,9 +18,6 @@ pub enum Error {
     #[error("LambdaVM execution failed: {0}")]
     Execute(#[source] ExecutorError),
 
-    #[error("LambdaVM execution exceeded {0} cycles")]
-    CycleLimitExceeded(u64),
-
     #[error("LambdaVM cost estimation failed: {0}")]
     EstimateCost(#[source] lambda_vm_prover::Error),
 

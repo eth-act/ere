@@ -10,13 +10,6 @@ use lambda_vm_executor::{elf::Elf, vm::execution::Executor as VmExecutor};
 
 use crate::error::Error;
 
-/// Execution stops with an error beyond this many cycles, so a guest that never
-/// halts cannot hang the caller.
-pub(crate) const MAX_CYCLES: u64 = 1 << 32;
-
-/// Cycles run between two checks of [`MAX_CYCLES`].
-const CHUNK_CYCLES: usize = 1 << 20;
-
 /// An execution instance of a loaded program.
 pub(crate) struct Executor {
     program: Arc<Elf>,
@@ -48,14 +41,8 @@ pub(crate) fn run(program: &Elf, stdin: &[u8]) -> Result<(VmExecutor, u64), Erro
     let mut executor = VmExecutor::new(program, stdin.to_vec()).map_err(Error::Execute)?;
 
     let mut cycles = 0;
-    while let Some(logs) = executor
-        .resume_with_limit(CHUNK_CYCLES)
-        .map_err(Error::Execute)?
-    {
+    while let Some(logs) = executor.resume().map_err(Error::Execute)? {
         cycles += logs.len() as u64;
-        if cycles > MAX_CYCLES {
-            return Err(Error::CycleLimitExceeded(MAX_CYCLES));
-        }
     }
 
     Ok((executor, cycles))
