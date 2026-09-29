@@ -46,4 +46,8 @@ ENV RVR_CC=clang-22 \
     RVR_LD=lld \
     OPENVM_RVR_NATIVE_CACHE_DIR=/root/.openvm/cache
 
+# Keeps mcl symbols private to each rvr library, because shared ones crash the
+# process when a library unloads. Remove once OpenVM does this itself.
+ENV LDFLAGS=-Wl,--exclude-libs,librvr_openvm_ext_pairing_ffi.a
+
 CMD ["/bin/bash"]
