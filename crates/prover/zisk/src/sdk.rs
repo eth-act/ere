@@ -37,6 +37,9 @@ const CONTROL_INPUT_ADDR: u64 = 0x7000_0000;
 /// and the length prefix.
 const MAX_STDIN_SIZE: u64 = CONTROL_INPUT_ADDR - INPUT_ADDR - 16;
 
+/// Step limit of the ZisK prover, whose PIL gives each step index 36 bits.
+pub(crate) const MAX_STEPS: u64 = 1 << 36;
+
 /// Default ZisK cluster prove timeout seconds.
 const DEFAULT_ZISK_CLUSTER_PROVE_TIMEOUT_SECS: u64 = 600;
 
@@ -148,6 +151,7 @@ impl ZiskSdk {
         ensure_stdin_fits(input)?;
         let stdin = framed_stdin(input.stdin());
         let options = EmuOptions {
+            max_steps: MAX_STEPS,
             stats: true,
             ..Default::default()
         };
@@ -219,8 +223,7 @@ fn rom(elf: &Elf) -> Result<ZiskRom, Error> {
         .map_err(|err| Error::Riscv2zisk(err.to_string()))
 }
 
-/// Rejects a stdin that ZisK cannot read intact, the same for execution, cost estimation and
-/// proving.
+/// Rejects a stdin that ZisK cannot read intact.
 fn ensure_stdin_fits(input: &Input) -> Result<(), Error> {
     if input.stdin().len() as u64 > MAX_STDIN_SIZE {
         Err(CommonError::unsupported_input(format!(
@@ -258,7 +261,7 @@ mod tests {
     use tempfile::tempdir;
 
     use crate::{
-        prover::tests::{basic_elf, basic_elf_zkvm},
+        prover::tests::{basic_elf, with_basic_elf, zkvm},
         sdk::proving_key::ensure_proving_key,
     };
 
@@ -296,6 +299,6 @@ mod tests {
             ZiskProgramVk::try_from(fs::read(&verkey_paths[0]).unwrap().as_slice()).unwrap()
         };
 
-        assert_eq!(*basic_elf_zkvm().program_vk(), program_vk);
+        assert_eq!(*with_basic_elf(zkvm()).program_vk(), program_vk);
     }
 }

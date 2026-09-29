@@ -13,9 +13,9 @@ use crate::error::Error;
 mod asm;
 mod emu;
 
-/// Runs a program on the ASM emulator on x86_64 Linux, and on the Rust emulator on other targets
-/// and for programs with the profile operations of the `cycle-scope` guest feature, which the ASM
-/// generator does not support.
+/// Runs a program on the ASM emulator on x86_64 Linux. Other targets, and programs with the profile
+/// operations of the `cycle-scope` guest feature that the ASM generator does not support, run on
+/// the Rust emulator.
 pub(crate) struct ZiskExecutor {
     #[cfg(all(target_arch = "x86_64", target_os = "linux"))]
     asm: Option<asm::AsmExecutor>,

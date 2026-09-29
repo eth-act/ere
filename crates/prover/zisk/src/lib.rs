@@ -43,9 +43,17 @@
 //!
 //! - The first execution of a program compiles it, which takes seconds. Later executions use the
 //!   cached binary.
-//! - Each program runs as a service that takes one execution at a time and uses up to 1.4 GiB of
-//!   `/dev/shm`. In Docker, raise the 64 MiB default with `--shm-size`.
-//! - There is no step limit. A guest that never stops blocks all executions of its program.
+//! - Each execution runs on an idle service of the program, and concurrent executions start more
+//!   services, up to `ERE_ZISK_EXECUTE_CONCURRENCY`. Each service uses up to 1.7 GiB of `/dev/shm`.
+//!   In Docker, raise the 64 MiB default with `--shm-size`.
+//! - A run above the 2^36-step limit of the ZisK prover fails with `EmulatorNotTerminated`. The ASM
+//!   emulator does not count steps as it runs, so a service that takes longer than
+//!   `ERE_ZISK_EXECUTE_TIMEOUT_SECS` (5 minutes by default) to start or to run is killed, and the
+//!   execution fails with `AsmEmulatorTimeout`.
+//! - The native code does not check guest memory accesses, as in the ASM services of the prover. A
+//!   load past the input reads zeros, as in the Rust emulator, except at the control words from
+//!   `0x70000000`, which the services of the prover map there too. A guest can also read and write
+//!   the memory of its service process, so execute and prove only trusted programs.
 //! - Guest prints do not appear.
 //! - Other targets and guests with the `cycle-scope` feature use the Rust emulator.
 //!
@@ -83,6 +91,8 @@
 //! | `ERE_ZISK_NUMBER_THREADS_WITNESS`      | Value |                | Configure the prover number of witness threads         |
 //! | `ERE_ZISK_MAX_WITNESS_STORED`          | Value |                | Configure the prover max witness stored                |
 //! | `ERE_ZISK_CLUSTER_PROVE_TIMEOUT_SECS`  | Value |                | Timeout for the cluster client prove job               |
+//! | `ERE_ZISK_EXECUTE_TIMEOUT_SECS`        | Value | `300`          | Timeout for the start and each run of an ASM service   |
+//! | `ERE_ZISK_EXECUTE_CONCURRENCY`         | Value | CPUs, max 32   | Services that execute one program at once              |
 //! | `ERE_COST_ESTIMATION_HEAP_START`       | Value | `_heap_bottom` | Symbol marking the bottom of the guest heap            |
 //! | `ERE_COST_ESTIMATION_HEAP_END`         | Value | `_heap_top`    | Symbol marking the top of the guest heap               |
 //!

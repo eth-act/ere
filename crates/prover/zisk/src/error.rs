@@ -1,4 +1,4 @@
-use std::io;
+use std::{io, time::Duration};
 
 use ere_prover_core::CommonError;
 use thiserror::Error;
@@ -31,6 +31,9 @@ pub enum Error {
 
     #[error("ASM emulator failed: {0}, stderr: {1}")]
     AsmEmulatorFailed(#[source] io::Error, String),
+
+    #[error("ASM emulator timed out after {0:?}")]
+    AsmEmulatorTimeout(Duration),
 
     #[error("ZisK cost estimation failed: {0}")]
     EstimateCost(#[from] EstimateCostError),
