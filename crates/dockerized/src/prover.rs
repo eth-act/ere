@@ -639,8 +639,8 @@ mod tests {
             async fn test_setup() {
                 let mut zkvm = zkvm(
                     zkVMKind::$zkvm_kind,
-                    CompilerKind::$compiler_kind,
-                    "zkvm_interface",
+                    CompilerKind::Rust,
+                    "stock_nightly_no_std",
                     ProverResource::Cpu,
                 );
                 let program_vk = zkvm.program_vk().clone();
@@ -790,32 +790,6 @@ mod tests {
         };
     }
 
-    mod lambdavm {
-        use super::*;
-        // TODO: Add `test_setup!` when LambdaVM supports the `zkvm_interface` program.
-        test_execute!(
-            LambdaVM,
-            RustCustomized,
-            "basic",
-            [BasicProgram::<BincodeLegacy>::valid_test_case()],
-            [
-                Input::new(),
-                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
-            ]
-        );
-        test_prove!(
-            LambdaVM,
-            RustCustomized,
-            "basic",
-            [Cpu],
-            [BasicProgram::<BincodeLegacy>::valid_test_case()],
-            [
-                Input::new(),
-                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
-            ]
-        );
-    }
-
     mod openvm {
         use super::*;
         test_setup!(OpenVM, RustCustomized, "basic");
@@ -886,6 +860,32 @@ mod tests {
             RustCustomized,
             "basic_rust",
             [Cpu, Gpu],
+            [BasicProgram::<BincodeLegacy>::valid_test_case()],
+            [
+                Input::new(),
+                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
+            ]
+        );
+    }
+
+    mod lambdavm {
+        use super::*;
+        test_setup!(LambdaVM, RustCustomized, "basic");
+        test_execute!(
+            LambdaVM,
+            RustCustomized,
+            "basic",
+            [BasicProgram::<BincodeLegacy>::valid_test_case()],
+            [
+                Input::new(),
+                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
+            ]
+        );
+        test_prove!(
+            LambdaVM,
+            RustCustomized,
+            "basic",
+            [Cpu],
             [BasicProgram::<BincodeLegacy>::valid_test_case()],
             [
                 Input::new(),

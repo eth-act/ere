@@ -41,13 +41,12 @@ impl CostEstimator {
     }
 
     pub(crate) fn estimate(&self, stdin: &[u8]) -> Result<(PublicValues, CostEstimation), Error> {
-        let (executor, cycles) = run(&self.program, stdin)?;
+        let executor = run(&self.program, stdin)?;
 
         let (main_elements, aux_elements) =
             count_elements(&self.elf.0, stdin).map_err(Error::EstimateCost)?;
 
         let cost = BTreeMap::from([
-            ("cycles".to_owned(), cycles),
             ("main_elements".to_owned(), main_elements),
             ("aux_elements".to_owned(), aux_elements),
         ]);

@@ -25,27 +25,23 @@ impl Executor {
     /// Runs `stdin` on the instance.
     pub(crate) fn execute(&self, stdin: &[u8]) -> Result<(PublicValues, Duration), Error> {
         let start = Instant::now();
-        let (executor, _) = run(&self.program, stdin)?;
+        let executor = run(&self.program, stdin)?;
         let execution_duration = start.elapsed();
 
         Ok((extract_public_values(executor)?, execution_duration))
     }
 }
 
-/// Runs `program` on `stdin` until it halts, and returns the halted executor and
-/// the cycle count.
+/// Runs `program` on `stdin` until it halts, and returns the halted executor.
 ///
 /// Runs in chunks and drops the logs of each chunk, so memory use does not grow
 /// with the cycle count.
-pub(crate) fn run(program: &Elf, stdin: &[u8]) -> Result<(VmExecutor, u64), Error> {
+pub(crate) fn run(program: &Elf, stdin: &[u8]) -> Result<VmExecutor, Error> {
     let mut executor = VmExecutor::new(program, stdin.to_vec()).map_err(Error::Execute)?;
 
-    let mut cycles = 0;
-    while let Some(logs) = executor.resume().map_err(Error::Execute)? {
-        cycles += logs.len() as u64;
-    }
+    while executor.resume().map_err(Error::Execute)?.is_some() {}
 
-    Ok((executor, cycles))
+    Ok(executor)
 }
 
 pub(crate) fn extract_public_values(executor: VmExecutor) -> Result<PublicValues, Error> {

@@ -22,17 +22,15 @@
 //!
 //! ## Cost estimation
 //!
-//! The unit depends on the component. Cycles are counted during execution, and
-//! the element counts come from the traces the prover would commit to.
+//! The unit is field elements of the traces the prover commits to.
 //!
 //! | Component       | Meaning                                                      |
 //! | --------------- | ------------------------------------------------------------ |
-//! | `cycles`        | Executed RISC-V instructions                                 |
 //! | `main_elements` | Field elements of the main traces of all tables              |
 //! | `aux_elements`  | Field elements of the auxiliary (LogUp) traces of all tables |
 //!
 //! Execution runs in chunks, so its memory use does not grow with the cycle
-//! count, but the element counts and proving keep one log per cycle in memory,
+//! count, but the cost estimation and proving keep one log per cycle in memory,
 //! because `lambda-vm-prover` executes at once.
 //!
 //! `peak_heap_bytes` spans from the `_end` symbol up to the highest non-zero
