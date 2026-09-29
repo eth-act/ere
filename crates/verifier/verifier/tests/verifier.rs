@@ -77,10 +77,10 @@ macro_rules! test_verifier {
     };
 }
 
-test_verifier!(LambdaVM);
-
 test_verifier!(OpenVM);
 
 test_verifier!(SP1);
 
 test_verifier!(Zisk);
+
+test_verifier!(LambdaVM);

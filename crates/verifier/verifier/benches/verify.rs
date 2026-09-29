@@ -22,10 +22,10 @@ macro_rules! bench_verifier {
     };
 }
 
-bench_verifier!(LambdaVM);
 bench_verifier!(OpenVM);
 bench_verifier!(SP1);
 bench_verifier!(Zisk);
+bench_verifier!(LambdaVM);
 
-criterion_group!(verify, bench_lambdavm, bench_openvm, bench_sp1, bench_zisk,);
+criterion_group!(verify, bench_openvm, bench_sp1, bench_zisk, bench_lambdavm,);
 criterion_main!(verify);

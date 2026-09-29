@@ -210,7 +210,6 @@ impl ServerContainer {
 
         // zkVM specific options
         cmd = match zkvm_kind {
-            zkVMKind::LambdaVM => cmd,
             zkVMKind::OpenVM => cmd
                 .inherit_env("ERE_OPENVM_SEGMENT_MEMORY")
                 .inherit_env("ERE_OPENVM_SETUP_ON_INIT")
@@ -238,15 +237,16 @@ impl ServerContainer {
                 .inherit_env("ERE_ZISK_CLUSTER_PROVE_TIMEOUT_SECS")
                 .volume_from_env(ERE_ZISK_CACHE_VOLUME, "/root/.zisk/cache")
                 .volume_from_env(ERE_ZISK_PROVING_KEY_VOLUME, "/root/.zisk/provingKey"),
+            zkVMKind::LambdaVM => cmd,
         };
 
         // zkVM specific options when using GPU
         if gpu {
             cmd = match zkvm_kind {
-                zkVMKind::LambdaVM => cmd,
                 zkVMKind::OpenVM => cmd.gpus(),
                 zkVMKind::SP1 => cmd.gpus(),
                 zkVMKind::Zisk => cmd.gpus(),
+                zkVMKind::LambdaVM => cmd,
             }
         }
 
