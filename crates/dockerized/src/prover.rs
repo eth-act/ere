@@ -218,8 +218,8 @@ impl ServerContainer {
             // we set 32G for safety.
             zkVMKind::SP1 => cmd
                 .option("shm-size", "32G")
-                .inherit_env("ERE_SP1_EXECUTOR_CONCURRENCY")
-                .inherit_env("ERE_SP1_ESTIMATOR_CONCURRENCY"),
+                .inherit_env("ERE_SP1_EXECUTE_CONCURRENCY")
+                .inherit_env("ERE_SP1_EXECUTE_ESTIMATED_CONCURRENCY"),
             // ZisK uses shared memory to exchange data between processes, it
             // requires at least 16G shared memory, here we set 32G for safety.
             zkVMKind::Zisk => cmd
@@ -235,6 +235,8 @@ impl ServerContainer {
                 .inherit_env("ERE_ZISK_NUMBER_THREADS_WITNESS")
                 .inherit_env("ERE_ZISK_MAX_WITNESS_STORED")
                 .inherit_env("ERE_ZISK_CLUSTER_PROVE_TIMEOUT_SECS")
+                .inherit_env("ERE_ZISK_EXECUTE_TIMEOUT_SECS")
+                .inherit_env("ERE_ZISK_EXECUTE_CONCURRENCY")
                 .volume_from_env(ERE_ZISK_CACHE_VOLUME, "/root/.zisk/cache")
                 .volume_from_env(ERE_ZISK_PROVING_KEY_VOLUME, "/root/.zisk/provingKey"),
             zkVMKind::LambdaVM => cmd,

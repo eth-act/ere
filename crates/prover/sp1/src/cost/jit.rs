@@ -214,12 +214,12 @@ fn read_guest_bytes(
     Ok(guest_bytes)
 }
 
-/// Estimates that may run at once, which `ERE_SP1_ESTIMATOR_CONCURRENCY` states outright.
+/// Estimates that may run at once, which `ERE_SP1_EXECUTE_ESTIMATED_CONCURRENCY` states outright.
 ///
 /// Absent that, an estimate holds a trace buffer where a plain execution holds none, so free memory
 /// bounds the count as well as the core count.
 fn concurrency() -> usize {
-    if let Some(stated) = env::var("ERE_SP1_ESTIMATOR_CONCURRENCY")
+    if let Some(stated) = env::var("ERE_SP1_EXECUTE_ESTIMATED_CONCURRENCY")
         .ok()
         .and_then(|value| value.parse::<usize>().ok())
         .filter(|&concurrency| concurrency > 0)

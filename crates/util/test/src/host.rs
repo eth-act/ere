@@ -2,10 +2,17 @@ use core::{marker::PhantomData, ops::Deref};
 use std::{env, fs, path::PathBuf};
 
 use ere_codec::{Decode, Encode};
-use ere_prover_core::{Input, PublicValues, zkVMProver};
+use ere_prover_core::{Elf, Input, PublicValues, zkVMProver};
 use sha2::{Digest, Sha256};
 
-use crate::program::Program;
+use crate::{
+    codec::BincodeLegacy,
+    program::{
+        Program,
+        basic::BasicProgram,
+        zkvm_interface::{self, Accelerator},
+    },
+};
 
 pub(crate) fn workspace() -> PathBuf {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -72,6 +79,44 @@ pub fn run_zkvm_prove(zkvm: &impl zkVMProver, test_case: &impl TestCase) -> Publ
     }
 
     verifier_public_values
+}
+
+/// Switches `zkvm` between `basic_elf` and `zkvm_interface_elf` and back, checks that each program
+/// keeps its program VK, and runs a test case of each, proving it when `prove` is set.
+pub fn run_zkvm_switchable(
+    zkvm: &mut impl zkVMProver,
+    basic_elf: Elf,
+    zkvm_interface_elf: Elf,
+    prove: bool,
+) {
+    zkvm.setup(basic_elf.clone()).unwrap();
+    let basic_vk = zkvm.program_vk().encode_to_vec().unwrap();
+    zkvm.setup(zkvm_interface_elf.clone()).unwrap();
+    let zkvm_interface_vk = zkvm.program_vk().encode_to_vec().unwrap();
+
+    zkvm.setup(basic_elf).unwrap();
+    assert_eq!(zkvm.program_vk().encode_to_vec().unwrap(), basic_vk);
+    let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+    if prove {
+        run_zkvm_prove(zkvm, &test_case);
+    } else {
+        run_zkvm_execute(zkvm, &test_case);
+    }
+
+    zkvm.setup(zkvm_interface_elf).unwrap();
+    assert_eq!(
+        zkvm.program_vk().encode_to_vec().unwrap(),
+        zkvm_interface_vk
+    );
+    let test_case = zkvm_interface::test_cases()
+        .into_iter()
+        .find(|test_case| test_case.0[0].accelerator == Accelerator::Sha256)
+        .unwrap();
+    if prove {
+        run_zkvm_prove(zkvm, &test_case);
+    } else {
+        run_zkvm_execute(zkvm, &test_case);
+    }
 }
 
 /// Test case for specific [`Program`] that provides serialized

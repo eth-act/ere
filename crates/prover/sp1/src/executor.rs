@@ -96,9 +96,9 @@ impl Drop for ExecutorGuard<'_> {
     }
 }
 
-/// Executions that may run at once, which `ERE_SP1_EXECUTOR_CONCURRENCY` states outright.
+/// Executions that may run at once, which `ERE_SP1_EXECUTE_CONCURRENCY` states outright.
 pub(crate) fn execution_concurrency() -> usize {
-    env::var("ERE_SP1_EXECUTOR_CONCURRENCY")
+    env::var("ERE_SP1_EXECUTE_CONCURRENCY")
         .ok()
         .and_then(|value| value.parse::<usize>().ok())
         .filter(|&concurrency| concurrency > 0)
