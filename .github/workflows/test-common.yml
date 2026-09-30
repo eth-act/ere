@@ -52,6 +52,15 @@ jobs:
 
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/master' }}
+
+      # `proofman-starks-lib-c` builds `libstarks.a` in the cargo registry
+      # sources, which rust-cache does not restore.
+      - name: Clean cached libstarks build
+        run: |
+          cargo clean -p proofman-starks-lib-c
+          cargo clean --release -p proofman-starks-lib-c
 
       - name: Run cargo clippy ere-dockerized
         run: cargo clippy --all-targets --package ere-dockerized -- -D warnings

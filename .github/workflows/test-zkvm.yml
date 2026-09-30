@@ -134,11 +134,6 @@ jobs:
       - name: Free up disk space
         run: bash .github/scripts/free-up-disk-space.sh
 
-      - name: Cache dependencies
-        uses: Swatinem/rust-cache@v2
-        with:
-          key: rust-${{ inputs.zkvm }}-${{ hashFiles('Cargo.lock') }}
-
       - name: Pull published base zkvm image
         if: github.event_name == 'workflow_run'
         run: |
@@ -199,7 +194,8 @@ jobs:
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          key: rust-${{ inputs.zkvm }}-${{ hashFiles('Cargo.lock') }}
+          key: rust-${{ inputs.zkvm }}
+          save-if: ${{ github.ref == 'refs/heads/master' }}
 
       - name: Pull published base zkvm image
         if: github.event_name == 'workflow_run'
@@ -247,6 +243,10 @@ jobs:
           cat <<EOF | $DOCKER_CMD
           set -e -o pipefail
 
+          # proofman-starks-lib-c builds libstarks.a in the cargo registry
+          # sources, which rust-cache does not restore.
+          cargo clean --release -p proofman-starks-lib-c
+
           ${{ inputs.test_min_stack && format('RUST_MIN_STACK={0}', inputs.test_min_stack) || '' }} \
           cargo test --release \
             --package ere-compiler-${{ inputs.zkvm }} \
@@ -282,7 +282,8 @@ jobs:
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          key: rust-${{ inputs.zkvm }}-${{ hashFiles('Cargo.lock') }}
+          shared-key: ere-dockerized
+          save-if: ${{ github.ref == 'refs/heads/master' }}
 
       - name: Pull published images
         if: github.event_name == 'workflow_run'

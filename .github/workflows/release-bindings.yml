@@ -54,6 +54,15 @@ jobs:
 
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: bindings
+          save-if: ${{ github.ref == 'refs/heads/master' }}
+
+      # `proofman-starks-lib-c` builds `libstarks.a` in the cargo registry
+      # sources, which rust-cache does not restore.
+      - name: Clean cached libstarks build
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        run: cargo clean --release --target ${{ matrix.target }} -p proofman-starks-lib-c
 
       - name: Install zig
         uses: mlugg/setup-zig@v2
