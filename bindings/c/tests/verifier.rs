@@ -160,6 +160,8 @@ test_verifier!(SP1);
 
 test_verifier!(Zisk);
 
+test_verifier!(LambdaVM);
+
 #[test]
 fn test_null_ptr() {
     let mut pv_ptr: *mut u8 = null_mut();

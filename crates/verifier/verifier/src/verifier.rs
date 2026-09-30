@@ -8,6 +8,7 @@ pub enum Verifier {
     OpenVM(Box<ere_verifier_openvm::OpenVMVerifier>),
     SP1(ere_verifier_sp1::SP1Verifier),
     Zisk(ere_verifier_zisk::ZiskVerifier),
+    LambdaVM(ere_verifier_lambdavm::LambdaVMVerifier),
 }
 
 impl Verifier {
@@ -30,6 +31,11 @@ impl Verifier {
                     .map_err(Error::decode_program_vk)?;
                 Self::Zisk(ere_verifier_zisk::ZiskVerifier::new(program_vk))
             }
+            zkVMKind::LambdaVM => {
+                let program_vk = Decode::decode_from_slice(encoded_program_vk)
+                    .map_err(Error::decode_program_vk)?;
+                Self::LambdaVM(ere_verifier_lambdavm::LambdaVMVerifier::new(program_vk))
+            }
         })
     }
 
@@ -38,6 +44,7 @@ impl Verifier {
             Self::OpenVM(_) => zkVMKind::OpenVM,
             Self::SP1(_) => zkVMKind::SP1,
             Self::Zisk(_) => zkVMKind::Zisk,
+            Self::LambdaVM(_) => zkVMKind::LambdaVM,
         }
     }
 
@@ -54,6 +61,11 @@ impl Verifier {
                 verifier.verify(&proof).map_err(Error::verification)?
             }
             Self::Zisk(verifier) => {
+                let proof =
+                    Decode::decode_from_slice(encoded_proof).map_err(Error::decode_proof)?;
+                verifier.verify(&proof).map_err(Error::verification)?
+            }
+            Self::LambdaVM(verifier) => {
                 let proof =
                     Decode::decode_from_slice(encoded_proof).map_err(Error::decode_proof)?;
                 verifier.verify(&proof).map_err(Error::verification)?

@@ -93,6 +93,7 @@ jobs:
         run: |
           cargo clippy --all-targets \
             --package ere-verifier \
+            --package ere-verifier-lambdavm \
             --package ere-verifier-openvm \
             --package ere-verifier-sp1 \
             --package ere-verifier-zisk \
@@ -102,6 +103,7 @@ jobs:
         run: |
           cargo test --release \
             --package ere-verifier \
+            --package ere-verifier-lambdavm \
             --package ere-verifier-openvm \
             --package ere-verifier-sp1 \
             --package ere-verifier-zisk \

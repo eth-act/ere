@@ -237,6 +237,7 @@ impl ServerContainer {
                 .inherit_env("ERE_ZISK_CLUSTER_PROVE_TIMEOUT_SECS")
                 .volume_from_env(ERE_ZISK_CACHE_VOLUME, "/root/.zisk/cache")
                 .volume_from_env(ERE_ZISK_PROVING_KEY_VOLUME, "/root/.zisk/provingKey"),
+            zkVMKind::LambdaVM => cmd,
         };
 
         // zkVM specific options when using GPU
@@ -245,6 +246,7 @@ impl ServerContainer {
                 zkVMKind::OpenVM => cmd.gpus(),
                 zkVMKind::SP1 => cmd.gpus(),
                 zkVMKind::Zisk => cmd.gpus(),
+                zkVMKind::LambdaVM => cmd,
             }
         }
 
@@ -637,8 +639,8 @@ mod tests {
             async fn test_setup() {
                 let mut zkvm = zkvm(
                     zkVMKind::$zkvm_kind,
-                    CompilerKind::$compiler_kind,
-                    "zkvm_interface",
+                    CompilerKind::Rust,
+                    "stock_nightly_no_std",
                     ProverResource::Cpu,
                 );
                 let program_vk = zkvm.program_vk().clone();
@@ -730,11 +732,12 @@ mod tests {
                 test_case.assert_output(&verifier_public_values);
             }
 
-            // Timeout
+            // Timeout, with a valid input because an invalid one can fail before the timer fires
             let mut zkvm = zkvm;
             let prove_timeout = Duration::ZERO;
             zkvm.config.prove_timeout = Some(prove_timeout);
-            let err = zkvm.prove(&Input::new()).unwrap_err();
+            let input = $valid_test_cases.into_iter().next().unwrap().input();
+            let err = zkvm.prove(&input).unwrap_err();
             assert!(
                 matches!(
                     err.downcast_ref::<Error>().unwrap(),
@@ -857,6 +860,32 @@ mod tests {
             RustCustomized,
             "basic_rust",
             [Cpu, Gpu],
+            [BasicProgram::<BincodeLegacy>::valid_test_case()],
+            [
+                Input::new(),
+                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
+            ]
+        );
+    }
+
+    mod lambdavm {
+        use super::*;
+        test_setup!(LambdaVM, RustCustomized, "basic");
+        test_execute!(
+            LambdaVM,
+            RustCustomized,
+            "basic",
+            [BasicProgram::<BincodeLegacy>::valid_test_case()],
+            [
+                Input::new(),
+                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
+            ]
+        );
+        test_prove!(
+            LambdaVM,
+            RustCustomized,
+            "basic",
+            [Cpu],
             [BasicProgram::<BincodeLegacy>::valid_test_case()],
             [
                 Input::new(),

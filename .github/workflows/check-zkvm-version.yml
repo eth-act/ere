@@ -17,6 +17,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - zkvm: lambdavm
+            crate: lambda-vm-prover
           # - zkvm: openvm
           #   crate: openvm-sdk
           - zkvm: sp1

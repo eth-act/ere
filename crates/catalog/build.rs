@@ -29,10 +29,11 @@ fn generate_docker_image_tag() {
 }
 
 fn generate_zkvm_sdk_version_impl() {
-    let [openvm_version, sp1_version, zisk_version] = [
+    let [openvm_version, sp1_version, zisk_version, lambdavm_version] = [
         ("ere-platform-openvm", "openvm"),
         ("ere-verifier-sp1", "sp1-verifier"),
         ("ere-verifier-zisk", "zisk-verifier"),
+        ("ere-verifier-lambdavm", "lambda-vm-prover"),
     ]
     .map(|(c, d)| detect_dep_version(c, d));
 
@@ -43,6 +44,7 @@ fn generate_zkvm_sdk_version_impl() {
             Self::OpenVM => "{openvm_version}",
             Self::SP1 => "{sp1_version}",
             Self::Zisk => "{zisk_version}",
+            Self::LambdaVM => "{lambdavm_version}",
         }}
     }}
 }}"#,

@@ -35,6 +35,7 @@ pub enum zkVMKind {
     OpenVM,
     SP1,
     Zisk,
+    LambdaVM,
 }
 
 impl zkVMKind {
@@ -110,6 +111,7 @@ mod tests {
             (["openvm", "OpenVM"], zkVMKind::OpenVM),
             (["sp1", "SP1"], zkVMKind::SP1),
             (["zisk", "Zisk"], zkVMKind::Zisk),
+            (["lambdavm", "LambdaVM"], zkVMKind::LambdaVM),
         ] {
             ss.iter().for_each(|s| assert_eq!(s.parse(), Ok(kind)));
             assert_eq!(kind.as_str(), ss[0]);
@@ -120,7 +122,7 @@ mod tests {
         assert_eq!(
             ParseError::from("xxx").to_string(),
             "Unsupported zkVM kind `xxx`, expect one of \
-                        [openvm, sp1, zisk]"
+                        [openvm, sp1, zisk, lambdavm]"
                 .to_string()
         );
     }

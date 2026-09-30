@@ -258,4 +258,11 @@ pub(crate) mod tests {
         test_reproducible_elf!(Zisk, RustCustomized, "basic_rust");
         test_reproducible_elf!(Zisk, Rust, "stock_nightly_no_std");
     }
+
+    mod lambdavm {
+        test_compile!(LambdaVM, RustCustomized, "basic");
+        test_compile!(LambdaVM, Rust, "stock_nightly_no_std");
+        test_reproducible_elf!(LambdaVM, RustCustomized, "basic");
+        test_reproducible_elf!(LambdaVM, Rust, "stock_nightly_no_std");
+    }
 }

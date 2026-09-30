@@ -29,6 +29,7 @@ pub struct EreVerifier(Verifier);
 /// - `0` - [`zkVMKind::OpenVM`]
 /// - `1` - [`zkVMKind::SP1`]
 /// - `2` - [`zkVMKind::Zisk`]
+/// - `3` - [`zkVMKind::LambdaVM`]
 ///
 /// On success, writes the new handle into `*output` and returns [`ERE_OK`]. The
 /// caller owns the handle and must release it with [`ere_verifier_free`]. On

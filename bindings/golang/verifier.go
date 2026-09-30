@@ -27,9 +27,10 @@ import (
 type ZkVMKind uint32
 
 const (
-	OpenVM ZkVMKind = 0
-	SP1    ZkVMKind = 1
-	Zisk   ZkVMKind = 2
+	OpenVM   ZkVMKind = 0
+	SP1      ZkVMKind = 1
+	Zisk     ZkVMKind = 2
+	LambdaVM ZkVMKind = 3
 )
 
 // String implements [fmt.Stringer].
@@ -41,6 +42,8 @@ func (k ZkVMKind) String() string {
 		return "sp1"
 	case Zisk:
 		return "zisk"
+	case LambdaVM:
+		return "lambdavm"
 	default:
 		return fmt.Sprintf("unknown(%d)", uint32(k))
 	}

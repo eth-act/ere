@@ -26,6 +26,7 @@ def print_table(header, sep, body):
 
 
 ZKVM = {
+    "lambdavm": "LambdaVM",
     "openvm": "OpenVM",
     "sp1": "SP1",
     "zisk": "ZisK",
