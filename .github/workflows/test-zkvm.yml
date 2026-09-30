@@ -42,13 +42,13 @@ jobs:
       base_zkvm_image: ${{ steps.image_meta.outputs.base_zkvm_image }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Check Dockerfile changes
         id: changed_files
-        uses: tj-actions/changed-files@v46
+        uses: tj-actions/changed-files@v47
         with:
           files: |
             .github/scripts/build-image.sh
@@ -90,7 +90,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Free up disk space
         run: bash .github/scripts/free-up-disk-space.sh
@@ -127,17 +127,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Free up disk space
         run: bash .github/scripts/free-up-disk-space.sh
-
-      - name: Cache dependencies
-        uses: Swatinem/rust-cache@v2
-        with:
-          key: rust-${{ inputs.zkvm }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Pull published base zkvm image
         if: github.event_name == 'workflow_run'
@@ -189,7 +184,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
@@ -199,7 +194,9 @@ jobs:
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          key: rust-${{ inputs.zkvm }}-${{ hashFiles('Cargo.lock') }}
+          key: rust-${{ inputs.zkvm }}
+          # A `workflow_run` has the default branch as `github.ref`, also for a release branch push.
+          save-if: ${{ github.event.workflow_run.head_branch == 'master' }}
 
       - name: Pull published base zkvm image
         if: github.event_name == 'workflow_run'
@@ -236,6 +233,7 @@ jobs:
           DOCKER_CMD="docker run \
             --rm \
             --interactive \
+            --shm-size 16G \
             --volume ${{ github.workspace }}:/ere \
             --volume $HOME/.cargo/registry:/usr/local/cargo/registry \
             --volume $HOME/.cargo/git:/usr/local/cargo/git \
@@ -245,6 +243,10 @@ jobs:
 
           cat <<EOF | $DOCKER_CMD
           set -e -o pipefail
+
+          # proofman-starks-lib-c builds libstarks.a in the cargo registry
+          # sources, which rust-cache does not restore.
+          cargo clean --release -p proofman-starks-lib-c
 
           ${{ inputs.test_min_stack && format('RUST_MIN_STACK={0}', inputs.test_min_stack) || '' }} \
           cargo test --release \
@@ -266,7 +268,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
@@ -281,7 +283,9 @@ jobs:
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          key: rust-${{ inputs.zkvm }}-${{ hashFiles('Cargo.lock') }}
+          shared-key: ere-dockerized
+          # A `workflow_run` has the default branch as `github.ref`, also for a release branch push.
+          save-if: ${{ github.event.workflow_run.head_branch == 'master' }}
 
       - name: Pull published images
         if: github.event_name == 'workflow_run'

@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Run
         run: |
@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # protoc is needed for crate `sp1-prover-types` (transitive dep of the
       # verifier bench). The rest are needed to build `proofman-starks-lib-c`,
@@ -44,10 +44,19 @@ jobs:
           sudo apt-get install -y protobuf-compiler nasm nlohmann-json3-dev libgmp-dev libsodium-dev libomp-dev libopenmpi-dev libssl-dev
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
 
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/master' }}
+
+      # `proofman-starks-lib-c` builds `libstarks.a` in the cargo registry
+      # sources, which rust-cache does not restore.
+      - name: Clean cached libstarks build
+        run: cargo clean --release -p proofman-starks-lib-c
 
       - name: Run verifier benchmark
         run: |
@@ -71,7 +80,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # protoc is needed for crate `sp1-prover-types`. The rest are needed to
       # build `proofman-starks-lib-c`, which is pulled by `proofman-fields`
@@ -82,12 +91,22 @@ jobs:
           sudo apt-get install -y protobuf-compiler nasm nlohmann-json3-dev libgmp-dev libsodium-dev libomp-dev libopenmpi-dev libssl-dev
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: stable
           components: clippy
 
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/master' }}
+
+      # `proofman-starks-lib-c` builds `libstarks.a` in the cargo registry
+      # sources, which rust-cache does not restore.
+      - name: Clean cached libstarks build
+        run: |
+          cargo clean -p proofman-starks-lib-c
+          cargo clean --release -p proofman-starks-lib-c
 
       - name: Run cargo clippy verifier crates
         run: |

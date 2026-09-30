@@ -3713,7 +3713,6 @@ dependencies = [
  "sp1-sdk",
  "sysinfo 0.35.2",
  "thiserror 2.0.18",
- "tokio",
  "tracing",
 ]
 

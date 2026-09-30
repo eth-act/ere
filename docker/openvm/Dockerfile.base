@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     software-properties-common \
     && wget -qO /tmp/llvm.sh https://apt.llvm.org/llvm.sh \
     && chmod +x /tmp/llvm.sh \
-    && /tmp/llvm.sh 22 \
+    && for attempt in $(seq 10); do /tmp/llvm.sh 22 && break; [ "$attempt" -lt 10 ] || exit 1; sleep 15; done \
     && apt-get install -y --no-install-recommends lld-22 \
     && rm -f /tmp/llvm.sh \
     # rvr probes for a bare `lld`/`ld.lld`, and clang's `-fuse-ld=` only accepts
@@ -45,5 +45,9 @@ RUN cargo openvm --version
 ENV RVR_CC=clang-22 \
     RVR_LD=lld \
     OPENVM_RVR_NATIVE_CACHE_DIR=/root/.openvm/cache
+
+# Keeps mcl symbols private to each rvr library, because shared ones crash the
+# process when a library unloads. Remove once OpenVM does this itself.
+ENV LDFLAGS=-Wl,--exclude-libs,librvr_openvm_ext_pairing_ffi.a
 
 CMD ["/bin/bash"]

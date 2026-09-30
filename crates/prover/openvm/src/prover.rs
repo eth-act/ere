@@ -251,21 +251,18 @@ fn internal_recursive_pk_path() -> PathBuf {
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use std::sync::OnceLock;
+    use std::sync::{Mutex, MutexGuard, OnceLock};
 
     use ere_compiler_core::{Compiler, Elf};
     use ere_compiler_openvm::OpenVMRustRv64imaCustomized;
-    use ere_prover_core::{Input, ProverResource, codec::Encode, zkVMProver};
+    use ere_prover_core::{Input, ProverResource, zkVMProver};
     use ere_util_test::{
         codec::BincodeLegacy,
         host::{
             TestCase, run_zkvm_execute, run_zkvm_execute_estimated_cost, run_zkvm_prove,
-            testing_guest_directory,
+            run_zkvm_switchable, testing_guest_directory,
         },
-        program::{
-            basic::BasicProgram,
-            zkvm_interface::{self, Accelerator},
-        },
+        program::{basic::BasicProgram, zkvm_interface},
     };
 
     use crate::prover::OpenVMProver;
@@ -290,51 +287,41 @@ pub(crate) mod tests {
         .clone()
     }
 
-    /// Switches from the basic program to `zkvm_interface` and back, then runs both again.
-    fn run_switchable(zkvm: &mut OpenVMProver, prove: bool) {
-        let basic_vk = zkvm.program_vk().encode_to_vec().unwrap();
-        zkvm.setup(zkvm_interface_elf()).unwrap();
-        let zkvm_interface_vk = zkvm.program_vk().encode_to_vec().unwrap();
+    fn zkvm(gpu: bool) -> MutexGuard<'static, OpenVMProver> {
+        static ZKVM: [OnceLock<Mutex<OpenVMProver>>; 2] = [OnceLock::new(), OnceLock::new()];
+        ZKVM[gpu as usize]
+            .get_or_init(|| {
+                let resource = if gpu {
+                    ProverResource::Gpu
+                } else {
+                    ProverResource::Cpu
+                };
+                Mutex::new(OpenVMProver::new(basic_elf(), resource).unwrap())
+            })
+            .lock()
+            .unwrap()
+    }
 
+    fn with_basic_elf<T: zkVMProver>(mut zkvm: MutexGuard<T>) -> MutexGuard<T> {
         zkvm.setup(basic_elf()).unwrap();
-        assert_eq!(zkvm.program_vk().encode_to_vec().unwrap(), basic_vk);
-        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
-        if prove {
-            run_zkvm_prove(&*zkvm, &test_case);
-        } else {
-            run_zkvm_execute(&*zkvm, &test_case);
-        }
+        zkvm
+    }
 
+    fn with_zkvm_interface<T: zkVMProver>(mut zkvm: MutexGuard<T>) -> MutexGuard<T> {
         zkvm.setup(zkvm_interface_elf()).unwrap();
-        assert_eq!(
-            zkvm.program_vk().encode_to_vec().unwrap(),
-            zkvm_interface_vk
-        );
-        let test_case = zkvm_interface::test_cases()
-            .into_iter()
-            .find(|test_case| test_case.0[0].accelerator == Accelerator::Sha256)
-            .unwrap();
-        if prove {
-            run_zkvm_prove(&*zkvm, &test_case);
-        } else {
-            run_zkvm_execute(&*zkvm, &test_case);
-        }
+        zkvm
     }
 
     #[test]
     fn test_execute() {
-        let elf = basic_elf();
-        let zkvm = OpenVMProver::new(elf, ProverResource::Cpu).unwrap();
-
+        let zkvm = with_basic_elf(zkvm(false));
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
-        run_zkvm_execute(&zkvm, &test_case);
+        run_zkvm_execute(&*zkvm, &test_case);
     }
 
     #[test]
     fn test_execute_invalid_test_case() {
-        let elf = basic_elf();
-        let zkvm = OpenVMProver::new(elf, ProverResource::Cpu).unwrap();
-
+        let zkvm = with_basic_elf(zkvm(false));
         for input in [
             Input::new(),
             BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
@@ -345,27 +332,21 @@ pub(crate) mod tests {
 
     #[test]
     fn test_execute_estimated_cost() {
-        let elf = basic_elf();
-        let zkvm = OpenVMProver::new(elf, ProverResource::Cpu).unwrap();
-
+        let zkvm = with_basic_elf(zkvm(false));
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
-        run_zkvm_execute_estimated_cost(&zkvm, &test_case);
+        run_zkvm_execute_estimated_cost(&*zkvm, &test_case);
     }
 
     #[test]
     fn test_prove() {
-        let elf = basic_elf();
-        let zkvm = OpenVMProver::new(elf, ProverResource::Cpu).unwrap();
-
+        let zkvm = with_basic_elf(zkvm(false));
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
-        run_zkvm_prove(&zkvm, &test_case);
+        run_zkvm_prove(&*zkvm, &test_case);
     }
 
     #[test]
     fn test_prove_invalid_test_case() {
-        let elf = basic_elf();
-        let zkvm = OpenVMProver::new(elf, ProverResource::Cpu).unwrap();
-
+        let zkvm = with_basic_elf(zkvm(false));
         for input in [
             Input::new(),
             BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
@@ -375,25 +356,21 @@ pub(crate) mod tests {
 
         // Should be able to recover
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
-        run_zkvm_prove(&zkvm, &test_case);
+        run_zkvm_prove(&*zkvm, &test_case);
     }
 
     #[cfg(feature = "cuda")]
     #[test]
     fn test_prove_gpu() {
-        let elf = basic_elf();
-        let zkvm = OpenVMProver::new(elf, ProverResource::Gpu).unwrap();
-
+        let zkvm = with_basic_elf(zkvm(true));
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
-        run_zkvm_prove(&zkvm, &test_case);
+        run_zkvm_prove(&*zkvm, &test_case);
     }
 
     #[cfg(feature = "cuda")]
     #[test]
     fn test_prove_invalid_test_case_gpu() {
-        let elf = basic_elf();
-        let zkvm = OpenVMProver::new(elf, ProverResource::Gpu).unwrap();
-
+        let zkvm = with_basic_elf(zkvm(true));
         for input in [
             Input::new(),
             BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
@@ -403,37 +380,30 @@ pub(crate) mod tests {
 
         // Should be able to recover
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
-        run_zkvm_prove(&zkvm, &test_case);
+        run_zkvm_prove(&*zkvm, &test_case);
     }
 
     #[test]
     fn test_execute_zkvm_interface() {
-        let elf = OpenVMRustRv64imaCustomized
-            .compile(testing_guest_directory("openvm", "zkvm_interface"), &[])
-            .unwrap();
-        let zkvm = OpenVMProver::new(elf, ProverResource::Cpu).unwrap();
-
+        let zkvm = with_zkvm_interface(zkvm(false));
         for test_case in zkvm_interface::test_cases() {
-            run_zkvm_execute(&zkvm, &test_case);
+            run_zkvm_execute(&*zkvm, &test_case);
         }
     }
 
     #[test]
     fn test_execute_switchable() {
-        let mut zkvm = OpenVMProver::new(basic_elf(), ProverResource::Cpu).unwrap();
-        run_switchable(&mut zkvm, false);
+        run_zkvm_switchable(&mut *zkvm(false), basic_elf(), zkvm_interface_elf(), false);
     }
 
     #[test]
     fn test_prove_switchable() {
-        let mut zkvm = OpenVMProver::new(basic_elf(), ProverResource::Cpu).unwrap();
-        run_switchable(&mut zkvm, true);
+        run_zkvm_switchable(&mut *zkvm(false), basic_elf(), zkvm_interface_elf(), true);
     }
 
     #[cfg(feature = "cuda")]
     #[test]
     fn test_prove_switchable_gpu() {
-        let mut zkvm = OpenVMProver::new(basic_elf(), ProverResource::Gpu).unwrap();
-        run_switchable(&mut zkvm, true);
+        run_zkvm_switchable(&mut *zkvm(true), basic_elf(), zkvm_interface_elf(), true);
     }
 }
