@@ -3636,6 +3636,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "ere-platform-zkvm"
+version = "0.18.1"
+dependencies = [
+ "ere-platform-core",
+]
+
+[[package]]
 name = "ere-prover-core"
 version = "0.18.1"
 dependencies = [

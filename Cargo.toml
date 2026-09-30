@@ -12,6 +12,7 @@ members = [
     "crates/platform/lambdavm",
     "crates/platform/openvm",
     "crates/platform/sp1",
+    "crates/platform/zkvm",
     "crates/platform/zisk",
     # Prover
     "crates/prover/core",
@@ -195,6 +196,7 @@ ere-platform-core = { path = "crates/platform/core" }
 ere-platform-lambdavm = { path = "crates/platform/lambdavm" }
 ere-platform-openvm = { path = "crates/platform/openvm" }
 ere-platform-sp1 = { path = "crates/platform/sp1" }
+ere-platform-zkvm = { path = "crates/platform/zkvm" }
 ere-platform-zisk = { path = "crates/platform/zisk" }
 ere-prover-core = { path = "crates/prover/core" }
 ere-prover-lambdavm = { path = "crates/prover/lambdavm" }
