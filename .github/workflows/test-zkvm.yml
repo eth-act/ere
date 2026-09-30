@@ -42,13 +42,13 @@ jobs:
       base_zkvm_image: ${{ steps.image_meta.outputs.base_zkvm_image }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Check Dockerfile changes
         id: changed_files
-        uses: tj-actions/changed-files@v46
+        uses: tj-actions/changed-files@v47
         with:
           files: |
             .github/scripts/build-image.sh
@@ -90,7 +90,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Free up disk space
         run: bash .github/scripts/free-up-disk-space.sh
@@ -127,7 +127,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
@@ -184,7 +184,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
@@ -195,7 +195,8 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           key: rust-${{ inputs.zkvm }}
-          save-if: ${{ github.ref == 'refs/heads/master' }}
+          # A `workflow_run` has the default branch as `github.ref`, also for a release branch push.
+          save-if: ${{ github.event.workflow_run.head_branch == 'master' }}
 
       - name: Pull published base zkvm image
         if: github.event_name == 'workflow_run'
@@ -267,7 +268,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
@@ -283,7 +284,8 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           shared-key: ere-dockerized
-          save-if: ${{ github.ref == 'refs/heads/master' }}
+          # A `workflow_run` has the default branch as `github.ref`, also for a release branch push.
+          save-if: ${{ github.event.workflow_run.head_branch == 'master' }}
 
       - name: Pull published images
         if: github.event_name == 'workflow_run'

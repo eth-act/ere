@@ -14,19 +14,21 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
         id: release
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           target-branch: ${{ github.ref_name }}
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: steps.release.outputs.pr
         with:
           ref: ${{ fromJson(steps.release.outputs.pr).headBranchName }}
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@master
         if: steps.release.outputs.pr
+        with:
+          toolchain: stable
 
       - name: Update Cargo.lock
         if: steps.release.outputs.pr

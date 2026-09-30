@@ -30,7 +30,7 @@ jobs:
             target: aarch64-apple-darwin
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       # Needed to build `proofman-starks-lib-c`, which is pulled by
       # `proofman-fields` unconditionally on x86_64.
@@ -41,8 +41,9 @@ jobs:
           sudo apt-get install -y nasm nlohmann-json3-dev libgmp-dev libsodium-dev libomp-dev libopenmpi-dev libssl-dev
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: stable
           components: llvm-tools
 
       - name: Cache dependencies
@@ -75,6 +76,7 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version-file: bindings/golang/go.mod
+          cache: false
 
       - name: Run C binding tests
         run: cargo test --release -p ere-verifier-c
