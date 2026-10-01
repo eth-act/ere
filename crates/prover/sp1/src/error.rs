@@ -27,6 +27,10 @@ pub enum Error {
     #[error("SP1 cost estimation failed: {0}")]
     EstimateCost(#[from] EstimateCostError),
 
+    // Profile
+    #[error("SP1 profile does not support untrusted programs")]
+    ProfileUntrustedPrograms,
+
     // Prove
     #[error("SP1 SDK proving failed: {0}")]
     Prove(#[source] anyhow::Error),

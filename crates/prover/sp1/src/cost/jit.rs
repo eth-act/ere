@@ -95,7 +95,8 @@ impl Drop for PermitGuard<'_> {
     }
 }
 
-/// Estimates that may run at once, which `ERE_SP1_EXECUTE_ESTIMATED_CONCURRENCY` states outright.
+/// Estimates and profiles that may run at once, which `ERE_SP1_EXECUTE_ESTIMATED_CONCURRENCY`
+/// states outright.
 ///
 /// Absent that, an estimate holds a trace buffer where a plain execution holds none, so free memory
 /// bounds the count as well as the core count.
