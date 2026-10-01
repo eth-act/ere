@@ -2,8 +2,10 @@ use ere_platform_core::Platform;
 
 /// ZisK [`Platform`] implementation.
 ///
-/// `read_input` and `write_output` are inherited from the trait's default
-/// implementation, which calls [zkvm-standards] FFI symbols exported by `ziskos`.
+/// `read_input`, `write_output` and `abort` are inherited from the trait's default
+/// implementation, which calls [zkvm-standards] FFI symbols: `read_input` and
+/// `write_output` exported by `ziskos`, and `abort`, which `ziskos` does not export,
+/// below.
 ///
 /// Note that ZisK enforces a 256-byte output cap at the runtime level.
 ///
@@ -51,4 +53,19 @@ impl Platform for ZiskPlatform {
 unsafe extern "C" {
     /// POSIX-style `write` syscall exported by `ziskos`.
     fn sys_write(fd: u32, write_ptr: *const u8, nbytes: usize);
+}
+
+/// Failed termination: ZisK's exit syscall, as `ziskos`'s `_start` uses it for `main`'s return
+/// value, with exit code 1.
+#[unsafe(no_mangle)]
+extern "C" fn abort() -> ! {
+    unsafe { core::arch::asm!("ecall", in("a7") 93, in("a0") 1, options(noreturn)) }
+}
+
+/// The panic handler a `no_std` staticlib needs, which `ziskos` does not define (a ZisK guest
+/// program gets one from `std`).
+#[cfg(feature = "panic-handler")]
+#[panic_handler]
+fn panic(_: &core::panic::PanicInfo<'_>) -> ! {
+    abort()
 }

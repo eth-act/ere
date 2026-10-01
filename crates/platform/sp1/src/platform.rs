@@ -1,20 +1,13 @@
 use alloc::format;
-use core::ops::Deref;
 
 use ere_platform_core::Platform;
 
 /// SP1 [`Platform`] implementation.
 pub struct SP1Platform;
 
+/// `read_input`, `write_output` and `abort` are the trait's defaults, on the zkvm-standards C
+/// functions that `libzkevm` exports.
 impl Platform for SP1Platform {
-    fn read_input() -> impl Deref<Target = [u8]> {
-        sp1_zkvm::io::read_vec()
-    }
-
-    fn write_output(output: &[u8]) {
-        sp1_zkvm::io::commit_slice(output);
-    }
-
     fn print(message: &str) {
         sp1_zkvm::io::write(1, message.as_bytes());
     }

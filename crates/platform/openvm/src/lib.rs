@@ -1,3 +1,6 @@
+// Only for OpenVM guests, as `openvm-platform`'s runtime: built for any other target, the crate is
+// empty.
+#![cfg(any(openvm_intrinsics, target_os = "openvm"))]
 #![no_std]
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 

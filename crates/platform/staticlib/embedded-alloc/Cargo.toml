@@ -1,0 +1,14 @@
+[package]
+name = "embedded-alloc"
+version = "0.6.0"
+edition = "2024"
+description = "The zkVM staticlibs' stand-in for embedded-alloc 0.6: a stack allocator that frees in any order."
+license = "MIT OR Apache-2.0"
+publish = false
+
+# embedded-alloc 0.6's features, which vendor crates select. None changes this crate.
+[features]
+default = ["llff", "tlsf"]
+allocator_api = []
+llff = []
+tlsf = []

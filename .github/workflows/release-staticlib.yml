@@ -1,0 +1,77 @@
+# Builds the zkVM static libraries (`crates/platform/staticlib/build.sh`) and publishes them as release assets, so guest builds
+# download them instead of compiling vendor code.
+#
+# Push a tag `staticlib-*` (for example `staticlib-dev-1`). The release carries, per zkVM, `staticlib-<zkvm>.tar.gz`
+# (`libzkvm.a`, `zkvm.ld`, and if any `zkvm.features` and `zkvm-lto-plugin.so`, the plugin built
+# for Linux x86_64 against LLVM 22), and `SHA256SUMS`.
+name: Release static libraries
+
+on:
+  push:
+    tags: ["staticlib-*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.zkvm }} static library
+    runs-on: ubuntu-latest
+    # A clean image with LLVM 22 only. On the runner image, `bindgen` in the vendor build scripts
+    # picks up the preinstalled `clang-18` to detect include paths and then fails to parse
+    # `zkvm_accelerators.h` (`unknown type name 'uint8_t'`). Pinning both `CLANG_PATH` and
+    # `LIBCLANG_PATH` to LLVM 22 also works; pinning `LIBCLANG_PATH` alone does not.
+    container: ubuntu:24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        zkvm: [openvm, sp1, zisk]
+    steps:
+      - name: Install build tools
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update -qq
+          apt-get install -y -qq curl wget gnupg lsb-release software-properties-common xxd cmake \
+            git build-essential ca-certificates
+          wget -qO- https://apt.llvm.org/llvm.sh | bash -s -- 22
+          apt-get install -y -qq lld-22 llvm-22-dev
+          curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
+          "$HOME/.cargo/bin/rustup" toolchain install nightly-2026-03-17 --profile minimal \
+            --component rust-src
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - uses: actions/checkout@v4
+
+      - name: Build the static library
+        env:
+          LLVM_BIN: /usr/lib/llvm-22/bin
+        run: |
+          crates/platform/staticlib/build.sh ${{ matrix.zkvm }} "out/staticlib-${{ matrix.zkvm }}"
+          tar -czf "staticlib-${{ matrix.zkvm }}.tar.gz" -C out "staticlib-${{ matrix.zkvm }}"
+          tar -tzvf "staticlib-${{ matrix.zkvm }}.tar.gz"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: staticlib-${{ matrix.zkvm }}
+          path: staticlib-${{ matrix.zkvm }}.tar.gz
+
+  release:
+    name: Publish
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Checksums
+        run: cd dist && sha256sum -- *.tar.gz > SHA256SUMS && cat SHA256SUMS
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "${{ github.ref_name }}" dist/*
+          --repo "${{ github.repository }}" --title "${{ github.ref_name }}"
+          --notes "zkVM static libraries built from ${{ github.sha }}."

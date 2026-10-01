@@ -35,6 +35,17 @@ pub trait Platform {
         unsafe { zkvm_io::write_output(output.as_ptr(), output.len()) };
     }
 
+    /// Terminates the execution as a failure.
+    ///
+    /// The default implementation calls the [zkvm-standards] `abort` C ABI symbol. zkVMs whose
+    /// runtime exports that symbol can rely on this default. Other zkVMs should implement with
+    /// their SDK's termination API.
+    ///
+    /// [zkvm-standards]: https://github.com/eth-act/zkvm-standards
+    fn abort() -> ! {
+        unsafe { zkvm_io::abort() }
+    }
+
     /// Prints a message to the host environment.
     ///
     /// Note that this function will be a no-op if the platform doesn't support.
@@ -74,8 +85,8 @@ pub trait Platform {
 
 /// FFI bindings for the [zkvm-standards] guest I/O C ABI.
 ///
-/// [`Platform::read_input`] and [`Platform::write_output`] default impls call
-/// into them. If default impls are used, these symbols are expected to be
+/// [`Platform::read_input`], [`Platform::write_output`] and [`Platform::abort`]
+/// default impls call into them. If default impls are used, these symbols are expected to be
 /// exported by the zkVM runtime.
 ///
 /// [zkvm-standards]: https://github.com/eth-act/zkvm-standards
@@ -86,5 +97,8 @@ mod zkvm_io {
 
         /// Writes `size` bytes from `output` to the public output.
         pub(super) fn write_output(output: *const u8, size: usize);
+
+        /// Terminates the execution as a failure.
+        pub(super) fn abort() -> !;
     }
 }
