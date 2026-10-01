@@ -23,6 +23,9 @@ zisk-embedded-talc-alloc = ["ziskos/zisk-embedded-talc-alloc"]
 zisk-embedded-tlfs-alloc = ["ziskos/zisk-embedded-tlfs-alloc"]
 # NOTE: This enables `cycle_scope_*` to emit profile syscalls, the generated ELF can NOT be proved by ASM prover.
 cycle-scope = []
+# The panic handler a `no_std` staticlib needs (`staticlib/build.sh`), which `ziskos` does not
+# define, calling `abort`. A guest program brings its own.
+panic-handler = []
 
 [lints]
 workspace = true

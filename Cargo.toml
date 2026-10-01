@@ -12,6 +12,7 @@ members = [
     "crates/platform/lambdavm",
     "crates/platform/openvm",
     "crates/platform/sp1",
+    "crates/platform/staticlib/embedded-alloc",
     "crates/platform/zisk",
     # Prover
     "crates/prover/core",
@@ -55,7 +56,7 @@ license = "MIT OR Apache-2.0"
 [workspace.lints]
 
 [workspace.lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(openvm_intrinsics)', 'cfg(target_os, values("openvm"))', 'cfg(target_vendor, values("zisk"))'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(openvm_intrinsics)', 'cfg(target_os, values("openvm"))', 'cfg(target_vendor, values("succinct", "zisk"))'] }
 
 [workspace.dependencies]
 anyhow = "1.0.98"
@@ -218,3 +219,22 @@ ere-util-build = { path = "crates/util/build" }
 ere-util-compile = { path = "crates/util/compile" }
 ere-util-test = { path = "crates/util/test" }
 ere-util-tokio = { path = "crates/util/tokio" }
+
+# For the zkVM staticlibs (`crates/platform/staticlib/build.sh`). A patch applies only to builds of
+# this workspace, never to guests that depend on these crates.
+#
+# The vendors' runtimes register `embedded-alloc` heaps (SP1's `TlsfHeap`, OpenVM's `LlffHeap`, and
+# ZisK's `TlsfHeap` with `zisk-embedded-tlfs-alloc`). This stand-in allocates from the vendor's
+# private region, apart from the guest's heap, and frees in any order, so each accelerator call
+# leaves it as it found it.
+[patch.crates-io]
+embedded-alloc = { path = "crates/platform/staticlib/embedded-alloc" }
+sp1-lib = { git = "https://github.com/han0110/sp1", rev = "b4f72fe1de5d6d26b3d3f531fcabd137b03e3338" }
+
+# `libzkevm` v6.6.0's `zkvm_bls12_*` and `zkvm_ripemd160` do not follow the zkvm-standards encoding:
+# the revision ere's SP1 test guests pin for the fix (https://github.com/succinctlabs/sp1/pull/2865).
+# It changes nothing outside `zkevm/`, so SP1's other crates build from the same code as v6.6.0.
+[patch."https://github.com/succinctlabs/sp1"]
+libzkevm = { git = "https://github.com/han0110/sp1", rev = "b4f72fe1de5d6d26b3d3f531fcabd137b03e3338" }
+sp1-lib = { git = "https://github.com/han0110/sp1", rev = "b4f72fe1de5d6d26b3d3f531fcabd137b03e3338" }
+sp1-zkvm = { git = "https://github.com/han0110/sp1", rev = "b4f72fe1de5d6d26b3d3f531fcabd137b03e3338" }

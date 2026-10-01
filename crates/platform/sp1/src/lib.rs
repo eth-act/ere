@@ -1,3 +1,6 @@
+// Only for SP1 guests (`riscv64im-succinct-zkvm-elf`): built for any other target, the crate is
+// empty.
+#![cfg(all(target_os = "zkvm", target_vendor = "succinct"))]
 #![no_std]
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
