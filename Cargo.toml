@@ -85,6 +85,7 @@ hex = "0.4"
 hex-literal = "1.1"
 http = "1"
 libc = "0.2"
+libloading = "0.8"
 md-5 = "0.10"
 memmap2 = "0.9"
 metrics = "0.24"
@@ -153,10 +154,13 @@ openvm-build = { git = "https://github.com/han0110/openvm.git", branch = "patch/
 openvm-circuit = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.1.0-preview", default-features = false }
 openvm-continuations = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.1.0-preview", default-features = false }
 openvm-sdk = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.1.0-preview", default-features = false }
+openvm-riscv-transpiler = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.1.0-preview", default-features = false }
 openvm-sdk-config = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.1.0-preview", default-features = false }
 openvm-stark-sdk = { git = "https://github.com/han0110/stark-backend.git", branch = "patch/v2.1.0-preview", default-features = false }
 openvm-transpiler = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.1.0-preview", default-features = false }
 openvm-verify-stark-host = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.1.0-preview", default-features = false }
+rvr-openvm-ir = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.1.0-preview", default-features = false }
+rvr-openvm-lift = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.1.0-preview", default-features = false }
 
 # SP1 dependencies
 sp1-core-executor = { git = "https://github.com/succinctlabs/sp1", tag = "v6.6.0" }

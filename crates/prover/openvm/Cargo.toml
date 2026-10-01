@@ -7,16 +7,20 @@ license.workspace = true
 
 [dependencies]
 eyre.workspace = true
+libloading.workspace = true
 once_cell.workspace = true
 thiserror.workspace = true
 
 # OpenVM dependencies
 openvm-circuit.workspace = true
+openvm-riscv-transpiler.workspace = true
 openvm-sdk = { workspace = true, features = ["jemalloc", "parallel", "rvr"] }
 openvm-sdk-config.workspace = true
 openvm-stark-sdk.workspace = true
 openvm-transpiler.workspace = true
 openvm-verify-stark-host.workspace = true
+rvr-openvm-ir.workspace = true
+rvr-openvm-lift.workspace = true
 
 # Local dependencies
 ere-compiler-core.workspace = true
