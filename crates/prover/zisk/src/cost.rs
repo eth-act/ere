@@ -2,10 +2,14 @@ use std::collections::{BTreeMap, HashMap};
 
 use crate::error::EstimateCostError;
 
+mod profile;
+
+pub(crate) use profile::{record_accesses, running_cost, stack_pointer_write};
+
 const TOTAL: &str = "total";
 
 /// Component names with their labels in the emulator report.
-const COMPONENTS: [(&str, &str); 5] = [
+pub(crate) const COMPONENTS: [(&str, &str); 5] = [
     ("base", "base"),
     ("precompile", "precompiles"),
     ("memory", "memory"),
