@@ -39,6 +39,13 @@
 //! Syscall and system costs are chip row counts times the gas weight of each
 //! chip. The opcode cost is the total minus the other two.
 //!
+//! ## Profile
+//!
+//! `profile` splits the cost estimate over the guest call stacks, in the same unit, and its
+//! `cost_estimation` equals the `execute_estimated_cost` result. The frames follow
+//! [`ere_prover_core::CallTree`]. SP1 does not prove `unconstrained!` blocks, so the profile does
+//! not count their cost, memory or stack. `profile` fails for programs with untrusted programs.
+//!
 //! [`install_sp1_sdk.sh`]: https://github.com/eth-act/ere/blob/master/scripts/sdk_installers/install_sp1_sdk.sh
 
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
