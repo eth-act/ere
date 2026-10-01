@@ -39,9 +39,6 @@
 //! Syscall and system costs are chip row counts times the gas weight of each
 //! chip. The opcode cost is the total minus the other two.
 //!
-//! `peak_heap_bytes` covers guest memory above the `_end` symbol, or is `None`
-//! when the estimator cannot read the heap.
-//!
 //! [`install_sp1_sdk.sh`]: https://github.com/eth-act/ere/blob/master/scripts/sdk_installers/install_sp1_sdk.sh
 
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]

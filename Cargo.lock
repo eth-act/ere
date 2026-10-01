@@ -3647,10 +3647,15 @@ dependencies = [
  "ere-codec",
  "ere-compiler-core",
  "ere-verifier-core",
+ "flate2",
+ "prost 0.14.3",
+ "prost-build 0.14.3",
+ "rustc-demangle",
  "serde",
  "serde_json",
  "serde_yaml",
  "strum 0.27.2",
+ "tempfile",
  "thiserror 2.0.18",
  "toml 0.8.23",
 ]
@@ -3702,7 +3707,6 @@ dependencies = [
  "ere-util-test",
  "ere-util-tokio",
  "ere-verifier-sp1",
- "libc",
  "memmap2",
  "sp1-core-executor",
  "sp1-cuda",
@@ -3798,6 +3802,7 @@ dependencies = [
  "ere-prover-core",
  "ere-server-api",
  "opentelemetry 0.31.0",
+ "prost 0.14.3",
  "thiserror 2.0.18",
  "tracing",
  "tracing-opentelemetry",
@@ -9699,9 +9704,9 @@ checksum = "48fd7bd8a6377e15ad9d42a8ec25371b94ddc67abe7c8b9127bec79bebaaae18"
 
 [[package]]
 name = "rustc-demangle"
-version = "0.1.27"
+version = "0.1.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b50b8869d9fc858ce7266cce0194bd74df58b9d0e3f6df3a9fc8eb470d95c09d"
+checksum = "b74b56ffa8bb2830709a538c2cbcae9aa062db0d2a42563bfb09bdaae44020eb"
 
 [[package]]
 name = "rustc-hash"

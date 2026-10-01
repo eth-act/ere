@@ -1,8 +1,6 @@
-use std::{collections::BTreeMap, env, sync::Arc};
+use std::{collections::BTreeMap, sync::Arc};
 
-use ere_prover_core::{
-    CostEstimation, ERE_COST_ESTIMATION_HEAP_START, PublicValues, symbol_address,
-};
+use ere_prover_core::{CostEstimation, PublicValues};
 use sp1_core_executor::{
     GasEstimatingVMEnum, Program, RiscvAirId, SP1CoreOpts, TraceChunkRaw, get_complexity_mapping,
     rv64im_costs,
@@ -19,8 +17,6 @@ use crate::cost::jit::Executor;
 mod portable;
 #[cfg(not(all(target_arch = "x86_64", target_os = "linux")))]
 use crate::cost::portable::Executor;
-
-const DEFAULT_HEAP_START: &str = "_end";
 
 const TRACE_AREA_WEIGHT: u64 = 3;
 
@@ -39,11 +35,9 @@ pub(crate) struct SP1CostEstimator {
 }
 
 impl SP1CostEstimator {
-    pub(crate) fn new(program: Arc<Program>, elf: &[u8]) -> Self {
-        let start = env::var(ERE_COST_ESTIMATION_HEAP_START)
-            .unwrap_or_else(|_| DEFAULT_HEAP_START.to_owned());
+    pub(crate) fn new(program: Arc<Program>) -> Self {
         Self {
-            executor: Executor::new(Arc::clone(&program), symbol_address(elf, &start)),
+            executor: Executor::new(Arc::clone(&program)),
             program,
             weights: weights(),
         }
@@ -51,7 +45,7 @@ impl SP1CostEstimator {
 
     pub(crate) fn estimate(&self, input: &[u8]) -> Result<(PublicValues, CostEstimation), Error> {
         let mut charges = Charges::default();
-        let (peak_heap_bytes, public_values) = self
+        let public_values = self
             .executor
             .execute(input, |chunk| self.charge(chunk, &mut charges))?;
 
@@ -72,7 +66,6 @@ impl SP1CostEstimator {
                     ("syscall".to_owned(), charges.syscall),
                     ("system".to_owned(), charges.system),
                 ]),
-                peak_heap_bytes,
             },
         ))
     }

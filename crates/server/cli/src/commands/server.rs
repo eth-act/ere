@@ -7,19 +7,19 @@ use std::{
 use anyhow::{Context, Error};
 use ere_compiler_core::Elf;
 use ere_prover_core::{
-    CostEstimation, Input, Proof, ProverResource, PublicValues,
+    CostEstimation, CostProfile, Input, Proof, ProverResource, PublicValues,
     codec::{Decode, Encode},
     zkVMProver,
 };
 use ere_server_api::{
     ExecuteEstimatedCostOk, ExecuteEstimatedCostRequest, ExecuteEstimatedCostResponse, ExecuteOk,
-    ExecuteRequest, ExecuteResponse, ProgramVkOk, ProgramVkRequest, ProgramVkResponse, ProveOk,
-    ProveRequest, ProveResponse, SetupOk, SetupRequest, SetupResponse, VerifyOk, VerifyRequest,
-    VerifyResponse, ZkvmService,
+    ExecuteRequest, ExecuteResponse, ProfileOk, ProfileRequest, ProfileResponse, ProgramVkOk,
+    ProgramVkRequest, ProgramVkResponse, ProveOk, ProveRequest, ProveResponse, SetupOk,
+    SetupRequest, SetupResponse, VerifyOk, VerifyRequest, VerifyResponse, ZkvmService,
     execute_estimated_cost_response::Result as ExecuteEstimatedCostResult,
-    execute_response::Result as ExecuteResult, program_vk_response::Result as ProgramVkResult,
-    prove_response::Result as ProveResult, router, setup_response::Result as SetupResult,
-    verify_response::Result as VerifyResult,
+    execute_response::Result as ExecuteResult, profile_response::Result as ProfileResult,
+    program_vk_response::Result as ProgramVkResult, prove_response::Result as ProveResult, router,
+    setup_response::Result as SetupResult, verify_response::Result as VerifyResult,
 };
 use parking_lot::Mutex;
 use tokio::{
@@ -144,8 +144,8 @@ impl Drop for ProveInFlight {
 /// FIFO order, dropping a request future before the permit is acquired removes that waiter from
 /// the queue.
 ///
-/// `execute`, `execute_estimated_cost` and `verify` are assumed concurrent-safe for the underlying
-/// implementation. A backend that needs a bound applies its own.
+/// `execute`, `execute_estimated_cost`, `profile` and `verify` are assumed concurrent-safe for the
+/// underlying implementation. A backend that needs a bound applies its own.
 #[allow(non_camel_case_types)]
 pub struct zkVMServer<T> {
     zkvm: Arc<RwLock<T>>,
@@ -189,6 +189,13 @@ impl<T: 'static + zkVMProver + Send + Sync> zkVMServer<T> {
         tokio::task::spawn_blocking(move || Ok(zkvm.execute_estimated_cost(&input)?))
             .await
             .context("execute_estimated_cost panicked")?
+    }
+
+    async fn profile(&self, input: Input) -> anyhow::Result<(PublicValues, CostProfile)> {
+        let zkvm = Arc::clone(&self.zkvm).read_owned().await;
+        tokio::task::spawn_blocking(move || Ok(zkvm.profile(&input)?))
+            .await
+            .context("profile panicked")?
     }
 
     async fn prove(&self, input: Input) -> anyhow::Result<(PublicValues, Proof<T>, Duration)> {
@@ -286,13 +293,42 @@ impl<T: 'static + zkVMProver + Send + Sync> ZkvmService for zkVMServer<T> {
                 ExecuteEstimatedCostResult::Ok(ExecuteEstimatedCostOk {
                     public_values: public_values.into(),
                     cost: estimation.cost.into_iter().collect(),
-                    peak_heap_bytes: estimation.peak_heap_bytes,
                 })
             }
             Err(err) => ExecuteEstimatedCostResult::Err(err.to_string()),
         };
 
         Ok(Response::new(ExecuteEstimatedCostResponse {
+            result: Some(result),
+        }))
+    }
+
+    async fn profile(
+        &self,
+        request: Request<ProfileRequest>,
+    ) -> twirp::Result<Response<ProfileResponse>> {
+        let ProfileRequest {
+            input_stdin: stdin,
+            input_proofs: proofs,
+        } = request.into_body();
+
+        let input = Input { stdin, proofs };
+
+        let start = Instant::now();
+        let result = self.profile(input).await;
+        metrics::record_profile(&result, start.elapsed());
+
+        let result = match result {
+            Ok((public_values, profile)) => ProfileResult::Ok(ProfileOk {
+                public_values: public_values.into(),
+                pprof: profile.to_pb(),
+                peak_stack_bytes: profile.peak_stack_bytes,
+                peak_heap_bytes: profile.peak_heap_bytes,
+            }),
+            Err(err) => ProfileResult::Err(err.to_string()),
+        };
+
+        Ok(Response::new(ProfileResponse {
             result: Some(result),
         }))
     }

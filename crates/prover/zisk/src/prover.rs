@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{
-    CommonError, CostEstimation, Input, ProverResource, PublicValues, zkVMProver,
+    CommonError, CostEstimation, CostProfile, Input, ProverResource, PublicValues, zkVMProver,
 };
 use ere_verifier_zisk::{ZiskProof, ZiskVerifier};
 
@@ -52,6 +52,10 @@ impl zkVMProver for ZiskProver {
         }
 
         self.sdk.execute_estimated_cost(input)
+    }
+
+    fn profile(&self, _input: &Input) -> Result<(PublicValues, CostProfile), Error> {
+        unimplemented!()
     }
 
     fn prove(&self, input: &Input) -> Result<(PublicValues, ZiskProof, Duration), Error> {

@@ -5,8 +5,8 @@ use std::{
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{
-    CommonError, CostEstimation, Input, ProverResource, ProverResourceKind, PublicValues,
-    zkVMProver, zkVMVerifier,
+    CommonError, CostEstimation, CostProfile, Input, ProverResource, ProverResourceKind,
+    PublicValues, zkVMProver, zkVMVerifier,
 };
 use ere_verifier_lambdavm::{BLOWUP_FACTOR, LambdaVMProgramVk, LambdaVMProof, LambdaVMVerifier};
 use lambda_vm_prover::{GoldilocksCubicProofOptions, MaxRowsConfig, prove_with_options_and_inputs};
@@ -80,6 +80,10 @@ impl zkVMProver for LambdaVMProver {
         }
 
         self.estimator.estimate(input.stdin())
+    }
+
+    fn profile(&self, _input: &Input) -> Result<(PublicValues, CostProfile), Error> {
+        Err(Error::ProfileUnsupported)
     }
 
     fn prove(&self, input: &Input) -> Result<(PublicValues, LambdaVMProof, Duration), Error> {
