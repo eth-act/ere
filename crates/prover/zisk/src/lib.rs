@@ -57,8 +57,8 @@
 //! - Guest prints do not appear.
 //! - Other targets and guests with the `cycle-scope` feature use the Rust emulator.
 //!
-//! Execution, cost estimation and proving reject a stdin above 768 MiB - 16 bytes, because the ASM
-//! emulator maps its control input over the rest of the input region.
+//! Execution, cost estimation, profiling and proving reject a stdin above 768 MiB - 16 bytes. The
+//! ASM emulator maps its control input over the rest of the input region.
 //!
 //! ## Cost estimation
 //!
@@ -72,9 +72,19 @@
 //! | `opcode`     | Plain RISC-V instructions                   |
 //! | `main`       | The main table, one entry per step          |
 //!
-//! The emulator runs with statistics turned on. That setting also prints its own
-//! report to stdout. ZisK sums the five components into the total, so a mismatch
-//! means the estimator misread the report and the estimate fails.
+//! The emulator runs with statistics turned on. ZisK sums the five components into the total, so a
+//! mismatch means the estimator misread the report and the estimate fails.
+//!
+//! ## Profile
+//!
+//! `profile` splits the cost estimate over the guest call stacks, in the same unit, and its
+//! `cost_estimation` equals the `execute_estimated_cost` result. The frames follow
+//! [`ere_prover_core::CallTree`]. Two root frames hold the cost that no step spends.
+//!
+//! | Frame    | Cost                                      |
+//! | -------- | ----------------------------------------- |
+//! | `[base]` | The `base` component                      |
+//! | `[init]` | The `memory` cost of the ROM and RAM init |
 //!
 //! ## Environment variables
 //!

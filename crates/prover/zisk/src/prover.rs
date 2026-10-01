@@ -9,15 +9,16 @@ use ere_verifier_zisk::{ZiskProof, ZiskVerifier};
 use crate::{error::Error, sdk::ZiskSdk};
 
 pub struct ZiskProver {
+    elf: Elf,
     sdk: ZiskSdk,
     verifier: ZiskVerifier,
 }
 
 impl ZiskProver {
     pub fn new(elf: Elf, resource: ProverResource) -> Result<Self, Error> {
-        let sdk = ZiskSdk::new(elf, resource)?;
+        let sdk = ZiskSdk::new(&elf, resource)?;
         let verifier = ZiskVerifier::new(sdk.program_vk());
-        Ok(Self { sdk, verifier })
+        Ok(Self { elf, sdk, verifier })
     }
 }
 
@@ -30,8 +31,13 @@ impl zkVMProver for ZiskProver {
     }
 
     fn setup(&mut self, elf: Elf) -> Result<(), Error> {
-        self.sdk.setup(elf)?;
+        if self.elf == elf {
+            return Ok(());
+        }
+
+        self.sdk.setup(&elf)?;
         self.verifier = ZiskVerifier::new(self.sdk.program_vk());
+        self.elf = elf;
         Ok(())
     }
 
@@ -54,8 +60,12 @@ impl zkVMProver for ZiskProver {
         self.sdk.execute_estimated_cost(input)
     }
 
-    fn profile(&self, _input: &Input) -> Result<(PublicValues, CostProfile), Error> {
-        unimplemented!()
+    fn profile(&self, input: &Input) -> Result<(PublicValues, CostProfile), Error> {
+        if input.proofs.is_some() {
+            Err(CommonError::unsupported_input("no dedicated proofs stream"))?
+        }
+
+        self.sdk.profile(input)
     }
 
     fn prove(&self, input: &Input) -> Result<(PublicValues, ZiskProof, Duration), Error> {
@@ -79,11 +89,14 @@ pub(crate) mod tests {
     use ere_util_test::{
         codec::BincodeLegacy,
         host::{
-            TestCase, run_zkvm_execute, run_zkvm_execute_estimated_cost, run_zkvm_prove,
-            run_zkvm_switchable, testing_guest_directory,
+            TestCase, profile_root_cost, run_zkvm_execute, run_zkvm_execute_estimated_cost,
+            run_zkvm_profile, run_zkvm_profile_without_function_symbols,
+            run_zkvm_profile_zkvm_interface, run_zkvm_prove, run_zkvm_switchable,
+            testing_guest_directory,
         },
         program::{basic::BasicProgram, zkvm_interface},
     };
+    use zisk_core::STACK_SIZE;
 
     use crate::prover::ZiskProver;
 
@@ -154,6 +167,48 @@ pub(crate) mod tests {
         let zkvm = with_basic_elf(zkvm());
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_execute_estimated_cost(&*zkvm, &test_case);
+    }
+
+    #[test]
+    fn test_profile() {
+        let zkvm = with_basic_elf(zkvm());
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+        let profile = run_zkvm_profile(&*zkvm, &test_case);
+        let estimation = profile.cost_estimation();
+        assert_eq!(
+            profile_root_cost(&profile, "[base]"),
+            estimation.cost["base"]
+        );
+        // The ROM and RAM init is a part of the `memory` component.
+        assert!(profile_root_cost(&profile, "[init]") < estimation.cost["memory"]);
+        assert!(profile.peak_stack_bytes < STACK_SIZE);
+    }
+
+    #[test]
+    fn test_profile_invalid_test_case() {
+        let zkvm = with_basic_elf(zkvm());
+        for input in [
+            Input::new(),
+            BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
+        ] {
+            zkvm.profile(&input).unwrap_err();
+        }
+
+        // Should be able to recover
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+        run_zkvm_profile(&*zkvm, &test_case);
+    }
+
+    #[test]
+    fn test_profile_zkvm_interface() {
+        let zkvm = with_zkvm_interface(zkvm());
+        run_zkvm_profile_zkvm_interface(&*zkvm);
+    }
+
+    #[test]
+    fn test_profile_elf_without_function_symbols() {
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+        run_zkvm_profile_without_function_symbols(&mut *zkvm(), basic_elf(), &test_case);
     }
 
     #[test]
