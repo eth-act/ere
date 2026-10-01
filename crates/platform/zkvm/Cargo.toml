@@ -1,0 +1,18 @@
+[package]
+name = "ere-platform-zkvm"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+ere-platform-core.workspace = true
+
+[features]
+default = ["runtime"]
+# The guest's global allocator (on `_heap_start`/`_heap_end`) and panic handler, on bare-metal
+# targets.
+runtime = []
+
+[lints]
+workspace = true
