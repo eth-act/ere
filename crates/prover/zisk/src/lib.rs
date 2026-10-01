@@ -76,10 +76,6 @@
 //! report to stdout. ZisK sums the five components into the total, so a mismatch
 //! means the estimator misread the report and the estimate fails.
 //!
-//! `peak_heap_bytes` spans the non-zero bytes between the `_heap_bottom` and
-//! `_heap_top` symbols. The value is `None` if the guest carries no such symbols
-//! or if the range leaves emulator RAM.
-//!
 //! ## Environment variables
 //!
 //! | Variable                               | Type  | Default        | Description                                            |
@@ -93,8 +89,6 @@
 //! | `ERE_ZISK_CLUSTER_PROVE_TIMEOUT_SECS`  | Value |                | Timeout for the cluster client prove job               |
 //! | `ERE_ZISK_EXECUTE_TIMEOUT_SECS`        | Value | `300`          | Timeout for the start and each run of an ASM service   |
 //! | `ERE_ZISK_EXECUTE_CONCURRENCY`         | Value | CPUs, max 32   | Services that execute one program at once              |
-//! | `ERE_COST_ESTIMATION_HEAP_START`       | Value | `_heap_bottom` | Symbol marking the bottom of the guest heap            |
-//! | `ERE_COST_ESTIMATION_HEAP_END`         | Value | `_heap_top`    | Symbol marking the top of the guest heap               |
 //!
 //! [`install_zisk_sdk.sh`]: https://github.com/eth-act/ere/blob/master/scripts/sdk_installers/install_zisk_sdk.sh
 //! [`ziskup`]: https://raw.githubusercontent.com/0xPolygonHermez/zisk/main/ziskup/install.sh

@@ -52,9 +52,6 @@
 //! segment. `ERE_OPENVM_SEGMENT_MEMORY` sets the limit that starts a new segment,
 //! by default 14.5 GiB.
 //!
-//! `peak_heap_bytes` spans the non-zero bytes above the `_end` symbol, or is
-//! `None` when the estimator cannot read the heap.
-//!
 //! [`install_openvm_sdk.sh`]: https://github.com/eth-act/ere/blob/master/scripts/sdk_installers/install_openvm_sdk.sh
 
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]

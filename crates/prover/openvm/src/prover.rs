@@ -7,8 +7,8 @@ use std::{
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{
-    CommonError, CostEstimation, Input, ProverResource, ProverResourceKind, PublicValues,
-    zkVMProver,
+    CommonError, CostEstimation, CostProfile, Input, ProverResource, ProverResourceKind,
+    PublicValues, zkVMProver,
 };
 use ere_verifier_openvm::{
     NUM_PUBLIC_VALUES_BYTES, OpenVMProgramVk, OpenVMProof, OpenVMVerifier, extract_public_values,
@@ -109,7 +109,7 @@ impl OpenVMProver {
 
     fn estimator(&self) -> Result<&CostEstimator, Error> {
         self.estimator
-            .get_or_try_init(|| CostEstimator::new(&self.elf, &self.app_exe, &self.app_pk))
+            .get_or_try_init(|| CostEstimator::new(&self.app_exe, &self.app_pk))
     }
 }
 
@@ -171,6 +171,10 @@ impl zkVMProver for OpenVMProver {
         stdin.write_bytes(input.stdin());
 
         self.estimator()?.estimate(stdin)
+    }
+
+    fn profile(&self, _input: &Input) -> Result<(PublicValues, CostProfile), Error> {
+        unimplemented!()
     }
 
     fn prove(&self, input: &Input) -> Result<(PublicValues, OpenVMProof, Duration), Error> {

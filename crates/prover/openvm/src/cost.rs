@@ -1,24 +1,16 @@
-use std::{collections::BTreeMap, env, ops::Range, sync::Arc};
+use std::{collections::BTreeMap, sync::Arc};
 
-use ere_compiler_core::Elf;
-use ere_prover_core::{
-    CostEstimation, ERE_COST_ESTIMATION_HEAP_START, PublicValues, symbol_address,
-};
+use ere_prover_core::{CostEstimation, PublicValues};
 use once_cell::sync::OnceCell;
 use openvm_circuit::arch::{
-    VirtualMachineError, VmExecutor,
-    execution_mode::MeteredCtx,
-    instructions::{exe::VmExe, riscv::RV64_MEMORY_AS},
+    VirtualMachineError, VmExecutor, execution_mode::MeteredCtx, instructions::exe::VmExe,
     rvr::RvrMeteredInstance,
 };
 use openvm_sdk::{F, StdIn, keygen::AppProvingKey, prover::AppProver};
 use openvm_sdk_config::{SdkVmConfig, SdkVmCpuBuilder};
 use openvm_stark_sdk::config::baby_bear_poseidon2::BabyBearPoseidon2CpuEngine;
-use openvm_transpiler::openvm_platform::memory::MEM_SIZE;
 
 use crate::{error::Error, executor::extract_public_values, prover::sdk_vm_config};
-
-const DEFAULT_HEAP_START: &str = "_end";
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Component {
@@ -80,12 +72,10 @@ pub(crate) struct CostEstimator {
     ctx: MeteredCtx,
     widths: Vec<usize>,
     components: Vec<Component>,
-    heap_range: Option<Range<u64>>,
 }
 
 impl CostEstimator {
     pub(crate) fn new(
-        elf: &Elf,
         app_exe: &Arc<VmExe<F>>,
         app_pk: &AppProvingKey<SdkVmConfig>,
     ) -> Result<Self, Error> {
@@ -106,12 +96,6 @@ impl CostEstimator {
         let executor_idx_to_air_idx = vm.executor_idx_to_air_idx();
         let components = vm.air_names().map(Component::classify).collect();
 
-        let start = env::var(ERE_COST_ESTIMATION_HEAP_START)
-            .unwrap_or_else(|_| DEFAULT_HEAP_START.to_owned());
-        let heap_range = symbol_address(&elf.0, &start)
-            .filter(|start| *start < MEM_SIZE as u64)
-            .map(|start| start..MEM_SIZE as u64);
-
         Ok(Self {
             instance: OnceCell::new(),
             executor,
@@ -120,7 +104,6 @@ impl CostEstimator {
             ctx,
             widths,
             components,
-            heap_range,
         })
     }
 
@@ -162,29 +145,6 @@ impl CostEstimator {
                 rows[air] * self.widths[air] as u64;
         }
 
-        let peak_heap_bytes = self.heap_range.as_ref().and_then(|range| {
-            let heap = state
-                .memory
-                .checked_u8_slice(RV64_MEMORY_AS, range.start, range.end - range.start)
-                .ok()?;
-            peak_heap_bytes(heap)
-        });
-
-        Ok((
-            extract_public_values(&state),
-            CostEstimation {
-                cost,
-                peak_heap_bytes,
-            },
-        ))
+        Ok((extract_public_values(&state), CostEstimation { cost }))
     }
-}
-
-fn peak_heap_bytes(bytes: &[u8]) -> Option<u64> {
-    let highest = bytes.iter().rposition(|byte| *byte != 0)?;
-    let lowest = bytes
-        .iter()
-        .position(|byte| *byte != 0)
-        .expect("a heap holding a highest non-zero byte holds a lowest one");
-    Some((highest - lowest + 1) as u64)
 }

@@ -6,6 +6,7 @@ service ZkvmService {
     rpc Setup(SetupRequest) returns (SetupResponse) {}
     rpc Execute(ExecuteRequest) returns (ExecuteResponse) {}
     rpc ExecuteEstimatedCost(ExecuteEstimatedCostRequest) returns (ExecuteEstimatedCostResponse) {}
+    rpc Profile(ProfileRequest) returns (ProfileResponse) {}
     rpc Prove(ProveRequest) returns (ProveResponse) {}
     rpc Verify(VerifyRequest) returns (VerifyResponse) {}
     rpc ProgramVk(ProgramVkRequest) returns (ProgramVkResponse) {}
@@ -58,7 +59,27 @@ message ExecuteEstimatedCostResponse {
 message ExecuteEstimatedCostOk {
     bytes public_values = 1;
     map<string, uint64> cost = 2;
-    optional uint64 peak_heap_bytes = 3;
+    reserved 3;
+    reserved "peak_heap_bytes";
+}
+
+message ProfileRequest {
+    bytes input_stdin = 1;
+    optional bytes input_proofs = 2;
+}
+
+message ProfileResponse {
+    oneof result {
+        ProfileOk ok = 1;
+        string err = 2;
+    }
+}
+
+message ProfileOk {
+    bytes public_values = 1;
+    bytes pprof = 2;
+    uint64 peak_stack_bytes = 3;
+    uint64 peak_heap_bytes = 4;
 }
 
 message ProveRequest {

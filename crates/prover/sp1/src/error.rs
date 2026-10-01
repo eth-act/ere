@@ -57,6 +57,6 @@ pub enum EstimateCostError {
     #[error("priced chips exceed the total {0}")]
     Mismatch(u64),
 
-    #[error("failed to read guest memory: {0}")]
+    #[error("failed to map the trace buffer: {0}")]
     Memory(#[from] io::Error),
 }

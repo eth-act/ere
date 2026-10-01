@@ -6,7 +6,7 @@ use std::{
 use anyhow::anyhow;
 use ere_compiler_core::Elf;
 use ere_prover_core::{
-    CommonError, CostEstimation, Input, ProverResource, PublicValues, zkVMProver,
+    CommonError, CostEstimation, CostProfile, Input, ProverResource, PublicValues, zkVMProver,
 };
 use ere_util_tokio::block_on;
 use ere_verifier_sp1::{SP1ProgramVk, SP1Proof, SP1Verifier};
@@ -50,7 +50,7 @@ impl SP1Prover {
 
     fn estimator(&self) -> &SP1CostEstimator {
         self.estimator
-            .get_or_init(|| SP1CostEstimator::new(Arc::clone(&self.program), &self.elf))
+            .get_or_init(|| SP1CostEstimator::new(Arc::clone(&self.program)))
     }
 }
 
@@ -93,6 +93,10 @@ impl zkVMProver for SP1Prover {
         }
 
         self.estimator().estimate(input.stdin())
+    }
+
+    fn profile(&self, _input: &Input) -> Result<(PublicValues, CostProfile), Error> {
+        unimplemented!()
     }
 
     fn prove(&self, input: &Input) -> Result<(PublicValues, SP1Proof, Duration), Error> {

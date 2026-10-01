@@ -1,7 +1,11 @@
 use core::error::Error;
 use std::time::Duration;
 
-use crate::{Elf, Input, PublicValues, cost::CostEstimation, zkVMVerifier};
+use crate::{
+    Elf, Input, PublicValues,
+    cost::{CostEstimation, CostProfile},
+    zkVMVerifier,
+};
 
 /// zkVM prover trait to abstract away the differences between each zkVM.
 ///
@@ -32,6 +36,10 @@ pub trait zkVMProver: Sync {
         &self,
         input: &Input,
     ) -> Result<(PublicValues, CostEstimation), Self::Error>;
+
+    /// Executes the program and splits the cost of [`Self::execute_estimated_cost`] over the guest
+    /// call stacks, and measures the peak memory use. It does not prove.
+    fn profile(&self, input: &Input) -> Result<(PublicValues, CostProfile), Self::Error>;
 
     /// Creates a proof of the program execution with given input.
     fn prove(&self, input: &Input) -> Result<(PublicValues, Proof<Self>, Duration), Self::Error>;

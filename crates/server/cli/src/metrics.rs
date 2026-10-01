@@ -19,6 +19,8 @@ const EXECUTE_DURATION_SECONDS: &str = "ere_server_execute_duration_seconds";
 const EXECUTE_ESTIMATED_COST_TOTAL: &str = "ere_server_execute_estimated_cost_total";
 const EXECUTE_ESTIMATED_COST_DURATION_SECONDS: &str =
     "ere_server_execute_estimated_cost_duration_seconds";
+const PROFILE_TOTAL: &str = "ere_server_profile_total";
+const PROFILE_DURATION_SECONDS: &str = "ere_server_profile_duration_seconds";
 const PROVE_TOTAL: &str = "ere_server_prove_total";
 const PROVE_DURATION_SECONDS: &str = "ere_server_prove_duration_seconds";
 const PROVE_PROOF_BYTES: &str = "ere_server_prove_proof_bytes";
@@ -66,6 +68,10 @@ pub fn record_execute_estimated_cost<T, E>(result: &Result<T, E>, elapsed: Durat
         result,
         elapsed,
     );
+}
+
+pub fn record_profile<T, E>(result: &Result<T, E>, elapsed: Duration) {
+    record_call(PROFILE_TOTAL, PROFILE_DURATION_SECONDS, result, elapsed);
 }
 
 pub fn record_prove<T, E>(result: &Result<T, E>, elapsed: Duration) {
@@ -141,6 +147,7 @@ pub fn path_to_method(path: &str) -> &'static str {
         "/twirp/api.ZkvmService/Setup" => "setup",
         "/twirp/api.ZkvmService/Execute" => "execute",
         "/twirp/api.ZkvmService/ExecuteEstimatedCost" => "execute_estimated_cost",
+        "/twirp/api.ZkvmService/Profile" => "profile",
         "/twirp/api.ZkvmService/Prove" => "prove",
         "/twirp/api.ZkvmService/Verify" => "verify",
         _ => "unknown",

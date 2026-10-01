@@ -1,7 +1,6 @@
 use std::{
     any::Any,
     env,
-    ops::Range,
     panic::{self, AssertUnwindSafe},
     time::Duration,
 };
@@ -19,12 +18,7 @@ use zisk_core::{INPUT_ADDR, ZiskRom};
 use zisk_transpiler_riscv::Riscv2zisk;
 use ziskemu::{Emu, EmuOptions};
 
-use crate::{
-    cost::{self, peak_heap_bytes},
-    error::Error,
-    executor::ZiskExecutor,
-    sdk::local::LocalProver,
-};
+use crate::{cost, error::Error, executor::ZiskExecutor, sdk::local::LocalProver};
 
 mod local;
 mod proving_key;
@@ -56,15 +50,12 @@ pub struct ZiskSdk {
     resource: ProverResource,
     backend: Backend,
     rom: ZiskRom,
-    heap_range: Option<Range<u64>>,
     executor: ZiskExecutor,
 }
 
 impl ZiskSdk {
     pub fn new(elf: Elf, resource: ProverResource) -> Result<Self, Error> {
         let rom = rom(&elf)?;
-
-        let heap_range = cost::heap_range(&elf);
 
         let executor = ZiskExecutor::new(&elf, &rom);
 
@@ -103,7 +94,6 @@ impl ZiskSdk {
             resource,
             backend,
             rom,
-            heap_range,
             executor,
         })
     }
@@ -111,7 +101,6 @@ impl ZiskSdk {
     /// Replaces the program.
     pub fn setup(&mut self, elf: Elf) -> Result<(), Error> {
         let rom = rom(&elf)?;
-        let heap_range = cost::heap_range(&elf);
         let executor = ZiskExecutor::new(&elf, &rom);
 
         match &mut self.backend {
@@ -125,7 +114,6 @@ impl ZiskSdk {
         }
 
         self.rom = rom;
-        self.heap_range = heap_range;
         self.executor = executor;
         Ok(())
     }
@@ -172,23 +160,9 @@ impl ZiskSdk {
 
         emu.ctx.stats.set_use_thousands_sep(false);
         let cost = cost::parse(&emu.ctx.stats.report(&self.rom))?;
-        let peak_heap_bytes = self.heap_range.as_ref().and_then(|range| {
-            let heap = emu
-                .ctx
-                .inst_ctx
-                .mem
-                .read_slice(range.start, range.end - range.start);
-            peak_heap_bytes(heap)
-        });
         let public_values = emu.get_output_8();
 
-        Ok((
-            public_values.as_slice().into(),
-            CostEstimation {
-                cost,
-                peak_heap_bytes,
-            },
-        ))
+        Ok((public_values.as_slice().into(), CostEstimation { cost }))
     }
 
     pub fn prove(&self, input: &Input) -> Result<(PublicValues, ZiskProof, Duration), Error> {
