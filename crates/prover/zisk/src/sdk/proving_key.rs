@@ -10,12 +10,12 @@ use md5::{Digest, Md5};
 use parking_lot::Mutex;
 use zisk_common::ZiskPaths;
 
-/// URL of the blake3 proving key of v1.3.0-alpha.
+/// URL of the blake3 proving key of v1.3.1-alpha.
 const PROVING_KEY_URL: &str =
-    "https://storage.googleapis.com/zisk-setup/zisk-provingkey-1.3.0-alpha-blake3.tar.gz";
+    "https://storage.googleapis.com/zisk-setup/zisk-provingkey-1.3.1-alpha-blake3.tar.gz";
 
-/// MD5 of the blake3 proving key of v1.3.0-alpha.
-const PROVING_KEY_MD5: [u8; 16] = hex_literal::hex!("879b7f726cf48e8a53be877020068548");
+/// MD5 of the blake3 proving key of v1.3.1-alpha.
+const PROVING_KEY_MD5: [u8; 16] = hex_literal::hex!("9e7339145735b334beb6b63b524cf9d5");
 
 /// Marker file holding the hex MD5 of the unpacked archive, written last.
 const PROVING_KEY_MD5_FILE: &str = ".md5";

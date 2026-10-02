@@ -168,7 +168,7 @@ LambdaVM has no verifying key separate from the program: its verifier binds a pr
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     . "$HOME/.cargo/env"
 
-    ZKVM_VERSION="v1.3.0-alpha"
+    ZKVM_VERSION="v1.3.1-alpha"
     export ZISK_VERSION=${ZKVM_VERSION#v} SETUP_KEY=proving-no-consttree USE_GPU=false
     curl -sSf "https://raw.githubusercontent.com/0xPolygonHermez/zisk/$ZKVM_VERSION/ziskup/ziskup" | bash -s -- --blake3
     export PATH="$HOME/.zisk/bin:$PATH"

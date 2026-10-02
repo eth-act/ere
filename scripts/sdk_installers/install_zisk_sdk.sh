@@ -32,7 +32,7 @@ ensure_tool_installed "rustup" "for managing Rust toolchains (ZisK installs its 
 # Download and run the script that installs the ziskup binary itself.
 # Export USE_GPU to download pre-built cargo-zisk and zisk-worker with or without cuda support.
 # LocalProver downloads the proving key at runtime when setup is needed.
-export ZISK_VERSION="1.3.0-alpha"
+export ZISK_VERSION="1.3.1-alpha"
 export USE_GPU=$([ -n "$CUDA" ] && echo true || echo false)
 export SETUP_KEY=none
 curl "https://raw.githubusercontent.com/0xPolygonHermez/zisk/v$ZISK_VERSION/ziskup/ziskup" | bash
@@ -40,5 +40,5 @@ unset SETUP_KEY
 
 # The ASM services build from this source. The patched one makes them exit with the prover.
 # Keep the revision equal to the zisk git revision in Cargo.lock.
-curl -fsSL "https://raw.githubusercontent.com/han0110/zisk/de8d48e9e24965e82732463d807efaf2a739c54d/emulator-asm/src/main.c" \
+curl -fsSL "https://raw.githubusercontent.com/han0110/zisk/c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1/emulator-asm/src/main.c" \
     -o "$HOME/.zisk/zisk/emulator-asm/src/main.c"
