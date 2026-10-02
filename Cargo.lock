@@ -3632,7 +3632,7 @@ name = "ere-platform-zisk"
 version = "0.18.1"
 dependencies = [
  "ere-platform-core",
- "ziskos 1.3.0-alpha (registry+https://github.com/rust-lang/crates.io-index)",
+ "ziskos 1.3.1-alpha (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -3939,7 +3939,7 @@ dependencies = [
  "serde",
  "tar",
  "thiserror 2.0.18",
- "zisk-verifier 1.3.0-alpha (registry+https://github.com/rust-lang/crates.io-index)",
+ "zisk-verifier 1.3.1-alpha (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -8426,9 +8426,9 @@ dependencies = [
 
 [[package]]
 name = "pil2-pilout"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "800e58e34302736d85831088aa18c3ebb450c1ac7535f6df5674c7f5ba819767"
+checksum = "e33d50d8ddcc03643a323b7fd567cb637e534c1f5bb1be62a8ec7530a3f31131"
 dependencies = [
  "bytes",
  "prost 0.13.5",
@@ -8438,9 +8438,9 @@ dependencies = [
 
 [[package]]
 name = "pil2-stark-recurser"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "387cdd37109beb03f35cf7c7a04946d237269adcec63737e12a62d4263c01ae7"
+checksum = "be22608b6b84e8d54d2510c3c8391f19382496d8a3242fd57cc44501efa8e580"
 dependencies = [
  "anyhow",
  "num-bigint 0.4.6",
@@ -8455,9 +8455,9 @@ dependencies = [
 
 [[package]]
 name = "pil2-stark-setup"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbe10f8e5970915a046be5425299f7aca9bc6c0c494c28851056f32dccaa2570"
+checksum = "9ae638a53a6e70019011a3cbb826a9e77791afb3c91f848e22ae023808e65cc5"
 dependencies = [
  "anyhow",
  "clap",
@@ -8482,9 +8482,9 @@ dependencies = [
 
 [[package]]
 name = "pil2-std-lib"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "272e6df06a48c940b5171e8d4f359f2bc6a3640ae387acab87dc5cde829431f6"
+checksum = "7c978590064142e9692b1446305eb6a6c9ca9a7c8f6a87f68aaee9ad19c7d834"
 dependencies = [
  "colored",
  "proofman-common",
@@ -8731,9 +8731,9 @@ dependencies = [
 
 [[package]]
 name = "proofman"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed61450e219e0ef379a4a209c801412212ed91cb9f2fd5a119e5e67374191382"
+checksum = "20b5b1efeaeae3c40499d89ff43198e7e4c6dab1af821b74d4a022ce431b5108"
 dependencies = [
  "bincode 2.0.1",
  "blake3",
@@ -8764,9 +8764,9 @@ dependencies = [
 
 [[package]]
 name = "proofman-common"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0beb2f502684bae9a66f16a3a073952dd39a3f0201a7b98130bd89b96ce511c5"
+checksum = "53606f78c0b7dd40e618140c3177bb85d3b8fbdffb56c2a2106436da5b2ebcf8"
 dependencies = [
  "borsh",
  "colored",
@@ -8793,18 +8793,18 @@ dependencies = [
 
 [[package]]
 name = "proofman-curves"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec2435a5b866a332b92fe9ff3166d0dcdee99d127d6d436d2c2930080ab493b9"
+checksum = "02583568e18a77e08c302ace22821fb6d833b0c89e60bb40c34ad3b27bc88508"
 dependencies = [
  "proofman-fields",
 ]
 
 [[package]]
 name = "proofman-exps-codegen"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0ce21e79c9f648682900e9fb041005af32491b01c73445fa7ff53ca211d796c"
+checksum = "3a034e0e688896c8c81443538a88984378e51512ec79dd73caa7700131dc8913"
 dependencies = [
  "anyhow",
  "proofman-starks-src",
@@ -8817,9 +8817,9 @@ dependencies = [
 
 [[package]]
 name = "proofman-fields"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eb8d460b2e0e01f448eb78bd5486877239130674572be8f5c334bc86948cd65b"
+checksum = "288f1cfadffdd60f4297428d41fa27dbae9837a63c89f77ba3e9ce8f5e03f987"
 dependencies = [
  "blake3",
  "cfg-if",
@@ -8831,9 +8831,9 @@ dependencies = [
 
 [[package]]
 name = "proofman-hints"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f735abbbea2d423db91f4adddc51c30a5a3ef53e781a1775ec7745e8458b116"
+checksum = "8976eb1eeb543a74772fc83b654a96cd7e483750262fa8ca35c8e65ca1c70402"
 dependencies = [
  "itoa",
  "proofman-common",
@@ -8844,9 +8844,9 @@ dependencies = [
 
 [[package]]
 name = "proofman-macros"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8d1f957e8d6b90fd887ab2505058f703f5753afc629a96d90d141c09861b95e"
+checksum = "541ae1751c469a81f21210f8a2bd0c4e08980a82b08a5cd80eac021bab9e770c"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -8855,9 +8855,9 @@ dependencies = [
 
 [[package]]
 name = "proofman-starks-lib-c"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "620e15078fdf0acae3ced9f2c773ab10eb376dcaf7a192cc6204a37ce292fe57"
+checksum = "71fbc5a3cbea8630ccc96c4373ee45c8f63f5ac243f9b9456026773e30ab130e"
 dependencies = [
  "crossbeam-channel",
  "proofman-starks-src",
@@ -8865,15 +8865,15 @@ dependencies = [
 
 [[package]]
 name = "proofman-starks-src"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3a7ebe850e6ba9c8cfbdae2d68c196e5453ff4548e91c4ce01b91ffc2e727384"
+checksum = "ec72725ea4f99741a95b52edc3290d5b9fe904762b6991b14aedb399ce43e86a"
 
 [[package]]
 name = "proofman-util"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5503fc174295766688d434d1e24a1685498343cc8eec4f993f41b374c2d61cff"
+checksum = "1558e3975f49c44713e27d4c49662b3dca24071987892ab88489c9b73afb9e13"
 dependencies = [
  "colored",
  "sysinfo 0.35.2",
@@ -8881,9 +8881,9 @@ dependencies = [
 
 [[package]]
 name = "proofman-verifier"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "369dc577fafca5499350103a31de6a57c614cfb1b1e9298347b6e2d0561baec4"
+checksum = "fcfb929d02d38e48617f4badd3c5cc9cf140742dcf539c0d53ea5e6d9c037ab7"
 dependencies = [
  "bincode 2.0.1",
  "num-traits",
@@ -8895,9 +8895,9 @@ dependencies = [
 
 [[package]]
 name = "proofman-witness"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ce2805c605fb3338370c2ae1f53a99b3c5237389fae9542838b2b5ba69923e7"
+checksum = "f0fce6674550d900e44ad619a20bc9a5b2a454d3fc8f4385c4fe95497915c1b9"
 dependencies = [
  "libloading",
  "proofman-common",
@@ -14141,8 +14141,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-asm-runner"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "anyhow",
  "libc",
@@ -14160,19 +14160,19 @@ dependencies = [
 
 [[package]]
 name = "zisk-circuit"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e620c55ff505ea5bd8305e301b64b19b8e645715380f2beca257e206e1f6757"
+checksum = "94e6818c11ba36b58f40cfa653e3657a0069c6199e9d32fd4ebddcc44d162016"
 
 [[package]]
 name = "zisk-circuit"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 
 [[package]]
 name = "zisk-cluster-common"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "anyhow",
  "borsh",
@@ -14190,8 +14190,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-common"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "alloy-sol-types",
  "bincode 2.0.1",
@@ -14211,42 +14211,42 @@ dependencies = [
  "tikv-jemallocator",
  "tracing",
  "zisk-core",
- "zisk-definitions 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
+ "zisk-definitions 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
  "zisk-pil",
- "zisk-stream 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
- "zisk-verifier 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
+ "zisk-stream 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
+ "zisk-verifier 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
 ]
 
 [[package]]
 name = "zisk-core"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "paste",
  "proofman-fields",
  "rayon",
  "sha2 0.10.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "tiny-keccak 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "zisk-definitions 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
- "zisk-precomp-helpers 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
- "ziskos 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
+ "zisk-definitions 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
+ "zisk-precomp-helpers 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
+ "ziskos 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
 ]
 
 [[package]]
 name = "zisk-definitions"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9098679a2ae1ae037f629e6a449154a19d9b4bf981648b2045ee77797bb04347"
+checksum = "22bb9cf0c0d750a368d559df2c94abb6d20db4cbd153c3a12e7f6c60682ec47b"
 
 [[package]]
 name = "zisk-definitions"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 
 [[package]]
 name = "zisk-executor"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -14290,19 +14290,19 @@ dependencies = [
 
 [[package]]
 name = "zisk-lib-c"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af2c550f1c21c3c8b401d5ceb8d83b59cce17578724b3559f960ffee0c87ed78"
+checksum = "877ca137dd74c446fda8105478b990b07f699ca2bdc927ee573bd1d47ee7cf96"
 
 [[package]]
 name = "zisk-lib-c"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 
 [[package]]
 name = "zisk-pil"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "proofman-common",
  "proofman-fields",
@@ -14313,8 +14313,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-precomp-arith-eq"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "ark-bn254",
  "ark-ff 0.5.0",
@@ -14335,16 +14335,16 @@ dependencies = [
  "tracing",
  "zisk-common",
  "zisk-core",
- "zisk-lib-c 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
+ "zisk-lib-c 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
  "zisk-pil",
  "zisk-precomp-common",
- "zisk-precomp-helpers 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
+ "zisk-precomp-helpers 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
 ]
 
 [[package]]
 name = "zisk-precomp-arith-eq-384"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "ark-bls12-381 0.5.0",
  "ark-ff 0.5.0",
@@ -14364,13 +14364,13 @@ dependencies = [
  "zisk-pil",
  "zisk-precomp-arith-eq",
  "zisk-precomp-common",
- "zisk-precomp-helpers 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
+ "zisk-precomp-helpers 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
 ]
 
 [[package]]
 name = "zisk-precomp-babyjubjub"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "ark-bn254",
  "ark-ff 0.5.0",
@@ -14390,13 +14390,13 @@ dependencies = [
  "zisk-pil",
  "zisk-precomp-arith-eq",
  "zisk-precomp-common",
- "zisk-precomp-helpers 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
+ "zisk-precomp-helpers 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
 ]
 
 [[package]]
 name = "zisk-precomp-big-int"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "pil2-std-lib",
  "proofman-common",
@@ -14406,15 +14406,15 @@ dependencies = [
  "tracing",
  "zisk-common",
  "zisk-core",
- "zisk-lib-c 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
+ "zisk-lib-c 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
  "zisk-pil",
  "zisk-precomp-common",
 ]
 
 [[package]]
 name = "zisk-precomp-blake2"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "pil2-std-lib",
  "proofman-common",
@@ -14430,8 +14430,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-precomp-blake3"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "pil2-std-lib",
  "proofman-common",
@@ -14447,8 +14447,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-precomp-common"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "pil2-std-lib",
  "proofman-fields",
@@ -14461,8 +14461,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-precomp-dma"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "pil2-std-lib",
  "proofman-common",
@@ -14474,13 +14474,13 @@ dependencies = [
  "zisk-core",
  "zisk-pil",
  "zisk-precomp-common",
- "zisk-precomp-helpers 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
+ "zisk-precomp-helpers 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
 ]
 
 [[package]]
 name = "zisk-precomp-evm"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "clap",
  "pil2-std-lib",
@@ -14490,14 +14490,14 @@ dependencies = [
  "zisk-core",
  "zisk-pil",
  "zisk-precomp-common",
- "zisk-precomp-helpers 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
+ "zisk-precomp-helpers 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
 ]
 
 [[package]]
 name = "zisk-precomp-helpers"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8860c99c4d8b77fb6ef5ac0558a5586198abce62a617054e398064cd825ec5c0"
+checksum = "70cee87e859e6f70b5a4e8640b522c61b403bb431fab5a4106f2717b8c1b2c5f"
 dependencies = [
  "ark-bls12-381 0.5.0",
  "ark-bn254",
@@ -14508,14 +14508,14 @@ dependencies = [
  "crunchy",
  "num-bigint 0.4.6",
  "num-traits",
- "zisk-circuit 1.3.0-alpha (registry+https://github.com/rust-lang/crates.io-index)",
- "zisk-lib-c 1.3.0-alpha (registry+https://github.com/rust-lang/crates.io-index)",
+ "zisk-circuit 1.3.1-alpha (registry+https://github.com/rust-lang/crates.io-index)",
+ "zisk-lib-c 1.3.1-alpha (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "zisk-precomp-helpers"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "ark-bls12-381 0.5.0",
  "ark-bn254",
@@ -14526,14 +14526,14 @@ dependencies = [
  "crunchy",
  "num-bigint 0.4.6",
  "num-traits",
- "zisk-circuit 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
- "zisk-lib-c 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
+ "zisk-circuit 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
+ "zisk-lib-c 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
 ]
 
 [[package]]
 name = "zisk-precomp-hints"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "anyhow",
  "borsh",
@@ -14547,8 +14547,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-precomp-keccakf"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "pil2-std-lib",
  "proofman-common",
@@ -14561,13 +14561,13 @@ dependencies = [
  "zisk-core",
  "zisk-pil",
  "zisk-precomp-common",
- "zisk-precomp-helpers 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
+ "zisk-precomp-helpers 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
 ]
 
 [[package]]
 name = "zisk-precomp-poseidon"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "pil2-std-lib",
  "proofman-common",
@@ -14583,8 +14583,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-precomp-sha256f"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "pil2-std-lib",
  "proofman-common",
@@ -14600,8 +14600,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-program-macros"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "blake3",
  "proc-macro-crate 3.5.0",
@@ -14612,8 +14612,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-prover-backend"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "alloy-sol-types",
  "anyhow",
@@ -14637,14 +14637,15 @@ dependencies = [
  "zisk-program-macros",
  "zisk-recurser",
  "zisk-rom-setup",
+ "zisk-setup",
  "zisk-transpiler-riscv",
  "ziskemu",
 ]
 
 [[package]]
 name = "zisk-recurser"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "anyhow",
  "blake3",
@@ -14660,22 +14661,22 @@ dependencies = [
  "tera",
  "thiserror 2.0.18",
  "tracing",
- "zisk-verifier 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
+ "zisk-verifier 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
 ]
 
 [[package]]
 name = "zisk-riscv"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "zisk-core",
- "zisk-definitions 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
+ "zisk-definitions 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
 ]
 
 [[package]]
 name = "zisk-rom-setup"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "anyhow",
  "blake3",
@@ -14690,9 +14691,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "zisk-setup"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
+dependencies = [
+ "serde_json",
+]
+
+[[package]]
 name = "zisk-sm-arith"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "pil2-std-lib",
  "proofman-common",
@@ -14708,8 +14717,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-sm-binary"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "pil2-std-lib",
  "proofman-common",
@@ -14725,8 +14734,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-sm-frequent-ops"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "clap",
  "proofman-common",
@@ -14737,8 +14746,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-sm-main"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "pil2-std-lib",
  "proofman-common",
@@ -14755,8 +14764,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-sm-mem"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "env",
  "pil2-std-lib",
@@ -14773,8 +14782,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-sm-mem-common"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "clap",
  "proofman-fields",
@@ -14788,8 +14797,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-sm-mem-planner"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "proofman-util",
  "tracing",
@@ -14800,8 +14809,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-sm-rom"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "proofman-common",
  "proofman-fields",
@@ -14818,9 +14827,9 @@ dependencies = [
 
 [[package]]
 name = "zisk-stream"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c162073a2f76b78fbe42d8483adc1a25b25abfbaa17860c1c33c23412bc85370"
+checksum = "89cec47a985d96623746e8bd58bf2bd8835a6ae67b2ecef2e24af378c9047f18"
 dependencies = [
  "libc",
  "thiserror 2.0.18",
@@ -14829,8 +14838,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-stream"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "libc",
  "quinn",
@@ -14843,8 +14852,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-transpiler-common"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "elf",
  "zisk-core",
@@ -14853,8 +14862,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-transpiler-riscv"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "zisk-core",
  "zisk-transpiler-common",
@@ -14862,9 +14871,9 @@ dependencies = [
 
 [[package]]
 name = "zisk-verifier"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c89f2583bba06f0cca2a6580c171920289c7452466fad51b1631d3414b02546f"
+checksum = "7f4a6068ec4bcc4777d70ffcd4ffc71f5cf7d3325ff9240020b6668abc6a39a8"
 dependencies = [
  "proofman-fields",
  "proofman-verifier",
@@ -14872,8 +14881,8 @@ dependencies = [
 
 [[package]]
 name = "zisk-verifier"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "proofman-fields",
  "proofman-verifier",
@@ -14881,25 +14890,25 @@ dependencies = [
 
 [[package]]
 name = "zisk-zkvm-interface"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0dfb08e112069201fe52e3a86d76a3e5118882330e543a81fa6d79ca8276649b"
+checksum = "19e33fc6910644ee1465112b45e258d1f67d8373b679f1f2151988c48dfe29fd"
 dependencies = [
  "bindgen",
 ]
 
 [[package]]
 name = "zisk-zkvm-interface"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "bindgen",
 ]
 
 [[package]]
 name = "ziskemu"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "clap",
  "flate2",
@@ -14916,7 +14925,7 @@ dependencies = [
  "vergen-git2",
  "zisk-common",
  "zisk-core",
- "zisk-definitions 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
+ "zisk-definitions 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
  "zisk-pil",
  "zisk-riscv",
  "zisk-sm-arith",
@@ -14927,9 +14936,9 @@ dependencies = [
 
 [[package]]
 name = "ziskos"
-version = "1.3.0-alpha"
+version = "1.3.1-alpha"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9dc921082bf9abc69cb3510ca1a0723a9b4bbf85a57d4ab51de5df7071d28d2f"
+checksum = "904f751efa7c365eb36ce8aa52fa06a0b20de1a50f42235560e5c1e5192270fd"
 dependencies = [
  "anyhow",
  "ark-bn254",
@@ -14962,18 +14971,18 @@ dependencies = [
  "talc",
  "tiny-keccak 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio",
- "zisk-definitions 1.3.0-alpha (registry+https://github.com/rust-lang/crates.io-index)",
- "zisk-lib-c 1.3.0-alpha (registry+https://github.com/rust-lang/crates.io-index)",
- "zisk-precomp-helpers 1.3.0-alpha (registry+https://github.com/rust-lang/crates.io-index)",
- "zisk-stream 1.3.0-alpha (registry+https://github.com/rust-lang/crates.io-index)",
- "zisk-verifier 1.3.0-alpha (registry+https://github.com/rust-lang/crates.io-index)",
- "zisk-zkvm-interface 1.3.0-alpha (registry+https://github.com/rust-lang/crates.io-index)",
+ "zisk-definitions 1.3.1-alpha (registry+https://github.com/rust-lang/crates.io-index)",
+ "zisk-lib-c 1.3.1-alpha (registry+https://github.com/rust-lang/crates.io-index)",
+ "zisk-precomp-helpers 1.3.1-alpha (registry+https://github.com/rust-lang/crates.io-index)",
+ "zisk-stream 1.3.1-alpha (registry+https://github.com/rust-lang/crates.io-index)",
+ "zisk-verifier 1.3.1-alpha (registry+https://github.com/rust-lang/crates.io-index)",
+ "zisk-zkvm-interface 1.3.1-alpha (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "ziskos"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "anyhow",
  "ark-bn254",
@@ -15002,18 +15011,18 @@ dependencies = [
  "sha2 0.10.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "tiny-keccak 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio",
- "zisk-definitions 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
- "zisk-lib-c 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
- "zisk-precomp-helpers 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
- "zisk-stream 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
- "zisk-verifier 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
- "zisk-zkvm-interface 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
+ "zisk-definitions 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
+ "zisk-lib-c 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
+ "zisk-precomp-helpers 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
+ "zisk-stream 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
+ "zisk-verifier 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
+ "zisk-zkvm-interface 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
 ]
 
 [[package]]
 name = "ziskos-hints"
-version = "1.3.0-alpha"
-source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha#de8d48e9e24965e82732463d807efaf2a739c54d"
+version = "1.3.1-alpha"
+source = "git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha#c8e3f055b9c634f6b3fe98e53d701fe7188b6cf1"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -15030,11 +15039,11 @@ dependencies = [
  "serde",
  "sha2 0.10.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "tiny-keccak 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "zisk-definitions 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
- "zisk-lib-c 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
- "zisk-precomp-helpers 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
- "zisk-verifier 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
- "zisk-zkvm-interface 1.3.0-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.0-alpha)",
+ "zisk-definitions 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
+ "zisk-lib-c 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
+ "zisk-precomp-helpers 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
+ "zisk-verifier 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
+ "zisk-zkvm-interface 1.3.1-alpha (git+https://github.com/han0110/zisk.git?branch=patch%2Fv1.3.1-alpha)",
 ]
 
 [[package]]
