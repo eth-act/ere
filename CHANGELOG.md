@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.19.0](https://github.com/eth-act/ere/compare/v0.18.1...v0.19.0) (2026-10-02)
+
+
+### Features
+
+* add lambdavm ([#435](https://github.com/eth-act/ere/issues/435)) ([bcdb1b4](https://github.com/eth-act/ere/commit/bcdb1b463ec5133dcb25879e95c0a65d710c53ec))
+* allow switch to different ELF ([#436](https://github.com/eth-act/ere/issues/436)) ([77e2aae](https://github.com/eth-act/ere/commit/77e2aae2b92bc0231a3603749ee1a30f8e89c87d))
+* avoid having zisk pk in image and download on demand ([#428](https://github.com/eth-act/ere/issues/428)) ([225ce84](https://github.com/eth-act/ere/commit/225ce841dbdc33f28e509c5516c907cb8e7a039f))
+* update zisk to v1.3.0-alpha and use blake3 hash family ([#430](https://github.com/eth-act/ere/issues/430)) ([e49696e](https://github.com/eth-act/ere/commit/e49696e5e1bfedbfd6a8f4009140b72005ce72e3))
+* update zisk to v1.3.1-alpha ([#445](https://github.com/eth-act/ere/issues/445)) ([96fabc2](https://github.com/eth-act/ere/commit/96fabc2a5c52a4ecd7f9f50a1dd2173454fea1eb))
+* use AOT compiled executor in zisk ([#441](https://github.com/eth-act/ere/issues/441)) ([f68dedf](https://github.com/eth-act/ere/commit/f68dedf4d71119e1aba37782872281d39aefd086))
+
+
+### Bug Fixes
+
+* localize symbols of ere-verifier ([#431](https://github.com/eth-act/ere/issues/431)) ([9c9ca2b](https://github.com/eth-act/ere/commit/9c9ca2bc53d76de388fbead88850e42c9ffda4ca))
+
 ## [0.18.1](https://github.com/eth-act/ere/compare/v0.18.0...v0.18.1) (2026-09-15)
 
 
