@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.1](https://github.com/eth-act/ere/compare/v0.19.0...v0.19.1) (2026-10-03)
+
+
+### Bug Fixes
+
+* sp1 verifier check exit code ([#446](https://github.com/eth-act/ere/issues/446)) ([f0b439f](https://github.com/eth-act/ere/commit/f0b439f077d2aecee58866b9008e79d1cba22aba))
+
 ## [0.19.0](https://github.com/eth-act/ere/compare/v0.18.1...v0.19.0) (2026-10-02)
 
 
