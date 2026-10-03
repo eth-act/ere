@@ -3706,10 +3706,8 @@ dependencies = [
  "memmap2",
  "sp1-core-executor",
  "sp1-cuda",
- "sp1-hypercube",
  "sp1-jit",
  "sp1-primitives 6.6.0",
- "sp1-recursion-executor",
  "sp1-sdk",
  "sysinfo 0.35.2",
  "thiserror 2.0.18",
@@ -3920,6 +3918,7 @@ dependencies = [
  "serde",
  "sp1-hypercube",
  "sp1-primitives 6.6.0",
+ "sp1-recursion-executor",
  "sp1-verifier",
  "thiserror 2.0.18",
 ]

@@ -31,9 +31,6 @@ pub enum Error {
     #[error("SP1 SDK proving failed: {0}")]
     Prove(#[source] anyhow::Error),
 
-    #[error("Failed to extract exit code from proof")]
-    ExitCodeExtractionFailed,
-
     // Verify
     #[error(transparent)]
     Verifier(#[from] ere_verifier_sp1::Error),
