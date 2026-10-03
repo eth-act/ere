@@ -1,17 +1,15 @@
-use std::{borrow::Borrow, env, sync::Arc};
+use std::{env, sync::Arc};
 
 use ere_prover_core::{CommonError, ProverResource, ProverResourceKind, RemoteProverConfig};
+use ere_verifier_sp1::extract_exit_code;
 #[cfg(feature = "cuda")]
 use sp1_cuda::CudaProvingKey;
-use sp1_hypercube::PrimeField32;
-use sp1_recursion_executor::{RECURSIVE_PROOF_NUM_PV_ELTS, RecursionPublicValues};
 #[cfg(feature = "cuda")]
 use sp1_sdk::CudaProver;
 use sp1_sdk::{
     CpuProver, Elf, NetworkProver, ProofFromNetwork, ProveRequest, Prover as SP1Prover,
-    ProverClient, ProvingKey as SP1ProvingKeyTrait, SP1Proof, SP1ProofMode,
-    SP1ProofWithPublicValues, SP1ProvingKey as CpuProvingKey, SP1Stdin, SP1VerifyingKey,
-    StatusCode,
+    ProverClient, ProvingKey as SP1ProvingKeyTrait, SP1ProvingKey as CpuProvingKey, SP1Stdin,
+    SP1VerifyingKey, StatusCode,
 };
 
 use crate::error::Error;
@@ -105,7 +103,7 @@ impl SP1Sdk {
             }
         }?;
 
-        let exit_code = extract_exit_code(&proof)?;
+        let exit_code = extract_exit_code(&proof.proof)?;
         if exit_code != StatusCode::SUCCESS.as_u32() {
             return Err(Error::ExecutionFailed(exit_code));
         }
@@ -136,21 +134,4 @@ async fn build_network_prover(config: &RemoteProverConfig) -> Result<NetworkProv
     }
     // Otherwise SP1 SDK will use its default RPC URL
     Ok(builder.build().await)
-}
-
-/// Extracts the exit code from an public values of proof.
-///
-/// The `exit_code` field is extracted from the public values struct of proof,
-/// mirroring the approach used in `verify_proof` of `sp1_sdk`.
-fn extract_exit_code(proof: &SP1ProofWithPublicValues) -> Result<u32, Error> {
-    let SP1Proof::Compressed(proof) = &proof.proof else {
-        let proof_mode = SP1ProofMode::from(&proof.proof);
-        return Err(ere_verifier_sp1::Error::UnexpectedProofKind(proof_mode).into());
-    };
-    (proof.proof.public_values.len() == RECURSIVE_PROOF_NUM_PV_ELTS)
-        .then(|| {
-            let pv: &RecursionPublicValues<_> = proof.proof.public_values.as_slice().borrow();
-            pv.exit_code.as_canonical_u32()
-        })
-        .ok_or(Error::ExitCodeExtractionFailed)
 }
