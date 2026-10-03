@@ -1,16 +1,18 @@
 use core::{ops::Deref, time::Duration};
 
-use ere_prover_core::{CostEstimation, Elf, Input, PublicValues};
+use ere_prover_core::{CostEstimation, CostProfile, Elf, Input, PublicValues, pprof};
 use ere_server_api::{
-    ExecuteEstimatedCostRequest, ExecuteRequest, ProgramVkRequest, ProveRequest, SetupRequest,
-    VerifyRequest, ZkvmService,
+    ExecuteEstimatedCostRequest, ExecuteRequest, ProfileRequest, ProgramVkRequest, ProveRequest,
+    SetupRequest, VerifyRequest, ZkvmService,
     execute_estimated_cost_response::Result as ExecuteEstimatedCostResult,
-    execute_response::Result as ExecuteResult, program_vk_response::Result as ProgramVkResult,
-    prove_response::Result as ProveResult, setup_response::Result as SetupResult,
-    verify_response::Result as VerifyResult,
+    execute_response::Result as ExecuteResult, profile_response::Result as ProfileResult,
+    program_vk_response::Result as ProgramVkResult, prove_response::Result as ProveResult,
+    setup_response::Result as SetupResult, verify_response::Result as VerifyResult,
 };
 #[cfg(feature = "otel")]
 pub use otel_propagation::OtelPropagation;
+pub use prost::DecodeError;
+use prost::Message;
 use thiserror::Error;
 use twirp::{Client, Middleware, Request, url::Url};
 pub use twirp::{TwirpErrorResponse, reqwest, url};
@@ -26,6 +28,8 @@ pub enum Error {
     zkVM(String),
     #[error("RPC error: {0}")]
     Rpc(#[from] TwirpErrorResponse),
+    #[error("Decode pprof profile failed: {0}")]
+    DecodePprof(#[from] DecodeError),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -150,10 +154,30 @@ impl zkVMClient {
                 result.public_values.into(),
                 CostEstimation {
                     cost: result.cost.into_iter().collect(),
-                    peak_heap_bytes: result.peak_heap_bytes,
                 },
             )),
             ExecuteEstimatedCostResult::Err(err) => Err(Error::zkVM(err)),
+        }
+    }
+
+    pub async fn profile(&self, input: Input) -> Result<(PublicValues, CostProfile), Error> {
+        let request = Request::new(ProfileRequest {
+            input_stdin: input.stdin,
+            input_proofs: input.proofs,
+        });
+
+        let response = self.client.profile(request).await?;
+
+        match response.into_body().result.ok_or_else(result_none_err)? {
+            ProfileResult::Ok(result) => Ok((
+                result.public_values.into(),
+                CostProfile {
+                    pprof: pprof::Profile::decode(result.pprof.as_slice())?,
+                    peak_stack_bytes: result.peak_stack_bytes,
+                    peak_heap_bytes: result.peak_heap_bytes,
+                },
+            )),
+            ProfileResult::Err(err) => Err(Error::zkVM(err)),
         }
     }
 

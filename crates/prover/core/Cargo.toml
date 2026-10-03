@@ -11,6 +11,9 @@ auto_impl.workspace = true
 bincode = { workspace = true, features = ["alloc", "serde"] }
 clap = { workspace = true, features = ["derive"], optional = true }
 elf.workspace = true
+flate2.workspace = true
+prost.workspace = true
+rustc-demangle.workspace = true
 serde = { workspace = true, features = ["derive"] }
 strum = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
@@ -22,8 +25,10 @@ ere-verifier-core.workspace = true
 
 [dev-dependencies]
 bincode = { workspace = true, features = ["alloc", "serde"] }
+prost-build = { workspace = true, features = ["cleanup-markdown"] }
 serde_json.workspace = true
 serde_yaml.workspace = true
+tempfile.workspace = true
 toml.workspace = true
 
 [lints]

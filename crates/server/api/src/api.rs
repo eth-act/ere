@@ -93,8 +93,43 @@ pub struct ExecuteEstimatedCostOk {
     pub public_values: ::prost::alloc::vec::Vec<u8>,
     #[prost(map = "string, uint64", tag = "2")]
     pub cost: ::std::collections::HashMap<::prost::alloc::string::String, u64>,
-    #[prost(uint64, optional, tag = "3")]
-    pub peak_heap_bytes: ::core::option::Option<u64>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ProfileRequest {
+    #[prost(bytes = "vec", tag = "1")]
+    pub input_stdin: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes = "vec", optional, tag = "2")]
+    pub input_proofs: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ProfileResponse {
+    #[prost(oneof = "profile_response::Result", tags = "1, 2")]
+    pub result: ::core::option::Option<profile_response::Result>,
+}
+/// Nested message and enum types in `ProfileResponse`.
+pub mod profile_response {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
+    pub enum Result {
+        #[prost(message, tag = "1")]
+        Ok(super::ProfileOk),
+        #[prost(string, tag = "2")]
+        Err(::prost::alloc::string::String),
+    }
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ProfileOk {
+    #[prost(bytes = "vec", tag = "1")]
+    pub public_values: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes = "vec", tag = "2")]
+    pub pprof: ::prost::alloc::vec::Vec<u8>,
+    #[prost(uint64, tag = "3")]
+    pub peak_stack_bytes: u64,
+    #[prost(uint64, tag = "4")]
+    pub peak_heap_bytes: u64,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
@@ -201,6 +236,10 @@ pub trait ZkvmService: Send + Sync {
         &self,
         req: twirp::Request<ExecuteEstimatedCostRequest>,
     ) -> twirp::Result<twirp::Response<ExecuteEstimatedCostResponse>>;
+    async fn profile(
+        &self,
+        req: twirp::Request<ProfileRequest>,
+    ) -> twirp::Result<twirp::Response<ProfileResponse>>;
     async fn prove(
         &self,
         req: twirp::Request<ProveRequest>,
@@ -236,6 +275,12 @@ where
         req: twirp::Request<ExecuteEstimatedCostRequest>,
     ) -> twirp::Result<twirp::Response<ExecuteEstimatedCostResponse>> {
         T::execute_estimated_cost(&*self, req).await
+    }
+    async fn profile(
+        &self,
+        req: twirp::Request<ProfileRequest>,
+    ) -> twirp::Result<twirp::Response<ProfileResponse>> {
+        T::profile(&*self, req).await
     }
     async fn prove(
         &self,
@@ -280,6 +325,12 @@ where
             },
         )
         .route(
+            "/Profile",
+            |api: T, req: twirp::Request<ProfileRequest>| async move {
+                api.profile(req).await
+            },
+        )
+        .route(
             "/Prove",
             |api: T, req: twirp::Request<ProveRequest>| async move {
                 api.prove(req).await
@@ -318,6 +369,12 @@ impl ZkvmService for twirp::client::Client {
         req: twirp::Request<ExecuteEstimatedCostRequest>,
     ) -> twirp::Result<twirp::Response<ExecuteEstimatedCostResponse>> {
         self.request("api.ZkvmService/ExecuteEstimatedCost", req).await
+    }
+    async fn profile(
+        &self,
+        req: twirp::Request<ProfileRequest>,
+    ) -> twirp::Result<twirp::Response<ProfileResponse>> {
+        self.request("api.ZkvmService/Profile", req).await
     }
     async fn prove(
         &self,
@@ -386,6 +443,14 @@ pub mod handler {
                             .execute_estimated_cost(
                                 twirp::details::decode_request(req).await?,
                             )
+                            .await?,
+                    )
+                }
+                "Profile" => {
+                    twirp::details::encode_response(
+                        self
+                            .inner
+                            .profile(twirp::details::decode_request(req).await?)
                             .await?,
                     )
                 }

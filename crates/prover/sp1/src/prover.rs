@@ -1,4 +1,5 @@
 use std::{
+    ops::Range,
     sync::{Arc, OnceLock},
     time::{Duration, Instant},
 };
@@ -6,7 +7,8 @@ use std::{
 use anyhow::anyhow;
 use ere_compiler_core::Elf;
 use ere_prover_core::{
-    CommonError, CostEstimation, Input, ProverResource, PublicValues, zkVMProver,
+    CommonError, CostEstimation, CostProfile, Input, ProverResource, PublicValues, SymbolMap,
+    loadable_segments, zkVMProver,
 };
 use ere_util_tokio::block_on;
 use ere_verifier_sp1::{SP1ProgramVk, SP1Proof, SP1Verifier};
@@ -19,6 +21,8 @@ use crate::{cost::SP1CostEstimator, error::Error, executor::SP1Executor, sdk::SP
 /// `executor` is lazy, because two pools of its 2 TiB instances exceed the address space.
 pub struct SP1Prover {
     program: Arc<Program>,
+    symbol_map: Arc<SymbolMap>,
+    loadable_segments: Vec<Range<u64>>,
     executor: OnceLock<SP1Executor>,
     estimator: OnceLock<SP1CostEstimator>,
     elf: Arc<[u8]>,
@@ -30,11 +34,15 @@ impl SP1Prover {
     pub fn new(elf: Elf, resource: ProverResource) -> Result<Self, Error> {
         let elf: Arc<[u8]> = Arc::from(elf.0);
         let program = transpile(&elf)?;
+        let symbol_map = Arc::new(SymbolMap::from_elf(&elf)?);
+        let loadable_segments = loadable_segments(&elf)?;
         let sdk = block_on(SP1Sdk::new(Arc::clone(&elf), &resource))?;
         let program_vk = SP1ProgramVk(sdk.vk().hash_koalabear());
         let verifier = SP1Verifier::new(program_vk);
         Ok(Self {
             program,
+            symbol_map,
+            loadable_segments,
             executor: OnceLock::new(),
             estimator: OnceLock::new(),
             elf,
@@ -49,8 +57,13 @@ impl SP1Prover {
     }
 
     fn estimator(&self) -> &SP1CostEstimator {
-        self.estimator
-            .get_or_init(|| SP1CostEstimator::new(Arc::clone(&self.program), &self.elf))
+        self.estimator.get_or_init(|| {
+            SP1CostEstimator::new(
+                Arc::clone(&self.program),
+                Arc::clone(&self.symbol_map),
+                self.loadable_segments.clone(),
+            )
+        })
     }
 }
 
@@ -70,9 +83,13 @@ impl zkVMProver for SP1Prover {
 
         let elf: Arc<[u8]> = Arc::from(elf.0);
         let program = transpile(&elf)?;
+        let symbol_map = Arc::new(SymbolMap::from_elf(&elf)?);
+        let loadable_segments = loadable_segments(&elf)?;
         block_on(self.sdk.setup(Arc::clone(&elf)))?;
         self.verifier = SP1Verifier::new(SP1ProgramVk(self.sdk.vk().hash_koalabear()));
         self.program = program;
+        self.symbol_map = symbol_map;
+        self.loadable_segments = loadable_segments;
         self.executor = OnceLock::new();
         self.estimator = OnceLock::new();
         self.elf = elf;
@@ -93,6 +110,19 @@ impl zkVMProver for SP1Prover {
         }
 
         self.estimator().estimate(input.stdin())
+    }
+
+    fn profile(&self, input: &Input) -> Result<(PublicValues, CostProfile), Error> {
+        // The gas estimator reads stdin only, so it cannot price a proofs stream.
+        if input.proofs.is_some() {
+            Err(CommonError::unsupported_input("no dedicated proofs stream"))?
+        }
+        // The profiler copies only the supervisor-mode step, and untrusted programs need user mode.
+        if self.program.enable_untrusted_programs {
+            Err(Error::ProfileUntrustedPrograms)?
+        }
+
+        self.estimator().profile(input.stdin())
     }
 
     fn prove(&self, input: &Input) -> Result<(PublicValues, SP1Proof, Duration), Error> {
@@ -129,21 +159,24 @@ fn input_to_stdin(input: &Input) -> Result<SP1Stdin, Error> {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::{Mutex, MutexGuard, OnceLock};
+    use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
 
     use ere_compiler_core::{Compiler, Elf};
     use ere_compiler_sp1::SP1RustRv64imaCustomized;
-    use ere_prover_core::{Input, ProverResource, RemoteProverConfig, zkVMProver};
+    use ere_prover_core::{
+        Input, ProverResource, RemoteProverConfig, SymbolMap, loadable_segments, zkVMProver,
+    };
     use ere_util_test::{
         codec::BincodeLegacy,
         host::{
-            TestCase, run_zkvm_execute, run_zkvm_execute_estimated_cost, run_zkvm_prove,
-            run_zkvm_switchable, testing_guest_directory,
+            TestCase, profile_stacks, run_zkvm_execute, run_zkvm_execute_estimated_cost,
+            run_zkvm_profile, run_zkvm_profile_zkvm_interface, run_zkvm_prove, run_zkvm_switchable,
+            testing_guest_directory,
         },
         program::{basic::BasicProgram, zkvm_interface},
     };
 
-    use crate::prover::SP1Prover;
+    use crate::{cost::SP1CostEstimator, prover::SP1Prover};
 
     fn basic_elf() -> Elf {
         static ELF: OnceLock<Elf> = OnceLock::new();
@@ -213,6 +246,59 @@ mod tests {
         let zkvm = with_basic_elf(zkvm(false));
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_execute_estimated_cost(&*zkvm, &test_case);
+    }
+
+    #[test]
+    fn test_profile() {
+        let zkvm = with_basic_elf(zkvm(false));
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+        run_zkvm_profile(&*zkvm, &test_case);
+    }
+
+    #[test]
+    fn test_profile_invalid_test_case() {
+        let zkvm = with_basic_elf(zkvm(false));
+        for input in [
+            Input::new(),
+            BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
+        ] {
+            zkvm.profile(&input).unwrap_err();
+        }
+
+        // Should be able to recover
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+        run_zkvm_profile(&*zkvm, &test_case);
+    }
+
+    #[test]
+    fn test_profile_zkvm_interface() {
+        let zkvm = with_zkvm_interface(zkvm(false));
+        run_zkvm_profile_zkvm_interface(&*zkvm);
+    }
+
+    #[test]
+    fn test_profile_elf_without_function_symbols() {
+        let zkvm = with_basic_elf(zkvm(false));
+        // Zeroes `e_shoff`, `e_shnum` and `e_shstrndx` to remove the section headers and symbols.
+        let mut elf = basic_elf().0;
+        elf[0x28..0x30].fill(0);
+        elf[0x3c..0x40].fill(0);
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+        let symbol_map = Arc::new(SymbolMap::from_elf(&elf).unwrap());
+        let estimator = SP1CostEstimator::new(
+            Arc::clone(&zkvm.program),
+            symbol_map,
+            loadable_segments(&elf).unwrap(),
+        );
+        let (public_values, profile) = estimator.profile(test_case.input().stdin()).unwrap();
+        test_case.assert_output(&public_values);
+        // Every frame is `[unknown]`, and the peaks need no symbols.
+        assert!(
+            profile_stacks(&profile)
+                .iter()
+                .all(|(frames, _)| frames.iter().all(|frame| *frame == "[unknown]"))
+        );
+        assert!(profile.peak_stack_bytes > 0 && profile.peak_heap_bytes > 0);
     }
 
     #[test]

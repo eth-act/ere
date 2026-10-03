@@ -21,6 +21,10 @@ pub enum Error {
     #[error("LambdaVM cost estimation failed: {0}")]
     EstimateCost(#[source] lambda_vm_prover::Error),
 
+    // Profile
+    #[error("LambdaVM does not support profiling yet")]
+    ProfileUnsupported,
+
     // Prove
     #[error("LambdaVM proving failed: {0}")]
     Prove(#[source] lambda_vm_prover::Error),

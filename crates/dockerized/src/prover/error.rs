@@ -1,7 +1,7 @@
 use core::time::Duration;
 
 use ere_prover_core::CommonError;
-use ere_server_client::{TwirpErrorResponse, url};
+use ere_server_client::{DecodeError, TwirpErrorResponse, url};
 use thiserror::Error;
 
 use crate::util::docker::ContainerExitInfo;
@@ -12,6 +12,7 @@ impl From<ere_server_client::Error> for Error {
             ere_server_client::Error::ParseUrl(err) => Self::ParseUrl(err),
             ere_server_client::Error::zkVM(err) => Self::zkVM(err),
             ere_server_client::Error::Rpc(err) => Self::Rpc(err),
+            ere_server_client::Error::DecodePprof(err) => Self::DecodePprof(err),
         }
     }
 }
@@ -29,6 +30,8 @@ pub enum Error {
     ConnectionTimeout,
     #[error("RPC to zkVM server error: {0}")]
     Rpc(TwirpErrorResponse),
+    #[error("Decode pprof profile failed: {0}")]
+    DecodePprof(DecodeError),
     #[error("Server container '{container_id}' exited during request: {exit_info}")]
     ContainerExited {
         container_id: String,

@@ -6,14 +6,17 @@ mod input;
 mod prover;
 mod resource;
 
+#[cfg(test)]
+mod test;
+
 pub use ere_codec as codec;
 pub use ere_compiler_core::Elf;
 pub use ere_verifier_core::{PublicValues, zkVMVerifier};
 
 pub use crate::{
     cost::{
-        CostEstimation, ERE_COST_ESTIMATION_HEAP_END, ERE_COST_ESTIMATION_HEAP_START,
-        symbol_address,
+        CallTree, CostEstimation, CostProfile, Frame, PeakMemory, RasAction, StackPointerWrite,
+        SymbolMap, loadable_segments, pprof,
     },
     error::CommonError,
     input::Input,

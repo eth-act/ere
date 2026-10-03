@@ -46,7 +46,7 @@ This repository contains the following crates:
 
 - Traits
   - [`ere-compiler-core`] - `Compiler` trait and `Elf` type for compiling guest programs
-  - [`ere-prover-core`] - `zkVMProver` trait, `Input`, `ProverResource`, and `CostEstimation`
+  - [`ere-prover-core`] - `zkVMProver` trait, `Input`, `ProverResource`, `CostEstimation`, and `CostProfile`
   - [`ere-platform-core`] - `Platform` trait for guest program
   - [`ere-verifier-core`] - `zkVMVerifier` trait and `PublicValues`
 - Per-zkVM implementations for [`ere-compiler-core`] (host)

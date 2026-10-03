@@ -3647,10 +3647,15 @@ dependencies = [
  "ere-codec",
  "ere-compiler-core",
  "ere-verifier-core",
+ "flate2",
+ "prost 0.14.3",
+ "prost-build 0.14.3",
+ "rustc-demangle",
  "serde",
  "serde_json",
  "serde_yaml",
  "strum 0.27.2",
+ "tempfile",
  "thiserror 2.0.18",
  "toml 0.8.23",
 ]
@@ -3679,13 +3684,17 @@ dependencies = [
  "ere-util-test",
  "ere-verifier-openvm",
  "eyre",
+ "libloading",
  "once_cell",
  "openvm-circuit",
+ "openvm-riscv-transpiler",
  "openvm-sdk",
  "openvm-sdk-config",
  "openvm-stark-sdk",
  "openvm-transpiler",
  "openvm-verify-stark-host",
+ "rvr-openvm-ir",
+ "rvr-openvm-lift",
  "thiserror 2.0.18",
 ]
 
@@ -3702,13 +3711,13 @@ dependencies = [
  "ere-util-test",
  "ere-util-tokio",
  "ere-verifier-sp1",
- "libc",
  "memmap2",
  "sp1-core-executor",
  "sp1-cuda",
  "sp1-jit",
  "sp1-primitives 6.6.0",
  "sp1-sdk",
+ "strum 0.27.2",
  "sysinfo 0.35.2",
  "thiserror 2.0.18",
  "tracing",
@@ -3798,6 +3807,7 @@ dependencies = [
  "ere-prover-core",
  "ere-server-api",
  "opentelemetry 0.31.0",
+ "prost 0.14.3",
  "thiserror 2.0.18",
  "tracing",
  "tracing-opentelemetry",
@@ -6276,7 +6286,7 @@ dependencies = [
 [[package]]
 name = "openvm"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "bytemuck",
  "num-bigint 0.4.6",
@@ -6290,7 +6300,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-circuit"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "blstrs",
  "cfg-if",
@@ -6339,7 +6349,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-complex-macros"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "openvm-macros-common 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "quote",
@@ -6365,7 +6375,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-guest"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "halo2curves-axiom 0.7.3",
  "num-bigint 0.4.6",
@@ -6393,7 +6403,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-moduli-macros"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "num-bigint 0.4.6",
  "num-prime",
@@ -6405,7 +6415,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-transpiler"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "openvm-algebra-guest 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "openvm-decoder",
@@ -6419,7 +6429,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-utils"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "num-bigint 0.4.6",
  "num-traits",
@@ -6429,7 +6439,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-circuit"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "cfg-if",
  "derive-new 0.6.0",
@@ -6458,7 +6468,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-guest"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "openvm-platform 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "strum_macros 0.26.4",
@@ -6467,7 +6477,7 @@ dependencies = [
 [[package]]
 name = "openvm-bigint-transpiler"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "openvm-bigint-guest",
  "openvm-decoder",
@@ -6482,7 +6492,7 @@ dependencies = [
 [[package]]
 name = "openvm-build"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "cargo_metadata 0.18.1",
  "eyre",
@@ -6494,7 +6504,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "backtrace",
  "bytesize",
@@ -6541,7 +6551,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-derive"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "itertools 0.14.0",
  "proc-macro2",
@@ -6552,7 +6562,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-primitives"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "derive-new 0.6.0",
  "itertools 0.14.0",
@@ -6572,7 +6582,7 @@ dependencies = [
 [[package]]
 name = "openvm-circuit-primitives-derive"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "itertools 0.14.0",
  "proc-macro2",
@@ -6594,7 +6604,7 @@ dependencies = [
 [[package]]
 name = "openvm-continuations"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "cfg-if",
  "derivative",
@@ -6721,7 +6731,7 @@ dependencies = [
 [[package]]
 name = "openvm-custom-insn"
 version = "0.1.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6731,12 +6741,12 @@ dependencies = [
 [[package]]
 name = "openvm-decoder"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 
 [[package]]
 name = "openvm-deferral-circuit"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "cfg-if",
  "dashmap",
@@ -6768,7 +6778,7 @@ dependencies = [
 [[package]]
 name = "openvm-deferral-guest"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "openvm-custom-insn 0.1.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "strum_macros 0.26.4",
@@ -6777,7 +6787,7 @@ dependencies = [
 [[package]]
 name = "openvm-deferral-transpiler"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "eyre",
  "openvm-deferral-guest",
@@ -6793,7 +6803,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-circuit"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "blstrs",
  "cfg-if",
@@ -6850,7 +6860,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-guest"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "ecdsa 0.16.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "elliptic-curve",
@@ -6879,7 +6889,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-sw-macros"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "openvm-macros-common 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "quote",
@@ -6889,7 +6899,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-transpiler"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "openvm-decoder",
  "openvm-ecc-guest 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
@@ -6903,7 +6913,7 @@ dependencies = [
 [[package]]
 name = "openvm-instructions"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "backtrace",
  "derive-new 0.6.0",
@@ -6920,7 +6930,7 @@ dependencies = [
 [[package]]
 name = "openvm-instructions-derive"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "quote",
  "syn 2.0.117",
@@ -6939,7 +6949,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-circuit"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "derive-new 0.6.0",
  "derive_more 1.0.0",
@@ -6977,7 +6987,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-guest"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "openvm-platform 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
 ]
@@ -6985,7 +6995,7 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-transpiler"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "openvm-decoder",
  "openvm-instructions",
@@ -7024,7 +7034,7 @@ dependencies = [
 [[package]]
 name = "openvm-macros-common"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "syn 2.0.117",
 ]
@@ -7037,12 +7047,12 @@ source = "git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview#538c54
 [[package]]
 name = "openvm-mem"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 
 [[package]]
 name = "openvm-mod-circuit-builder"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "itertools 0.14.0",
  "num-bigint 0.4.6",
@@ -7082,7 +7092,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-circuit"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "cfg-if",
  "derive-new 0.6.0",
@@ -7135,7 +7145,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-guest"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "blst",
  "halo2curves-axiom 0.7.3",
@@ -7156,7 +7166,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-transpiler"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "openvm-decoder",
  "openvm-instructions",
@@ -7181,7 +7191,7 @@ dependencies = [
 [[package]]
 name = "openvm-platform"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "libm",
  "openvm-custom-insn 0.1.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
@@ -7191,7 +7201,7 @@ dependencies = [
 [[package]]
 name = "openvm-poseidon2-air"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "derivative",
  "lazy_static",
@@ -7209,7 +7219,7 @@ dependencies = [
 [[package]]
 name = "openvm-recursion-circuit"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "derive-new 0.6.0",
  "itertools 0.14.0",
@@ -7237,7 +7247,7 @@ dependencies = [
 [[package]]
 name = "openvm-recursion-circuit-derive"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "quote",
  "syn 2.0.117",
@@ -7246,7 +7256,7 @@ dependencies = [
 [[package]]
 name = "openvm-riscv-adapters"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "derive-new 0.6.0",
  "itertools 0.14.0",
@@ -7263,7 +7273,7 @@ dependencies = [
 [[package]]
 name = "openvm-riscv-circuit"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "cfg-if",
  "derive-new 0.6.0",
@@ -7303,7 +7313,7 @@ dependencies = [
 [[package]]
 name = "openvm-riscv-guest"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "openvm-custom-insn 0.1.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
  "strum_macros 0.26.4",
@@ -7312,7 +7322,7 @@ dependencies = [
 [[package]]
 name = "openvm-riscv-transpiler"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "openvm-decoder",
  "openvm-instructions",
@@ -7328,7 +7338,7 @@ dependencies = [
 [[package]]
 name = "openvm-sdk"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "bitcode",
  "cfg-if",
@@ -7364,7 +7374,7 @@ dependencies = [
 [[package]]
 name = "openvm-sdk-config"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "bon",
  "cfg-if",
@@ -7411,7 +7421,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha2-air"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "ndarray",
  "num_enum 0.7.6",
@@ -7425,7 +7435,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha2-circuit"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "cfg-if",
  "derive-new 0.6.0",
@@ -7464,7 +7474,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha2-guest"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "openvm-platform 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
 ]
@@ -7472,7 +7482,7 @@ dependencies = [
 [[package]]
 name = "openvm-sha2-transpiler"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "openvm-decoder",
  "openvm-instructions",
@@ -7549,7 +7559,7 @@ dependencies = [
 [[package]]
 name = "openvm-static-verifier"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "halo2-base",
  "itertools 0.14.0",
@@ -7569,7 +7579,7 @@ dependencies = [
 [[package]]
 name = "openvm-transpiler"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "elf",
  "eyre",
@@ -7583,7 +7593,7 @@ dependencies = [
 [[package]]
 name = "openvm-verify-stark-circuit"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "bitcode",
  "cfg-if",
@@ -7613,7 +7623,7 @@ dependencies = [
 [[package]]
 name = "openvm-verify-stark-host"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "bitcode",
  "eyre",
@@ -9699,9 +9709,9 @@ checksum = "48fd7bd8a6377e15ad9d42a8ec25371b94ddc67abe7c8b9127bec79bebaaae18"
 
 [[package]]
 name = "rustc-demangle"
-version = "0.1.27"
+version = "0.1.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b50b8869d9fc858ce7266cce0194bd74df58b9d0e3f6df3a9fc8eb470d95c09d"
+checksum = "b74b56ffa8bb2830709a538c2cbcae9aa062db0d2a42563bfb09bdaae44020eb"
 
 [[package]]
 name = "rustc-hash"
@@ -9903,7 +9913,7 @@ dependencies = [
 [[package]]
 name = "rvr-openvm"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "openvm-instructions",
  "openvm-platform 2.0.0 (git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview)",
@@ -9917,12 +9927,12 @@ dependencies = [
 [[package]]
 name = "rvr-openvm-build"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 
 [[package]]
 name = "rvr-openvm-ext-algebra"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "cc",
  "num-bigint 0.4.6",
@@ -9939,7 +9949,7 @@ dependencies = [
 [[package]]
 name = "rvr-openvm-ext-bigint"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "openvm-bigint-transpiler",
  "openvm-instructions",
@@ -9953,7 +9963,7 @@ dependencies = [
 [[package]]
 name = "rvr-openvm-ext-deferral"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "libloading",
  "openvm-circuit",
@@ -9967,7 +9977,7 @@ dependencies = [
 [[package]]
 name = "rvr-openvm-ext-ecc"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "openvm-ecc-transpiler",
  "openvm-instructions",
@@ -9980,7 +9990,7 @@ dependencies = [
 [[package]]
 name = "rvr-openvm-ext-keccak"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "openvm-instructions",
  "openvm-keccak256-transpiler",
@@ -9993,7 +10003,7 @@ dependencies = [
 [[package]]
 name = "rvr-openvm-ext-pairing"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "openvm-instructions",
  "openvm-pairing-transpiler",
@@ -10005,7 +10015,7 @@ dependencies = [
 [[package]]
 name = "rvr-openvm-ext-riscv"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "libloading",
  "openvm-circuit",
@@ -10020,7 +10030,7 @@ dependencies = [
 [[package]]
 name = "rvr-openvm-ext-sha2"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "openvm-instructions",
  "openvm-sha2-air",
@@ -10033,7 +10043,7 @@ dependencies = [
 [[package]]
 name = "rvr-openvm-ir"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "serde",
 ]
@@ -10041,7 +10051,7 @@ dependencies = [
 [[package]]
 name = "rvr-openvm-lift"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 dependencies = [
  "libloading",
  "openvm-instructions",
@@ -10054,7 +10064,7 @@ dependencies = [
 [[package]]
 name = "rvr-state"
 version = "2.0.0"
-source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#a391b22ebb5305fa52d3394abfd0810df4baff90"
+source = "git+https://github.com/han0110/openvm.git?branch=patch%2Fv2.1.0-preview#f73d411c192153cc5f4dc0f4794944605ec6dc9e"
 
 [[package]]
 name = "ryu"
