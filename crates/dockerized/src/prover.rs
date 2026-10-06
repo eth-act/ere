@@ -2,10 +2,7 @@ use core::{future::Future, iter, pin::Pin, time::Duration};
 use std::time::Instant;
 
 use ere_compiler_core::Elf;
-use ere_prover_core::{
-    CostEstimation, ERE_COST_ESTIMATION_HEAP_END, ERE_COST_ESTIMATION_HEAP_START, Input,
-    ProverResource, PublicValues,
-};
+use ere_prover_core::{CostEstimation, CostProfile, Input, ProverResource, PublicValues};
 use ere_server_client::{EncodedProgramVk, EncodedProof, reqwest::Client, url::Url, zkVMClient};
 use ere_util_tokio::block_on;
 use tokio::{
@@ -196,8 +193,6 @@ impl ServerContainer {
             .inherit_env("RUST_LOG")
             .inherit_env("RUST_BACKTRACE")
             .inherit_env("NO_COLOR")
-            .inherit_env(ERE_COST_ESTIMATION_HEAP_START)
-            .inherit_env(ERE_COST_ESTIMATION_HEAP_END)
             .publish(port.to_string(), port.to_string())
             .name(&name);
 
@@ -369,6 +364,10 @@ impl DockerizedzkVM {
         block_on(self.execute_estimated_cost_async(input.clone()))
     }
 
+    pub fn profile(&self, input: &Input) -> anyhow::Result<(PublicValues, CostProfile)> {
+        block_on(self.profile_async(input.clone()))
+    }
+
     pub fn prove(&self, input: &Input) -> anyhow::Result<(PublicValues, EncodedProof, Duration)> {
         block_on(self.prove_async(input.clone()))
     }
@@ -448,6 +447,17 @@ impl DockerizedzkVM {
             |client| {
                 let input = input.clone();
                 Box::pin(async move { client.execute_estimated_cost(input).await })
+            },
+            self.config.execute_timeout,
+        )
+        .await
+    }
+
+    pub async fn profile_async(&self, input: Input) -> anyhow::Result<(PublicValues, CostProfile)> {
+        self.with_retry(
+            |client| {
+                let input = input.clone();
+                Box::pin(async move { client.profile(input).await })
             },
             self.config.execute_timeout,
         )
@@ -610,7 +620,11 @@ mod tests {
     use core::time::Duration;
 
     use ere_prover_core::{Input, ProverResource};
-    use ere_util_test::{codec::BincodeLegacy, host::TestCase, program::basic::BasicProgram};
+    use ere_util_test::{
+        codec::BincodeLegacy,
+        host::{TestCase, assert_profile},
+        program::basic::BasicProgram,
+    };
 
     use crate::{
         CompilerKind, DockerizedzkVMConfig,
@@ -687,6 +701,32 @@ mod tests {
                         matches!(err.downcast_ref::<Error>().unwrap(), Error::zkVM(_)),
                         "Expect error variant `Error::zkVM`, got {err:?}",
                     );
+                }
+            }
+        };
+    }
+
+    macro_rules! test_profile {
+        ($zkvm_kind:ident, $compiler_kind:ident, $program:literal, $valid_test_cases:expr) => {
+            #[tokio::test(flavor = "multi_thread")]
+            async fn test_profile() {
+                let zkvm = zkvm(
+                    zkVMKind::$zkvm_kind,
+                    CompilerKind::$compiler_kind,
+                    $program,
+                    ProverResource::Cpu,
+                );
+
+                for test_case in $valid_test_cases {
+                    let input = test_case.input();
+                    let (public_values, profile) = zkvm
+                        .profile(&input)
+                        .expect("profile should not fail with valid input");
+                    let (_, estimation) = zkvm
+                        .execute_estimated_cost(&input)
+                        .expect("execute_estimated_cost should not fail with valid input");
+                    assert_profile(&profile, &estimation);
+                    test_case.assert_output(&public_values);
                 }
             }
         };
@@ -805,6 +845,12 @@ mod tests {
                 BasicProgram::<BincodeLegacy>::invalid_test_case().input()
             ]
         );
+        test_profile!(
+            OpenVM,
+            RustCustomized,
+            "basic",
+            [BasicProgram::<BincodeLegacy>::valid_test_case()]
+        );
         test_prove!(
             OpenVM,
             RustCustomized,
@@ -831,6 +877,12 @@ mod tests {
                 BasicProgram::<BincodeLegacy>::invalid_test_case().input()
             ]
         );
+        test_profile!(
+            SP1,
+            RustCustomized,
+            "basic",
+            [BasicProgram::<BincodeLegacy>::valid_test_case()]
+        );
         test_prove!(
             SP1,
             RustCustomized,
@@ -856,6 +908,12 @@ mod tests {
                 Input::new(),
                 BasicProgram::<BincodeLegacy>::invalid_test_case().input()
             ]
+        );
+        test_profile!(
+            Zisk,
+            RustCustomized,
+            "basic_rust",
+            [BasicProgram::<BincodeLegacy>::valid_test_case()]
         );
         test_prove!(
             Zisk,

@@ -7,8 +7,8 @@ use std::{
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{
-    CommonError, CostEstimation, Input, ProverResource, ProverResourceKind, PublicValues,
-    zkVMProver,
+    CommonError, CostEstimation, CostProfile, Input, ProverResource, ProverResourceKind,
+    PublicValues, zkVMProver,
 };
 use ere_verifier_openvm::{
     NUM_PUBLIC_VALUES_BYTES, OpenVMProgramVk, OpenVMProof, OpenVMVerifier, extract_public_values,
@@ -173,6 +173,17 @@ impl zkVMProver for OpenVMProver {
         self.estimator()?.estimate(stdin)
     }
 
+    fn profile(&self, input: &Input) -> Result<(PublicValues, CostProfile), Error> {
+        if input.proofs.is_some() {
+            Err(CommonError::unsupported_input("no dedicated proofs stream"))?
+        }
+
+        let mut stdin = StdIn::default();
+        stdin.write_bytes(input.stdin());
+
+        self.estimator()?.profile(stdin)
+    }
+
     fn prove(&self, input: &Input) -> Result<(PublicValues, OpenVMProof, Duration), Error> {
         if input.proofs.is_some() {
             Err(CommonError::unsupported_input("no dedicated proofs stream"))?
@@ -259,11 +270,17 @@ pub(crate) mod tests {
     use ere_util_test::{
         codec::BincodeLegacy,
         host::{
-            TestCase, run_zkvm_execute, run_zkvm_execute_estimated_cost, run_zkvm_prove,
-            run_zkvm_switchable, testing_guest_directory,
+            TestCase, profile_root_cost, run_zkvm_execute, run_zkvm_execute_estimated_cost,
+            run_zkvm_profile, run_zkvm_profile_without_function_symbols,
+            run_zkvm_profile_zkvm_interface, run_zkvm_prove, run_zkvm_switchable,
+            testing_guest_directory,
         },
-        program::{basic::BasicProgram, zkvm_interface},
+        program::{
+            basic::BasicProgram,
+            zkvm_interface::{self, Accelerator},
+        },
     };
+    use openvm_transpiler::openvm_platform::memory::STACK_TOP;
 
     use crate::prover::OpenVMProver;
 
@@ -335,6 +352,44 @@ pub(crate) mod tests {
         let zkvm = with_basic_elf(zkvm(false));
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_execute_estimated_cost(&*zkvm, &test_case);
+    }
+
+    #[test]
+    fn test_profile() {
+        let zkvm = with_basic_elf(zkvm(false));
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+        let profile = run_zkvm_profile(&*zkvm, &test_case);
+        assert!(profile_root_cost(&profile, "[segment base]") > 0);
+        assert!(profile.peak_stack_bytes < STACK_TOP);
+    }
+
+    #[test]
+    fn test_profile_invalid_test_case() {
+        let zkvm = with_basic_elf(zkvm(false));
+        for input in [
+            Input::new(),
+            BasicProgram::<BincodeLegacy>::invalid_test_case().input(),
+        ] {
+            zkvm.profile(&input).unwrap_err();
+        }
+
+        // Should be able to recover
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+        run_zkvm_profile(&*zkvm, &test_case);
+    }
+
+    #[test]
+    fn test_profile_zkvm_interface() {
+        let zkvm = with_zkvm_interface(zkvm(false));
+        run_zkvm_profile_zkvm_interface(&*zkvm);
+        // Modexp runs over several segments, which the profile cuts where the estimate does.
+        run_zkvm_profile(&*zkvm, &zkvm_interface::test_case(Accelerator::Modexp));
+    }
+
+    #[test]
+    fn test_profile_elf_without_function_symbols() {
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+        run_zkvm_profile_without_function_symbols(&mut *zkvm(false), basic_elf(), &test_case);
     }
 
     #[test]

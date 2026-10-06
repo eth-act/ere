@@ -28,7 +28,7 @@ mod host;
 
 #[cfg(feature = "host")]
 pub use crate::program::zkvm_interface::host::{
-    Fixture, FixtureVector, ZkvmInterfaceTestCase, from_hex, test_cases,
+    Fixture, FixtureVector, ZkvmInterfaceTestCase, from_hex, test_case, test_cases,
 };
 
 /// Accelerator one test vector runs, named after the `revm::precompile::Crypto` method that

@@ -33,9 +33,9 @@
 //! count, but the cost estimation and proving keep one log per cycle in memory,
 //! because `lambda-vm-prover` executes at once.
 //!
-//! `peak_heap_bytes` spans from the `_end` symbol up to the highest non-zero
-//! byte below the top of the guest heap at `0xC0000000`, or is `None` when the
-//! estimator cannot read the heap.
+//! ## Profile
+//!
+//! `profile` returns `Error::ProfileUnsupported`.
 //!
 //! ## Security
 //!

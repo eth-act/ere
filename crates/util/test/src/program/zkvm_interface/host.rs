@@ -144,3 +144,11 @@ pub fn test_cases() -> Vec<ZkvmInterfaceTestCase> {
     .map(|(_, vectors)| ProgramTestCase::new(Vectors(vectors)))
     .collect()
 }
+
+/// Test case of `accelerator`.
+pub fn test_case(accelerator: Accelerator) -> ZkvmInterfaceTestCase {
+    test_cases()
+        .into_iter()
+        .find(|test_case| test_case.0[0].accelerator == accelerator)
+        .unwrap()
+}

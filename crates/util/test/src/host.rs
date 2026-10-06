@@ -14,6 +14,13 @@ use crate::{
     },
 };
 
+mod profile;
+
+pub use crate::host::profile::{
+    assert_profile, profile_root_cost, run_zkvm_profile, run_zkvm_profile_without_function_symbols,
+    run_zkvm_profile_zkvm_interface,
+};
+
 pub(crate) fn workspace() -> PathBuf {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.pop();
@@ -45,10 +52,6 @@ pub fn run_zkvm_execute_estimated_cost(
         .expect("execute_estimated_cost should not fail with valid input");
 
     assert!(!estimation.cost.is_empty(), "cost must not be empty");
-    assert!(
-        estimation.peak_heap_bytes.is_some(),
-        "peak heap must be known"
-    );
 
     test_case.assert_output(&public_values);
 
@@ -108,10 +111,7 @@ pub fn run_zkvm_switchable(
         zkvm.program_vk().encode_to_vec().unwrap(),
         zkvm_interface_vk
     );
-    let test_case = zkvm_interface::test_cases()
-        .into_iter()
-        .find(|test_case| test_case.0[0].accelerator == Accelerator::Sha256)
-        .unwrap();
+    let test_case = zkvm_interface::test_case(Accelerator::Sha256);
     if prove {
         run_zkvm_prove(zkvm, &test_case);
     } else {
