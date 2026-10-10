@@ -3453,7 +3453,7 @@ checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
 [[package]]
 name = "ere-catalog"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "ere-util-build",
  "serde",
@@ -3462,7 +3462,7 @@ dependencies = [
 
 [[package]]
 name = "ere-cluster-client-zisk"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "bincode 2.0.1",
  "ere-compiler-core",
@@ -3483,7 +3483,7 @@ dependencies = [
 
 [[package]]
 name = "ere-codec"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "bincode 2.0.1",
  "serde",
@@ -3491,7 +3491,7 @@ dependencies = [
 
 [[package]]
 name = "ere-compiler"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -3507,14 +3507,14 @@ dependencies = [
 
 [[package]]
 name = "ere-compiler-core"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "ere-compiler-lambdavm"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "ere-compiler-core",
  "ere-prover-core",
@@ -3526,7 +3526,7 @@ dependencies = [
 
 [[package]]
 name = "ere-compiler-openvm"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "ere-compiler-core",
  "ere-prover-core",
@@ -3540,7 +3540,7 @@ dependencies = [
 
 [[package]]
 name = "ere-compiler-sp1"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "ere-compiler-core",
  "ere-prover-core",
@@ -3554,7 +3554,7 @@ dependencies = [
 
 [[package]]
 name = "ere-compiler-zisk"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "ere-compiler-core",
  "ere-prover-core",
@@ -3566,7 +3566,7 @@ dependencies = [
 
 [[package]]
 name = "ere-dockerized"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "anyhow",
  "ere-catalog",
@@ -3585,11 +3585,11 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-core"
-version = "0.19.1"
+version = "0.19.2"
 
 [[package]]
 name = "ere-platform-lambdavm"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "ere-platform-core",
  "lambda-vm-syscalls",
@@ -3597,7 +3597,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-openvm"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "ark-bls12-381 0.6.0",
  "ark-ec 0.6.0",
@@ -3620,7 +3620,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-sp1"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "ere-platform-core",
  "libzkevm",
@@ -3629,7 +3629,7 @@ dependencies = [
 
 [[package]]
 name = "ere-platform-zisk"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "ere-platform-core",
  "ziskos 1.3.1-alpha (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3637,7 +3637,7 @@ dependencies = [
 
 [[package]]
 name = "ere-prover-core"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "anyhow",
  "auto_impl",
@@ -3662,7 +3662,7 @@ dependencies = [
 
 [[package]]
 name = "ere-prover-lambdavm"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "ere-compiler-core",
  "ere-compiler-lambdavm",
@@ -3676,7 +3676,7 @@ dependencies = [
 
 [[package]]
 name = "ere-prover-openvm"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "ere-compiler-core",
  "ere-compiler-openvm",
@@ -3700,7 +3700,7 @@ dependencies = [
 
 [[package]]
 name = "ere-prover-sp1"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "anyhow",
  "bincode 2.0.1",
@@ -3725,7 +3725,7 @@ dependencies = [
 
 [[package]]
 name = "ere-prover-zisk"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "anyhow",
  "ere-cluster-client-zisk",
@@ -3760,7 +3760,7 @@ dependencies = [
 
 [[package]]
 name = "ere-server"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -3790,7 +3790,7 @@ dependencies = [
 
 [[package]]
 name = "ere-server-api"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "prost 0.14.3",
  "prost-build 0.14.3",
@@ -3802,7 +3802,7 @@ dependencies = [
 
 [[package]]
 name = "ere-server-client"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "ere-prover-core",
  "ere-server-api",
@@ -3816,14 +3816,14 @@ dependencies = [
 
 [[package]]
 name = "ere-util-build"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "cargo_metadata 0.19.2",
 ]
 
 [[package]]
 name = "ere-util-compile"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "anyhow",
  "cargo_metadata 0.19.2",
@@ -3834,7 +3834,7 @@ dependencies = [
 
 [[package]]
 name = "ere-util-test"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "bincode 2.0.1",
  "ciborium",
@@ -3854,14 +3854,14 @@ dependencies = [
 
 [[package]]
 name = "ere-util-tokio"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "tokio",
 ]
 
 [[package]]
 name = "ere-verifier"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "criterion",
  "ere-catalog",
@@ -3876,7 +3876,7 @@ dependencies = [
 
 [[package]]
 name = "ere-verifier-c"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "cbindgen",
  "ere-verifier",
@@ -3885,7 +3885,7 @@ dependencies = [
 
 [[package]]
 name = "ere-verifier-core"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "auto_impl",
  "ere-codec",
@@ -3894,7 +3894,7 @@ dependencies = [
 
 [[package]]
 name = "ere-verifier-lambdavm"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "ere-util-build",
  "ere-verifier-core",
@@ -3906,7 +3906,7 @@ dependencies = [
 
 [[package]]
 name = "ere-verifier-openvm"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "bitcode",
  "ere-util-build",
@@ -3920,7 +3920,7 @@ dependencies = [
 
 [[package]]
 name = "ere-verifier-sp1"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "bincode 2.0.1",
  "ere-util-build",
@@ -3935,7 +3935,7 @@ dependencies = [
 
 [[package]]
 name = "ere-verifier-zisk"
-version = "0.19.1"
+version = "0.19.2"
 dependencies = [
  "bincode 2.0.1",
  "bytemuck",

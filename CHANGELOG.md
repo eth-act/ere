@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.2](https://github.com/eth-act/ere/compare/v0.19.1...v0.19.2) (2026-10-10)
+
+
+### Bug Fixes
+
+* drop dead code when merging the ELF verifier archive ([#448](https://github.com/eth-act/ere/issues/448)) ([c65b531](https://github.com/eth-act/ere/commit/c65b53172f9a9eeb3b81d05b5ef29f0432570c7f))
+
 ## [0.19.1](https://github.com/eth-act/ere/compare/v0.19.0...v0.19.1) (2026-10-06)
 
 
