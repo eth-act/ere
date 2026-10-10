@@ -68,7 +68,9 @@ localize_elf_symbols() {
     ar="$(elf_tool ar)"
     nm="$(elf_tool nm)"
 
-    "$ld" -r --whole-archive "$library" --no-whole-archive -o "$WORKSPACE/merged.o"
+    local -a roots=()
+    while read -r symbol; do roots+=(-u "$symbol"); done < <(api_symbols)
+    "$ld" -r --gc-sections "${roots[@]}" --whole-archive "$library" --no-whole-archive -o "$WORKSPACE/merged.o"
     # The archiver cannot read the merged bitcode.
     "$objcopy" --wildcard \
         --keep-global-symbol='ere_*' \
