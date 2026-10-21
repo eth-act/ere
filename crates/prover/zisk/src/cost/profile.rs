@@ -9,7 +9,7 @@ use crate::cost::COMPONENTS;
 
 /// Cost that the steps have spent, in the order of `COMPONENTS`. It is the report cost without
 /// `BASE_COST` and the ROM and RAM init.
-/// https://github.com/0xPolygonHermez/zisk/blob/v1.3.1-alpha/emulator/src/stats/stats.rs#L2840-L2848
+/// https://github.com/0xPolygonHermez/zisk/blob/v1.3.2-alpha/emulator/src/stats/stats.rs#L2840-L2848
 pub(crate) fn running_cost(costs: &StatsCosts) -> [u64; COMPONENTS.len()] {
     [
         0,
@@ -38,9 +38,9 @@ pub(crate) fn stack_pointer_write(instruction: &ZiskInst) -> StackPointerWrite {
 /// step left it, which holds the operands that the accesses used.
 ///
 /// The address and width rules are copies of `source_a`, `source_b` and `store_c` of ziskemu.
-/// https://github.com/0xPolygonHermez/zisk/blob/v1.3.1-alpha/emulator/src/emu.rs#L180-L197
-/// https://github.com/0xPolygonHermez/zisk/blob/v1.3.1-alpha/emulator/src/emu.rs#L502-L533
-/// https://github.com/0xPolygonHermez/zisk/blob/v1.3.1-alpha/emulator/src/emu.rs#L1070-L1134
+/// https://github.com/0xPolygonHermez/zisk/blob/v1.3.2-alpha/emulator/src/emu.rs#L180-L197
+/// https://github.com/0xPolygonHermez/zisk/blob/v1.3.2-alpha/emulator/src/emu.rs#L502-L533
+/// https://github.com/0xPolygonHermez/zisk/blob/v1.3.2-alpha/emulator/src/emu.rs#L1070-L1134
 #[inline]
 pub(crate) fn record_accesses(
     memory: &mut PeakMemory,
@@ -92,7 +92,7 @@ pub(crate) fn record_accesses(
         _ => {}
     }
     // Records the parameter reads of `opc_fcall_param`, whose stats hook is `ops_none`.
-    // https://github.com/0xPolygonHermez/zisk/blob/v1.3.1-alpha/core/src/zisk_ops.rs#L2054-L2079
+    // https://github.com/0xPolygonHermez/zisk/blob/v1.3.2-alpha/core/src/zisk_ops.rs#L2054-L2079
     if instruction.op == ZiskOp::FCALL_PARAM && context.a > 1 {
         accesses.access(context.b, 8 * context.a);
     }
@@ -103,7 +103,7 @@ pub(crate) fn record_accesses(
 
 /// Records the accesses that the stats hook of a precompile reports, and those of keccak, whose
 /// hook is `ops_none`.
-/// https://github.com/0xPolygonHermez/zisk/blob/v1.3.1-alpha/core/src/zisk_ops.rs#L565
+/// https://github.com/0xPolygonHermez/zisk/blob/v1.3.2-alpha/core/src/zisk_ops.rs#L565
 ///
 /// It stays out of line so that [`record_accesses`] inlines into the step.
 #[inline(never)]
@@ -153,7 +153,7 @@ mod tests {
     #[test]
     fn stack_pointer_write_finds_the_upper_immediate_of_the_entry_code() {
         // `la sp, _init_stack_top` of the ziskos entry code expands to `auipc sp` and `addi`.
-        // https://github.com/0xPolygonHermez/zisk/blob/v1.3.1-alpha/ziskos/entrypoint/src/lib.rs#L374
+        // https://github.com/0xPolygonHermez/zisk/blob/v1.3.2-alpha/ziskos/entrypoint/src/lib.rs#L374
         let rom = Riscv2zisk::new(&basic_elf()).run().unwrap();
         assert!(rom.insts.values().any(
             |builder| stack_pointer_write(&builder.i) == StackPointerWrite::UpperImmediate

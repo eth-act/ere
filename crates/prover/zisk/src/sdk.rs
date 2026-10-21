@@ -182,12 +182,12 @@ impl ZiskSdk {
             // The step ran in the frame that runs before a frame change.
             cost::record_accesses(&mut memory, call_tree.frame(), instruction, context);
             // An odd PC is an internal instruction of the RISC-V instruction that runs.
-            // https://github.com/0xPolygonHermez/zisk/blob/v1.3.1-alpha/core/src/zisk_rom.rs#L545-L563
+            // https://github.com/0xPolygonHermez/zisk/blob/v1.3.2-alpha/core/src/zisk_rom.rs#L545-L563
             if action.is_some() || (context.pc % 2 == 0 && !call_tree.contains(context.pc)) {
                 running = cost::running_cost(emu.ctx.stats.get_costs());
                 call_tree.charge(&running);
                 // A call writes its return address to `rd`, 8 bytes past a fused `auipc`.
-                // https://github.com/0xPolygonHermez/zisk/blob/v1.3.1-alpha/transpilers/riscv/src/riscv2zisk_context.rs#L1261-L1285
+                // https://github.com/0xPolygonHermez/zisk/blob/v1.3.2-alpha/transpilers/riscv/src/riscv2zisk_context.rs#L1261-L1285
                 let return_address = instruction
                     .meta_rd
                     .map_or(0, |rd| context.regs[rd as usize]);
@@ -221,7 +221,7 @@ impl ZiskSdk {
     /// Runs `input` on the Rust emulator with statistics, and returns the emulator and its report.
     /// It steps the emulator as `Emu::run` does, and calls `on_step` after each step with the
     /// emulator and the PC of the step.
-    /// https://github.com/0xPolygonHermez/zisk/blob/v1.3.1-alpha/emulator/src/emu.rs#L1672-L2092
+    /// https://github.com/0xPolygonHermez/zisk/blob/v1.3.2-alpha/emulator/src/emu.rs#L1672-L2092
     fn run_with_stats(
         &self,
         input: &Input,
