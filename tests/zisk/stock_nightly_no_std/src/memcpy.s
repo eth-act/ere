@@ -1,4 +1,4 @@
-# Copied from https://github.com/0xPolygonHermez/zisk/blob/v1.3.1-alpha/ziskos/entrypoint/src/dma/memcpy.s
+# Copied from https://github.com/0xPolygonHermez/zisk/blob/v1.3.2-alpha/ziskos/entrypoint/src/dma/memcpy.s
 
         .section ".note.GNU-stack","",@progbits
         .text

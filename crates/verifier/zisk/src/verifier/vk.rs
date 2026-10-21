@@ -1,4 +1,4 @@
-/// Aggregation verifying key for VadcopFinal proofs in zisk v1.3.1-alpha, under the blake3 hash
+/// Aggregation verifying key for VadcopFinal proofs in zisk v1.3.2-alpha, under the blake3 hash
 /// family.
 ///
 /// To reproduce:
@@ -7,10 +7,10 @@
 /// cat $HOME/.zisk/provingKey/zisk/vadcop_final/vadcop_final.verkey.json
 /// ```
 pub const VADCOP_FINAL_VK: [u64; 4] = [
-    17362875648210006843,
-    17118080347053690355,
-    16676305655426731175,
-    2889446131052424392,
+    3213505036805938264,
+    17028655392078661840,
+    5593895546430464126,
+    13641597543864939016,
 ];
 
 /// Hash family the [`VADCOP_FINAL_VK`] was generated under. Proofs from any other family cannot
@@ -25,9 +25,9 @@ mod tests {
 
     use crate::verifier::vk::VADCOP_FINAL_VK;
 
-    /// URL of the blake3 verifying key of v1.3.1-alpha.
+    /// URL of the blake3 verifying key of v1.3.2-alpha.
     const VERIFY_KEY_URL: &str =
-        "https://storage.googleapis.com/zisk-setup/zisk-verifykey-1.3.1-alpha-blake3.tar.gz";
+        "https://storage.googleapis.com/zisk-setup/zisk-verifykey-1.3.2-alpha-blake3.tar.gz";
     const VK_PATH: &str = "provingKey/zisk/vadcop_final/vadcop_final.verkey.bin";
 
     #[test]
