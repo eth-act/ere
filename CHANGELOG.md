@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.3](https://github.com/eth-act/ere/compare/v0.19.2...v0.19.3) (2026-10-21)
+
+
+### Features
+
+* update zisk to v1.3.2-alpha ([#451](https://github.com/eth-act/ere/issues/451)) ([7bceb92](https://github.com/eth-act/ere/commit/7bceb92f69a94fcd540e85fdf46643a5ae433831))
+
 ## [0.19.2](https://github.com/eth-act/ere/compare/v0.19.1...v0.19.2) (2026-10-10)
 
 
