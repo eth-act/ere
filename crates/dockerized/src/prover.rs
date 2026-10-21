@@ -1,9 +1,8 @@
 use core::{future::Future, iter, pin::Pin, time::Duration};
-use std::time::Instant;
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{CostEstimation, CostProfile, Input, ProverResource, PublicValues};
-use ere_server_client::{EncodedProgramVk, EncodedProof, reqwest::Client, url::Url, zkVMClient};
+use ere_server_client::{EncodedProgramVk, EncodedProof, url::Url, zkVMClient};
 use ere_util_tokio::block_on;
 use tokio::{
     sync::{RwLock, RwLockReadGuard},
@@ -16,8 +15,9 @@ use crate::{
     util::{
         cuda::cuda_archs,
         docker::{
-            DockerBuildCmd, DockerRunCmd, docker_image_exists, docker_pull_image,
-            docker_wait_for_exit, remove_docker_container,
+            DockerBuildCmd, DockerContainer, DockerRunCmd, docker_image_exists,
+            docker_inspect_exit_info, docker_pull_image, docker_wait_for_exit,
+            remove_docker_container,
         },
         env::{
             ERE_OPENVM_CACHE_VOLUME, ERE_ZISK_CACHE_VOLUME, ERE_ZISK_PROVING_KEY_VOLUME,
@@ -161,28 +161,22 @@ fn build_server_image(zkvm_kind: zkVMKind, gpu: bool) -> Result<(), Error> {
 
 #[derive(Debug)]
 struct ServerContainer {
-    id: String,
+    container: DockerContainer,
     client: zkVMClient,
-}
-
-impl Drop for ServerContainer {
-    fn drop(&mut self) {
-        if let Err(err) = remove_docker_container(&self.id) {
-            error!("Failed to remove docker container: {err}");
-        }
-    }
 }
 
 impl ServerContainer {
     /// Offset of port used for `ere-server`.
     const PORT_OFFSET: u16 = 4174;
 
-    fn new(
+    /// Returns the healthy server and its program VK within `health_timeout`. An error or a
+    /// cancel removes the container.
+    async fn new(
         zkvm_kind: zkVMKind,
         elf: &Elf,
         resource: &ProverResource,
         health_timeout: Duration,
-    ) -> Result<Self, Error> {
+    ) -> Result<(Self, EncodedProgramVk), Error> {
         let name = format!("ere-server-{zkvm_kind}");
         remove_docker_container(&name)?;
 
@@ -247,31 +241,45 @@ impl ServerContainer {
             }
         }
 
-        let (_, container_id) = cmd.spawn(
+        let client = zkVMClient::from_endpoint(Url::parse(&format!("http://{host}:{port}"))?)?;
+        let container = cmd.spawn(
             iter::empty()
                 .chain(["--port", &port.to_string()])
                 .chain(resource.to_args()),
             elf,
         )?;
 
-        let endpoint = Url::parse(&format!("http://{host}:{port}"))?;
-        let http_client = Client::new();
-        block_on(wait_until_healthy(
-            &endpoint,
-            http_client.clone(),
-            health_timeout,
-        ))?;
-
-        Ok(ServerContainer {
-            id: container_id,
-            client: zkVMClient::new(endpoint, http_client, vec![])?,
+        let mut server = ServerContainer { container, client };
+        let program_vk = timeout(health_timeout, async {
+            server.wait_until_healthy().await?;
+            Ok::<_, Error>(server.client.program_vk().await?)
         })
+        .await
+        .map_err(|_| Error::ConnectionTimeout)??;
+        Ok((server, program_vk))
+    }
+
+    async fn wait_until_healthy(&mut self) -> Result<(), Error> {
+        const INTERVAL: Duration = Duration::from_millis(500);
+
+        loop {
+            if self.client.is_healthy().await {
+                return Ok(());
+            }
+            if self.container.has_exited()? {
+                return Err(Error::ContainerExited {
+                    container_id: self.container.id().to_string(),
+                    exit_info: docker_inspect_exit_info(self.container.id())?,
+                });
+            }
+            sleep(INTERVAL).await;
+        }
     }
 }
 
 /// Default time [`DockerizedzkVMConfig::health_timeout`] allows a spawned
-/// `ere-server` to become healthy. Construction of the prover happens before the
-/// server starts serving, so this covers any preprocessing the zkVM does there.
+/// `ere-server` to become healthy and return its program VK. Construction of the prover happens
+/// before the server starts serving, so this covers any preprocessing the zkVM does there.
 const DEFAULT_HEALTH_TIMEOUT: Duration = Duration::from_secs(300);
 
 #[derive(Debug, Clone)]
@@ -312,8 +320,12 @@ impl DockerizedzkVM {
     ) -> Result<Self, Error> {
         build_server_image(zkvm_kind, resource.is_gpu())?;
 
-        let container = ServerContainer::new(zkvm_kind, &elf, &resource, config.health_timeout)?;
-        let program_vk = block_on(container.client.program_vk())?;
+        let (container, program_vk) = block_on(ServerContainer::new(
+            zkvm_kind,
+            &elf,
+            &resource,
+            config.health_timeout,
+        ))?;
 
         Ok(Self {
             zkvm_kind,
@@ -412,14 +424,13 @@ impl DockerizedzkVM {
         } else {
             info!("Server not healthy, recreating...");
             drop(container);
-            let container = ServerContainer::new(
+            ServerContainer::new(
                 self.zkvm_kind,
                 &elf,
                 &self.resource,
                 self.config.health_timeout,
-            )?;
-            let program_vk = container.client.program_vk().await?;
-            (container, program_vk)
+            )
+            .await?
         };
 
         *self.container.get_mut() = Some(container);
@@ -521,12 +532,12 @@ impl DockerizedzkVM {
                 Some(duration) => match timeout(duration, f(client)).await {
                     Ok(result) => result,
                     Err(_) => {
-                        let container_id = container.id.clone();
+                        let container_id = container.container.id().to_string();
                         drop(container);
 
                         let mut guard = self.container.write().await;
                         if let Some(container) = &*guard
-                            && container.id == container_id
+                            && container.container.id() == container_id
                         {
                             info!("Operation timed out, removing container...");
                             drop(guard.take())
@@ -546,10 +557,11 @@ impl DockerizedzkVM {
             if matches!(&err, Error::Rpc(_))
                 && !container.client.is_healthy().await
                 && let Some(exit_info) =
-                    docker_wait_for_exit(&container.id, DOCKER_WAIT_FOR_EXIT_TIMEOUT).await
+                    docker_wait_for_exit(container.container.id(), DOCKER_WAIT_FOR_EXIT_TIMEOUT)
+                        .await
             {
                 return Err(Error::ContainerExited {
-                    container_id: container.id.clone(),
+                    container_id: container.container.id().to_string(),
                     exit_info,
                 }
                 .into());
@@ -582,43 +594,26 @@ impl DockerizedzkVM {
 
         info!("Server not healthy, recreating...");
         drop(guard.take());
-        *guard = Some(ServerContainer::new(
+        let (container, _) = ServerContainer::new(
             self.zkvm_kind,
             &self.elf,
             &self.resource,
             self.config.health_timeout,
-        )?);
+        )
+        .await?;
+        *guard = Some(container);
 
         let guard = guard.downgrade();
         Ok(RwLockReadGuard::map(guard, |opt| opt.as_ref().unwrap()))
     }
 }
 
-async fn wait_until_healthy(
-    endpoint: &Url,
-    http_client: Client,
-    timeout: Duration,
-) -> Result<(), Error> {
-    const INTERVAL: Duration = Duration::from_millis(500);
-
-    let http_client = http_client.clone();
-    let start = Instant::now();
-    loop {
-        if start.elapsed() > timeout {
-            return Err(Error::ConnectionTimeout);
-        }
-
-        match http_client.get(endpoint.join("health")?).send().await {
-            Ok(response) if response.status().is_success() => break Ok(()),
-            _ => sleep(INTERVAL).await,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use core::time::Duration;
+    use std::process::{self, Command};
 
+    use ere_compiler_core::Elf;
     use ere_prover_core::{Input, ProverResource};
     use ere_util_test::{
         codec::BincodeLegacy,
@@ -671,6 +666,59 @@ mod tests {
                     .execute(&test_case.input())
                     .expect("execute should not fail with valid input");
                 test_case.assert_output(&public_values);
+            }
+        };
+    }
+
+    macro_rules! test_startup_failure {
+        ($zkvm_kind:ident) => {
+            #[tokio::test(flavor = "multi_thread")]
+            async fn test_startup_failure() {
+                let cases = [
+                    ("health timeout", Duration::ZERO, "ConnectionTimeout"),
+                    (
+                        "empty ELF",
+                        DockerizedzkVMConfig::default().health_timeout,
+                        "ContainerExited",
+                    ),
+                ];
+                for (description, health_timeout, expected) in cases {
+                    let config = DockerizedzkVMConfig {
+                        health_timeout,
+                        ..Default::default()
+                    };
+                    let err = DockerizedzkVM::new(
+                        zkVMKind::$zkvm_kind,
+                        Elf(Vec::new()),
+                        ProverResource::Cpu,
+                        config,
+                    )
+                    .unwrap_err();
+                    assert!(
+                        format!("{err:?}").starts_with(expected),
+                        "{description}: expect `Error::{expected}`, got {err:?}",
+                    );
+
+                    let inspect = Command::new("docker")
+                        .args(["container", "inspect"])
+                        .arg(format!("ere-server-{}", zkVMKind::$zkvm_kind))
+                        .output()
+                        .unwrap();
+                    assert!(
+                        !inspect.status.success(),
+                        "{description}: container is left"
+                    );
+
+                    let children = Command::new("ps")
+                        .args(["--ppid", &process::id().to_string(), "-o", "comm="])
+                        .output()
+                        .unwrap();
+                    let children = String::from_utf8_lossy(&children.stdout);
+                    assert!(
+                        !children.lines().any(|comm| comm == "docker"),
+                        "{description}: docker process is left",
+                    );
+                }
             }
         };
     }
@@ -835,6 +883,7 @@ mod tests {
     mod openvm {
         use super::*;
         test_setup!(OpenVM, RustCustomized, "basic");
+        test_startup_failure!(OpenVM);
         test_execute!(
             OpenVM,
             RustCustomized,
@@ -867,6 +916,7 @@ mod tests {
     mod sp1 {
         use super::*;
         test_setup!(SP1, RustCustomized, "basic");
+        test_startup_failure!(SP1);
         test_execute!(
             SP1,
             RustCustomized,
@@ -899,6 +949,7 @@ mod tests {
     mod zisk {
         use super::*;
         test_setup!(Zisk, RustCustomized, "basic_rust");
+        test_startup_failure!(Zisk);
         test_execute!(
             Zisk,
             RustCustomized,
@@ -931,6 +982,7 @@ mod tests {
     mod lambdavm {
         use super::*;
         test_setup!(LambdaVM, RustCustomized, "basic");
+        test_startup_failure!(LambdaVM);
         test_execute!(
             LambdaVM,
             RustCustomized,
