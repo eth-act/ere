@@ -26,13 +26,13 @@ pub enum Error {
     ParseUrl(#[from] url::ParseError),
     #[error("zkVM method error: {0}")]
     zkVM(String),
-    #[error("Connection to zkVM server timeout after 5 minutes")]
+    #[error("Connection to zkVM server timeout")]
     ConnectionTimeout,
     #[error("RPC to zkVM server error: {0}")]
     Rpc(TwirpErrorResponse),
     #[error("Decode pprof profile failed: {0}")]
     DecodePprof(DecodeError),
-    #[error("Server container '{container_id}' exited during request: {exit_info}")]
+    #[error("Server container '{container_id}' exited: {exit_info}")]
     ContainerExited {
         container_id: String,
         exit_info: ContainerExitInfo,

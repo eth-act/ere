@@ -8,7 +8,7 @@ use std::{
 };
 
 use ere_prover_core::CommonError;
-use tracing::debug;
+use tracing::{debug, error};
 
 use crate::util::env::gpu_devices;
 
@@ -186,7 +186,7 @@ impl DockerRunCmd {
         self,
         commands: impl IntoIterator<Item: AsRef<str>>,
         stdin: &[u8],
-    ) -> Result<(Child, String), CommonError> {
+    ) -> Result<DockerContainer, CommonError> {
         // `docker container create --interactive ...` to create container and get container id.
         let mut cmd = Command::new("docker");
         cmd.args(["container", "create", "--interactive"]);
@@ -210,7 +210,10 @@ impl DockerRunCmd {
                 Some(&output),
             ));
         }
-        let container_id = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        let mut container = DockerContainer {
+            id: String::from_utf8_lossy(&output.stdout).trim().to_string(),
+            attach: None,
+        };
 
         // `docker container start --attach --interactive ...` to start container with stdin.
         let mut cmd = Command::new("docker");
@@ -219,24 +222,25 @@ impl DockerRunCmd {
             "start",
             "--attach",
             "--interactive",
-            &container_id,
+            &container.id,
         ]);
 
         debug!("Docker container start with command: {cmd:?}");
 
-        let mut child = cmd
-            .stdin(Stdio::piped())
-            .spawn()
-            .map_err(|err| CommonError::command(&cmd, err))?;
+        let attach = container.attach.insert(
+            cmd.stdin(Stdio::piped())
+                .spawn()
+                .map_err(|err| CommonError::command(&cmd, err))?,
+        );
 
-        child
+        attach
             .stdin
             .take()
             .unwrap()
             .write_all(stdin)
             .map_err(|err| CommonError::command(&cmd, err))?;
 
-        Ok((child, container_id))
+        Ok(container)
     }
 
     pub fn exec(self, commands: impl IntoIterator<Item: AsRef<str>>) -> Result<(), CommonError> {
@@ -261,6 +265,46 @@ impl DockerRunCmd {
         }
 
         Ok(())
+    }
+}
+
+/// Container that [`DockerRunCmd::spawn`] creates. Drop force-removes the container, then kills
+/// and reaps its attach process.
+#[derive(Debug)]
+pub struct DockerContainer {
+    id: String,
+    attach: Option<Child>,
+}
+
+impl DockerContainer {
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    /// Returns `true` when the container stopped. The attach process exits first, and an inspect
+    /// then tells a stop from an attach failure such as a closed output pipe.
+    pub fn has_exited(&mut self) -> Result<bool, CommonError> {
+        let attach_exited = self
+            .attach
+            .as_mut()
+            .is_some_and(|attach| matches!(attach.try_wait(), Ok(Some(_))));
+        Ok(attach_exited && !docker_inspect_running(&self.id)?)
+    }
+}
+
+impl Drop for DockerContainer {
+    fn drop(&mut self) {
+        if let Err(err) = remove_docker_container(&self.id) {
+            error!("Failed to remove docker container: {err}");
+        }
+        if let Some(attach) = &mut self.attach {
+            // The removal ends the attach stream, so the kill only stops a process that outlives
+            // it.
+            let _ = attach.kill();
+            if let Err(err) = attach.wait() {
+                error!("Failed to wait for docker attach process: {err}");
+            }
+        }
     }
 }
 
@@ -369,6 +413,24 @@ pub fn docker_inspect_exit_info(
     })
 }
 
+fn docker_inspect_running(container_id: &str) -> Result<bool, CommonError> {
+    let mut cmd = Command::new("docker");
+    let output = cmd
+        .args(["inspect", "--format", "{{.State.Running}}", container_id])
+        .output()
+        .map_err(|err| CommonError::command(&cmd, err))?;
+
+    if !output.status.success() {
+        Err(CommonError::command_exit_non_zero(
+            &cmd,
+            output.status,
+            Some(&output),
+        ))?
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout).trim() == "true")
+}
+
 pub async fn docker_wait_for_exit(
     container_id: impl AsRef<str>,
     timeout: Duration,
@@ -378,6 +440,7 @@ pub async fn docker_wait_for_exit(
         tokio::process::Command::new("docker")
             .arg("wait")
             .arg(container_id)
+            .kill_on_drop(true)
             .output()
             .await
     })
