@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.19.4](https://github.com/eth-act/ere/compare/v0.19.3...v0.19.4) (2026-10-21)
+
+
+### Features
+
+* use upstream openvm-accelerators for the OpenVM zkvm_* interface ([#453](https://github.com/eth-act/ere/issues/453)) ([1abce93](https://github.com/eth-act/ere/commit/1abce938e95f0959139697582be6b287f8723eec))
+
+
+### Bug Fixes
+
+* remove server container when startup fails ([#455](https://github.com/eth-act/ere/issues/455)) ([e1467cc](https://github.com/eth-act/ere/commit/e1467cc7d7727ff39493df8f1c62fe12ec2f5000))
+
 ## [0.19.3](https://github.com/eth-act/ere/compare/v0.19.2...v0.19.3) (2026-10-21)
 
 
