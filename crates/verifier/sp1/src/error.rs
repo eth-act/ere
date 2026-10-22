@@ -22,4 +22,12 @@ pub enum Error {
     /// `sp1-verifier` rejected the proof.
     #[error("Failed to verify: {0}")]
     Verify(#[from] CompressedError),
+
+    /// The proof's public values do not hold an exit code.
+    #[error("Failed to extract exit code from proof")]
+    ExitCodeExtractionFailed,
+
+    /// The proof's public values hold a non-zero exit code.
+    #[error("Execution failed with exit code: {0}")]
+    ExecutionFailed(u32),
 }
