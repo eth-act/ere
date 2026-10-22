@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.19.5](https://github.com/eth-act/ere/compare/v0.19.4...v0.19.5) (2026-10-22)
+
+
+### Features
+
+* update sp1 to v6.9.0 ([#458](https://github.com/eth-act/ere/issues/458)) ([020886c](https://github.com/eth-act/ere/commit/020886c1492727358619154db213792738e05fd6))
+
+
+### Miscellaneous Chores
+
+* release 0.19.5 [skip ci] ([#459](https://github.com/eth-act/ere/issues/459)) ([632ac47](https://github.com/eth-act/ere/commit/632ac479f1395965791ac2d1c01cc82d83e49701))
+
 ## [0.19.4](https://github.com/eth-act/ere/compare/v0.19.3...v0.19.4) (2026-10-21)
 
 
