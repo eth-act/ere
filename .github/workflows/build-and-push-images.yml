@@ -91,10 +91,13 @@ jobs:
 
             if [ -n "$VERSION_TAG" ]; then
               SEMVER_TAG="${VERSION_TAG#v}"
-              echo "Tagging $IMAGE:$SHA_TAG as $IMAGE:$SEMVER_TAG and $IMAGE:latest"
-              docker buildx imagetools create "$IMAGE:$SHA_TAG" \
-                --tag "$IMAGE:$SEMVER_TAG" \
-                --tag "$IMAGE:latest"
+              echo "Tagging $IMAGE:$SHA_TAG as $IMAGE:$SEMVER_TAG"
+              docker buildx imagetools create "$IMAGE:$SHA_TAG" --tag "$IMAGE:$SEMVER_TAG"
+            fi
+
+            if [ -n "$VERSION_TAG" ] && [ "${{ github.ref_name }}" = master ]; then
+              echo "Tagging $IMAGE:$SHA_TAG as $IMAGE:latest"
+              docker buildx imagetools create "$IMAGE:$SHA_TAG" --tag "$IMAGE:latest"
             fi
           done
 
@@ -166,9 +169,12 @@ jobs:
 
             if [ -n "$VERSION_TAG" ]; then
               SEMVER_TAG="${VERSION_TAG#v}-cuda"
-              echo "Tagging $IMAGE:$SHA_TAG as $IMAGE:$SEMVER_TAG and $IMAGE:latest-cuda"
-              docker buildx imagetools create "$IMAGE:$SHA_TAG" \
-                --tag "$IMAGE:$SEMVER_TAG" \
-                --tag "$IMAGE:latest-cuda"
+              echo "Tagging $IMAGE:$SHA_TAG as $IMAGE:$SEMVER_TAG"
+              docker buildx imagetools create "$IMAGE:$SHA_TAG" --tag "$IMAGE:$SEMVER_TAG"
+            fi
+
+            if [ -n "$VERSION_TAG" ] && [ "${{ github.ref_name }}" = master ]; then
+              echo "Tagging $IMAGE:$SHA_TAG as $IMAGE:latest-cuda"
+              docker buildx imagetools create "$IMAGE:$SHA_TAG" --tag "$IMAGE:latest-cuda"
             fi
           done
