@@ -34,7 +34,7 @@ impl Profiler {
 
     /// Runs the chunk of `vm` to its end, as `GasEstimatingVM::<SupervisorMode>::execute` does. At
     /// each frame change it charges the growth of `running_cost`, the gas per component so far.
-    /// https://github.com/succinctlabs/sp1/blob/v6.6.0/crates/core/executor/src/estimating.rs#L37-L51
+    /// https://github.com/succinctlabs/sp1/blob/v6.9.0/crates/core/executor/src/estimating.rs#L37-L51
     pub(crate) fn execute(
         &mut self,
         vm: &mut GasEstimatingVM<'_, SupervisorMode>,
@@ -43,7 +43,7 @@ impl Profiler {
         if !vm.core.is_done() {
             loop {
                 // A fetch in supervisor mode changes no state.
-                // https://github.com/succinctlabs/sp1/blob/v6.6.0/crates/core/executor/src/vm.rs#L595-L599
+                // https://github.com/succinctlabs/sp1/blob/v6.9.0/crates/core/executor/src/vm.rs#L595-L599
                 let instruction = vm.core.fetch();
                 let action = ras_action(&instruction);
                 // The return address of a `jal` or `jalr` is the address after it.
@@ -100,7 +100,7 @@ impl Profiler {
         let mut access = |address, len| self.memory.access(address, len, frame);
         match code {
             // The doublewords that `hint_read` writes.
-            // https://github.com/succinctlabs/sp1/blob/v6.6.0/crates/core/executor/src/minimal/hint.rs#L19-L38
+            // https://github.com/succinctlabs/sp1/blob/v6.9.0/crates/core/executor/src/minimal/hint.rs#L19-L38
             SyscallCode::HINT_READ => access(register(10), 8 * (register(11) / 8 + 1)),
             SyscallCode::WRITE => access(register(11), register(12)),
             SyscallCode::INSERT_PROFILER_SYMBOLS | SyscallCode::DELETE_PROFILER_SYMBOLS => {
@@ -198,8 +198,8 @@ fn stack_pointer_write(instruction: &Instruction) -> StackPointerWrite {
 }
 
 /// Copy of the private `GasEstimatingVM::<SupervisorMode>::execute_instruction` of
-/// sp1-core-executor v6.6.0, with `self` as the argument `vm`.
-/// https://github.com/succinctlabs/sp1/blob/v6.6.0/crates/core/executor/src/estimating.rs#L53-L115
+/// sp1-core-executor v6.9.0, with `self` as the argument `vm`.
+/// https://github.com/succinctlabs/sp1/blob/v6.9.0/crates/core/executor/src/estimating.rs#L53-L115
 #[rustfmt::skip]
 fn execute_instruction(
     vm: &mut GasEstimatingVM<'_, SupervisorMode>,
@@ -266,8 +266,8 @@ fn execute_instruction(
     Ok(vm.core.advance())
 }
 
-/// Copy of the crate-private `riscv_air_id_from_opcode` of sp1-core-executor v6.6.0.
-/// https://github.com/succinctlabs/sp1/blob/v6.6.0/crates/core/executor/src/vm/shapes.rs#L350-L393
+/// Copy of the crate-private `riscv_air_id_from_opcode` of sp1-core-executor v6.9.0.
+/// https://github.com/succinctlabs/sp1/blob/v6.9.0/crates/core/executor/src/vm/shapes.rs#L350-L393
 #[rustfmt::skip]
 #[inline]
 pub fn riscv_air_id_from_opcode(opcode: Opcode) -> RiscvAirId {
@@ -328,7 +328,7 @@ mod tests {
     #[test]
     fn stack_pointer_write_finds_the_upper_immediate_of_the_entry_code() {
         // `la sp, _STACK_TOP` of the sp1-zkvm entry code expands to `auipc sp` and `addi`.
-        // https://github.com/succinctlabs/sp1/blob/v6.6.0/crates/zkvm/entrypoint/src/lib.rs#L269
+        // https://github.com/succinctlabs/sp1/blob/v6.9.0/crates/zkvm/entrypoint/src/lib.rs#L269
         let program = Program::from(&basic_elf()).unwrap();
         assert!(program.instructions.iter().any(
             |instruction| stack_pointer_write(instruction) == StackPointerWrite::UpperImmediate

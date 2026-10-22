@@ -119,7 +119,7 @@ LambdaVM has no verifying key separate from the program: its verifier binds a pr
 
 ### Format
 
-32-bytes holding the 8 koalabear field elements of the digest packed as base-2^31 digits of a big-endian integer, which is the form [`HashableKey::bytes32`](https://github.com/succinctlabs/sp1/blob/v6.6.0/crates/hypercube/src/verifier/hashable_key.rs) prints and what `cargo prove vkey` reports.
+32-bytes holding the 8 koalabear field elements of the digest packed as base-2^31 digits of a big-endian integer, which is the form [`HashableKey::bytes32`](https://github.com/succinctlabs/sp1/blob/v6.9.0/crates/hypercube/src/verifier/hashable_key.rs) prints and what `cargo prove vkey` reports.
 
 ### Instructions
 
@@ -131,7 +131,7 @@ LambdaVM has no verifying key separate from the program: its verifier binds a pr
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     . "$HOME/.cargo/env"
 
-    ZKVM_VERSION="v6.6.0"
+    ZKVM_VERSION="v6.9.0"
     curl -L https://sp1up.succinct.xyz | bash
     export PATH="$HOME/.sp1/bin:$PATH"
     sp1up -v "$ZKVM_VERSION"
