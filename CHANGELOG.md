@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.18.2](https://github.com/eth-act/ere/compare/v0.18.1...v0.18.2) (2026-10-23)
+
+
+### Bug Fixes
+
+* drop dead code when merging the ELF verifier archive ([#448](https://github.com/eth-act/ere/issues/448)) ([65e7dbe](https://github.com/eth-act/ere/commit/65e7dbe220a2d1b92550548fde021f1e71b0d3e6))
+* localize symbols of ere-verifier ([#431](https://github.com/eth-act/ere/issues/431)) ([65e7dbe](https://github.com/eth-act/ere/commit/65e7dbe220a2d1b92550548fde021f1e71b0d3e6))
+* sp1 verifier check exit code ([#446](https://github.com/eth-act/ere/issues/446)) ([65e7dbe](https://github.com/eth-act/ere/commit/65e7dbe220a2d1b92550548fde021f1e71b0d3e6))
+
 ## [0.18.1](https://github.com/eth-act/ere/compare/v0.18.0...v0.18.1) (2026-09-15)
 
 
