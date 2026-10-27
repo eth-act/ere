@@ -4,12 +4,6 @@ on:
   pull_request:
   release:
     types: [published]
-  workflow_dispatch:
-    inputs:
-      tag_name:
-        description: Existing release tag to attach artifacts to, for example v0.9.1
-        required: true
-        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -90,7 +84,7 @@ jobs:
   upload:
     name: upload-release-assets
     needs: build
-    if: ${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'release' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -103,5 +97,5 @@ jobs:
       - name: Attach artifacts to release
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag_name || github.event.release.tag_name }}
+          tag_name: ${{ github.event.release.tag_name }}
           files: artifacts/**/*
