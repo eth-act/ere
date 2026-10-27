@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.6](https://github.com/eth-act/ere/compare/v0.19.5...v0.19.6) (2026-10-27)
+
+
+### Bug Fixes
+
+* drop unused imports so Rust programs can link libere_verifier_c ([#463](https://github.com/eth-act/ere/issues/463)) ([9b63779](https://github.com/eth-act/ere/commit/9b637792b8f697b1f1c1809ad2ac38fe55a98706))
+
 ## [0.19.5](https://github.com/eth-act/ere/compare/v0.19.4...v0.19.5) (2026-10-22)
 
 
