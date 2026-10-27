@@ -1,0 +1,8 @@
+[package]
+name = "ere-verifier-rust"
+edition = "2024"
+rust-version = "1.91"
+license = "MIT OR Apache-2.0"
+links = "ere_verifier_c"
+
+[workspace]
