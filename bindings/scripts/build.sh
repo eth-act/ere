@@ -72,9 +72,11 @@ localize_elf_symbols() {
     while read -r symbol; do roots+=(-u "$symbol"); done < <(api_symbols)
     "$ld" -r --gc-sections "${roots[@]}" --whole-archive "$library" --no-whole-archive -o "$WORKSPACE/merged.o"
     # The archiver cannot read the merged bitcode.
+    # --strip-unneeded drops unused imports, which break consumers that import them weakly.
     "$objcopy" --wildcard \
         --keep-global-symbol='ere_*' \
         --keep-global-symbol='DW.ref.rust_eh_personality' \
+        --strip-unneeded \
         --remove-section=.llvmbc \
         --remove-section=.llvmcmd \
         "$WORKSPACE/merged.o" "$WORKSPACE/localized.o"

@@ -91,3 +91,10 @@ jobs:
           tar -xzf libere_verifier_c.tar.gz -C "$LIBDIR"
           cd bindings/golang
           CGO_CFLAGS="-I$LIBDIR" CGO_LDFLAGS="-L$LIBDIR" go test ./...
+
+      - name: Run Rust binding tests
+        shell: bash
+        run: |
+          LIBDIR="$(mktemp -d)"
+          tar -xzf libere_verifier_c.tar.gz -C "$LIBDIR"
+          ERE_VERIFIER_LIB_DIR="$LIBDIR" cargo test --manifest-path bindings/rust/Cargo.toml
