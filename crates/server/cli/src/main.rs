@@ -21,6 +21,7 @@ const _: () = {
     assert!(
         (cfg!(feature = "lambdavm") as u8
             + cfg!(feature = "openvm") as u8
+            + cfg!(feature = "pico") as u8
             + cfg!(feature = "sp1") as u8
             + cfg!(feature = "zisk") as u8)
             == 1,
@@ -144,6 +145,9 @@ pub(crate) fn construct_zkvm(elf: Elf, resource: ProverResource) -> Result<impl 
 
     #[cfg(feature = "openvm")]
     let zkvm = ere_prover_openvm::OpenVMProver::new(elf, resource);
+
+    #[cfg(feature = "pico")]
+    let zkvm = ere_prover_pico::PicoProver::new(elf, resource);
 
     #[cfg(feature = "sp1")]
     let zkvm = ere_prover_sp1::SP1Prover::new(elf, resource);

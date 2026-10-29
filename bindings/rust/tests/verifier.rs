@@ -14,6 +14,7 @@ fn verify() {
         ("sp1", ZkVMKind::SP1),
         ("zisk", ZkVMKind::Zisk),
         ("lambdavm", ZkVMKind::LambdaVM),
+        ("pico", ZkVMKind::Pico),
     ] {
         let vk = fixture(zkvm, "program_vk.bin");
         let proof = fixture(zkvm, "proof.bin");

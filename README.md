@@ -383,6 +383,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 | `ERE_ZISK_PROVING_KEY_VOLUME`    | Volume or absolute host path mounted at the ZisK proving key directory, so the downloaded key persists across containers.               | ``      |
 | `ERE_ZISK_CACHE_VOLUME`          | Volume or absolute host path mounted at the ZisK cache directory, so the ROM setup of each program persists across containers.          | ``      |
 | `ERE_OPENVM_CACHE_VOLUME`        | Volume or absolute host path mounted at the OpenVM `rvr` cache directory, so each compiled program persists across containers.          | ``      |
+| `ERE_PICO_CACHE_VOLUME`          | Volume or absolute host path mounted at the Pico GPU JIT cache directory, so kernels compiled with `G1_JIT`/`Z1_JIT` persist across containers. | ``      |
 
 Example usage:
 

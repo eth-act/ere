@@ -11,6 +11,7 @@ const _: () = {
     assert!(
         (cfg!(feature = "lambdavm") as u8
             + cfg!(feature = "openvm") as u8
+            + cfg!(feature = "pico") as u8
             + cfg!(feature = "sp1") as u8
             + cfg!(feature = "zisk") as u8)
             == 1,
@@ -79,6 +80,15 @@ fn compile(guest_dir: PathBuf, compiler_kind: CompilerKind, args: &[String]) -> 
         match compiler_kind {
             CompilerKind::Rust => OpenVMRustRv64ima.compile(guest_dir, args)?,
             CompilerKind::RustCustomized => OpenVMRustRv64imaCustomized.compile(guest_dir, args)?,
+        }
+    };
+
+    #[cfg(feature = "pico")]
+    let elf = {
+        use ere_compiler_pico::*;
+        match compiler_kind {
+            CompilerKind::Rust => PicoRustRv64ima.compile(guest_dir, args)?,
+            CompilerKind::RustCustomized => PicoRustRv64imaCustomized.compile(guest_dir, args)?,
         }
     };
 

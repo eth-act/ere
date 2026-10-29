@@ -31,6 +31,7 @@ const (
 	SP1      ZkVMKind = 1
 	Zisk     ZkVMKind = 2
 	LambdaVM ZkVMKind = 3
+	Pico     ZkVMKind = 4
 )
 
 // String implements [fmt.Stringer].
@@ -44,6 +45,8 @@ func (k ZkVMKind) String() string {
 		return "zisk"
 	case LambdaVM:
 		return "lambdavm"
+	case Pico:
+		return "pico"
 	default:
 		return fmt.Sprintf("unknown(%d)", uint32(k))
 	}
