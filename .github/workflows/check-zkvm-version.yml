@@ -21,6 +21,8 @@ jobs:
             crate: lambda-vm-prover
           # - zkvm: openvm
           #   crate: openvm-sdk
+          # - zkvm: pico
+          #   crate: pico-sdk
           - zkvm: sp1
             crate: sp1-sdk
           # - zkvm: zisk
