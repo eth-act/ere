@@ -1,0 +1,10 @@
+[package]
+name = "ere-test-pico-guest"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+ere-platform-pico = { path = "../../../crates/platform/pico" }
+ere-util-test = { path = "../../../crates/util/test" }

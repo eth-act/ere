@@ -5,18 +5,21 @@ members = [
     "crates/compiler/core",
     "crates/compiler/lambdavm",
     "crates/compiler/openvm",
+    "crates/compiler/pico",
     "crates/compiler/sp1",
     "crates/compiler/zisk",
     # Platform
     "crates/platform/core",
     "crates/platform/lambdavm",
     "crates/platform/openvm",
+    "crates/platform/pico",
     "crates/platform/sp1",
     "crates/platform/zisk",
     # Prover
     "crates/prover/core",
     "crates/prover/lambdavm",
     "crates/prover/openvm",
+    "crates/prover/pico",
     "crates/prover/sp1",
     "crates/prover/zisk",
     # Verifier
@@ -24,6 +27,7 @@ members = [
     "crates/verifier/core",
     "crates/verifier/lambdavm",
     "crates/verifier/openvm",
+    "crates/verifier/pico",
     "crates/verifier/sp1",
     "crates/verifier/zisk",
     # Server
@@ -151,6 +155,11 @@ openvm-verify-stark-host = { git = "https://github.com/han0110/openvm.git", bran
 rvr-openvm-ir = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.1.0-preview", default-features = false }
 rvr-openvm-lift = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.1.0-preview", default-features = false }
 
+# Pico dependencies
+pico-prover = { git = "https://github.com/brevis-network/pico", rev = "675303e322a24c0fc52e98b0910c4a32de8bd092", default-features = false }
+pico-sdk = { git = "https://github.com/brevis-network/pico", rev = "675303e322a24c0fc52e98b0910c4a32de8bd092" }
+pico-verifier = { git = "https://github.com/brevis-network/pico", rev = "675303e322a24c0fc52e98b0910c4a32de8bd092" }
+
 # SP1 dependencies
 sp1-core-executor = { git = "https://github.com/succinctlabs/sp1", tag = "v6.9.0" }
 sp1-cuda = { git = "https://github.com/succinctlabs/sp1", tag = "v6.9.0" }
@@ -183,22 +192,26 @@ ere-compiler = { path = "crates/compiler/cli" }
 ere-compiler-core = { path = "crates/compiler/core" }
 ere-compiler-lambdavm = { path = "crates/compiler/lambdavm" }
 ere-compiler-openvm = { path = "crates/compiler/openvm" }
+ere-compiler-pico = { path = "crates/compiler/pico" }
 ere-compiler-sp1 = { path = "crates/compiler/sp1" }
 ere-compiler-zisk = { path = "crates/compiler/zisk" }
 ere-platform-core = { path = "crates/platform/core" }
 ere-platform-lambdavm = { path = "crates/platform/lambdavm" }
 ere-platform-openvm = { path = "crates/platform/openvm" }
+ere-platform-pico = { path = "crates/platform/pico" }
 ere-platform-sp1 = { path = "crates/platform/sp1" }
 ere-platform-zisk = { path = "crates/platform/zisk" }
 ere-prover-core = { path = "crates/prover/core" }
 ere-prover-lambdavm = { path = "crates/prover/lambdavm" }
 ere-prover-openvm = { path = "crates/prover/openvm" }
+ere-prover-pico = { path = "crates/prover/pico" }
 ere-prover-sp1 = { path = "crates/prover/sp1" }
 ere-prover-zisk = { path = "crates/prover/zisk" }
 ere-verifier = { path = "crates/verifier/verifier" }
 ere-verifier-core = { path = "crates/verifier/core" }
 ere-verifier-lambdavm = { path = "crates/verifier/lambdavm" }
 ere-verifier-openvm = { path = "crates/verifier/openvm" }
+ere-verifier-pico = { path = "crates/verifier/pico" }
 ere-verifier-sp1 = { path = "crates/verifier/sp1" }
 ere-verifier-zisk = { path = "crates/verifier/zisk" }
 ere-server = { path = "crates/server/cli" }

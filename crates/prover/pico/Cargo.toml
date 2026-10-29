@@ -1,0 +1,28 @@
+[package]
+name = "ere-prover-pico"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+
+# Pico dependencies
+pico-prover.workspace = true
+
+# Local dependencies
+ere-compiler-core.workspace = true
+ere-prover-core.workspace = true
+ere-verifier-pico.workspace = true
+
+[dev-dependencies]
+ere-compiler-pico.workspace = true
+ere-util-test = { workspace = true, features = ["host"] }
+
+[features]
+default = []
+cuda = ["pico-prover/cuda", "pico-prover/bigint-rug", "pico-prover/tcmalloc"]
+
+[lints]
+workspace = true
