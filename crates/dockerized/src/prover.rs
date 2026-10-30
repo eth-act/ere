@@ -20,8 +20,9 @@ use crate::{
             remove_docker_container,
         },
         env::{
-            ERE_OPENVM_CACHE_VOLUME, ERE_ZISK_CACHE_VOLUME, ERE_ZISK_PROVING_KEY_VOLUME,
-            docker_network, force_rebuild_docker_image, image_registry,
+            ERE_OPENVM_CACHE_VOLUME, ERE_PICO_CACHE_VOLUME, ERE_ZISK_CACHE_VOLUME,
+            ERE_ZISK_PROVING_KEY_VOLUME, docker_network, force_rebuild_docker_image,
+            image_registry,
         },
         workspace_dir,
     },
@@ -35,7 +36,7 @@ pub use error::Error;
 /// Applies per-zkVM CUDA architecture build args to a Docker build command.
 ///
 /// Each zkVM expects a different format for specifying CUDA architectures:
-/// - OpenVM: `CUDA_ARCH` (comma-separated, e.g. "89,120")
+/// - OpenVM, Pico: `CUDA_ARCH` (comma-separated, e.g. "89,120")
 /// - Zisk: `CUDA_ARCHS` (comma-separated, e.g. "89,120")
 fn apply_cuda_build_args(
     cmd: DockerBuildCmd,
@@ -48,7 +49,7 @@ fn apply_cuda_build_args(
     }
 
     Ok(match zkvm_kind {
-        zkVMKind::OpenVM => {
+        zkVMKind::OpenVM | zkVMKind::Pico => {
             let value = cuda_archs
                 .iter()
                 .map(|arch| arch.to_string())
@@ -229,6 +230,12 @@ impl ServerContainer {
                 .volume_from_env(ERE_ZISK_CACHE_VOLUME, "/root/.zisk/cache")
                 .volume_from_env(ERE_ZISK_PROVING_KEY_VOLUME, "/root/.zisk/provingKey"),
             zkVMKind::LambdaVM => cmd,
+            zkVMKind::Pico => cmd
+                .inherit_env("PICO_GPU_MEM")
+                .inherit_env("G1_JIT")
+                .inherit_env("Z1_JIT")
+                .inherit_env("ERE_PICO_GPU_EVENT_POOL_SIZE")
+                .volume_from_env(ERE_PICO_CACHE_VOLUME, "/root/.mle_jit_cache"),
         };
 
         // zkVM specific options when using GPU
@@ -238,6 +245,7 @@ impl ServerContainer {
                 zkVMKind::SP1 => cmd.gpus(),
                 zkVMKind::Zisk => cmd.gpus(),
                 zkVMKind::LambdaVM => cmd,
+                zkVMKind::Pico => cmd.gpus(),
             }
         }
 
@@ -998,6 +1006,33 @@ mod tests {
             RustCustomized,
             "basic",
             [Cpu],
+            [BasicProgram::<BincodeLegacy>::valid_test_case()],
+            [
+                Input::new(),
+                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
+            ]
+        );
+    }
+
+    mod pico {
+        use super::*;
+        test_setup!(Pico, RustCustomized, "basic");
+        test_startup_failure!(Pico);
+        test_execute!(
+            Pico,
+            RustCustomized,
+            "basic",
+            [BasicProgram::<BincodeLegacy>::valid_test_case()],
+            [
+                Input::new(),
+                BasicProgram::<BincodeLegacy>::invalid_test_case().input()
+            ]
+        );
+        test_prove!(
+            Pico,
+            RustCustomized,
+            "basic",
+            [Cpu, Gpu],
             [BasicProgram::<BincodeLegacy>::valid_test_case()],
             [
                 Input::new(),

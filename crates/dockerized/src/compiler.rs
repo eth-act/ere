@@ -265,4 +265,11 @@ pub(crate) mod tests {
         test_reproducible_elf!(LambdaVM, RustCustomized, "basic");
         test_reproducible_elf!(LambdaVM, Rust, "stock_nightly_no_std");
     }
+
+    mod pico {
+        test_compile!(Pico, RustCustomized, "basic");
+        test_compile!(Pico, Rust, "stock_nightly_no_std");
+        test_reproducible_elf!(Pico, RustCustomized, "basic");
+        test_reproducible_elf!(Pico, Rust, "stock_nightly_no_std");
+    }
 }

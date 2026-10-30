@@ -1,0 +1,21 @@
+[package]
+name = "ere-compiler-pico"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+tempfile.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+# Local dependencies
+ere-compiler-core.workspace = true
+ere-util-compile.workspace = true
+
+[dev-dependencies]
+ere-util-test = { workspace = true, features = ["host"] }
+
+[lints]
+workspace = true

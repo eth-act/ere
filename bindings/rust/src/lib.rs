@@ -27,6 +27,7 @@ pub enum ZkVMKind {
     SP1 = 1,
     Zisk = 2,
     LambdaVM = 3,
+    Pico = 4,
 }
 
 /// Status code of a failed call, with the values of the C API.

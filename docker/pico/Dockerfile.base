@@ -1,0 +1,41 @@
+ARG BASE_IMAGE=ere-base:latest
+
+FROM $BASE_IMAGE
+
+# The ere-base image provides Rust, Cargo, protoc (needed by `distributed-vm`
+# under `cuda`), and the CUDA toolkit when built with `CUDA=1`.
+# We operate as root for SDK installation.
+
+# Whether to enable CUDA feature or not.
+ARG CUDA
+
+# Copy the Pico SDK installer script from the workspace context
+COPY --chmod=755 scripts/sdk_installers/install_pico_sdk.sh /tmp/install_pico_sdk.sh
+
+# Run the Pico SDK installation script.
+# This script installs the nightly toolchain Pico pins, cargo-pico,
+# and the `pico` guest toolchain.
+RUN /tmp/install_pico_sdk.sh && rm /tmp/install_pico_sdk.sh
+
+# Set default toolchain to the nightly Pico pins, since `pico-vm` needs nightly
+# features, and uninstall the original one. The `pico` guest toolchain stays.
+# The installer adds that nightly with the minimal profile, so add clippy for CI.
+RUN rustup default nightly-2026-09-27 && \
+    rustup component add clippy --toolchain nightly-2026-09-27 && \
+    rustup toolchain list | grep -v -e default -e '^pico' | xargs -r rustup toolchain uninstall
+
+# Add nightly toolchain to provide cargo fallback for stock compilation
+RUN rustup toolchain install --profile minimal nightly
+
+# Verify Pico installation
+RUN cargo pico --version
+
+# Under CUDA, `pico-gpu-api` compiles with `-ccbin=/usr/bin/g++-11`, `distributed-vm`'s
+# protos import the well-known types that `libprotobuf-dev` ships, and `ere-prover-pico/cuda`
+# builds GMP (needs `m4`) and links tcmalloc.
+RUN if [ -n "$CUDA" ]; then \
+        apt-get update && apt-get install -y --no-install-recommends g++-11 libprotobuf-dev m4 libgoogle-perftools-dev \
+        && apt-get clean && rm -rf /var/lib/apt/lists/*; \
+    fi
+
+CMD ["/bin/bash"]

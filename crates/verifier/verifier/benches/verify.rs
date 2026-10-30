@@ -26,6 +26,14 @@ bench_verifier!(OpenVM);
 bench_verifier!(SP1);
 bench_verifier!(Zisk);
 bench_verifier!(LambdaVM);
+bench_verifier!(Pico);
 
-criterion_group!(verify, bench_openvm, bench_sp1, bench_zisk, bench_lambdavm,);
+criterion_group!(
+    verify,
+    bench_openvm,
+    bench_sp1,
+    bench_zisk,
+    bench_lambdavm,
+    bench_pico,
+);
 criterion_main!(verify);

@@ -30,6 +30,8 @@ pub fn init() -> (Option<SdkTracerProvider>, Option<OtelLayer>) {
             "ere-server-lambdavm"
         } else if cfg!(feature = "openvm") {
             "ere-server-openvm"
+        } else if cfg!(feature = "pico") {
+            "ere-server-pico"
         } else if cfg!(feature = "sp1") {
             "ere-server-sp1"
         } else if cfg!(feature = "zisk") {

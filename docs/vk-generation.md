@@ -115,6 +115,43 @@ LambdaVM has no verifying key separate from the program: its verifier binds a pr
     printf 'Generated OpenVM VK sha256: %s\n' "$(sha256sum "$VK" | cut -d' ' -f1)"
     ```
 
+## Pico
+
+### Format
+
+The v2 VK bundle of [`pico-verifier`](https://github.com/brevis-network/pico/tree/613d6aeb64350d73faf24c17e2e3e3cee5b763bc/verifier): `PICOMLEV`, version `2` as a `u32` little endian, then the zstd compressed bincode of the guest exe identity (25 `u32`), the whitelist root of the recursion verifying keys (8 `u32`), and the Merkle memberships of the keys a root proof can carry. `ere-prover-pico` proves in whitelist mode under the whitelist shipped in Pico, so the bundle is a function of the ELF and that whitelist.
+
+### Instructions
+
+The `mle-ethproofs-vk-bundle` binary in the Pico repository builds the bundle from an ELF with the shipped whitelist.
+
+1. Setup
+
+    ```bash
+    sudo apt-get update && sudo apt-get install -y curl ca-certificates git build-essential
+
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly-2026-09-27
+    . "$HOME/.cargo/env"
+
+    ZKVM_VERSION="613d6aeb64350d73faf24c17e2e3e3cee5b763bc"
+    git clone https://github.com/brevis-network/pico && git -C pico checkout "$ZKVM_VERSION"
+    ```
+2. Generate VK
+
+    ```bash
+    set -euo pipefail
+    GUEST_NAME="<guest-name>"
+    ELF_PATH="$(realpath <elf-path>)"
+    VK="$PWD/stateless-validator-$GUEST_NAME-pico-${ZKVM_VERSION::7}.vk"
+    (cd pico && cargo run --release -p distributed-vm --bin mle-ethproofs-vk-bundle -- --elf "$ELF_PATH" "$VK")
+    ```
+3. Sanity check
+
+    ```bash
+    [ "$(head -c 8 "$VK")" = "PICOMLEV" ] || { echo "not a Pico VK bundle" >&2; exit 1; }
+    printf 'Generated Pico VK sha256: %s\n' "$(sha256sum "$VK" | cut -d' ' -f1)"
+    ```
+
 ## SP1
 
 ### Format

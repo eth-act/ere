@@ -84,3 +84,5 @@ test_verifier!(SP1);
 test_verifier!(Zisk);
 
 test_verifier!(LambdaVM);
+
+test_verifier!(Pico);

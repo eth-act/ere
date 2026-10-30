@@ -21,6 +21,7 @@ var fixtures = []fixture{
 	{"sp1", SP1},
 	{"zisk", Zisk},
 	{"lambdavm", LambdaVM},
+	{"pico", Pico},
 }
 
 // workspaceRoot returns the absolute path of the repo root, derived from this

@@ -137,7 +137,7 @@ fi
 # Per-zkVM CUDA architecture translation
 if [ "$CUDA" = true ] && [ -n "$CUDA_ARCHS" ]; then
     case "$ZKVM" in
-        openvm)
+        openvm|pico)
             BASE_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCH=$CUDA_ARCHS")
             SERVER_ZKVM_BUILD_ARGS+=(--build-arg "CUDA_ARCH=$CUDA_ARCHS")
             ;;

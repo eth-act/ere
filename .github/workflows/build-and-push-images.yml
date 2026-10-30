@@ -37,6 +37,7 @@ jobs:
         zkvm:
           - lambdavm
           - openvm
+          - pico
           - sp1
           - zisk
     steps:
@@ -114,6 +115,7 @@ jobs:
       matrix:
         zkvm:
           - openvm
+          - pico
           - sp1
           - zisk
     steps:

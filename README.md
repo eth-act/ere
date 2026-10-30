@@ -53,21 +53,25 @@ This repository contains the following crates:
 - Per-zkVM implementations for [`ere-compiler-core`] (host)
   - [`ere-compiler-lambdavm`]
   - [`ere-compiler-openvm`]
+  - [`ere-compiler-pico`]
   - [`ere-compiler-sp1`]
   - [`ere-compiler-zisk`]
 - Per-zkVM implementations for [`ere-prover-core`] (host)
   - [`ere-prover-lambdavm`]
   - [`ere-prover-openvm`]
+  - [`ere-prover-pico`]
   - [`ere-prover-sp1`]
   - [`ere-prover-zisk`]
 - Per-zkVM implementations for [`ere-platform-core`] (guest)
   - [`ere-platform-lambdavm`]
   - [`ere-platform-openvm`]
+  - [`ere-platform-pico`]
   - [`ere-platform-sp1`]
   - [`ere-platform-zisk`]
 - Per-zkVM implementations for [`ere-verifier-core`] (lightweight host verifier)
   - [`ere-verifier-lambdavm`]
   - [`ere-verifier-openvm`]
+  - [`ere-verifier-pico`]
   - [`ere-verifier-sp1`]
   - [`ere-verifier-zisk`]
 - [`ere-dockerized`] - Docker wrapper that spawns [`ere-server`] containers to run zkVM operations without local SDK installation
@@ -99,6 +103,10 @@ This repository contains the following crates:
 [`ere-prover-openvm`]: https://github.com/eth-act/ere/tree/master/crates/prover/openvm
 [`ere-platform-openvm`]: https://github.com/eth-act/ere/tree/master/crates/platform/openvm
 [`ere-verifier-openvm`]: https://github.com/eth-act/ere/tree/master/crates/verifier/openvm
+[`ere-compiler-pico`]: https://github.com/eth-act/ere/tree/master/crates/compiler/pico
+[`ere-prover-pico`]: https://github.com/eth-act/ere/tree/master/crates/prover/pico
+[`ere-platform-pico`]: https://github.com/eth-act/ere/tree/master/crates/platform/pico
+[`ere-verifier-pico`]: https://github.com/eth-act/ere/tree/master/crates/verifier/pico
 [`ere-prover-sp1`]: https://github.com/eth-act/ere/tree/master/crates/prover/sp1
 [`ere-platform-sp1`]: https://github.com/eth-act/ere/tree/master/crates/platform/sp1
 [`ere-verifier-sp1`]: https://github.com/eth-act/ere/tree/master/crates/verifier/sp1
@@ -161,6 +169,7 @@ Different zkVMs handles public values in different approaches:
 | -------- | ---------- | ------------------------------ |
 | LambdaVM | 1 MiB      |                                |
 | OpenVM   | 256 bytes  | Padded to 256 bytes with zeros |
+| Pico     | unlimited  | Hashed internally              |
 | SP1      | unlimited  | Hashed internally              |
 | ZisK     | 256 bytes  |                                |
 
@@ -170,6 +179,7 @@ Different zkVMs handles public values in different approaches:
 | -------- | --------------------------------------------------------------------------- | -------- | :---: | :-------: | :-----: |
 | LambdaVM | [`0.1.0`](https://github.com/yetanotherco/lambda_vm/tree/v0.1.0)            | `RV64IM` |       |           |         |
 | OpenVM   | [`2.1.0-preview`](https://github.com/openvm-org/openvm/tree/v2.1.0-preview) | `RV64IM` |   V   |           |         |
+| Pico     | [`613d6ae`](https://github.com/brevis-network/pico/tree/613d6ae)            | `RV64IM` |   V   |     V     |         |
 | SP1      | [`6.9.0`](https://github.com/succinctlabs/sp1/tree/v6.9.0)                  | `RV64IM` |   V   |           |         |
 | ZisK     | [`1.3.2-alpha`](https://github.com/0xPolygonHermez/zisk/tree/v1.3.2-alpha)  | `RV64IM` |   V   |     V     |    V    |
 
@@ -388,6 +398,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 | `ERE_ZISK_PROVING_KEY_VOLUME`    | Volume or absolute host path mounted at the ZisK proving key directory, so the downloaded key persists across containers.               | ``      |
 | `ERE_ZISK_CACHE_VOLUME`          | Volume or absolute host path mounted at the ZisK cache directory, so the ROM setup of each program persists across containers.          | ``      |
 | `ERE_OPENVM_CACHE_VOLUME`        | Volume or absolute host path mounted at the OpenVM `rvr` cache directory, so each compiled program persists across containers.          | ``      |
+| `ERE_PICO_CACHE_VOLUME`          | Volume or absolute host path mounted at the Pico GPU JIT cache directory, so kernels compiled with `G1_JIT`/`Z1_JIT` persist across containers. | ``      |
 
 Example usage:
 

@@ -9,6 +9,7 @@ pub enum Verifier {
     SP1(ere_verifier_sp1::SP1Verifier),
     Zisk(ere_verifier_zisk::ZiskVerifier),
     LambdaVM(ere_verifier_lambdavm::LambdaVMVerifier),
+    Pico(ere_verifier_pico::PicoVerifier),
 }
 
 impl Verifier {
@@ -36,6 +37,14 @@ impl Verifier {
                     .map_err(Error::decode_program_vk)?;
                 Self::LambdaVM(ere_verifier_lambdavm::LambdaVMVerifier::new(program_vk))
             }
+            zkVMKind::Pico => {
+                let program_vk = Decode::decode_from_slice(encoded_program_vk)
+                    .map_err(Error::decode_program_vk)?;
+                Self::Pico(
+                    ere_verifier_pico::PicoVerifier::new(program_vk)
+                        .map_err(Error::decode_program_vk)?,
+                )
+            }
         })
     }
 
@@ -45,6 +54,7 @@ impl Verifier {
             Self::SP1(_) => zkVMKind::SP1,
             Self::Zisk(_) => zkVMKind::Zisk,
             Self::LambdaVM(_) => zkVMKind::LambdaVM,
+            Self::Pico(_) => zkVMKind::Pico,
         }
     }
 
@@ -66,6 +76,11 @@ impl Verifier {
                 verifier.verify(&proof).map_err(Error::verification)?
             }
             Self::LambdaVM(verifier) => {
+                let proof =
+                    Decode::decode_from_slice(encoded_proof).map_err(Error::decode_proof)?;
+                verifier.verify(&proof).map_err(Error::verification)?
+            }
+            Self::Pico(verifier) => {
                 let proof =
                     Decode::decode_from_slice(encoded_proof).map_err(Error::decode_proof)?;
                 verifier.verify(&proof).map_err(Error::verification)?
