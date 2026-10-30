@@ -234,6 +234,7 @@ impl ServerContainer {
                 .inherit_env("PICO_GPU_MEM")
                 .inherit_env("G1_JIT")
                 .inherit_env("Z1_JIT")
+                .inherit_env("ERE_PICO_GPU_EVENT_POOL_SIZE")
                 .volume_from_env(ERE_PICO_CACHE_VOLUME, "/root/.mle_jit_cache"),
         };
 

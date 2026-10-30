@@ -3,6 +3,8 @@ use std::{
     sync::{Mutex, MutexGuard},
     time::{Duration, Instant},
 };
+#[cfg(feature = "cuda")]
+use std::{env, num::NonZeroUsize};
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{
@@ -137,7 +139,16 @@ impl zkVMProver for PicoProver {
 
 /// Whitelist mode, under the whitelist compiled into `pico-prover`.
 fn builder(elf: &Elf) -> ProverBuilder {
-    Prover::builder(&elf.0).shipped_whitelist()
+    let builder = Prover::builder(&elf.0).shipped_whitelist();
+    #[cfg(feature = "cuda")]
+    let builder = match env::var("ERE_PICO_GPU_EVENT_POOL_SIZE")
+        .ok()
+        .and_then(|value| value.parse::<NonZeroUsize>().ok())
+    {
+        Some(size) => builder.gpu_event_pool_size(size),
+        None => builder,
+    };
+    builder
 }
 
 fn load(elf: &Elf) -> Result<(Prover, PicoVerifier), Error> {
