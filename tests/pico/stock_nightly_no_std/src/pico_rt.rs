@@ -3,7 +3,7 @@ use core::alloc::{GlobalAlloc, Layout};
 use crate::main;
 
 // Pico starts with no stack pointer set, so set `gp` and `sp` before calling `__start`.
-// According to https://github.com/brevis-network/pico/blob/675303e322a24c0fc52e98b0910c4a32de8bd092/sdk/sdk/src/lib.rs#L96-L111
+// According to https://github.com/brevis-network/pico/blob/613d6aeb64350d73faf24c17e2e3e3cee5b763bc/sdk/sdk/src/lib.rs#L96-L111
 core::arch::global_asm!(
     r#"
 .section .text._start;
@@ -34,7 +34,7 @@ const EMPTY_PV_DIGEST: [u32; 8] = [
     0x42c4b0e3, 0x141cfc98, 0xc8f4fb9a, 0x24b96f99, 0xe441ae27, 0x4c939b64, 0x1b9995a4, 0x55b85278,
 ];
 
-// According to https://github.com/brevis-network/pico/blob/675303e322a24c0fc52e98b0910c4a32de8bd092/sdk/sdk/src/riscv_ecalls/halt.rs
+// According to https://github.com/brevis-network/pico/blob/613d6aeb64350d73faf24c17e2e3e3cee5b763bc/sdk/sdk/src/riscv_ecalls/halt.rs
 #[inline(always)]
 fn terminate() {
     unsafe {
@@ -72,7 +72,7 @@ unsafe impl GlobalAlloc for SimpleAlloc {
 #[global_allocator]
 static HEAP: SimpleAlloc = SimpleAlloc;
 
-// According to https://github.com/brevis-network/pico/blob/675303e322a24c0fc52e98b0910c4a32de8bd092/sdk/sdk/src/riscv_ecalls/memory.rs
+// According to https://github.com/brevis-network/pico/blob/613d6aeb64350d73faf24c17e2e3e3cee5b763bc/sdk/sdk/src/riscv_ecalls/memory.rs
 pub const MAX_MEMORY: usize = 0x7800_0000;
 static mut HEAP_POS: usize = 0;
 #[allow(clippy::missing_safety_doc)]

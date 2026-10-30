@@ -19,7 +19,7 @@ const TARGET: RustTarget = RustTarget::SpecJson {
     json: include_str!("./rust_rv64ima/riscv64ima-unknown-none-elf.json"),
 };
 
-/// Rust flags according to https://github.com/brevis-network/pico/blob/675303e322a24c0fc52e98b0910c4a32de8bd092/sdk/cli/src/build/build.rs#L130-L157
+/// Rust flags according to https://github.com/brevis-network/pico/blob/613d6aeb64350d73faf24c17e2e3e3cee5b763bc/sdk/cli/src/build/build.rs#L130-L157
 const RUSTFLAGS: &[&str] = &[
     // Replace atomic ops with nonatomic versions since the guest is single threaded.
     "-C",
