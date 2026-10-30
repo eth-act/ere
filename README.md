@@ -22,6 +22,7 @@
     - [Reading Private Values from Host](#reading-private-values-from-host)
     - [Writing Public Values to Host](#writing-public-values-to-host)
 - [Supported zkVMs](#supported-zkvms)
+- [Standards Compliance](#standards-compliance)
 - [Examples](#examples)
   - [With SDK Installation](#with-sdk-installation)
     - [1. Install SDKs](#1-install-sdks)
@@ -181,6 +182,10 @@ Different zkVMs handles public values in different approaches:
 | Pico     | [`675303e`](https://github.com/brevis-network/pico/tree/675303e)            | `RV64IM` |   V   |     V     |         |
 | SP1      | [`6.9.0`](https://github.com/succinctlabs/sp1/tree/v6.9.0)                  | `RV64IM` |   V   |           |         |
 | ZisK     | [`1.3.2-alpha`](https://github.com/0xPolygonHermez/zisk/tree/v1.3.2-alpha)  | `RV64IM` |   V   |     V     |    V    |
+
+## Standards Compliance
+
+[docs/standard-compliance.md](docs/standard-compliance.md) lists what Ere adds on top of each zkVM SDK to meet the [zkevm-standards](https://github.com/eth-act/zkevm-standards).
 
 ## Examples
 
