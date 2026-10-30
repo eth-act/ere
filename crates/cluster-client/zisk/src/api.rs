@@ -101,6 +101,10 @@ pub struct Proof {
     pub started_at: ::core::option::Option<::prost_types::Timestamp>,
     #[prost(message, optional, tag = "8")]
     pub completed_at: ::core::option::Option<::prost_types::Timestamp>,
+    /// 32-byte host randomness seed of the execution the proof attests to, also kept inside `data`.
+    /// Set in responses (absent for aggregates); ignored in requests, but must be absent or 32 bytes.
+    #[prost(bytes = "vec", optional, tag = "9")]
+    pub random_seed: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
 /// RPC-level error — returned in Status details for programmatic inspection.
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
@@ -217,10 +221,20 @@ pub struct RegisterAggregationProgramResponse {
     #[prost(string, tag = "1")]
     pub recurser_id: ::prost::alloc::string::String,
 }
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct JobRequestMessage {
     #[prost(message, optional, tag = "1")]
     pub job_kind: ::core::option::Option<JobKind>,
+    /// Caller-defined key/value labels for the job; empty means none. At most 32
+    /// keys, each up to 128 bytes, with values up to 1024 bytes. Accepted for
+    /// prove, execute, wrap and aggregate_proofs jobs; setup and
+    /// setup_aggregation_program reject any with INVALID_ARGUMENT. A coordinator
+    /// that does not allow job metadata rejects it with JOB_METADATA_NOT_ALLOWED.
+    #[prost(map = "string, string", tag = "2")]
+    pub metadata: ::std::collections::HashMap<
+        ::prost::alloc::string::String,
+        ::prost::alloc::string::String,
+    >,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct JobResponse {
@@ -281,6 +295,13 @@ pub struct ProveRequest {
     pub proof_dest: i32,
     #[prost(message, optional, tag = "5")]
     pub hints: ::core::option::Option<InputKind>,
+    /// Uses this 32-byte host randomness seed instead of drawing a fresh one. Rejected unless the
+    /// coordinator is configured to allow client random seeds.
+    #[prost(bytes = "vec", optional, tag = "6")]
+    pub random_seed: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
+    /// For a PROOF_KIND_PLONK proof: the job is refused unless the workers' SNARK is of it.
+    #[prost(enumeration = "SnarkProtocol", optional, tag = "7")]
+    pub snark_protocol: ::core::option::Option<i32>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ProveResponse {
@@ -297,6 +318,9 @@ pub struct WrapRequest {
     pub proof_dest: i32,
     #[prost(message, optional, tag = "3")]
     pub wrap_timeout: ::core::option::Option<::prost_types::Timestamp>,
+    /// For a PROOF_KIND_PLONK proof_dest: the job is refused unless the workers' SNARK is of it.
+    #[prost(enumeration = "SnarkProtocol", optional, tag = "4")]
+    pub snark_protocol: ::core::option::Option<i32>,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct WrapResponse {
@@ -350,6 +374,10 @@ pub struct ExecuteRequest {
     pub execute_timeout: ::core::option::Option<::prost_types::Timestamp>,
     #[prost(message, optional, tag = "4")]
     pub hints: ::core::option::Option<InputKind>,
+    /// Uses this 32-byte host randomness seed instead of drawing a fresh one. Rejected unless the
+    /// coordinator is configured to allow client random seeds.
+    #[prost(bytes = "vec", optional, tag = "5")]
+    pub random_seed: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ExecuteResponse {
@@ -357,6 +385,10 @@ pub struct ExecuteResponse {
     pub stats: ::core::option::Option<ExecutionStats>,
     #[prost(bytes = "vec", tag = "2")]
     pub public_outputs: ::prost::alloc::vec::Vec<u8>,
+    /// 32-byte host randomness seed the execution ran with; passing it back as the request's
+    /// `random_seed` reproduces the run.
+    #[prost(bytes = "vec", optional, tag = "3")]
+    pub random_seed: ::core::option::Option<::prost::alloc::vec::Vec<u8>>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct JobKindResponse {
@@ -580,6 +612,37 @@ impl ProofKind {
             "PROOF_KIND_STARK" => Some(Self::Stark),
             "PROOF_KIND_STARK_MINIMAL" => Some(Self::StarkMinimal),
             "PROOF_KIND_PLONK" => Some(Self::Plonk),
+            _ => None,
+        }
+    }
+}
+/// Protocol of the final SNARK (PROOF_KIND_PLONK), which the workers' SNARK proving key sets up.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum SnarkProtocol {
+    /// any: the workers'
+    Unspecified = 0,
+    Plonk = 1,
+    Pilfflonk = 2,
+}
+impl SnarkProtocol {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "SNARK_PROTOCOL_UNSPECIFIED",
+            Self::Plonk => "SNARK_PROTOCOL_PLONK",
+            Self::Pilfflonk => "SNARK_PROTOCOL_PILFFLONK",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "SNARK_PROTOCOL_UNSPECIFIED" => Some(Self::Unspecified),
+            "SNARK_PROTOCOL_PLONK" => Some(Self::Plonk),
+            "SNARK_PROTOCOL_PILFFLONK" => Some(Self::Pilfflonk),
             _ => None,
         }
     }

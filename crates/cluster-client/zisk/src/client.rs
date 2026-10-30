@@ -1,6 +1,7 @@
 //! Remote ZisK cluster proving.
 
 use core::{iter, time::Duration};
+use std::collections::HashMap;
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{Input, RemoteProverConfig, zkVMVerifier};
@@ -72,6 +73,7 @@ impl ZiskClusterClient {
         let mut client = self.client.clone();
         let req = JobRequestMessage {
             job_kind: Some(prove_job(&self.hash_id, input)),
+            metadata: HashMap::new(),
         };
         let job_id = match client.job_request(req).await {
             Ok(res) => res.into_inner().job_id,
@@ -203,6 +205,7 @@ async fn setup(
     };
     let req = JobRequestMessage {
         job_kind: Some(job),
+        metadata: HashMap::new(),
     };
     let job_id = client.job_request(req).await?.into_inner().job_id;
 
@@ -281,6 +284,8 @@ fn prove_job(hash_id: &str, input: &Input) -> JobKind {
             proof_dest: ProofKind::Stark as i32,
             proof_timeout: None,
             hints: None,
+            random_seed: None,
+            snark_protocol: None,
         })),
     }
 }
@@ -325,7 +330,8 @@ fn parse_proof(bytes: &[u8]) -> Result<ZiskProof, Error> {
     /// Mirrors `zisk_common::ProgramVK` up to its trailing `hash_mode`, which is
     /// dropped because the hash family is already checked through `ProofBody`.
     /// Bincode is positional, so omitting it is only sound while it stays last
-    /// in a `ProgramVK` that stays last in `Proof`.
+    /// in a `ProgramVK` that `Proof` follows only with fields that are omitted
+    /// too.
     #[derive(Deserialize)]
     struct ProgramVK {
         vk: Vec<u64>,

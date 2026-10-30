@@ -10,7 +10,7 @@ pub enum Error {
     CommonError(#[from] CommonError),
 
     // Common
-    #[error("Invalid env variable {key}, expected usize, got {value}")]
+    #[error("Invalid env variable {key}, got {value}")]
     InvalidEnvVar { key: &'static str, value: String },
 
     // Emulator

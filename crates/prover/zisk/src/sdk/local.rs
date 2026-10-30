@@ -84,7 +84,12 @@ impl Config {
         Ok(Self {
             setup_on_init: env::var_os("ERE_ZISK_SETUP_ON_INIT").is_some(),
             unlock_mapped_memory: env::var_os("ERE_ZISK_UNLOCK_MAPPED_MEMORY").is_some(),
-            minimal_memory: env::var_os("ERE_ZISK_MINIMAL_MEMORY").is_some(),
+            minimal_memory: env::var("ERE_ZISK_MINIMAL_MEMORY").map_or(Ok(true), |value| {
+                value.parse().map_err(|_| Error::InvalidEnvVar {
+                    key: "ERE_ZISK_MINIMAL_MEMORY",
+                    value,
+                })
+            })?,
             cpu_mops: env::var_os("ERE_ZISK_CPU_MOPS").is_some(),
             packed: env::var_os("ERE_ZISK_PACKED").is_some(),
             max_streams: parse_usize("ERE_ZISK_MAX_STREAMS")?,

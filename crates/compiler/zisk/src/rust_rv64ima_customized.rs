@@ -8,7 +8,13 @@ use crate::{Error, rust_rv64ima::LINKER_SCRIPT};
 const ZISK_TOOLCHAIN: &str = "zisk";
 const ZISK_TARGET: &str = "riscv64ima-zisk-zkvm-elf";
 
-const RUSTFLAGS: &[&str] = &["-C", "passes=lower-atomic"];
+/// `+unaligned-scalar-mem` is the default flag of `cargo-zisk build`, which the target spec lacks.
+const RUSTFLAGS: &[&str] = &[
+    "-C",
+    "target-feature=+unaligned-scalar-mem",
+    "-C",
+    "passes=lower-atomic",
+];
 
 /// LLVM flags tuned by Optuna for the Ethrex guest on Zisk
 const PROFILE_ETHREX: &[&str] = &[

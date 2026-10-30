@@ -24,9 +24,7 @@ use ere_prover_core::{CommonError, PublicValues};
 use once_cell::sync::OnceCell;
 use parking_lot::{Condvar, Mutex};
 use zisk_common::ZISK_PUBLICS;
-use zisk_core::{
-    AsmGenerationMethod, INPUT_ADDR, MAX_INPUT_SIZE, RAM_ADDR, RAM_SIZE, ZiskRom, ZiskRom2Asm,
-};
+use zisk_core::{AsmGenerationMethod, MAX_INPUT_SIZE, RAM_ADDR, RAM_SIZE, ZiskRom, ZiskRom2Asm};
 use zisk_rom_setup::{ensure_ziskclib, get_elf_data_hash, get_output_path, resolve_emulator_asm};
 
 use crate::{
@@ -40,9 +38,13 @@ const TYPE_PONG: u64 = 2;
 const TYPE_FA_REQUEST: u64 = 13;
 const TYPE_FA_RESPONSE: u64 = 14;
 
-/// Linker script command of the Makefile that reserves the addresses of the input, the ROM, the RAM
-/// and the MT and MO trace.
-const TRACE_RESERVATION: &str = ". = . + 0x890000000;";
+/// Linker script command of the Makefile that reserves the addresses of the control input and
+/// output, the input, the ROM, the RAM and the MT and MO trace.
+const TRACE_RESERVATION: &str = ". = . + 0x8C0100000;";
+
+/// Address of the control input, the start of the reservation, from
+/// `emulator-asm/src/constants.hpp`.
+const CONTROL_INPUT_ADDR: u64 = 0x0FF0_0000;
 
 /// Chunk size of a Fast request. The service requires it and the step limit to be powers of two.
 const CHUNK_SIZE: u64 = 1 << 18;
@@ -256,7 +258,7 @@ fn build(rom: &ZiskRom, elf_hash: &str) -> Result<PathBuf, Error> {
             linker_script_path.display()
         )));
     }
-    let reservation = format!(". = . + {:#x};", RAM_ADDR + RAM_SIZE - INPUT_ADDR);
+    let reservation = format!(". = . + {:#x};", RAM_ADDR + RAM_SIZE - CONTROL_INPUT_ADDR);
     fs::write(
         &linker_script_path,
         linker_script.replace(TRACE_RESERVATION, &reservation),
