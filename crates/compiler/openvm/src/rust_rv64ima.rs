@@ -5,13 +5,14 @@ use ere_util_compile::{CargoBuildCmd, RustTarget, parse_cargo_build_options};
 
 use crate::Error;
 
-/// Target spec modified from `riscv64im-unknown-none-elf` with patch `atomic-cas = true`.
+/// Target spec modified from `riscv64im-unknown-none-elf` with patch `atomic-cas = true` and
+/// `+unaligned-scalar-mem`, which the OpenVM target enables and `openvm-mem` relies on.
 ///
 /// To reproduce:
 ///
 /// ```bash
 /// rustc +nightly -Z unstable-options --print target-spec-json --target riscv64im-unknown-none-elf \
-///     | jq '.["atomic-cas"] = true' \
+///     | jq '.["atomic-cas"] = true | .features += ",+unaligned-scalar-mem"' \
 ///     > ./crates/compiler/openvm/src/rust_rv64ima/riscv64ima-unknown-none-elf.json
 /// ```
 const TARGET: RustTarget = RustTarget::SpecJson {
