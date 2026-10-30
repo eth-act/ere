@@ -40,7 +40,10 @@ impl Verifier {
             zkVMKind::Pico => {
                 let program_vk = Decode::decode_from_slice(encoded_program_vk)
                     .map_err(Error::decode_program_vk)?;
-                Self::Pico(ere_verifier_pico::PicoVerifier::new(program_vk))
+                Self::Pico(
+                    ere_verifier_pico::PicoVerifier::new(program_vk)
+                        .map_err(Error::decode_program_vk)?,
+                )
             }
         })
     }

@@ -7,7 +7,7 @@ use std::{
 use ere_compiler_core::Elf;
 use ere_prover_core::{
     CommonError, CostEstimation, CostProfile, Input, ProverResource, ProverResourceKind,
-    PublicValues, zkVMProver,
+    PublicValues, codec::Decode, zkVMProver,
 };
 use ere_verifier_pico::{PicoProgramVk, PicoProof, PicoVerifier};
 use pico_prover::{CostComponent, Prover, ProverBuilder, Stdin};
@@ -143,7 +143,7 @@ fn builder(elf: &Elf) -> ProverBuilder {
 fn load(elf: &Elf) -> Result<(Prover, PicoVerifier), Error> {
     let prover = builder(elf).build().map_err(Error::ProverInit)?;
     let bundle = prover.vk_bundle().map_err(Error::ProverInit)?;
-    let verifier = PicoVerifier::new(PicoProgramVk::new(bundle)?);
+    let verifier = PicoVerifier::new(PicoProgramVk::decode_from_slice(&bundle)?)?;
     Ok((prover, verifier))
 }
 
