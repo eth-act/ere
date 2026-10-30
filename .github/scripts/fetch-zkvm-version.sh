@@ -36,7 +36,7 @@ if echo "$LINE" | grep -q "git ="; then
     LATEST=$(get_github_latest "$REPO")
 else
     # Dependency from crates.io
-    CURRENT=$(grep "^$CRATE = " Cargo.toml | grep -oP '"\K[0-9.]+(?=")')
+    CURRENT=$(grep "^$CRATE = " Cargo.toml | grep -oP '"\K[0-9][^"]*')
     LATEST=$(get_crates_io_latest "$CRATE")
 fi
 
