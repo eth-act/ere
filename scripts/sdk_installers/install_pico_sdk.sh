@@ -45,10 +45,10 @@ cargo "+${PICO_TOOLCHAIN_VERSION}" install --locked --git https://github.com/bre
 
 # Verify pico-cli installation
 echo "Verifying pico-cli installation..."
-if cargo pico --version; then
+if cargo "+${PICO_TOOLCHAIN_VERSION}" pico --version; then
     echo "pico-cli installation verified successfully."
 else
-    echo "Error: 'cargo pico --version' failed. pico-cli might not have installed correctly." >&2
+    echo "Error: 'cargo +${PICO_TOOLCHAIN_VERSION} pico --version' failed. pico-cli might not have installed correctly." >&2
     echo "       Ensure ${CARGO_HOME:-${HOME}/.cargo}/bin is in your PATH for new shells." >&2
     exit 1
 fi
@@ -56,7 +56,7 @@ fi
 # Install the customized Rust toolchain providing the built-in guest target
 # `riscv64im-pico-zkvm-elf`, and link it into rustup as `pico`
 echo "Installing Pico Rust toolchain..."
-cargo pico install
+cargo "+${PICO_TOOLCHAIN_VERSION}" pico install
 
 # Verify the guest toolchain installation
 echo "Verifying Pico Rust toolchain installation..."

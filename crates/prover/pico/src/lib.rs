@@ -5,6 +5,9 @@
 //! To install all requirements, run [`install_pico_sdk.sh`] from the Ere
 //! repository at the same git revision as your `ere-prover-pico` dependency.
 //!
+//! `pico-vm` needs nightly features, so build with the nightly the installer adds, for example
+//! `cargo +nightly-2026-09-27 test -p ere-prover-pico`.
+//!
 //! To use with GPU proving support, make sure CUDA 12.8 or newer is installed, and turn on the
 //! `cuda` feature.
 //!
