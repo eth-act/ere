@@ -5,13 +5,14 @@ use ere_util_compile::{CargoBuildCmd, RustTarget, parse_cargo_build_options};
 
 use crate::Error;
 
-/// Target spec modified from `riscv64im-unknown-none-elf` with patch `atomic-cas = true`.
+/// Target spec modified from `riscv64im-unknown-none-elf` with patch `atomic-cas = true` and
+/// `+unaligned-scalar-mem`, which `cargo-zisk build` enables for every guest.
 ///
 /// To reproduce:
 ///
 /// ```bash
 /// rustc +nightly -Z unstable-options --print target-spec-json --target riscv64im-unknown-none-elf \
-///     | jq '.["atomic-cas"] = true' \
+///     | jq '.["atomic-cas"] = true | .features += ",+unaligned-scalar-mem"' \
 ///     > ./crates/compiler/zisk/src/rust_rv64ima/riscv64ima-unknown-none-elf.json
 /// ```
 const TARGET: RustTarget = RustTarget::SpecJson {
@@ -35,7 +36,7 @@ const CARGO_BUILD_OPTIONS: &[&str] = &[
     "-Zjson-target-spec",
 ];
 
-/// Copied from https://github.com/0xPolygonHermez/zisk/blob/v1.3.2-alpha/ziskbuild/zisk_linker_script.ld.
+/// Copied from https://github.com/0xPolygonHermez/zisk/blob/v1.4.0-alpha/ziskbuild/zisk_linker_script.ld.
 ///
 /// The ZisK target carries no built-in link script, so both compilers pass this one explicitly,
 /// matching what `zisk-build` injects for its own guest builds.

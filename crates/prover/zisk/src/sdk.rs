@@ -18,10 +18,10 @@ use ere_verifier_zisk::{ZiskProgramVk, ZiskProof, ensure_program_vk_matches};
 use tokio::time::Instant;
 use zisk_common::EmuTrace;
 use zisk_core::{
-    INPUT_ADDR, OUTPUT_ADDR, OUTPUT_MAX_SIZE, RAM_ADDR, RAM_SIZE, ROM_ENTRY, SYS_ADDR, SYS_SIZE,
-    ZiskRom,
+    MAX_STDIN_SIZE, OUTPUT_ADDR, OUTPUT_MAX_SIZE, RAM_ADDR, RAM_SIZE, ROM_ENTRY, SYS_ADDR,
+    SYS_SIZE, ZiskRom,
 };
-use zisk_transpiler_riscv::Riscv2zisk;
+use zisk_transpiler_common::ZiskTranspiler;
 use ziskemu::{Emu, EmuOptions};
 
 use crate::{
@@ -33,14 +33,6 @@ use crate::{
 
 mod local;
 mod proving_key;
-
-/// Address of the control input that the ASM emulator maps over the input region, from
-/// `emulator-asm/src/constants.hpp`.
-const CONTROL_INPUT_ADDR: u64 = 0x7000_0000;
-
-/// Largest stdin that fits in the input region before the control input, after the free-input word
-/// and the length prefix.
-const MAX_STDIN_SIZE: u64 = CONTROL_INPUT_ADDR - INPUT_ADDR - 16;
 
 /// Step limit of the ZisK prover, whose PIL gives each step index 36 bits.
 pub(crate) const MAX_STEPS: u64 = 1 << 36;
@@ -182,12 +174,12 @@ impl ZiskSdk {
             // The step ran in the frame that runs before a frame change.
             cost::record_accesses(&mut memory, call_tree.frame(), instruction, context);
             // An odd PC is an internal instruction of the RISC-V instruction that runs.
-            // https://github.com/0xPolygonHermez/zisk/blob/v1.3.2-alpha/core/src/zisk_rom.rs#L545-L563
+            // https://github.com/0xPolygonHermez/zisk/blob/v1.4.0-alpha/core/src/zisk_rom.rs#L683-L701
             if action.is_some() || (context.pc % 2 == 0 && !call_tree.contains(context.pc)) {
                 running = cost::running_cost(emu.ctx.stats.get_costs());
                 call_tree.charge(&running);
                 // A call writes its return address to `rd`, 8 bytes past a fused `auipc`.
-                // https://github.com/0xPolygonHermez/zisk/blob/v1.3.2-alpha/transpilers/riscv/src/riscv2zisk_context.rs#L1261-L1285
+                // https://github.com/0xPolygonHermez/zisk/blob/v1.4.0-alpha/transpilers/riscv/src/riscv2zisk_context.rs#L1299-L1323
                 let return_address = instruction
                     .meta_rd
                     .map_or(0, |rd| context.regs[rd as usize]);
@@ -221,7 +213,7 @@ impl ZiskSdk {
     /// Runs `input` on the Rust emulator with statistics, and returns the emulator and its report.
     /// It steps the emulator as `Emu::run` does, and calls `on_step` after each step with the
     /// emulator and the PC of the step.
-    /// https://github.com/0xPolygonHermez/zisk/blob/v1.3.2-alpha/emulator/src/emu.rs#L1672-L2092
+    /// https://github.com/0xPolygonHermez/zisk/blob/v1.4.0-alpha/emulator/src/emu.rs#L1676-L2105
     fn run_with_stats(
         &self,
         input: &Input,
@@ -301,7 +293,7 @@ fn non_heap(elf: &Elf) -> Result<Vec<Range<u64>>, Error> {
 
 /// Converts `elf` to the ZisK ROM.
 fn rom(elf: &Elf) -> Result<ZiskRom, Error> {
-    Riscv2zisk::new(elf)
+    ZiskTranspiler::new(elf)
         .run()
         .map_err(|err| Error::Riscv2zisk(err.to_string()))
 }

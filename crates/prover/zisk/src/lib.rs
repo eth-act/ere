@@ -92,7 +92,7 @@
 //! | -------------------------------------- | ----- | -------------- | ------------------------------------------------------ |
 //! | `ERE_ZISK_SETUP_ON_INIT`               | Flag  |                | Setup local prover on `new` and `setup`, not lazily    |
 //! | `ERE_ZISK_UNLOCK_MAPPED_MEMORY`        | Flag  |                | Configure the prover to unlock mapped memory           |
-//! | `ERE_ZISK_MINIMAL_MEMORY`              | Flag  |                | Configure the prover to use minimal memory             |
+//! | `ERE_ZISK_MINIMAL_MEMORY`              | Value | `true`         | Configure the prover to use minimal memory             |
 //! | `ERE_ZISK_MAX_STREAMS`                 | Value |                | Configure the prover max streams                       |
 //! | `ERE_ZISK_NUMBER_THREADS_WITNESS`      | Value |                | Configure the prover number of witness threads         |
 //! | `ERE_ZISK_MAX_WITNESS_STORED`          | Value |                | Configure the prover max witness stored                |

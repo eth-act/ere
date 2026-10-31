@@ -1,11 +1,12 @@
 use core::alloc::{GlobalAlloc, Layout};
 
 #[no_mangle]
-unsafe extern "C" fn _zisk_main() {
+unsafe extern "C" fn _zisk_main() -> i32 {
     crate::main();
+    0
 }
 
-// According to https://github.com/0xPolygonHermez/zisk/blob/v1.3.2-alpha/ziskos/entrypoint/src/lib.rs#L364
+// According to https://github.com/0xPolygonHermez/zisk/blob/v1.4.0-alpha/ziskos/entrypoint/src/lib.rs#L364
 core::arch::global_asm!(
     r#"
 .section .text.init
@@ -46,7 +47,7 @@ unsafe impl GlobalAlloc for SimpleAlloc {
 #[global_allocator]
 static HEAP: SimpleAlloc = SimpleAlloc;
 
-// According to https://github.com/0xPolygonHermez/zisk/blob/v1.3.2-alpha/ziskos/entrypoint/src/alloc/alloc.rs#L131
+// According to https://github.com/0xPolygonHermez/zisk/blob/v1.4.0-alpha/ziskos/entrypoint/src/alloc/alloc.rs#L131
 #[no_mangle]
 pub unsafe extern "C" fn sys_alloc_aligned(bytes: usize, align: usize) -> *mut u8 {
     use core::arch::asm;
