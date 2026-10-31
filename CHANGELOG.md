@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.20.0](https://github.com/eth-act/ere/compare/v0.19.6...v0.20.0) (2026-10-31)
+
+
+### Features
+
+* add compliance wrapper note ([#466](https://github.com/eth-act/ere/issues/466)) ([f072943](https://github.com/eth-act/ere/commit/f0729436fc38a38717cfcd720b06d3f09ab09f54))
+* add pico ([#465](https://github.com/eth-act/ere/issues/465)) ([0e8c4e0](https://github.com/eth-act/ere/commit/0e8c4e0c7fe8897fb3024af0cb8afc803c101f58))
+* update zisk to v1.4.0-alpha ([#470](https://github.com/eth-act/ere/issues/470)) ([57ec0d7](https://github.com/eth-act/ere/commit/57ec0d7a66da4e9b9fecb4dfd009516bc06f7804))
+
 ## [0.19.6](https://github.com/eth-act/ere/compare/v0.19.5...v0.19.6) (2026-10-27)
 
 
