@@ -183,16 +183,27 @@ mod tests {
             TestCase, run_zkvm_execute, run_zkvm_execute_estimated_cost, run_zkvm_prove,
             testing_guest_directory,
         },
-        program::basic::BasicProgram,
+        program::{basic::BasicProgram, zkvm_interface},
     };
+    use pico_prover::ProveError;
 
-    use crate::prover::PicoProver;
+    use crate::{error::Error, prover::PicoProver};
 
     fn basic_elf() -> Elf {
         static ELF: OnceLock<Elf> = OnceLock::new();
         ELF.get_or_init(|| {
             PicoRustRv64imaCustomized
                 .compile(testing_guest_directory("pico", "basic"), &[])
+                .unwrap()
+        })
+        .clone()
+    }
+
+    fn zkvm_interface_elf() -> Elf {
+        static ELF: OnceLock<Elf> = OnceLock::new();
+        ELF.get_or_init(|| {
+            PicoRustRv64imaCustomized
+                .compile(testing_guest_directory("pico", "zkvm_interface"), &[])
                 .unwrap()
         })
         .clone()
@@ -231,7 +242,8 @@ mod tests {
 
     /// Switches from the basic program to `stock_nightly_no_std` and back, then runs both again.
     ///
-    /// The other zkVMs switch to `zkvm_interface`, which Pico does not support yet.
+    /// The other zkVMs switch to `zkvm_interface`; Pico proves it only on more memory than a
+    /// test run has (see `test_prove_zkvm_interface`).
     fn run_switchable(zkvm: &mut PicoProver, prove: bool) {
         zkvm.setup(basic_elf()).unwrap();
         let basic_vk = zkvm.program_vk().encode_to_vec().unwrap();
@@ -421,6 +433,42 @@ mod tests {
             .unwrap_err();
     }
 
-    // TODO: Add `test_execute_zkvm_interface` when Pico exports the `zkvm_*`
-    // accelerator symbols.
+    /// Every `zkvm_*` function, through `ere-platform-pico`, on each recorded vector.
+    #[test]
+    fn test_execute_zkvm_interface() {
+        let mut zkvm = default_zkvm();
+        zkvm.setup(zkvm_interface_elf()).unwrap();
+        for test_case in zkvm_interface::test_cases() {
+            run_zkvm_execute(&*zkvm, &test_case);
+        }
+    }
+
+    /// The guest's core chunk can fall to Pico's catch-all whitelist shape, which Pico refuses to
+    /// prove, and on the GPU a case can run out of device memory. Each case proves and verifies or
+    /// fails with one of those errors, and the prover proves the next program as before.
+    ///
+    /// Ignored by default: some cases need about 300 GB of host memory. On a 32 GB card the MSM,
+    /// pairing and KZG cases may run out of device memory, which the test accepts.
+    #[test]
+    #[ignore = "needs about 300 GB of host memory"]
+    fn test_prove_zkvm_interface() {
+        let mut zkvm = default_zkvm();
+        zkvm.setup(zkvm_interface_elf()).unwrap();
+        for test_case in zkvm_interface::test_cases() {
+            match zkvm.prove(&test_case.input()) {
+                Ok((_, proof, _)) => {
+                    zkvm.verify(&proof).unwrap();
+                }
+                Err(Error::Prove(ProveError::CatchAllShape(e))) => println!("[pico] refused: {e}"),
+                #[cfg(feature = "cuda")]
+                Err(Error::Prove(ProveError::GpuOutOfMemory(e))) => {
+                    println!("[pico] out of device memory: {e}")
+                }
+                Err(e) => panic!("{e}"),
+            }
+        }
+
+        let zkvm = with_basic_elf(zkvm);
+        run_zkvm_prove(&*zkvm, &BasicProgram::<BincodeLegacy>::valid_test_case());
+    }
 }
