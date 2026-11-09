@@ -51,8 +51,13 @@ impl zkVMVerifier for PicoVerifier {
     }
 
     fn verify(&self, proof: &PicoProof) -> Result<PublicValues, Error> {
-        pico_verifier::verify_with(&self.apex, &proof.envelope, &proof.committed)
-            .map_err(Error::Verify)?;
+        pico_verifier::verify_compress_with(
+            &self.apex,
+            &pico_verifier::shipped_compress_vk(),
+            &proof.envelope,
+            &proof.committed,
+        )
+        .map_err(Error::Verify)?;
         Ok(proof.committed.as_slice().into())
     }
 

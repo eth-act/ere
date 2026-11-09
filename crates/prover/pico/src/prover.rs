@@ -12,7 +12,7 @@ use ere_prover_core::{
     PublicValues, codec::Decode, zkVMProver,
 };
 use ere_verifier_pico::{PicoProgramVk, PicoProof, PicoVerifier};
-use pico_prover::{CostComponent, Prover, ProverBuilder, Stdin};
+use pico_prover::{CostComponent, Phase, Prover, ProverBuilder, Stdin};
 
 use crate::error::Error;
 
@@ -126,10 +126,12 @@ impl zkVMProver for PicoProver {
 
         let mut prover = self.prover()?;
         let start = Instant::now();
-        let proof = prover.prove(stdin).map_err(Error::Prove)?;
+        let proof = prover
+            .prove_to(stdin, Phase::Compress)
+            .map_err(Error::Prove)?;
         let proving_time = start.elapsed();
 
-        let (envelope, committed) = proof.export_v3().map_err(Error::Prove)?;
+        let (envelope, committed) = proof.export_compress_v4().map_err(Error::Prove)?;
         let public_values = committed.as_slice().into();
         let proof = PicoProof::new(envelope, committed);
 
@@ -369,6 +371,54 @@ mod tests {
             .err()
             .unwrap();
         assert!(matches!(err, crate::Error::CpuUnsupportedWithCuda));
+    }
+
+    /// The compress proof: at most 300 KiB, verified only as a compress proof, its output bound.
+    #[cfg(not(feature = "cuda"))]
+    #[test]
+    fn test_prove_compress_only() {
+        compress_only(&with_basic_elf(zkvm(false)));
+    }
+
+    #[cfg(feature = "cuda")]
+    #[test]
+    fn test_prove_compress_only_gpu() {
+        compress_only(&with_basic_elf(zkvm(true)));
+    }
+
+    fn compress_only(zkvm: &PicoProver) {
+        use ere_verifier_pico::PicoProof;
+
+        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
+        let (_, proof, _) = zkvm.prove(&test_case.input()).unwrap();
+        let encoded = proof.encode_to_vec().unwrap();
+        println!(
+            "[pico] compress envelope {} B, ere proof {} B",
+            proof.envelope.len(),
+            encoded.len()
+        );
+        assert!(
+            encoded.len() <= 300 * 1024,
+            "the proof is over 300 KiB: {}",
+            encoded.len()
+        );
+        zkvm.verify(&proof).unwrap();
+
+        // Another output under the same proof.
+        let mut committed = proof.committed.clone();
+        committed[0] ^= 1;
+        zkvm.verify(&PicoProof::new(proof.envelope.clone(), committed))
+            .unwrap_err();
+
+        // The root proof the compress proof re-proves, as a v3 envelope: refused.
+        let mut prover = zkvm.prover().unwrap();
+        let root = prover
+            .prove(super::stdin(&test_case.input()).unwrap())
+            .unwrap();
+        drop(prover);
+        let (root_envelope, committed) = root.export_v3().unwrap();
+        zkvm.verify(&PicoProof::new(root_envelope, committed))
+            .unwrap_err();
     }
 
     // TODO: Add `test_execute_zkvm_interface` when Pico exports the `zkvm_*`

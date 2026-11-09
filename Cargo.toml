@@ -156,9 +156,9 @@ rvr-openvm-ir = { git = "https://github.com/han0110/openvm.git", branch = "patch
 rvr-openvm-lift = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.1.0-preview", default-features = false }
 
 # Pico dependencies
-pico-prover = { git = "https://github.com/brevis-network/pico", rev = "613d6aeb64350d73faf24c17e2e3e3cee5b763bc", default-features = false }
-pico-sdk = { git = "https://github.com/brevis-network/pico", rev = "613d6aeb64350d73faf24c17e2e3e3cee5b763bc" }
-pico-verifier = { git = "https://github.com/brevis-network/pico", rev = "613d6aeb64350d73faf24c17e2e3e3cee5b763bc" }
+pico-prover = { git = "https://github.com/brevis-network/pico", rev = "5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e", default-features = false }
+pico-sdk = { git = "https://github.com/brevis-network/pico", rev = "5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e" }
+pico-verifier = { git = "https://github.com/brevis-network/pico", rev = "5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e" }
 
 # SP1 dependencies
 sp1-core-executor = { git = "https://github.com/succinctlabs/sp1", tag = "v6.9.0" }
