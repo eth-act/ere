@@ -3797,6 +3797,7 @@ dependencies = [
  "ere-util-test",
  "ere-verifier-pico",
  "libc",
+ "once_cell",
  "pico-prover",
  "thiserror 2.0.18",
 ]

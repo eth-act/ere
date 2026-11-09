@@ -17,10 +17,6 @@ ARG RUSTFLAGS
 # Env variable read by Pico crate `cuda-mle`, comma-separated numeric arch IDs (e.g. "120" or "89,120")
 ARG CUDA_ARCH=120
 
-# `PURE_AOT=1` (the default) ships what pure execute builds with; `PURE_AOT=0` makes an
-# interpreter-only image, about 820 MB smaller.
-ARG PURE_AOT=1
-
 # Under CUDA, `ere-server` links `libgpu_api.so`, which `pico-gpu-api` builds into the pico checkout.
 # For pure execute, `pico-aot-pure/` keeps the crate the library links, the workspace manifest it
 # takes its package fields from and Pico's toolchain file, and `pico-toolchain/` the toolchain that
@@ -30,21 +26,19 @@ RUN cargo build --release --package ere-server --bin ere-server --features pico$
     && if [ -n "$CUDA" ]; then \
         cp "$(find $CARGO_HOME/git/checkouts /ere -name libgpu_api.so -print -quit)" lib/; \
     fi \
-    && if [ "$PURE_AOT" = 1 ]; then \
-        crate="$(cargo metadata --format-version 1 --offline \
-            | jq -r '.packages[] | select(.name == "pico-aot-pure") | .manifest_path' | head -1)" \
-        && pico="$(dirname "$(dirname "$crate")")" \
-        && test -f "$pico/aot-pure/Cargo.toml" \
-        && cp "$pico/Cargo.toml" "$pico/rust-toolchain" pico-aot-pure/ \
-        && cp -r "$pico/aot-pure" pico-aot-pure/ \
-        && channel="$(sed -n 's/^channel = "\(.*\)"/\1/p' "$pico/rust-toolchain")" \
-        && sysroot="$(rustup run "$channel" rustc --print sysroot)" \
-        && cp -r "$sysroot/." pico-toolchain/ \
-        && rm -rf pico-toolchain/share/doc pico-toolchain/lib/rustlib/src \
-            pico-toolchain/bin/clippy-driver pico-toolchain/bin/cargo-clippy \
-            pico-toolchain/bin/rustfmt pico-toolchain/bin/cargo-fmt \
-        && pico-toolchain/bin/cargo --version; \
-    fi \
+    && crate="$(cargo metadata --format-version 1 --offline \
+        | jq -r '.packages[] | select(.name == "pico-aot-pure") | .manifest_path' | head -1)" \
+    && pico="$(dirname "$(dirname "$crate")")" \
+    && test -f "$pico/aot-pure/Cargo.toml" \
+    && cp "$pico/Cargo.toml" "$pico/rust-toolchain" pico-aot-pure/ \
+    && cp -r "$pico/aot-pure" pico-aot-pure/ \
+    && channel="$(sed -n 's/^channel = "\(.*\)"/\1/p' "$pico/rust-toolchain")" \
+    && sysroot="$(rustup run "$channel" rustc --print sysroot)" \
+    && cp -r "$sysroot/." pico-toolchain/ \
+    && rm -rf pico-toolchain/share/doc pico-toolchain/lib/rustlib/src \
+        pico-toolchain/bin/clippy-driver pico-toolchain/bin/cargo-clippy \
+        pico-toolchain/bin/rustfmt pico-toolchain/bin/cargo-fmt \
+    && pico-toolchain/bin/cargo --version \
     && cargo clean && rm -rf $CARGO_HOME/registry/
 
 FROM $RUNTIME_IMAGE AS runtime
@@ -57,21 +51,17 @@ FROM runtime${CUDA:+_cuda} AS runtime_stage
 # Where the GPU JIT kernels go when `G1_JIT`/`Z1_JIT` are set; `ERE_PICO_CACHE_VOLUME` mounts it.
 ENV MLE_JIT_CACHE_DIR=/root/.mle_jit_cache
 
-# Pure execute: from setup on, `ere-server` builds each program's pure-mode library with cargo,
+# Pure execute: on its first execution, `ere-server` builds each program's pure-mode library with cargo,
 # cached by ELF under `/root/.cache/pico-pure` (`ERE_PICO_PURE_CACHE_VOLUME` mounts it).
 # `pico-aot-pure`, the one crate the library links, has no dependencies, so the build needs only
-# the toolchain Pico pins and a linker, and runs offline. With `PURE_AOT=0` the two copied
-# directories are empty and `ERE_PICO_PURE=0` keeps the build off.
-ARG PURE_AOT=1
+# the toolchain Pico pins and a linker, and runs offline.
 COPY --from=build_stage /ere/pico-aot-pure /opt/pico
 COPY --from=build_stage /ere/pico-toolchain /opt/rust
-ENV PATH=/opt/rust/bin:$PATH ERE_PICO_PURE=$PURE_AOT \
+ENV PATH=/opt/rust/bin:$PATH \
     ERE_PICO_PURE_RUNTIME="path = \"/opt/pico/aot-pure\"" ERE_PICO_PURE_OFFLINE=1
-RUN if [ "$PURE_AOT" = 1 ]; then \
-        apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev \
-        && apt-get clean && rm -rf /var/lib/apt/lists/* \
-        && cargo --version; \
-    fi
+RUN apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* \
+    && cargo --version
 
 # Copy ere-server and the libraries it links
 COPY --from=build_stage /ere/bin/ere-server /ere/bin/ere-server

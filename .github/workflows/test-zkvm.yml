@@ -20,10 +20,6 @@ on:
         description: 'RUST_MIN_STACK value when testing via docker'
         required: false
         type: number
-      test_features:
-        description: 'Extra features for the docker cargo test run, e.g. "ere-prover-pico/pure-aot"'
-        required: false
-        type: string
       # Remove if we use larger runners.
       skip_prove_test:
         description: 'Whether to skip proof-generation tests'
@@ -257,7 +253,6 @@ jobs:
             --package ere-compiler-${{ inputs.zkvm }} \
             --package ere-prover-${{ inputs.zkvm }} \
             --package ere-verifier-${{ inputs.zkvm }} \
-            ${{ inputs.test_features && format('--features {0}', inputs.test_features) || '' }} \
             -- \
             ${{ inputs.skip_prove_test && '--skip test_prove' || '' }} \
             ${{ inputs.test_threads && format('--test-threads={0}', inputs.test_threads) || '' }}

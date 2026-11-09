@@ -23,6 +23,9 @@ pub enum Error {
     ProverPoisoned,
 
     // Execute
+    #[error("Build Pico pure-mode AOT library failed: {0}")]
+    PureAotBuild(String),
+
     #[error("Pico execution failed: {0}")]
     Execute(#[source] ProveError),
 

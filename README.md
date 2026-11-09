@@ -417,11 +417,10 @@ ERE_GPU_DEVICES="device=0,1" ere prove ...
 ERE_GPU_DEVICES="4" ere prove ...
 ```
 
-These variables configure `ere-prover-pico` (in the SDK, or inside `ere-server-pico`). With its `pure-aot` feature (on in `ere-server`'s `pico` feature), setup builds the program's pure-mode AOT library with cargo in the background and execution runs on it, waiting for the build outside the reported time; if the build fails, execution runs on Pico's interpreter and the next setup retries. `ere-server-pico` ships the toolchain and source this needs, so the build runs offline (about 30 s for a block-validation guest) and is cached by ELF. This grows the CPU image from about 115 MB to about 930 MB; `--build-arg PURE_AOT=0` builds an interpreter-only image.
+These variables configure `ere-prover-pico` (in the SDK, or inside `ere-server-pico`). The first execution of a program builds its pure-mode AOT library with cargo, outside the reported time, and execution runs on it. If the build fails, the execution fails and the next one retries. `ere-server-pico` ships the toolchain and source this needs, so the build runs offline (about 30 s for a block-validation guest) and is cached by ELF. This grows the CPU image from about 115 MB to about 930 MB.
 
 | Variable                 | Description                                                                                       | Default                                           |
 | ------------------------ | ------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `ERE_PICO_PURE`          | Pure execute is on by default; `0` turns it off and executes on the interpreter.                 | on                                                |
 | `ERE_PICO_PURE_CACHE`    | Absolute path of the library cache; it must be owned by the user and not writable by others, and its parent should be private too. | `$XDG_CACHE_HOME/pico-pure`, else `~/.cache/pico-pure` |
 | `ERE_PICO_PURE_RUNTIME`  | Cargo dependency entry for `pico-aot-pure` that the library builds against.                       | the source `ere-prover-pico` was built from       |
 | `ERE_PICO_PURE_OFFLINE`  | `1` builds the library with `--offline`.                                                          | ``                                                |
