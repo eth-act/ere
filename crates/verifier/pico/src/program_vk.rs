@@ -7,7 +7,7 @@ use crate::Error;
 ///
 /// The v2 VK bundle of `pico-verifier`: the program's exe identity, the pinned
 /// whitelist root of the recursion verifying keys, and the Merkle memberships of
-/// the keys a root proof can carry.
+/// the keys a root or a compress proof can carry.
 ///
 /// Encoded with the bundle codec of `pico-verifier`. [`PicoVerifier::new`] checks
 /// the bundle against the whitelist root shipped with Pico.

@@ -6,10 +6,12 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
+libc.workspace = true
+once_cell.workspace = true
 thiserror.workspace = true
 
 # Pico dependencies
-pico-prover.workspace = true
+pico-prover = { workspace = true, features = ["pure-build"] }
 
 # Local dependencies
 ere-compiler-core.workspace = true

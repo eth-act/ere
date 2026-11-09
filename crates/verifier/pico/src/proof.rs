@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-/// Proof produced by the Pico host prover: a whitelist-mode root proof as a v3
-/// envelope of `pico-verifier`, and the bytes the guest committed, which the
-/// proof binds by their SHA-256 digest.
+/// Proof produced by the Pico host prover: a whitelist-mode compress proof, the
+/// final proof Pico hands out, as a v4 envelope of `pico-verifier`, and the bytes
+/// the guest committed, which the proof binds by their SHA-256 digest. The verifier
+/// accepts no other kind of proof.
 ///
 /// Encoded via bincode legacy, rejecting trailing bytes. Decoding does not parse
 /// the envelope, the verifier does.

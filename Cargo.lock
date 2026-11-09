@@ -1578,10 +1578,10 @@ version = "0.69.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "271383c67ccabffb7381723dea0672a673f292304fcb45c01cc648c7a8d58088"
 dependencies = [
- "bitflags 2.11.0",
+ "bitflags",
  "cexpr",
  "clang-sys",
- "itertools 0.10.5",
+ "itertools 0.12.1",
  "lazy_static",
  "lazycell",
  "log",
@@ -1601,10 +1601,10 @@ version = "0.72.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "993776b509cfb49c750f11b8f07a46fa23e0a1386ffc01fb1e7d343efc387895"
 dependencies = [
- "bitflags 2.11.0",
+ "bitflags",
  "cexpr",
  "clang-sys",
- "itertools 0.10.5",
+ "itertools 0.12.1",
  "log",
  "prettyplease",
  "proc-macro2",
@@ -1655,12 +1655,6 @@ dependencies = [
  "bitcoin-io",
  "hex-conservative",
 ]
-
-[[package]]
-name = "bitflags"
-version = "1.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
 name = "bitflags"
@@ -1766,6 +1760,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "bls12_381"
+version = "0.8.0"
+source = "git+https://github.com/brevis-network/bls12_381.git?rev=79fbbface08629528c9ef6e326d98e38901c39bf#79fbbface08629528c9ef6e326d98e38901c39bf"
+dependencies = [
+ "cfg-if",
+ "digest 0.10.7",
+ "ff 0.13.1",
+ "group 0.13.0",
+ "hex",
+ "pairing 0.23.0",
+ "pico-patch-libs 1.2.2",
+ "rand_core 0.6.4",
+ "subtle",
+]
+
+[[package]]
 name = "blst"
 version = "0.3.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1809,7 +1819,7 @@ version = "3.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "519bd3116aeeb42d5372c29d982d16d0170d3d4a5ed85fc7dd91642ffff3c67c"
 dependencies = [
- "darling 0.23.0",
+ "darling 0.20.11",
  "ident_case",
  "prettyplease",
  "proc-macro2",
@@ -2638,8 +2648,8 @@ checksum = "e2931af7e13dc045d8e9d26afccc6fa115d64e115c9c84b1166288b46f6782c2"
 
 [[package]]
 name = "cuda-mle"
-version = "3.1.0"
-source = "git+https://github.com/brevis-network/pico?rev=613d6aeb64350d73faf24c17e2e3e3cee5b763bc#613d6aeb64350d73faf24c17e2e3e3cee5b763bc"
+version = "3.1.1"
+source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
 dependencies = [
  "bytesize",
  "cc",
@@ -2671,7 +2681,7 @@ name = "cudart"
 version = "0.1.0"
 source = "git+https://github.com/brevis-network/era-cuda.git?rev=4277a3558fce68b5ae48bc80055046bb1d0d6ed4#4277a3558fce68b5ae48bc80055046bb1d0d6ed4"
 dependencies = [
- "bitflags 2.11.0",
+ "bitflags",
  "cudart-sys",
  "paste",
  "serde_json",
@@ -2955,37 +2965,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "defmt"
-version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4a0795ac740cb54d7b3775c9c17345f6aaecf884c01733b39d6017738e0e3e1"
-dependencies = [
- "bitflags 1.3.2",
- "defmt-macros",
-]
-
-[[package]]
-name = "defmt-macros"
-version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "840bb056bd99c495c9188198a258ab787c79f306d864db3e6e8451442d6d8366"
-dependencies = [
- "defmt-parser",
- "proc-macro2",
- "quote",
- "syn 3.0.6",
-]
-
-[[package]]
-name = "defmt-parser"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71958f69fb2de856c5dd51ac9377e986ca1aa5919f931bf5395a807277f889a0"
-dependencies = [
- "thiserror 2.0.18",
-]
-
-[[package]]
 name = "der"
 version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3221,8 +3200,8 @@ dependencies = [
 
 [[package]]
 name = "distributed-vm"
-version = "3.1.0"
-source = "git+https://github.com/brevis-network/pico?rev=613d6aeb64350d73faf24c17e2e3e3cee5b763bc#613d6aeb64350d73faf24c17e2e3e3cee5b763bc"
+version = "3.1.1"
+source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -3318,7 +3297,7 @@ version = "3.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f7d4c414c94bc830797115b8e5f434d58e7e80cb42ba88508c14bc6ea270625"
 dependencies = [
- "bitflags 2.11.0",
+ "bitflags",
  "byteorder",
  "lazy_static",
  "proc-macro-error2",
@@ -3364,6 +3343,19 @@ dependencies = [
  "elliptic-curve",
  "rfc6979 0.4.0 (git+https://github.com/sp1-patches/signatures?tag=sp1-skip-verify-on-recovery)",
  "signature",
+]
+
+[[package]]
+name = "ecdsa"
+version = "0.16.9"
+source = "git+https://github.com/brevis-network/signatures?branch=patch-v1.1.0-rv64#3d810107f744520ebcf56ae655bb894bd5860c9a"
+dependencies = [
+ "der",
+ "digest 0.10.7",
+ "elliptic-curve",
+ "rfc6979 0.4.0 (git+https://github.com/brevis-network/signatures?branch=patch-v1.1.0-rv64)",
+ "signature",
+ "spki",
 ]
 
 [[package]]
@@ -3531,29 +3523,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bc95de49ad098572c02d3fbf368c9a020bfff5ae78483685b77f51d8a7e9486d"
 dependencies = [
  "num_threads",
-]
-
-[[package]]
-name = "env_filter"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "900d271a03799a1ee8d1ca9b19893b48ca674a9284fefcfb85f05e74ed314217"
-dependencies = [
- "log",
- "regex",
-]
-
-[[package]]
-name = "env_logger"
-version = "0.11.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de671bd27a75a797dc9ae289ba1e77276e75e2026408aab65185384e2d5cd3f6"
-dependencies = [
- "anstream",
- "anstyle",
- "env_filter",
- "jiff",
- "log",
 ]
 
 [[package]]
@@ -3827,6 +3796,8 @@ dependencies = [
  "ere-prover-core",
  "ere-util-test",
  "ere-verifier-pico",
+ "libc",
+ "once_cell",
  "pico-prover",
  "thiserror 2.0.18",
 ]
@@ -4526,7 +4497,7 @@ version = "0.20.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7b88256088d75a56f8ecfa070513a775dd9107f6530ef14919dac831af9cfe2b"
 dependencies = [
- "bitflags 2.11.0",
+ "bitflags",
  "libc",
  "libgit2-sys",
  "log",
@@ -4558,7 +4529,7 @@ version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0bf760ebf69878d9fd8f110c89703d90ce35095324d1f1edcb595c63945ee757"
 dependencies = [
- "bitflags 2.11.0",
+ "bitflags",
  "ignore",
  "walkdir",
 ]
@@ -5096,7 +5067,7 @@ dependencies = [
  "js-sys",
  "log",
  "wasm-bindgen",
- "windows-core 0.62.2",
+ "windows-core 0.61.2",
 ]
 
 [[package]]
@@ -5383,43 +5354,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
-name = "jiff"
-version = "0.2.38"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b2b005715dcbeb0089a3c0dab99f2ff1cc3b2525323552703d648585d342a383"
-dependencies = [
- "defmt",
- "jiff-core",
- "jiff-static",
- "log",
- "portable-atomic",
- "portable-atomic-util",
- "serde_core",
-]
-
-[[package]]
-name = "jiff-core"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e52fe76043ccecc9005d2305ebaadf7d7fc0cc89ca6baa10a94d6bc68c7128c"
-dependencies = [
- "defmt",
- "log",
-]
-
-[[package]]
-name = "jiff-static"
-version = "0.2.38"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2cc9817253cf7c7ee4684451bd327e88d6f3658014e54a29198625590650695c"
-dependencies = [
- "jiff-core",
- "proc-macro2",
- "quote",
- "syn 2.0.117",
-]
-
-[[package]]
 name = "jni"
 version = "0.21.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5519,6 +5453,20 @@ dependencies = [
  "openvm-ecc-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
  "openvm-ecc-sw-macros 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
  "serde",
+]
+
+[[package]]
+name = "k256"
+version = "0.13.4"
+source = "git+https://github.com/brevis-network/elliptic-curves?rev=d0c56392e728fd0df321820fb0cb495272d38673#d0c56392e728fd0df321820fb0cb495272d38673"
+dependencies = [
+ "cfg-if",
+ "ecdsa 0.16.9 (git+https://github.com/brevis-network/signatures?branch=patch-v1.1.0-rv64)",
+ "elliptic-curve",
+ "getrandom 0.2.17",
+ "hex",
+ "pico-patch-libs 1.2.2",
+ "sha2 0.10.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -5691,7 +5639,7 @@ dependencies = [
  "ripemd",
  "sha2 0.10.9 (git+https://github.com/sp1-patches/RustCrypto-hashes?tag=patch-sha2-0.10.9-sp1-6.2.0)",
  "sp1-zkvm",
- "substrate-bn",
+ "substrate-bn 0.6.0 (git+https://github.com/sp1-patches/bn?tag=patch-0.6.0-sp1-6.2.0-substrate-bn)",
  "tiny-keccak 2.0.2 (git+https://github.com/sp1-patches/tiny-keccak?tag=patch-2.0.2-sp1-6.2.0)",
 ]
 
@@ -6021,7 +5969,7 @@ version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fbeff6bd154a309b2ada5639b2661ca6ae4599b34e8487dc276d2cd637da2d76"
 dependencies = [
- "bitflags 2.11.0",
+ "bitflags",
  "itoa",
 ]
 
@@ -6125,7 +6073,7 @@ version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "71e2746dc3a24dd78b3cfcb7be93368c6de9963d30f43a6a73998a9cf4b17b46"
 dependencies = [
- "bitflags 2.11.0",
+ "bitflags",
  "cfg-if",
  "cfg_aliases",
  "libc",
@@ -6414,7 +6362,7 @@ version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2a180dd8642fa45cdb7dd721cd4c11b1cadd4929ce112ebd8b9f5803cc79d536"
 dependencies = [
- "bitflags 2.11.0",
+ "bitflags",
 ]
 
 [[package]]
@@ -6474,7 +6422,7 @@ version = "0.10.81"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77823a27f0babb03091cb9ed9ef80af3b39dbc82f97e8fa530374b7dafd87a45"
 dependencies = [
- "bitflags 2.11.0",
+ "bitflags",
  "cfg-if",
  "foreign-types",
  "libc",
@@ -8037,7 +7985,7 @@ dependencies = [
  "ecdsa 0.16.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "elliptic-curve",
  "hex",
- "primeorder 0.13.1",
+ "primeorder 0.13.1 (git+https://github.com/sp1-patches/elliptic-curves?tag=patch-p256-13.2-sp1-6.2.0)",
  "sha2 0.10.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp1-lib 6.3.0",
 ]
@@ -8058,6 +8006,20 @@ dependencies = [
  "openvm-ecc-guest 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
  "openvm-ecc-sw-macros 2.0.0 (git+https://github.com/openvm-org/openvm.git?tag=v2.1.0-preview)",
  "serde",
+]
+
+[[package]]
+name = "p256"
+version = "0.13.2"
+source = "git+https://github.com/brevis-network/elliptic-curves?rev=94ffb195ad1d91a0d6678dfbc3432f83e25162b4#94ffb195ad1d91a0d6678dfbc3432f83e25162b4"
+dependencies = [
+ "ecdsa 0.16.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "elliptic-curve",
+ "getrandom 0.2.17",
+ "hex",
+ "pico-patch-libs 1.2.2",
+ "primeorder 0.13.1 (git+https://github.com/brevis-network/elliptic-curves?rev=94ffb195ad1d91a0d6678dfbc3432f83e25162b4)",
+ "sha2 0.10.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -9008,9 +8970,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "pico-aot-codegen"
+version = "0.1.0"
+source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
+dependencies = [
+ "elf",
+ "pico-vm",
+ "prettyplease",
+ "proc-macro2",
+ "quote",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "syn 2.0.117",
+]
+
+[[package]]
+name = "pico-aot-pure"
+version = "3.1.1"
+source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
+
+[[package]]
 name = "pico-aot-runtime"
-version = "3.1.0"
-source = "git+https://github.com/brevis-network/pico?rev=613d6aeb64350d73faf24c17e2e3e3cee5b763bc#613d6aeb64350d73faf24c17e2e3e3cee5b763bc"
+version = "3.1.1"
+source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -9031,16 +9014,16 @@ dependencies = [
  "p3-field 0.5.4",
  "p3-koala-bear 0.5.4",
  "p3-symmetric 0.5.4",
+ "pico-aot-pure",
  "pico-vm",
- "secp256k1 0.30.0",
  "tiny-keccak 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "typenum",
 ]
 
 [[package]]
 name = "pico-derive"
-version = "3.1.0"
-source = "git+https://github.com/brevis-network/pico?rev=613d6aeb64350d73faf24c17e2e3e3cee5b763bc#613d6aeb64350d73faf24c17e2e3e3cee5b763bc"
+version = "3.1.1"
+source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -9050,12 +9033,12 @@ dependencies = [
 [[package]]
 name = "pico-gpu"
 version = "0.1.11"
-source = "git+https://github.com/brevis-network/pico-gpu.git?rev=4c9dc387f33a6dfd80704b1ddfaaf6dd6eee5b44#4c9dc387f33a6dfd80704b1ddfaaf6dd6eee5b44"
+source = "git+https://github.com/brevis-network/pico-gpu.git?rev=edd0ceb85f55c18b2aa9cb3864a94c99dd2ca3c5#edd0ceb85f55c18b2aa9cb3864a94c99dd2ca3c5"
 
 [[package]]
 name = "pico-gpu-api"
-version = "3.1.0"
-source = "git+https://github.com/brevis-network/pico?rev=613d6aeb64350d73faf24c17e2e3e3cee5b763bc#613d6aeb64350d73faf24c17e2e3e3cee5b763bc"
+version = "3.1.1"
+source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
 dependencies = [
  "cudart-sys",
  "pico-gpu",
@@ -9065,8 +9048,8 @@ dependencies = [
 
 [[package]]
 name = "pico-mle-core"
-version = "3.1.0"
-source = "git+https://github.com/brevis-network/pico?rev=613d6aeb64350d73faf24c17e2e3e3cee5b763bc#613d6aeb64350d73faf24c17e2e3e3cee5b763bc"
+version = "3.1.1"
+source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
 dependencies = [
  "cfg-if",
  "derivative",
@@ -9098,8 +9081,8 @@ dependencies = [
 
 [[package]]
 name = "pico-mle-cpu"
-version = "3.1.0"
-source = "git+https://github.com/brevis-network/pico?rev=613d6aeb64350d73faf24c17e2e3e3cee5b763bc#613d6aeb64350d73faf24c17e2e3e3cee5b763bc"
+version = "3.1.1"
+source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
 dependencies = [
  "cfg-if",
  "derive-new 0.7.0",
@@ -9116,8 +9099,18 @@ dependencies = [
 
 [[package]]
 name = "pico-patch-libs"
-version = "3.1.0"
-source = "git+https://github.com/brevis-network/pico?rev=613d6aeb64350d73faf24c17e2e3e3cee5b763bc#613d6aeb64350d73faf24c17e2e3e3cee5b763bc"
+version = "1.2.2"
+source = "git+https://github.com/brevis-network/pico.git?branch=rv64#dfc438f1e2708f183c117fbf9a40fb041880a3bd"
+dependencies = [
+ "bincode 1.3.3",
+ "elliptic-curve",
+ "serde",
+]
+
+[[package]]
+name = "pico-patch-libs"
+version = "3.1.1"
+source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
 dependencies = [
  "bincode 1.3.3",
  "elliptic-curve",
@@ -9126,8 +9119,8 @@ dependencies = [
 
 [[package]]
 name = "pico-perf"
-version = "3.1.0"
-source = "git+https://github.com/brevis-network/pico?rev=613d6aeb64350d73faf24c17e2e3e3cee5b763bc#613d6aeb64350d73faf24c17e2e3e3cee5b763bc"
+version = "3.1.1"
+source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
@@ -9137,16 +9130,19 @@ dependencies = [
  "reqwest",
  "serde",
  "strum 0.26.3",
- "tracing",
 ]
 
 [[package]]
 name = "pico-prover"
-version = "3.1.0"
-source = "git+https://github.com/brevis-network/pico?rev=613d6aeb64350d73faf24c17e2e3e3cee5b763bc#613d6aeb64350d73faf24c17e2e3e3cee5b763bc"
+version = "3.1.1"
+source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
 dependencies = [
  "bincode 1.3.3",
  "distributed-vm",
+ "libloading",
+ "log",
+ "pico-aot-codegen",
+ "pico-aot-pure",
  "pico-aot-runtime",
  "pico-mle-core",
  "pico-verifier",
@@ -9158,26 +9154,32 @@ dependencies = [
 
 [[package]]
 name = "pico-sdk"
-version = "3.1.0"
-source = "git+https://github.com/brevis-network/pico?rev=613d6aeb64350d73faf24c17e2e3e3cee5b763bc#613d6aeb64350d73faf24c17e2e3e3cee5b763bc"
+version = "3.1.1"
+source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
 dependencies = [
  "anyhow",
+ "aurora-engine-modexp",
  "bincode 1.3.3",
+ "bls12_381 0.8.0 (git+https://github.com/brevis-network/bls12_381.git?rev=79fbbface08629528c9ef6e326d98e38901c39bf)",
  "cfg-if",
- "env_logger",
  "getrandom 0.2.17",
  "getrandom 0.4.2",
  "hex",
+ "k256 0.13.4 (git+https://github.com/brevis-network/elliptic-curves?rev=d0c56392e728fd0df321820fb0cb495272d38673)",
+ "keccak",
  "lazy_static",
+ "p256 0.13.2 (git+https://github.com/brevis-network/elliptic-curves?rev=94ffb195ad1d91a0d6678dfbc3432f83e25162b4)",
  "p3-challenger 0.5.4",
  "p3-field 0.5.4",
  "p3-koala-bear 0.5.4",
- "pico-patch-libs",
- "pico-vm",
+ "p3-symmetric 0.5.4",
+ "pico-patch-libs 3.1.1",
  "rand 0.10.3",
+ "ripemd",
  "serde",
  "serde_json",
  "sha2 0.10.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "substrate-bn 0.6.0 (git+https://github.com/brevis-network/bn?rev=1455d63953ba9f7231043c57c7077cee6a10dc89)",
  "tracing",
  "tracing-forest",
  "tracing-subscriber",
@@ -9185,8 +9187,8 @@ dependencies = [
 
 [[package]]
 name = "pico-verifier"
-version = "3.1.0"
-source = "git+https://github.com/brevis-network/pico?rev=613d6aeb64350d73faf24c17e2e3e3cee5b763bc#613d6aeb64350d73faf24c17e2e3e3cee5b763bc"
+version = "3.1.1"
+source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
 dependencies = [
  "bincode 1.3.3",
  "p3-field 0.5.4",
@@ -9202,8 +9204,8 @@ dependencies = [
 
 [[package]]
 name = "pico-vm"
-version = "3.1.0"
-source = "git+https://github.com/brevis-network/pico?rev=613d6aeb64350d73faf24c17e2e3e3cee5b763bc#613d6aeb64350d73faf24c17e2e3e3cee5b763bc"
+version = "3.1.1"
+source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
 dependencies = [
  "anyhow",
  "arrayref",
@@ -9269,6 +9271,7 @@ dependencies = [
  "rrs-lib 0.2.0",
  "rug",
  "rustc-hash 2.1.1",
+ "secp256k1 0.31.1",
  "serde",
  "serde_json",
  "serde_with",
@@ -9581,6 +9584,14 @@ dependencies = [
 
 [[package]]
 name = "primeorder"
+version = "0.13.1"
+source = "git+https://github.com/brevis-network/elliptic-curves?rev=94ffb195ad1d91a0d6678dfbc3432f83e25162b4#94ffb195ad1d91a0d6678dfbc3432f83e25162b4"
+dependencies = [
+ "elliptic-curve",
+]
+
+[[package]]
+name = "primeorder"
 version = "0.13.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "353e1ca18966c16d9deb1c69278edbc5f194139612772bd9537af60ac231e1e6"
@@ -9854,7 +9865,7 @@ checksum = "37566cb3fdacef14c0737f9546df7cfeadbfbc9fef10991038bf5015d0c80532"
 dependencies = [
  "bit-set",
  "bit-vec",
- "bitflags 2.11.0",
+ "bitflags",
  "num-traits",
  "rand 0.9.4",
  "rand_chacha 0.9.0",
@@ -9892,7 +9903,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be769465445e8c1474e9c5dac2018218498557af32d9ed057325ec9a41ae81bf"
 dependencies = [
  "heck",
- "itertools 0.10.5",
+ "itertools 0.12.1",
  "log",
  "multimap",
  "once_cell",
@@ -9912,7 +9923,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "343d3bd7056eda839b03204e68deff7d1b13aba7af2b2fd16890697274262ee7"
 dependencies = [
  "heck",
- "itertools 0.10.5",
+ "itertools 0.12.1",
  "log",
  "multimap",
  "petgraph 0.8.3",
@@ -9933,7 +9944,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a56d757972c98b346a9b766e3f02746cde6dd1cd1d1d563472929fdd74bec4d"
 dependencies = [
  "anyhow",
- "itertools 0.10.5",
+ "itertools 0.12.1",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -9946,7 +9957,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "27c6023962132f4b30eb4c172c91ce92d933da334c59c23cddee82358ddafb0b"
 dependencies = [
  "anyhow",
- "itertools 0.10.5",
+ "itertools 0.12.1",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -9996,7 +10007,7 @@ version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c3a14896dfa883796f1cb410461aef38810ea05f2b2c33c5aded3649095fdad"
 dependencies = [
- "bitflags 2.11.0",
+ "bitflags",
  "memchr",
  "unicase",
 ]
@@ -10267,7 +10278,7 @@ version = "11.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "498cd0dc59d73224351ee52a95fee0f1a617a2eae0e7d9d720cc622c73a54186"
 dependencies = [
- "bitflags 2.11.0",
+ "bitflags",
 ]
 
 [[package]]
@@ -10325,7 +10336,7 @@ version = "0.5.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed2bf2547551a7053d6fdfafda3f938979645c44812fbfcda098faae3f1a362d"
 dependencies = [
- "bitflags 2.11.0",
+ "bitflags",
 ]
 
 [[package]]
@@ -10491,6 +10502,15 @@ dependencies = [
 name = "rfc6979"
 version = "0.4.0"
 source = "git+https://github.com/sp1-patches/signatures?tag=sp1-skip-verify-on-recovery#1880299a48fe7ef249edaa616fd411239fb5daf1"
+dependencies = [
+ "hmac",
+ "subtle",
+]
+
+[[package]]
+name = "rfc6979"
+version = "0.4.0"
+source = "git+https://github.com/brevis-network/signatures?branch=patch-v1.1.0-rv64#3d810107f744520ebcf56ae655bb894bd5860c9a"
 dependencies = [
  "hmac",
  "subtle",
@@ -10741,7 +10761,7 @@ version = "0.38.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fdb5bc1ae2baa591800df16c9ca78619bf65c0488b41b96ccec5d11220d8c154"
 dependencies = [
- "bitflags 2.11.0",
+ "bitflags",
  "errno",
  "libc",
  "linux-raw-sys 0.4.15",
@@ -10754,7 +10774,7 @@ version = "1.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6fe4565b9518b83ef4f91bb47ce29620ca828bd32cb7e408f0062e9930ba190"
 dependencies = [
- "bitflags 2.11.0",
+ "bitflags",
  "errno",
  "libc",
  "linux-raw-sys 0.12.1",
@@ -11185,7 +11205,7 @@ version = "3.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b7f4bc775c73d9a02cde8bf7b2ec4c9d12743edf609006c7facc23998404cd1d"
 dependencies = [
- "bitflags 2.11.0",
+ "bitflags",
  "core-foundation 0.10.1",
  "core-foundation-sys",
  "libc",
@@ -12864,6 +12884,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "substrate-bn"
+version = "0.6.0"
+source = "git+https://github.com/brevis-network/bn?rev=1455d63953ba9f7231043c57c7077cee6a10dc89#1455d63953ba9f7231043c57c7077cee6a10dc89"
+dependencies = [
+ "bytemuck",
+ "byteorder",
+ "cfg-if",
+ "crunchy",
+ "lazy_static",
+ "num-bigint 0.4.6",
+ "pico-patch-libs 1.2.2",
+ "rand 0.8.6",
+ "rustc-hex",
+]
+
+[[package]]
 name = "substrate-bn-succinct-rs"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -13050,7 +13086,7 @@ version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a13f3d0daba03132c0aa9767f98351b3488edc2c100cda2d2ec2b04f3d8d3c8b"
 dependencies = [
- "bitflags 2.11.0",
+ "bitflags",
  "core-foundation 0.9.4",
  "system-configuration-sys",
 ]
@@ -13705,7 +13741,7 @@ version = "0.6.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d4e6559d53cc268e5031cd8429d05415bc4cb4aefc4aa5d6cc35fbf5b924a1f8"
 dependencies = [
- "bitflags 2.11.0",
+ "bitflags",
  "bytes",
  "futures-util",
  "http 1.4.0",
@@ -14304,7 +14340,7 @@ version = "0.244.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "47b807c72e1bac69382b3a6fb3dbe8ea4c0ed87ff5629b8685ae6b9a611028fe"
 dependencies = [
- "bitflags 2.11.0",
+ "bitflags",
  "hashbrown 0.15.5",
  "indexmap 2.13.0",
  "semver 1.0.27",
@@ -15009,7 +15045,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9d66ea20e9553b30172b5e831994e35fbde2d165325bec84fc43dbf6f4eb9cb2"
 dependencies = [
  "anyhow",
- "bitflags 2.11.0",
+ "bitflags",
  "indexmap 2.13.0",
  "log",
  "serde",

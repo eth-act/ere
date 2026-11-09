@@ -179,7 +179,7 @@ Different zkVMs handles public values in different approaches:
 | -------- | --------------------------------------------------------------------------- | -------- | :---: | :-------: | :-----: |
 | LambdaVM | [`0.1.0`](https://github.com/yetanotherco/lambda_vm/tree/v0.1.0)            | `RV64IM` |       |           |         |
 | OpenVM   | [`2.1.0-preview`](https://github.com/openvm-org/openvm/tree/v2.1.0-preview) | `RV64IM` |   V   |           |         |
-| Pico     | [`613d6ae`](https://github.com/brevis-network/pico/tree/613d6ae)            | `RV64IM` |   V   |     V     |         |
+| Pico     | [`5ea8099`](https://github.com/brevis-network/pico/tree/5ea8099)            | `RV64IM` |   V   |     V     |         |
 | SP1      | [`6.9.0`](https://github.com/succinctlabs/sp1/tree/v6.9.0)                  | `RV64IM` |   V   |           |         |
 | ZisK     | [`1.4.0-alpha`](https://github.com/0xPolygonHermez/zisk/tree/v1.4.0-alpha)  | `RV64IM` |   V   |     V     |    V    |
 
@@ -399,6 +399,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 | `ERE_ZISK_CACHE_VOLUME`          | Volume or absolute host path mounted at the ZisK cache directory, so the ROM setup of each program persists across containers.          | ``      |
 | `ERE_OPENVM_CACHE_VOLUME`        | Volume or absolute host path mounted at the OpenVM `rvr` cache directory, so each compiled program persists across containers.          | ``      |
 | `ERE_PICO_CACHE_VOLUME`          | Volume or absolute host path mounted at the Pico GPU JIT cache directory, so kernels compiled with `G1_JIT`/`Z1_JIT` persist across containers. | ``      |
+| `ERE_PICO_PURE_CACHE_VOLUME`     | Volume or absolute host path mounted at the Pico pure-mode library cache, so each program's library persists across containers. It must be owned by root and accessible only by root (mode 700). | ``      |
 
 Example usage:
 

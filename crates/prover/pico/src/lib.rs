@@ -11,6 +11,11 @@
 //! To use with GPU proving support, make sure CUDA 12.8 or newer is installed, and turn on the
 //! `cuda` feature.
 //!
+//! ## `zkVMProver` requirements
+//!
+//! - A Rust toolchain and a linker, used by Pico to build the pure-mode AOT library of each guest
+//!   program the first time it executes
+//!
 //! # `Compiler` implementation
 //!
 //! See the separate [`ere-compiler-pico`](https://github.com/eth-act/ere/tree/master/crates/compiler/pico) crate.
@@ -41,6 +46,17 @@
 //! first prove of a program compiles them, which can take tens of minutes, so mount
 //! `ERE_PICO_CACHE_VOLUME` to keep the compiled kernels across containers.
 //!
+//! ## Execution
+//!
+//! Execution runs the pure-mode AOT code that Pico generates from the ELF, built with cargo into a
+//! shared library.
+//!
+//! - The first execution of a program builds the library, outside the reported time, which takes
+//!   about 30 s for a block-validation guest. Later executions use the library cached by ELF.
+//! - If the build fails, the execution fails, and the next execution builds again.
+//! - The cache must be owned by the current user and accessible only by it (mode 700), because the
+//!   prover loads the library as it is.
+//!
 //! ## Cost estimation
 //!
 //! The unit is main-trace cells of the RISC-V chips: rows times width, summed
@@ -61,6 +77,14 @@
 //! Proofs are proved in whitelist mode at log stacked height 23, the only
 //! operating point the shipped whitelist of recursion keys covers. The Pico 3.0
 //! MLE backend targets 100 bits of provable round-by-round soundness.
+//!
+//! ## Environment variables
+//!
+//! | Variable                | Type  | Default                                                | Description                                                  |
+//! | ----------------------- | ----- | ------------------------------------------------------ | ------------------------------------------------------------ |
+//! | `ERE_PICO_PURE_CACHE`   | Value | `$XDG_CACHE_HOME/pico-pure`, else `~/.cache/pico-pure` | Absolute path of the pure-mode library cache                 |
+//! | `ERE_PICO_PURE_RUNTIME` | Value | The source `ere-prover-pico` was built from            | Cargo dependency entry of `pico-aot-pure` for the library    |
+//! | `ERE_PICO_PURE_OFFLINE` | Flag  |                                                        | Build the pure-mode library with `--offline` when set to `1` |
 //!
 //! [`install_pico_sdk.sh`]: https://github.com/eth-act/ere/blob/master/scripts/sdk_installers/install_pico_sdk.sh
 
