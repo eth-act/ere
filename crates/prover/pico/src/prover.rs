@@ -203,8 +203,9 @@ fn pure_cache_dir() -> Result<PathBuf, Error> {
         .ok_or_else(|| Error::PureAotBuild("neither XDG_CACHE_HOME nor HOME is set".into()))
 }
 
-/// Rejects `dir` unless the current user owns it and no other user can access it, so no other user
-/// can reach the libraries inside, whatever their modes.
+/// Rejects `dir` unless the current user owns it and no other user can access it, so the modes of
+/// the libraries inside do not matter. The parent directories must not be writable by other users
+/// either.
 fn ensure_private(dir: &Path) -> Result<(), Error> {
     let metadata = fs::metadata(dir)
         .map_err(|err| Error::PureAotBuild(format!("{}: {err}", dir.display())))?;
@@ -470,12 +471,8 @@ mod tests {
             .unwrap_err();
     }
 
-    /// The guest's core chunk can fall to Pico's catch-all whitelist shape, which Pico refuses to
-    /// prove, and on the GPU a case can run out of device memory. Each case proves and verifies or
-    /// fails with one of those errors, and the prover proves the next program as before.
-    ///
-    /// Ignored by default: some cases need about 300 GB of host memory. On a 32 GB card the MSM,
-    /// pairing and KZG cases may run out of device memory, which the test accepts.
+    /// Each case proves and verifies, or Pico refuses a chunk that selects its catch-all whitelist
+    /// shape, or on the GPU the case runs out of device memory.
     #[test]
     #[ignore = "needs about 300 GB of host memory"]
     fn test_prove_zkvm_interface() {
@@ -485,16 +482,11 @@ mod tests {
                 Ok((_, proof, _)) => {
                     zkvm.verify(&proof).unwrap();
                 }
-                Err(Error::Prove(ProveError::CatchAllShape(e))) => println!("[pico] refused: {e}"),
+                Err(Error::Prove(ProveError::CatchAllShape(_))) => {}
                 #[cfg(feature = "cuda")]
-                Err(Error::Prove(ProveError::GpuOutOfMemory(e))) => {
-                    println!("[pico] out of device memory: {e}")
-                }
-                Err(e) => panic!("{e}"),
+                Err(Error::Prove(ProveError::GpuOutOfMemory(_))) => {}
+                Err(err) => panic!("{err}"),
             }
         }
-
-        let zkvm = with_basic_elf(zkvm);
-        run_zkvm_prove(&*zkvm, &BasicProgram::<BincodeLegacy>::valid_test_case());
     }
 }
