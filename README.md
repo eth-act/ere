@@ -399,7 +399,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 | `ERE_ZISK_CACHE_VOLUME`          | Volume or absolute host path mounted at the ZisK cache directory, so the ROM setup of each program persists across containers.          | ``      |
 | `ERE_OPENVM_CACHE_VOLUME`        | Volume or absolute host path mounted at the OpenVM `rvr` cache directory, so each compiled program persists across containers.          | ``      |
 | `ERE_PICO_CACHE_VOLUME`          | Volume or absolute host path mounted at the Pico GPU JIT cache directory, so kernels compiled with `G1_JIT`/`Z1_JIT` persist across containers. | ``      |
-| `ERE_PICO_PURE_CACHE_VOLUME`     | Volume or absolute host path mounted at the Pico pure-mode library cache, so each program's library persists across containers; concurrent servers can share it. It must be owned by root and not writable by others. | ``      |
+| `ERE_PICO_PURE_CACHE_VOLUME`     | Volume or absolute host path mounted at the Pico pure-mode library cache, so each program's library persists across containers. It must be owned by root and accessible only by root (mode 700). | ``      |
 
 Example usage:
 
@@ -416,14 +416,6 @@ ERE_GPU_DEVICES="device=0,1" ere prove ...
 # Can also signal to use any available GPUs
 ERE_GPU_DEVICES="4" ere prove ...
 ```
-
-These variables configure `ere-prover-pico` (in the SDK, or inside `ere-server-pico`). The first execution of a program builds its pure-mode AOT library with cargo, outside the reported time, and execution runs on it. If the build fails, the execution fails and the next one retries. `ere-server-pico` ships the toolchain and source this needs, so the build runs offline (about 30 s for a block-validation guest) and is cached by ELF. This grows the CPU image from about 115 MB to about 930 MB.
-
-| Variable                 | Description                                                                                       | Default                                           |
-| ------------------------ | ------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `ERE_PICO_PURE_CACHE`    | Absolute path of the library cache; it must be owned by the user and not writable by others, and its parent should be private too. | `$XDG_CACHE_HOME/pico-pure`, else `~/.cache/pico-pure` |
-| `ERE_PICO_PURE_RUNTIME`  | Cargo dependency entry for `pico-aot-pure` that the library builds against.                       | the source `ere-prover-pico` was built from       |
-| `ERE_PICO_PURE_OFFLINE`  | `1` builds the library with `--offline`.                                                          | ``                                                |
 
 ## Directory Layout
 

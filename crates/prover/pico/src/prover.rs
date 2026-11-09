@@ -1,10 +1,14 @@
+#[cfg(feature = "cuda")]
+use std::num::NonZeroUsize;
 use std::{
     collections::BTreeMap,
-    sync::{Mutex, MutexGuard},
+    env,
+    fs::{self, DirBuilder},
+    os::unix::fs::{DirBuilderExt, MetadataExt},
+    path::{Path, PathBuf},
+    sync::{Arc, Mutex, MutexGuard},
     time::{Duration, Instant},
 };
-#[cfg(feature = "cuda")]
-use std::{env, num::NonZeroUsize};
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{
@@ -13,7 +17,10 @@ use ere_prover_core::{
 };
 use ere_verifier_pico::{PicoProgramVk, PicoProof, PicoVerifier};
 use once_cell::sync::OnceCell;
-use pico_prover::{CostComponent, Phase, Prover, ProverBuilder, Stdin};
+use pico_prover::{
+    CostComponent, Phase, Prover, ProverBuilder, PureBuildOptions, PureLibrary, Stdin,
+    build_pure_library,
+};
 
 use crate::error::Error;
 
@@ -55,10 +62,8 @@ impl PicoProver {
     }
 
     fn emulator(&self) -> Result<&ProverBuilder, Error> {
-        self.emulator.get_or_try_init(|| {
-            let library = pure::library(&self.elf).map_err(Error::PureAotBuild)?;
-            Ok(builder(&self.elf).pure_aot_library(library))
-        })
+        self.emulator
+            .get_or_try_init(|| Ok(builder(&self.elf).pure_aot_library(pure_library(&self.elf)?)))
     }
 
     fn prover(&self) -> Result<MutexGuard<'_, Prover>, Error> {
@@ -159,74 +164,59 @@ fn builder(elf: &Elf) -> ProverBuilder {
     builder
 }
 
-/// The guest's pure-mode AOT library. See the README's Pico section for the `ERE_PICO_PURE*`
-/// variables.
-mod pure {
-    use std::{
-        env,
-        fs::{self, DirBuilder},
-        os::unix::fs::{DirBuilderExt, MetadataExt},
-        path::{Path, PathBuf},
-        sync::Arc,
+/// Builds the pure-mode AOT library of the guest into the cache once per ELF and loads it.
+fn pure_library(elf: &Elf) -> Result<Arc<PureLibrary>, Error> {
+    let cache_dir = pure_cache_dir()?;
+    DirBuilder::new()
+        .recursive(true)
+        .mode(0o700)
+        .create(&cache_dir)
+        .map_err(|err| Error::PureAotBuild(format!("{}: {err}", cache_dir.display())))?;
+    ensure_private(&cache_dir)?;
+    let options = PureBuildOptions {
+        runtime: env::var("ERE_PICO_PURE_RUNTIME").ok(),
+        offline: env::var("ERE_PICO_PURE_OFFLINE").is_ok_and(|value| value == "1"),
+        cargo: None,
     };
+    let library_path = build_pure_library(&elf.0, &cache_dir, &options)
+        .map_err(|err| Error::PureAotBuild(err.to_string()))?;
+    // SAFETY: `build_pure_library` built the library from this ELF, in a cache that only the
+    // current user can access.
+    let library = unsafe { PureLibrary::load(&library_path) }
+        .map_err(|err| Error::PureAotBuild(err.to_string()))?;
+    Ok(Arc::new(library))
+}
 
-    use ere_compiler_core::Elf;
-    use pico_prover::{PureBuildOptions, PureLibrary, build_pure_library};
+/// `ERE_PICO_PURE_CACHE`, else `pico-pure` under `$XDG_CACHE_HOME` or `$HOME/.cache`.
+fn pure_cache_dir() -> Result<PathBuf, Error> {
+    let absolute = |key| {
+        env::var_os(key)
+            .map(PathBuf::from)
+            .filter(|path| path.is_absolute())
+    };
+    absolute("ERE_PICO_PURE_CACHE")
+        .or_else(|| {
+            absolute("XDG_CACHE_HOME")
+                .or_else(|| absolute("HOME").map(|home| home.join(".cache")))
+                .map(|dir| dir.join("pico-pure"))
+        })
+        .ok_or_else(|| Error::PureAotBuild("neither XDG_CACHE_HOME nor HOME is set".into()))
+}
 
-    /// Builds the guest's library once per ELF into the cache and loads it.
-    pub(super) fn library(elf: &Elf) -> Result<Arc<PureLibrary>, String> {
-        let cache = cache_dir()?;
-        DirBuilder::new()
-            .recursive(true)
-            .mode(0o700)
-            .create(&cache)
-            .map_err(|e| format!("pure-mode cache {}: {e}", cache.display()))?;
-        private(&cache)?;
-        let options = PureBuildOptions {
-            runtime: env::var("ERE_PICO_PURE_RUNTIME").ok(),
-            offline: env::var("ERE_PICO_PURE_OFFLINE").is_ok_and(|v| v == "1"),
-            cargo: None,
-        };
-        let path = build_pure_library(&elf.0, &cache, &options).map_err(|e| e.to_string())?;
-        private(&path)?;
-        // SAFETY: the library is the one `build_pure_library` built from this ELF, in a cache
-        // that `private` has just checked only this user can write.
-        let library = unsafe { PureLibrary::load(&path) }.map_err(|e| e.to_string())?;
-        Ok(Arc::new(library))
+/// Rejects `dir` unless the current user owns it and no other user can access it, so no other user
+/// can reach the libraries inside, whatever their modes.
+fn ensure_private(dir: &Path) -> Result<(), Error> {
+    let metadata = fs::metadata(dir)
+        .map_err(|err| Error::PureAotBuild(format!("{}: {err}", dir.display())))?;
+    // SAFETY: `geteuid` has no preconditions.
+    let euid = unsafe { libc::geteuid() };
+    if metadata.uid() != euid || metadata.mode() & 0o077 != 0 {
+        Err(Error::PureAotBuild(format!(
+            "{} must be owned by the current user and accessible only by it (mode 700)",
+            dir.display()
+        )))?
     }
-
-    /// `ERE_PICO_PURE_CACHE`, else `pico-pure` under `$XDG_CACHE_HOME` or `$HOME/.cache`; never a
-    /// shared directory, since a library found there is loaded as is.
-    fn cache_dir() -> Result<PathBuf, String> {
-        let absolute = |var| {
-            env::var_os(var)
-                .map(PathBuf::from)
-                .filter(|p| p.is_absolute())
-        };
-        if let Some(dir) = absolute("ERE_PICO_PURE_CACHE") {
-            return Ok(dir);
-        }
-        absolute("XDG_CACHE_HOME")
-            .or_else(|| absolute("HOME").map(|home| home.join(".cache")))
-            .map(|dir| dir.join("pico-pure"))
-            .ok_or_else(|| "no cache directory: neither XDG_CACHE_HOME nor HOME is set".into())
-    }
-
-    /// Refuses `path` unless this user owns it and no one else can write it.
-    fn private(path: &Path) -> Result<(), String> {
-        let meta = fs::metadata(path).map_err(|e| format!("{}: {e}", path.display()))?;
-        // SAFETY: `geteuid` has no preconditions.
-        let euid = unsafe { libc::geteuid() };
-        if meta.uid() != euid || meta.mode() & 0o022 != 0 {
-            return Err(format!(
-                "{} is not private to this user (owner {}, mode {:o})",
-                path.display(),
-                meta.uid(),
-                meta.mode() & 0o777
-            ));
-        }
-        Ok(())
-    }
+    Ok(())
 }
 
 fn load(elf: &Elf) -> Result<(Prover, PicoVerifier), Error> {
@@ -251,19 +241,23 @@ mod tests {
     use std::sync::{Mutex, MutexGuard, OnceLock};
 
     use ere_compiler_core::{Compiler, Elf};
-    use ere_compiler_pico::{PicoRustRv64ima, PicoRustRv64imaCustomized};
+    use ere_compiler_pico::PicoRustRv64imaCustomized;
     use ere_prover_core::{Input, ProverResource, codec::Encode, zkVMProver};
     use ere_util_test::{
         codec::BincodeLegacy,
         host::{
             TestCase, run_zkvm_execute, run_zkvm_execute_estimated_cost, run_zkvm_prove,
-            testing_guest_directory,
+            run_zkvm_switchable, testing_guest_directory,
         },
         program::{basic::BasicProgram, zkvm_interface},
     };
+    use ere_verifier_pico::PicoProof;
     use pico_prover::ProveError;
 
-    use crate::{error::Error, prover::PicoProver};
+    use crate::{
+        error::Error,
+        prover::{PicoProver, stdin},
+    };
 
     fn basic_elf() -> Elf {
         static ELF: OnceLock<Elf> = OnceLock::new();
@@ -280,16 +274,6 @@ mod tests {
         ELF.get_or_init(|| {
             PicoRustRv64imaCustomized
                 .compile(testing_guest_directory("pico", "zkvm_interface"), &[])
-                .unwrap()
-        })
-        .clone()
-    }
-
-    fn stock_nightly_no_std_elf() -> Elf {
-        static ELF: OnceLock<Elf> = OnceLock::new();
-        ELF.get_or_init(|| {
-            PicoRustRv64ima
-                .compile(testing_guest_directory("pico", "stock_nightly_no_std"), &[])
                 .unwrap()
         })
         .clone()
@@ -316,36 +300,9 @@ mod tests {
         zkvm
     }
 
-    /// Switches from the basic program to `stock_nightly_no_std` and back, then runs both again.
-    ///
-    /// The other zkVMs switch to `zkvm_interface`; Pico proves it only on more memory than a
-    /// test run has (see `test_prove_zkvm_interface`).
-    fn run_switchable(zkvm: &mut PicoProver, prove: bool) {
-        zkvm.setup(basic_elf()).unwrap();
-        let basic_vk = zkvm.program_vk().encode_to_vec().unwrap();
-        zkvm.setup(stock_nightly_no_std_elf()).unwrap();
-        let stock_nightly_no_std_vk = zkvm.program_vk().encode_to_vec().unwrap();
-
-        zkvm.setup(basic_elf()).unwrap();
-        assert_eq!(zkvm.program_vk().encode_to_vec().unwrap(), basic_vk);
-        let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
-        if prove {
-            run_zkvm_prove(&*zkvm, &test_case);
-        } else {
-            run_zkvm_execute(&*zkvm, &test_case);
-        }
-
-        zkvm.setup(stock_nightly_no_std_elf()).unwrap();
-        assert_eq!(
-            zkvm.program_vk().encode_to_vec().unwrap(),
-            stock_nightly_no_std_vk
-        );
-        if prove {
-            let (_, proof, _) = zkvm.prove(&Input::new()).unwrap();
-            zkvm.verify(&proof).unwrap();
-        } else {
-            zkvm.execute(&Input::new()).unwrap();
-        }
+    fn with_zkvm_interface(mut zkvm: MutexGuard<PicoProver>) -> MutexGuard<PicoProver> {
+        zkvm.setup(zkvm_interface_elf()).unwrap();
+        zkvm
     }
 
     /// The prover a build has: CPU without `cuda`, GPU with it.
@@ -427,20 +384,33 @@ mod tests {
     }
 
     #[test]
+    fn test_execute_zkvm_interface() {
+        let zkvm = with_zkvm_interface(default_zkvm());
+        for test_case in zkvm_interface::test_cases() {
+            run_zkvm_execute(&*zkvm, &test_case);
+        }
+    }
+
+    #[test]
     fn test_execute_switchable() {
-        run_switchable(&mut default_zkvm(), false);
+        run_zkvm_switchable(
+            &mut *default_zkvm(),
+            basic_elf(),
+            zkvm_interface_elf(),
+            false,
+        );
     }
 
     #[cfg(not(feature = "cuda"))]
     #[test]
     fn test_prove_switchable() {
-        run_switchable(&mut zkvm(false), true);
+        run_zkvm_switchable(&mut *zkvm(false), basic_elf(), zkvm_interface_elf(), true);
     }
 
     #[cfg(feature = "cuda")]
     #[test]
     fn test_prove_switchable_gpu() {
-        run_switchable(&mut zkvm(true), true);
+        run_zkvm_switchable(&mut *zkvm(true), basic_elf(), zkvm_interface_elf(), true);
     }
 
     #[cfg(not(feature = "cuda"))]
@@ -461,16 +431,6 @@ mod tests {
         assert!(matches!(err, crate::Error::CpuUnsupportedWithCuda));
     }
 
-    /// Every `zkvm_*` function, through `ere-platform-pico`, on each recorded vector.
-    #[test]
-    fn test_execute_zkvm_interface() {
-        let mut zkvm = default_zkvm();
-        zkvm.setup(zkvm_interface_elf()).unwrap();
-        for test_case in zkvm_interface::test_cases() {
-            run_zkvm_execute(&*zkvm, &test_case);
-        }
-    }
-
     /// The compress proof: at most 300 KiB, verified only as a compress proof, its output bound.
     #[cfg(not(feature = "cuda"))]
     #[test]
@@ -485,16 +445,9 @@ mod tests {
     }
 
     fn compress_only(zkvm: &PicoProver) {
-        use ere_verifier_pico::PicoProof;
-
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         let (_, proof, _) = zkvm.prove(&test_case.input()).unwrap();
         let encoded = proof.encode_to_vec().unwrap();
-        println!(
-            "[pico] compress envelope {} B, ere proof {} B",
-            proof.envelope.len(),
-            encoded.len()
-        );
         assert!(
             encoded.len() <= 300 * 1024,
             "the proof is over 300 KiB: {}",
@@ -510,9 +463,7 @@ mod tests {
 
         // The root proof the compress proof re-proves, as a v3 envelope: refused.
         let mut prover = zkvm.prover().unwrap();
-        let root = prover
-            .prove(super::stdin(&test_case.input()).unwrap())
-            .unwrap();
+        let root = prover.prove(stdin(&test_case.input()).unwrap()).unwrap();
         drop(prover);
         let (root_envelope, committed) = root.export_v3().unwrap();
         zkvm.verify(&PicoProof::new(root_envelope, committed))
@@ -528,8 +479,7 @@ mod tests {
     #[test]
     #[ignore = "needs about 300 GB of host memory"]
     fn test_prove_zkvm_interface() {
-        let mut zkvm = default_zkvm();
-        zkvm.setup(zkvm_interface_elf()).unwrap();
+        let zkvm = with_zkvm_interface(default_zkvm());
         for test_case in zkvm_interface::test_cases() {
             match zkvm.prove(&test_case.input()) {
                 Ok((_, proof, _)) => {

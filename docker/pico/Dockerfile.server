@@ -61,7 +61,8 @@ ENV PATH=/opt/rust/bin:$PATH \
     ERE_PICO_PURE_RUNTIME="path = \"/opt/pico/aot-pure\"" ERE_PICO_PURE_OFFLINE=1
 RUN apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
-    && cargo --version
+    && cargo --version \
+    && mkdir -p -m 700 /root/.cache/pico-pure
 
 # Copy ere-server and the libraries it links
 COPY --from=build_stage /ere/bin/ere-server /ere/bin/ere-server
