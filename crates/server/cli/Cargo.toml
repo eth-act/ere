@@ -40,7 +40,7 @@ default = []
 # zkVM
 lambdavm = ["dep:ere-prover-lambdavm"]
 openvm = ["dep:ere-prover-openvm"]
-pico = ["dep:ere-prover-pico"]
+pico = ["dep:ere-prover-pico", "ere-prover-pico?/pure-aot"]
 sp1 = ["dep:ere-prover-sp1"]
 zisk = ["dep:ere-prover-zisk"]
 

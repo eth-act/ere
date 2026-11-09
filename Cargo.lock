@@ -3796,6 +3796,7 @@ dependencies = [
  "ere-prover-core",
  "ere-util-test",
  "ere-verifier-pico",
+ "libc",
  "pico-prover",
  "thiserror 2.0.18",
 ]
@@ -8968,6 +8969,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "pico-aot-codegen"
+version = "0.1.0"
+source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
+dependencies = [
+ "elf",
+ "pico-vm",
+ "prettyplease",
+ "proc-macro2",
+ "quote",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "syn 2.0.117",
+]
+
+[[package]]
 name = "pico-aot-pure"
 version = "3.1.1"
 source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
@@ -9123,6 +9140,7 @@ dependencies = [
  "distributed-vm",
  "libloading",
  "log",
+ "pico-aot-codegen",
  "pico-aot-pure",
  "pico-aot-runtime",
  "pico-mle-core",

@@ -20,9 +20,9 @@ use crate::{
             remove_docker_container,
         },
         env::{
-            ERE_OPENVM_CACHE_VOLUME, ERE_PICO_CACHE_VOLUME, ERE_ZISK_CACHE_VOLUME,
-            ERE_ZISK_PROVING_KEY_VOLUME, docker_network, force_rebuild_docker_image,
-            image_registry,
+            ERE_OPENVM_CACHE_VOLUME, ERE_PICO_CACHE_VOLUME, ERE_PICO_PURE_CACHE_VOLUME,
+            ERE_ZISK_CACHE_VOLUME, ERE_ZISK_PROVING_KEY_VOLUME, docker_network,
+            force_rebuild_docker_image, image_registry,
         },
         workspace_dir,
     },
@@ -235,7 +235,9 @@ impl ServerContainer {
                 .inherit_env("G1_JIT")
                 .inherit_env("Z1_JIT")
                 .inherit_env("ERE_PICO_GPU_EVENT_POOL_SIZE")
-                .volume_from_env(ERE_PICO_CACHE_VOLUME, "/root/.mle_jit_cache"),
+                .inherit_env("ERE_PICO_PURE")
+                .volume_from_env(ERE_PICO_CACHE_VOLUME, "/root/.mle_jit_cache")
+                .volume_from_env(ERE_PICO_PURE_CACHE_VOLUME, "/root/.cache/pico-pure"),
         };
 
         // zkVM specific options when using GPU

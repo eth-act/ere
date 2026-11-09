@@ -20,4 +20,5 @@ jobs:
       zkvm: pico
       cuda: true
       test_threads: 1
+      test_features: ere-prover-pico/pure-aot
       skip_prove_test: true

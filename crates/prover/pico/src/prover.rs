@@ -1,10 +1,11 @@
+#[cfg(feature = "cuda")]
+use std::num::NonZeroUsize;
 use std::{
     collections::BTreeMap,
-    sync::{Mutex, MutexGuard},
+    env,
+    sync::{Arc, Mutex, MutexGuard},
     time::{Duration, Instant},
 };
-#[cfg(feature = "cuda")]
-use std::{env, num::NonZeroUsize};
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{
@@ -18,8 +19,10 @@ use crate::error::Error;
 
 pub struct PicoProver {
     elf: Elf,
-    /// Emulates without keygen, so execution does not wait for a running prove.
-    emulator: ProverBuilder,
+    /// Executes without keygen, so execution does not wait for a running prove. The guest's
+    /// pure-mode library builds in the background from setup on; an execution that comes first
+    /// waits for it.
+    emulator: Mutex<Emulator>,
     /// Locked, because proving keeps recursion keys across calls and takes `&mut self`.
     prover: Mutex<Prover>,
     verifier: PicoVerifier,
@@ -45,11 +48,16 @@ impl PicoProver {
 
         let (prover, verifier) = load(&elf)?;
         Ok(Self {
-            emulator: builder(&elf),
+            emulator: Mutex::new(Emulator::start(&elf)),
             elf,
             prover: Mutex::new(prover),
             verifier,
         })
+    }
+
+    fn emulator(&self) -> Arc<ProverBuilder> {
+        let mut emulator = self.emulator.lock().unwrap_or_else(|e| e.into_inner());
+        emulator.ready(&self.elf)
     }
 
     fn prover(&self) -> Result<MutexGuard<'_, Prover>, Error> {
@@ -68,11 +76,16 @@ impl zkVMProver for PicoProver {
     fn setup(&mut self, elf: Elf) -> Result<(), Error> {
         // A prover poisoned by a panic is rebuilt even for the same program.
         if self.elf == elf && !self.prover.is_poisoned() {
+            // A pure-mode library that failed to build gets another try.
+            let emulator = self.emulator.get_mut().unwrap_or_else(|e| e.into_inner());
+            if emulator.pure_failed() {
+                *emulator = Emulator::start(&elf);
+            }
             return Ok(());
         }
 
         let (prover, verifier) = load(&elf)?;
-        self.emulator = builder(&elf);
+        self.emulator = Mutex::new(Emulator::start(&elf));
         self.elf = elf;
         self.prover = Mutex::new(prover);
         self.verifier = verifier;
@@ -82,8 +95,10 @@ impl zkVMProver for PicoProver {
     fn execute(&self, input: &Input) -> Result<(PublicValues, Duration), Error> {
         let stdin = stdin(input)?;
 
+        // Outside the timing: the first execution may wait for the pure-mode library's build.
+        let emulator = self.emulator();
         let start = Instant::now();
-        let execution = self.emulator.execute(stdin).map_err(Error::Execute)?;
+        let execution = emulator.execute(stdin).map_err(Error::Execute)?;
         let execution_duration = start.elapsed();
 
         Ok((execution.committed_bytes.into(), execution_duration))
@@ -96,14 +111,9 @@ impl zkVMProver for PicoProver {
         let stdin = stdin(input)?;
 
         // `estimate_cost` does not return the committed bytes, so this emulates twice.
-        let execution = self
-            .emulator
-            .execute(stdin.clone())
-            .map_err(Error::Execute)?;
-        let estimate = self
-            .emulator
-            .estimate_cost(stdin)
-            .map_err(Error::EstimateCost)?;
+        let emulator = self.emulator();
+        let execution = emulator.execute(stdin.clone()).map_err(Error::Execute)?;
+        let estimate = emulator.estimate_cost(stdin).map_err(Error::EstimateCost)?;
 
         let cost = [
             ("rv64", CostComponent::Rv64),
@@ -151,6 +161,163 @@ fn builder(elf: &Elf) -> ProverBuilder {
         None => builder,
     };
     builder
+}
+
+/// The [`builder`] for execution: with the guest's pure-mode AOT library when the `pure-aot`
+/// feature is on and the library builds, else Pico's interpreter. See the README's Pico section
+/// for the `ERE_PICO_PURE*` variables.
+enum Emulator {
+    #[cfg(feature = "pure-aot")]
+    Building(std::thread::JoinHandle<Result<Arc<pico_prover::PureLibrary>, String>>),
+    Ready {
+        builder: Arc<ProverBuilder>,
+        pure_failed: bool,
+    },
+}
+
+impl Emulator {
+    /// Starts building the pure-mode library in the background, unless it is off.
+    fn start(elf: &Elf) -> Self {
+        let interpreter = |builder: ProverBuilder| Self::Ready {
+            builder: Arc::new(builder),
+            pure_failed: false,
+        };
+        if env::var("ERE_PICO_PURE").is_ok_and(|v| v == "0") {
+            return interpreter(builder(elf).disable_pure_aot());
+        }
+        #[cfg(feature = "pure-aot")]
+        {
+            let owned = elf.clone();
+            match std::thread::Builder::new()
+                .name("pico-pure-build".into())
+                .spawn(move || pure::library(&owned))
+            {
+                Ok(handle) => Self::Building(handle),
+                Err(e) => Self::Ready {
+                    builder: Arc::new(
+                        builder(elf).pure_aot_unavailable(format!("cannot start the build: {e}")),
+                    ),
+                    pure_failed: true,
+                },
+            }
+        }
+        #[cfg(not(feature = "pure-aot"))]
+        interpreter(builder(elf))
+    }
+
+    /// The builder, waiting for the library's build if it is still running.
+    #[cfg_attr(not(feature = "pure-aot"), allow(unused_variables))]
+    fn ready(&mut self, elf: &Elf) -> Arc<ProverBuilder> {
+        #[cfg(feature = "pure-aot")]
+        if let Self::Building(_) = self {
+            let Self::Building(handle) = std::mem::replace(
+                self,
+                Self::Ready {
+                    builder: Arc::new(builder(elf)),
+                    pure_failed: true,
+                },
+            ) else {
+                unreachable!()
+            };
+            let built = handle
+                .join()
+                .unwrap_or_else(|_| Err("the pure-mode build panicked".into()));
+            *self = match built {
+                Ok(library) => Self::Ready {
+                    builder: Arc::new(builder(elf).pure_aot_library(library)),
+                    pure_failed: false,
+                },
+                Err(reason) => Self::Ready {
+                    builder: Arc::new(builder(elf).pure_aot_unavailable(reason)),
+                    pure_failed: true,
+                },
+            };
+        }
+        match self {
+            Self::Ready { builder, .. } => Arc::clone(builder),
+            #[cfg(feature = "pure-aot")]
+            Self::Building(_) => unreachable!(),
+        }
+    }
+
+    fn pure_failed(&self) -> bool {
+        matches!(
+            self,
+            Self::Ready {
+                pure_failed: true,
+                ..
+            }
+        )
+    }
+}
+
+#[cfg(feature = "pure-aot")]
+mod pure {
+    use std::{
+        env,
+        fs::{self, DirBuilder},
+        os::unix::fs::{DirBuilderExt, MetadataExt},
+        path::{Path, PathBuf},
+        sync::Arc,
+    };
+
+    use ere_compiler_core::Elf;
+    use pico_prover::{PureBuildOptions, PureLibrary, build_pure_library};
+
+    /// Builds the guest's library once per ELF into the cache and loads it.
+    pub(super) fn library(elf: &Elf) -> Result<Arc<PureLibrary>, String> {
+        let cache = cache_dir()?;
+        DirBuilder::new()
+            .recursive(true)
+            .mode(0o700)
+            .create(&cache)
+            .map_err(|e| format!("pure-mode cache {}: {e}", cache.display()))?;
+        private(&cache)?;
+        let options = PureBuildOptions {
+            runtime: env::var("ERE_PICO_PURE_RUNTIME").ok(),
+            offline: env::var("ERE_PICO_PURE_OFFLINE").is_ok_and(|v| v == "1"),
+            cargo: None,
+        };
+        let path = build_pure_library(&elf.0, &cache, &options).map_err(|e| e.to_string())?;
+        private(&path)?;
+        // SAFETY: the library is the one `build_pure_library` built from this ELF, in a cache
+        // that `private` has just checked only this user can write.
+        let library = unsafe { PureLibrary::load(&path) }.map_err(|e| e.to_string())?;
+        Ok(Arc::new(library))
+    }
+
+    /// `ERE_PICO_PURE_CACHE`, else `pico-pure` under `$XDG_CACHE_HOME` or `$HOME/.cache`; never a
+    /// shared directory, since a library found there is loaded as is.
+    fn cache_dir() -> Result<PathBuf, String> {
+        let absolute = |var| {
+            env::var_os(var)
+                .map(PathBuf::from)
+                .filter(|p| p.is_absolute())
+        };
+        if let Some(dir) = absolute("ERE_PICO_PURE_CACHE") {
+            return Ok(dir);
+        }
+        absolute("XDG_CACHE_HOME")
+            .or_else(|| absolute("HOME").map(|home| home.join(".cache")))
+            .map(|dir| dir.join("pico-pure"))
+            .ok_or_else(|| "no cache directory: neither XDG_CACHE_HOME nor HOME is set".into())
+    }
+
+    /// Refuses `path` unless this user owns it and no one else can write it.
+    fn private(path: &Path) -> Result<(), String> {
+        let meta = fs::metadata(path).map_err(|e| format!("{}: {e}", path.display()))?;
+        // SAFETY: `geteuid` has no preconditions.
+        let euid = unsafe { libc::geteuid() };
+        if meta.uid() != euid || meta.mode() & 0o022 != 0 {
+            return Err(format!(
+                "{} is not private to this user (owner {}, mode {:o})",
+                path.display(),
+                meta.uid(),
+                meta.mode() & 0o777
+            ));
+        }
+        Ok(())
+    }
 }
 
 fn load(elf: &Elf) -> Result<(Prover, PicoVerifier), Error> {
@@ -385,6 +552,29 @@ mod tests {
         assert!(matches!(err, crate::Error::CpuUnsupportedWithCuda));
     }
 
+    /// Every `zkvm_*` function, through `ere-platform-pico`, on each recorded vector.
+    #[test]
+    fn test_execute_zkvm_interface() {
+        let mut zkvm = default_zkvm();
+        zkvm.setup(zkvm_interface_elf()).unwrap();
+        for test_case in zkvm_interface::test_cases() {
+            run_zkvm_execute(&*zkvm, &test_case);
+        }
+    }
+
+    /// Execution runs the guest's pure-mode AOT library, built on the first execution.
+    #[cfg(feature = "pure-aot")]
+    #[test]
+    fn test_execute_runs_the_pure_aot_library() {
+        let zkvm = with_basic_elf(default_zkvm());
+        assert_eq!(
+            zkvm.emulator().execute_engine(),
+            pico_prover::ExecuteEngine::Aot,
+            "{:?}",
+            zkvm.emulator().execute_fallback_reason()
+        );
+    }
+
     /// The compress proof: at most 300 KiB, verified only as a compress proof, its output bound.
     #[cfg(not(feature = "cuda"))]
     #[test]
@@ -431,16 +621,6 @@ mod tests {
         let (root_envelope, committed) = root.export_v3().unwrap();
         zkvm.verify(&PicoProof::new(root_envelope, committed))
             .unwrap_err();
-    }
-
-    /// Every `zkvm_*` function, through `ere-platform-pico`, on each recorded vector.
-    #[test]
-    fn test_execute_zkvm_interface() {
-        let mut zkvm = default_zkvm();
-        zkvm.setup(zkvm_interface_elf()).unwrap();
-        for test_case in zkvm_interface::test_cases() {
-            run_zkvm_execute(&*zkvm, &test_case);
-        }
     }
 
     /// The guest's core chunk can fall to Pico's catch-all whitelist shape, which Pico refuses to
