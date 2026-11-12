@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.21.0](https://github.com/eth-act/ere/compare/v0.20.0...v0.21.0) (2026-11-12)
+
+
+### Features
+
+* update pico for the zkEVM standards ([#472](https://github.com/eth-act/ere/issues/472)) ([1008eed](https://github.com/eth-act/ere/commit/1008eedaae2c6e74c171c87967c3aa9ca983ef09))
+* update pico to v3.1.3 ([#474](https://github.com/eth-act/ere/issues/474)) ([de784c6](https://github.com/eth-act/ere/commit/de784c6d1a0bb82b8cfd9e48b13d4dbabd8957df))
+
 ## [0.20.0](https://github.com/eth-act/ere/compare/v0.19.6...v0.20.0) (2026-10-31)
 
 
