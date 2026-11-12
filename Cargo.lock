@@ -2649,7 +2649,7 @@ checksum = "e2931af7e13dc045d8e9d26afccc6fa115d64e115c9c84b1166288b46f6782c2"
 [[package]]
 name = "cuda-mle"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
 dependencies = [
  "bytesize",
  "cc",
@@ -3201,7 +3201,7 @@ dependencies = [
 [[package]]
 name = "distributed-vm"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -8972,7 +8972,7 @@ dependencies = [
 [[package]]
 name = "pico-aot-codegen"
 version = "0.1.0"
-source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
 dependencies = [
  "elf",
  "pico-vm",
@@ -8988,28 +8988,23 @@ dependencies = [
 [[package]]
 name = "pico-aot-pure"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
 
 [[package]]
 name = "pico-aot-runtime"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
  "ark-ff 0.5.0",
  "ark-secp256k1",
  "bls12_381 0.7.1",
- "bytemuck",
  "halo2curves",
  "hashbrown 0.14.5",
  "hybrid-array",
- "k256 0.13.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "log",
  "num",
- "num-bigint 0.4.6",
- "num-traits",
- "once_cell",
  "p256 0.13.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "p3-field 0.5.4",
  "p3-koala-bear 0.5.4",
@@ -9023,7 +9018,7 @@ dependencies = [
 [[package]]
 name = "pico-derive"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -9033,12 +9028,12 @@ dependencies = [
 [[package]]
 name = "pico-gpu"
 version = "0.1.11"
-source = "git+https://github.com/brevis-network/pico-gpu.git?rev=edd0ceb85f55c18b2aa9cb3864a94c99dd2ca3c5#edd0ceb85f55c18b2aa9cb3864a94c99dd2ca3c5"
+source = "git+https://github.com/brevis-network/pico-gpu.git?rev=9665f1079cd33367b3561176d9b2a56df679a9f5#9665f1079cd33367b3561176d9b2a56df679a9f5"
 
 [[package]]
 name = "pico-gpu-api"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
 dependencies = [
  "cudart-sys",
  "pico-gpu",
@@ -9049,7 +9044,7 @@ dependencies = [
 [[package]]
 name = "pico-mle-core"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
 dependencies = [
  "cfg-if",
  "derivative",
@@ -9082,7 +9077,7 @@ dependencies = [
 [[package]]
 name = "pico-mle-cpu"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
 dependencies = [
  "cfg-if",
  "derive-new 0.7.0",
@@ -9110,7 +9105,7 @@ dependencies = [
 [[package]]
 name = "pico-patch-libs"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
 dependencies = [
  "bincode 1.3.3",
  "elliptic-curve",
@@ -9120,7 +9115,7 @@ dependencies = [
 [[package]]
 name = "pico-perf"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
@@ -9135,7 +9130,7 @@ dependencies = [
 [[package]]
 name = "pico-prover"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
 dependencies = [
  "bincode 1.3.3",
  "distributed-vm",
@@ -9155,7 +9150,7 @@ dependencies = [
 [[package]]
 name = "pico-sdk"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
 dependencies = [
  "anyhow",
  "aurora-engine-modexp",
@@ -9188,7 +9183,7 @@ dependencies = [
 [[package]]
 name = "pico-verifier"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
 dependencies = [
  "bincode 1.3.3",
  "p3-field 0.5.4",
@@ -9205,7 +9200,7 @@ dependencies = [
 [[package]]
 name = "pico-vm"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?rev=5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e#5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
 dependencies = [
  "anyhow",
  "arrayref",

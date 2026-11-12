@@ -30,18 +30,18 @@ ensure_tool_installed "cargo" "to build and install Rust packages"
 
 # The nightly Pico builds its host crates with, and whose `rust-src` the guest
 # toolchain links for `-Z build-std`, according to
-# https://github.com/brevis-network/pico/blob/5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e/rust-toolchain
+# https://github.com/brevis-network/pico/blob/v3.1.3/rust-toolchain
 PICO_TOOLCHAIN_VERSION="nightly-2026-09-27"
-# Keep in sync with the `pico-sdk` rev in the workspace `Cargo.toml`.
-PICO_CLI_REV="5ea8099d0a612280c05eba9cc4f3bdbb56bbec9e"
+# Keep in sync with the `pico-sdk` tag in the workspace `Cargo.toml`.
+PICO_CLI_TAG="v3.1.3"
 
 # Install the nightly toolchain Pico pins
 echo "Installing Pico host Rust toolchain (${PICO_TOOLCHAIN_VERSION})..."
 rustup toolchain install "${PICO_TOOLCHAIN_VERSION}" --profile minimal --component rust-src
 
 # Install pico-cli (as `cargo-pico`) with that toolchain, since it links `pico-vm`
-echo "Installing pico-cli (rev ${PICO_CLI_REV}) from GitHub repository (brevis-network/pico)..."
-cargo "+${PICO_TOOLCHAIN_VERSION}" install --locked --git https://github.com/brevis-network/pico --rev "${PICO_CLI_REV}" pico-cli
+echo "Installing pico-cli (tag ${PICO_CLI_TAG}) from GitHub repository (brevis-network/pico)..."
+cargo "+${PICO_TOOLCHAIN_VERSION}" install --locked --git https://github.com/brevis-network/pico --tag "${PICO_CLI_TAG}" pico-cli
 
 # Verify pico-cli installation
 echo "Verifying pico-cli installation..."

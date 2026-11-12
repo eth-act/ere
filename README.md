@@ -179,7 +179,7 @@ Different zkVMs handles public values in different approaches:
 | -------- | --------------------------------------------------------------------------- | -------- | :---: | :-------: | :-----: |
 | LambdaVM | [`0.1.0`](https://github.com/yetanotherco/lambda_vm/tree/v0.1.0)            | `RV64IM` |       |           |         |
 | OpenVM   | [`2.1.0-preview`](https://github.com/openvm-org/openvm/tree/v2.1.0-preview) | `RV64IM` |   V   |           |         |
-| Pico     | [`5ea8099`](https://github.com/brevis-network/pico/tree/5ea8099)            | `RV64IM` |   V   |     V     |         |
+| Pico     | [`3.1.3`](https://github.com/brevis-network/pico/tree/v3.1.3)               | `RV64IM` |   V   |     V     |         |
 | SP1      | [`6.9.0`](https://github.com/succinctlabs/sp1/tree/v6.9.0)                  | `RV64IM` |   V   |           |         |
 | ZisK     | [`1.4.0-alpha`](https://github.com/0xPolygonHermez/zisk/tree/v1.4.0-alpha)  | `RV64IM` |   V   |     V     |    V    |
 
