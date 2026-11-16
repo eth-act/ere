@@ -1762,7 +1762,7 @@ dependencies = [
 [[package]]
 name = "bls12_381"
 version = "0.8.0"
-source = "git+https://github.com/brevis-network/bls12_381.git?rev=79fbbface08629528c9ef6e326d98e38901c39bf#79fbbface08629528c9ef6e326d98e38901c39bf"
+source = "git+https://github.com/brevis-network/bls12_381?rev=a4725b3db277d6237d04aec3835a2d5c74a46e46#a4725b3db277d6237d04aec3835a2d5c74a46e46"
 dependencies = [
  "cfg-if",
  "digest 0.10.7",
@@ -2649,7 +2649,7 @@ checksum = "e2931af7e13dc045d8e9d26afccc6fa115d64e115c9c84b1166288b46f6782c2"
 [[package]]
 name = "cuda-mle"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.4#898602969f3c08d0dc8711ebc40408c50a69bac1"
 dependencies = [
  "bytesize",
  "cc",
@@ -3201,7 +3201,7 @@ dependencies = [
 [[package]]
 name = "distributed-vm"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.4#898602969f3c08d0dc8711ebc40408c50a69bac1"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -8972,7 +8972,7 @@ dependencies = [
 [[package]]
 name = "pico-aot-codegen"
 version = "0.1.0"
-source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.4#898602969f3c08d0dc8711ebc40408c50a69bac1"
 dependencies = [
  "elf",
  "pico-vm",
@@ -8988,12 +8988,12 @@ dependencies = [
 [[package]]
 name = "pico-aot-pure"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.4#898602969f3c08d0dc8711ebc40408c50a69bac1"
 
 [[package]]
 name = "pico-aot-runtime"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.4#898602969f3c08d0dc8711ebc40408c50a69bac1"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -9018,7 +9018,7 @@ dependencies = [
 [[package]]
 name = "pico-derive"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.4#898602969f3c08d0dc8711ebc40408c50a69bac1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -9033,7 +9033,7 @@ source = "git+https://github.com/brevis-network/pico-gpu.git?rev=9665f1079cd3336
 [[package]]
 name = "pico-gpu-api"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.4#898602969f3c08d0dc8711ebc40408c50a69bac1"
 dependencies = [
  "cudart-sys",
  "pico-gpu",
@@ -9044,7 +9044,7 @@ dependencies = [
 [[package]]
 name = "pico-mle-core"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.4#898602969f3c08d0dc8711ebc40408c50a69bac1"
 dependencies = [
  "cfg-if",
  "derivative",
@@ -9077,7 +9077,7 @@ dependencies = [
 [[package]]
 name = "pico-mle-cpu"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.4#898602969f3c08d0dc8711ebc40408c50a69bac1"
 dependencies = [
  "cfg-if",
  "derive-new 0.7.0",
@@ -9105,7 +9105,7 @@ dependencies = [
 [[package]]
 name = "pico-patch-libs"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.4#898602969f3c08d0dc8711ebc40408c50a69bac1"
 dependencies = [
  "bincode 1.3.3",
  "elliptic-curve",
@@ -9115,7 +9115,7 @@ dependencies = [
 [[package]]
 name = "pico-perf"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.4#898602969f3c08d0dc8711ebc40408c50a69bac1"
 dependencies = [
  "anyhow",
  "bincode 1.3.3",
@@ -9130,7 +9130,7 @@ dependencies = [
 [[package]]
 name = "pico-prover"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.4#898602969f3c08d0dc8711ebc40408c50a69bac1"
 dependencies = [
  "bincode 1.3.3",
  "distributed-vm",
@@ -9150,12 +9150,12 @@ dependencies = [
 [[package]]
 name = "pico-sdk"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.4#898602969f3c08d0dc8711ebc40408c50a69bac1"
 dependencies = [
  "anyhow",
  "aurora-engine-modexp",
  "bincode 1.3.3",
- "bls12_381 0.8.0 (git+https://github.com/brevis-network/bls12_381.git?rev=79fbbface08629528c9ef6e326d98e38901c39bf)",
+ "bls12_381 0.8.0 (git+https://github.com/brevis-network/bls12_381?rev=a4725b3db277d6237d04aec3835a2d5c74a46e46)",
  "cfg-if",
  "getrandom 0.2.17",
  "getrandom 0.4.2",
@@ -9183,7 +9183,7 @@ dependencies = [
 [[package]]
 name = "pico-verifier"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.4#898602969f3c08d0dc8711ebc40408c50a69bac1"
 dependencies = [
  "bincode 1.3.3",
  "p3-field 0.5.4",
@@ -9200,7 +9200,7 @@ dependencies = [
 [[package]]
 name = "pico-vm"
 version = "3.1.1"
-source = "git+https://github.com/brevis-network/pico?tag=v3.1.3#08b6cdd858dee5da0366202b516d646a158479e0"
+source = "git+https://github.com/brevis-network/pico?tag=v3.1.4#898602969f3c08d0dc8711ebc40408c50a69bac1"
 dependencies = [
  "anyhow",
  "arrayref",
