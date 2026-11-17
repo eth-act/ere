@@ -2,10 +2,19 @@ use openvm_verify_stark_host::error::VerifyStarkError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum Error {
     /// Failed to deserialize a program VK.
     #[error("Failed to decode program vk: {0}")]
     DecodeProgramVk(#[from] bitcode::Error),
+
+    /// Proof byte slice was longer than the decode limit.
+    #[error("Proof size exceeds decode limit, expected at most {limit}, got {got}")]
+    DecodeLimitExceeded { limit: usize, got: usize },
+
+    /// Number of AIRs that the proof states differs from the number of AIRs of the aggregation key.
+    #[error("Invalid number of AIRs, expected {expected}, got {got}")]
+    InvalidNumAirs { expected: usize, got: usize },
 
     /// Failed to decode a proof.
     #[error("Failed to decode proof: {0}")]
