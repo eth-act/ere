@@ -20,9 +20,9 @@ jobs:
           - zkvm: lambdavm
             crate: lambda-vm-prover
           # - zkvm: openvm
-          #   crate: openvm-sdk
-          # - zkvm: pico
-          #   crate: pico-sdk
+          #   crate: openvm
+          - zkvm: pico
+            crate: pico-sdk
           - zkvm: sp1
             crate: sp1-sdk
           - zkvm: zisk
@@ -36,7 +36,7 @@ jobs:
         run: |
           set -e -o pipefail
 
-          RESULT=$(.github/scripts/fetch-zkvm-version.sh "${{ matrix.zkvm }}" "${{ matrix.crate }}")
+          RESULT=$(.github/scripts/fetch-zkvm-version.sh "${{ matrix.crate }}")
 
           CURRENT=$(echo "$RESULT" | grep "CURRENT=" | cut -d= -f2)
           LATEST=$(echo "$RESULT" | grep "LATEST=" | cut -d= -f2)

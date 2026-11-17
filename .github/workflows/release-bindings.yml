@@ -33,14 +33,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      # Needed to build `proofman-starks-lib-c`, which is pulled by
-      # `proofman-fields` unconditionally on x86_64.
-      - name: Install build dependencies
-        if: matrix.target == 'x86_64-unknown-linux-gnu'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y nasm nlohmann-json3-dev libgmp-dev libsodium-dev libomp-dev libopenmpi-dev libssl-dev
-
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
@@ -52,12 +44,6 @@ jobs:
         with:
           shared-key: bindings
           save-if: ${{ github.ref == 'refs/heads/master' }}
-
-      # `proofman-starks-lib-c` builds `libstarks.a` in the cargo registry
-      # sources, which rust-cache does not restore.
-      - name: Clean cached libstarks build
-        if: matrix.target == 'x86_64-unknown-linux-gnu'
-        run: cargo clean --release --target ${{ matrix.target }} -p proofman-starks-lib-c
 
       - name: Install zig
         uses: mlugg/setup-zig@v2
