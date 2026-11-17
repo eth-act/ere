@@ -1,4 +1,25 @@
 //! Rust binding of `libere_verifier_c`, linked from the directory in `ERE_VERIFIER_LIB_DIR`.
+//!
+//! # Public values
+//!
+//! A proof that verifies shows only that the program ran. The caller must compare the public values
+//! that [`Verifier::verify`] returns with the expected bytes.
+//!
+//! | zkVM                | Public values                                 |
+//! | ------------------- | --------------------------------------------- |
+//! | OpenVM, ZisK        | 256 bytes, the guest output padded with zeros |
+//! | LambdaVM, Pico, SP1 | The guest output                              |
+//!
+//! ```rust,no_run
+//! use ere_verifier_rust::{Verifier, ZkVMKind};
+//!
+//! # fn run(program_vk: &[u8], proof: &[u8], expected_public_values: &[u8])
+//! #     -> Result<bool, ere_verifier_rust::Error>
+//! # {
+//! let verifier = Verifier::new(ZkVMKind::SP1, program_vk)?;
+//! let accepted = verifier.verify(proof)? == expected_public_values;
+//! # Ok(accepted) }
+//! ```
 
 use std::{
     ffi::c_void,
@@ -32,6 +53,7 @@ pub enum ZkVMKind {
 
 /// Status code of a failed call, with the values of the C API.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum Error {
     NullPtr = 1,
     BadKind = 2,
@@ -39,6 +61,8 @@ pub enum Error {
     DecodeProof = 4,
     Verify = 5,
     Internal = 6,
+    /// The verifier code panicked. The caller treats this error as a rejected proof.
+    Panic = 7,
 }
 
 impl fmt::Display for Error {
@@ -57,6 +81,7 @@ fn check(status: i32) -> Result<(), Error> {
         3 => Err(Error::DecodeProgramVk),
         4 => Err(Error::DecodeProof),
         5 => Err(Error::Verify),
+        7 => Err(Error::Panic),
         _ => Err(Error::Internal),
     }
 }
@@ -85,7 +110,9 @@ impl Verifier {
         NonNull::new(verifier).map(Self).ok_or(Error::Internal)
     }
 
-    /// Verifies `proof` and returns its public values.
+    /// Verifies `proof` and returns its public values, which the caller compares with the expected
+    /// bytes.
+    #[must_use = "the public values must be compared with the expected public values"]
     pub fn verify(&self, proof: &[u8]) -> Result<Vec<u8>, Error> {
         let (mut bytes, mut len) = (ptr::null_mut(), 0);
         // SAFETY: the handle is live, the proof is readable for its length, and the outputs are
