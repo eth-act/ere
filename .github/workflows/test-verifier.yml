@@ -99,5 +99,4 @@ jobs:
             --package ere-verifier-openvm \
             --package ere-verifier-pico \
             --package ere-verifier-sp1 \
-            --package ere-verifier-zisk \
-            -- --skip test_vk_correctness
+            --package ere-verifier-zisk
