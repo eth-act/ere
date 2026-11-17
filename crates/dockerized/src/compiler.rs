@@ -13,7 +13,7 @@ use crate::{
     image::{base_image, base_zkvm_image, compiler_zkvm_image},
     util::{
         docker::{DockerBuildCmd, DockerRunCmd, docker_image_exists, docker_pull_image},
-        env::{force_rebuild_docker_image, image_registry},
+        env::{docker_memory, docker_memory_swap, force_rebuild_docker_image, image_registry},
         workspace_dir,
     },
     zkVMKind,
@@ -143,6 +143,7 @@ impl Compiler for DockerizedCompiler {
 
         let mut cmd = DockerRunCmd::new(compiler_zkvm_image(self.zkvm_kind))
             .rm()
+            .memory(docker_memory()?, docker_memory_swap())
             .inherit_env("RUST_LOG")
             .inherit_env("NO_COLOR")
             .inherit_env("ERE_RUST_TOOLCHAIN")

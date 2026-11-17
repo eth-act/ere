@@ -21,8 +21,8 @@ use crate::{
         },
         env::{
             ERE_OPENVM_CACHE_VOLUME, ERE_PICO_CACHE_VOLUME, ERE_PICO_PURE_CACHE_VOLUME,
-            ERE_ZISK_CACHE_VOLUME, ERE_ZISK_PROVING_KEY_VOLUME, docker_network,
-            force_rebuild_docker_image, image_registry,
+            ERE_ZISK_CACHE_VOLUME, ERE_ZISK_PROVING_KEY_VOLUME, docker_memory, docker_memory_swap,
+            docker_network, force_rebuild_docker_image, image_registry,
         },
         workspace_dir,
     },
@@ -189,6 +189,7 @@ impl ServerContainer {
             .inherit_env("RUST_BACKTRACE")
             .inherit_env("NO_COLOR")
             .publish(port.to_string(), port.to_string())
+            .memory(docker_memory()?, docker_memory_swap())
             .name(&name);
 
         let host = if let Some(network) = docker_network() {
