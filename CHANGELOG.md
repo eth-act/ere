@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.20.1](https://github.com/eth-act/ere/compare/v0.20.0...v0.20.1) (2026-11-17)
+
+
+### Features
+
+* **dockerized:** limit container memory by env variable with sane default value ([#476](https://github.com/eth-act/ere/issues/476)) ([6e2ce18](https://github.com/eth-act/ere/commit/6e2ce183d54fd3d2bcf8d51fc42a6dc228d8cc78))
+* update pico for the zkEVM standards ([#472](https://github.com/eth-act/ere/issues/472)) ([1008eed](https://github.com/eth-act/ere/commit/1008eedaae2c6e74c171c87967c3aa9ca983ef09))
+* update pico to v3.1.3 ([#474](https://github.com/eth-act/ere/issues/474)) ([de784c6](https://github.com/eth-act/ere/commit/de784c6d1a0bb82b8cfd9e48b13d4dbabd8957df))
+* update pico to v3.1.4 ([#475](https://github.com/eth-act/ere/issues/475)) ([c0a4126](https://github.com/eth-act/ere/commit/c0a4126fe62c444be0b87398c48d8cb7ae530c88))
+
 ## [0.20.0](https://github.com/eth-act/ere/compare/v0.19.6...v0.20.0) (2026-10-31)
 
 
