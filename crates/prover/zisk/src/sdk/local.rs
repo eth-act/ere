@@ -10,7 +10,7 @@ use once_cell::sync::OnceCell;
 use parking_lot::{Mutex, MutexGuard};
 use proofman_fields::{Field, Goldilocks, PrimeField64};
 use proofman_util::DeviceBuffer;
-use zisk_common::{HashMode, ZiskPaths, io::ZiskStdin};
+use zisk_common::{HashMode, ProofKind, ZiskPaths, io::ZiskStdin};
 use zisk_prover_backend::{
     Asm, AsmOptions, BackendProverOpts, GuestProgram, ProgramId, ProverClientBuilder, ZiskProver,
 };
@@ -162,6 +162,7 @@ impl LocalProver {
         let output = shared_prover
             .prover
             .prove(&self.program, stdin)
+            .wrap_proof(ProofKind::VadcopFinalMinimal)
             .run()
             .map_err(Error::Prove)?;
         let proving_time = started.elapsed();

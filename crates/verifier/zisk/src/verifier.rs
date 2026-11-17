@@ -1,13 +1,13 @@
 use ere_verifier_core::{PublicValues, zkVMVerifier};
-use zisk_verifier::verify_vadcop_final;
+use zisk_verifier::{VADCOP_FINAL_COMPRESSED_VK_BLAKE3, verify_vadcop_final};
 
-use crate::{Error, ZiskProgramVk, ZiskProof, verifier::vk::VADCOP_FINAL_VK};
+use crate::{Error, ZiskProgramVk, ZiskProof};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
-mod vk;
-
-pub use vk::VADCOP_FINAL_HASH_FAMILY;
+/// Hash family of [`VADCOP_FINAL_COMPRESSED_VK_BLAKE3`]. Proofs from any other family cannot
+/// authenticate against it and are rejected.
+pub const VADCOP_FINAL_HASH_FAMILY: &str = "blake3";
 
 /// Verifier bound to a specific compiled guest program.
 ///
@@ -39,7 +39,7 @@ impl zkVMVerifier for ZiskVerifier {
 
         ensure_program_vk_matches(self.program_vk, program_vk)?;
 
-        if !verify_vadcop_final(&proof.0, &VADCOP_FINAL_VK) {
+        if !verify_vadcop_final(&proof.0, &VADCOP_FINAL_COMPRESSED_VK_BLAKE3) {
             return Err(Error::InvalidProof);
         }
 

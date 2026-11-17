@@ -17,23 +17,15 @@ pub enum Error {
     #[error("Non-canonical ProgramVk")]
     NonCanonicalProgramVk,
 
-    /// The proof is not an uncompressed final proof of the supported hash family.
+    /// The proof is not a compressed final proof of the supported hash family.
     #[error(
-        "Invalid kind of VadcopFinalProof, expected an uncompressed final proof of the supported hash family"
+        "Invalid kind of VadcopFinalProof, expected a compressed final proof of the supported hash family"
     )]
     InvalidVadcopFinalProofKind,
 
     /// Public values of VadcopFinalProof was not the expected length.
     #[error("Invalid public value length of VadcopFinalProof, expected: {expected}, got: {got}")]
     InvalidPublicValueLength { expected: usize, got: usize },
-
-    /// Expected leaf VadcopFinalProof
-    #[error("Invalid is_vadcop_final_proof flag of VadcopFinalProof, got: {got}")]
-    UnexpectedVadcopFinalFlag { got: u64 },
-
-    /// Proof contains a word that is not a canonical field element.
-    #[error("Non-canonical word in proof")]
-    NonCanonicalProof,
 
     /// User public values was not u32.
     #[error("Invalid word in user public values, expected u32")]

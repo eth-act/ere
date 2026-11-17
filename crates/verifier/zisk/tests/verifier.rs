@@ -1,5 +1,8 @@
 use bincode::error::DecodeError;
-use ere_verifier_core::{codec::Decode, zkVMVerifier};
+use ere_verifier_core::{
+    codec::{Decode, Encode},
+    zkVMVerifier,
+};
 use ere_verifier_zisk::{Error, ZiskProgramVk, ZiskProof, ZiskVerifier};
 use zisk_verifier::GOLDILOCKS_ORDER;
 
@@ -58,6 +61,12 @@ fn test_invalid_proof_decode() {
         err,
         DecodeError::Other("trailing bytes after decoded value")
     ));
+
+    // Proof above the size limit
+    let mut proof = ZiskProof::decode_from_slice(PROOF).unwrap();
+    proof.0.proof.resize(300 * 1024 / 8, 0);
+    let err = ZiskProof::decode_from_slice(&proof.encode_to_vec().unwrap()).unwrap_err();
+    assert!(matches!(err, DecodeError::LimitExceeded));
 }
 
 #[test]
@@ -75,11 +84,35 @@ fn test_invalid_proof_verify() {
     let err = verifier.verify(&proof).unwrap_err();
     assert!(matches!(err, Error::InvalidProof));
 
+    // Uncompressed proof
+    let mut proof = ZiskProof::decode_from_slice(PROOF).unwrap();
+    proof.0.compressed = false;
+    let err = verifier.verify(&proof).unwrap_err();
+    assert!(matches!(err, Error::InvalidVadcopFinalProofKind));
+
+    // Unsupported hash family
+    let mut proof = ZiskProof::decode_from_slice(PROOF).unwrap();
+    proof.0.hash = "Poseidon2".to_string();
+    let err = verifier.verify(&proof).unwrap_err();
+    assert!(matches!(err, Error::InvalidVadcopFinalProofKind));
+
+    // Public value above u32
+    let mut proof = ZiskProof::decode_from_slice(PROOF).unwrap();
+    proof.0.public_values[4] |= 1 << 32;
+    let err = verifier.verify(&proof).unwrap_err();
+    assert!(matches!(err, Error::InvalidPublicValue));
+
+    // Unexpected public value length
+    let mut proof = ZiskProof::decode_from_slice(PROOF).unwrap();
+    proof.0.public_values.push(0);
+    let err = verifier.verify(&proof).unwrap_err();
+    assert!(matches!(err, Error::InvalidPublicValueLength { .. }));
+
     // Non-canonical field element
     let mut proof = ZiskProof::decode_from_slice(PROOF).unwrap();
-    proof.0.proof[0] = GOLDILOCKS_ORDER;
+    proof.0.proof[1] = GOLDILOCKS_ORDER;
     let err = verifier.verify(&proof).unwrap_err();
-    assert!(matches!(err, Error::NonCanonicalProof));
+    assert!(matches!(err, Error::InvalidProof));
 
     // Unexpected program vk
     let verifier = verifier_with_unexpected_program_vk();
