@@ -2,7 +2,10 @@ use core::fmt;
 use std::sync::Arc;
 
 use ere_verifier_core::{PublicValues, zkVMVerifier};
-use pico_verifier::{MleApexVerifier, bundle::apex_from_bundle, shipped_vk_root};
+use pico_verifier::{
+    MleApexVerifier, VerifyError, bundle::apex_from_bundle, shipped_compress_vk, shipped_vk_root,
+    whitelist::vk_identity,
+};
 
 use crate::{Error, PicoProgramVk, PicoProof};
 
@@ -29,11 +32,20 @@ impl fmt::Debug for PicoVerifier {
 impl PicoVerifier {
     /// Creates a new verifier bound to `program_vk`.
     ///
-    /// Refuses a bundle whose whitelist root is not the one shipped with Pico, or
-    /// whose memberships do not reach that root.
+    /// Refuses a bundle whose whitelist root is not the one shipped with Pico, whose memberships
+    /// do not reach that root, or whose memberships do not hold the shipped compress key.
     pub fn new(program_vk: PicoProgramVk) -> Result<Self, Error> {
         let apex = apex_from_bundle(&program_vk.0, shipped_vk_root())
             .map_err(Error::UntrustedProgramVk)?;
+        let compress_identity = vk_identity(&shipped_compress_vk());
+        if !program_vk
+            .0
+            .members
+            .iter()
+            .any(|member| member.identity == compress_identity)
+        {
+            return Err(Error::UntrustedProgramVk(VerifyError::NotWhitelisted));
+        }
         Ok(Self {
             program_vk,
             apex: Arc::new(apex),
