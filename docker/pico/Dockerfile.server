@@ -44,14 +44,15 @@ RUN cargo build --release --package ere-server --bin ere-server --features pico$
 FROM $RUNTIME_IMAGE AS runtime
 FROM $RUNTIME_CUDA_IMAGE AS runtime_cuda
 # `ere-prover-pico/cuda` links libtcmalloc at run time.
-RUN apt-get update && apt-get install -y --no-install-recommends libgoogle-perftools4t64 \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgoogle-perftools4t64 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 FROM runtime${CUDA:+_cuda} AS runtime_stage
 
-# Where the GPU JIT kernels go when `G1_JIT`/`Z1_JIT` are set; `ERE_PICO_CACHE_VOLUME` mounts it.
+# The GPU JIT kernels go here when `G1_JIT` or `Z1_JIT` is set. `ERE_PICO_CACHE_VOLUME` mounts it.
 ENV MLE_JIT_CACHE_DIR=/root/.mle_jit_cache
 
-# Pure execute: on its first execution, `ere-server` builds each program's pure-mode library with cargo,
+# On the first execution of a program, `ere-server` builds its pure-mode library with cargo,
 # cached by ELF under `/root/.cache/pico-pure` (`ERE_PICO_PURE_CACHE_VOLUME` mounts it).
 # `pico-aot-pure`, the one crate the library links, has no dependencies, so the build needs only
 # the toolchain Pico pins and a linker, and runs offline.
@@ -59,7 +60,9 @@ COPY --from=build_stage /ere/pico-aot-pure /opt/pico
 COPY --from=build_stage /ere/pico-toolchain /opt/rust
 ENV PATH=/opt/rust/bin:$PATH \
     ERE_PICO_PURE_RUNTIME="path = \"/opt/pico/aot-pure\"" ERE_PICO_PURE_OFFLINE=1
-RUN apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libc6-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
     && cargo --version \
     && mkdir -p -m 700 /root/.cache/pico-pure

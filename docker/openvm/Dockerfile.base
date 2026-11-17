@@ -2,9 +2,6 @@ ARG BASE_IMAGE=ere-base:latest
 
 FROM $BASE_IMAGE
 
-# The ere-base image provides Rust, Cargo, and common tools.
-# We operate as root for SDK installation.
-
 # `rvr` compiles guest programs with clang and lld. Ubuntu 24.04 ships
 # clang-18 while rvr requires 19 or newer, so clang-22, rvr's own default,
 # comes from apt.llvm.org.
@@ -26,6 +23,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && ln -sf /usr/bin/clang-22 /usr/bin/clang \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Set default toolchain for OpenVM.
+RUN rustup toolchain install --profile minimal --component clippy,rustfmt 1.91.1 \
+    && rustup default 1.91.1
+
 # Add nightly toolchain to provide cargo fallback for openvm toolchain
 RUN rustup toolchain install --profile minimal nightly
 
@@ -37,7 +38,7 @@ COPY --chmod=755 scripts/sdk_installers/install_openvm_sdk.sh /tmp/install_openv
 # and installs cargo-openvm.
 RUN /tmp/install_openvm_sdk.sh && rm /tmp/install_openvm_sdk.sh
 
-# Verify cargo-openvm is accessible with the correct toolchain
+# Verify the OpenVM SDK installation.
 RUN cargo openvm --version
 
 # `OPENVM_RVR_NATIVE_CACHE_DIR` lets rvr reuse a compiled guest artifact across
@@ -49,5 +50,3 @@ ENV RVR_CC=clang-22 \
 # Keeps mcl symbols private to each rvr library, because shared ones crash the
 # process when a library unloads. Remove once OpenVM does this itself.
 ENV LDFLAGS=-Wl,--exclude-libs,librvr_openvm_ext_pairing_ffi.a
-
-CMD ["/bin/bash"]

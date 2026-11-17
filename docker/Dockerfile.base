@@ -8,10 +8,6 @@ FROM $BASE_IMAGE AS base
 FROM $BASE_CUDA_IMAGE AS base_cuda
 FROM base${CUDA:+_cuda}
 
-# Free uid 1000 for later usage, see https://bugs.launchpad.net/cloud-images/+bug/2005129
-# for more details.
-RUN userdel -r ubuntu
-
 # Set DEBIAN_FRONTEND to noninteractive to avoid prompts during package
 # installation when building the image.
 ARG DEBIAN_FRONTEND=noninteractive
@@ -34,32 +30,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     protobuf-compiler \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install rustup.
-# RUST_VERSION can be 1.91.1, stable, nightly, etc
-ARG RUST_VERSION=1.91.1
-
+# Install rustup. Each zkVM base image installs its own default toolchain.
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain ${RUST_VERSION} --no-modify-path
-
-# Add a non-root user for subsequent stages or use in derived images
-# This is generally best practice.
-ARG USERNAME=ere_user
-ARG USER_UID=1000
-ARG USER_GID=${USER_UID}
-RUN groupadd --gid ${USER_GID} ${USERNAME} && \
-    useradd --uid ${USER_UID} --gid ${USER_GID} --shell /bin/bash --create-home ${USERNAME}
-
-# Set a default working directory (optional, can be overridden)
-WORKDIR /app
-
-# TODO: Default to the non-root user?
-# USER ${USERNAME}
-
-# Verify Rust installation went well
-RUN rustc --version
-RUN cargo --version
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none --no-modify-path
 
 CMD ["/bin/bash"]

@@ -17,10 +17,6 @@ ARG RUSTFLAGS
 # Env variable read by ZisK crate `proofman-starks-lib-c`, comma-separated numeric arch IDs (e.g. "120" or "89,120")
 ARG CUDA_ARCHS=120
 
-# proofman-starks-src reads /proc/cpuinfo to pick its SIMD flags, so a builder with AVX-512
-# produces an image that raises SIGILL on hosts without it. Disable the AVX-512 by default here.
-ARG MAKEFLAGS="AVX512_SUPPORTED="
-
 RUN cargo build --release --package ere-server --bin ere-server --features zisk${CUDA:+,cuda} \
     && mkdir bin && mv target/release/ere-server bin/ere-server \
     && cargo clean && rm -rf $CARGO_HOME/registry/
@@ -33,29 +29,18 @@ FROM runtime${CUDA:+_cuda} AS runtime_stage
 # installation when building the image.
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Install ZisK system dependencies (for Ubuntu)
-# Taken from https://0xpolygonhermez.github.io/zisk/getting_started/installation.html
+# Install the libraries that ere-server and the ZisK binaries link, the tools that build the ASM
+# services at run time, and curl for the proving key service and the coordinator health check of the
+# cluster example.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    xz-utils \
-    jq \
     curl \
     build-essential \
-    qemu-system \
     libomp-dev \
     libgmp-dev \
-    nlohmann-json3-dev \
-    protobuf-compiler \
-    uuid-dev \
-    libgrpc++-dev \
-    libsecp256k1-dev \
     libsodium-dev \
-    libpqxx-dev \
-    nasm \
     libopenmpi-dev \
     openmpi-bin \
     openmpi-common \
-    libclang-dev \
-    clang \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy ZisK SDK

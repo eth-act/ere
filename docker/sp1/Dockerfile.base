@@ -5,36 +5,33 @@ FROM $BASE_IMAGE
 # Whether to enable CUDA feature or not.
 ARG CUDA
 
-# Install the well known proto files.
+# libprotobuf-dev provides the well-known proto files.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libprotobuf-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Set default toolchain to 1.91.1 and uninstall the original one.
-RUN rustup default 1.91.1 && \
-    rustup toolchain list | grep -v default | xargs -r rustup toolchain uninstall
+# Set default toolchain for SP1.
+RUN rustup toolchain install --profile minimal --component clippy,rustfmt 1.91.1 \
+    && rustup default 1.91.1
 
 # Copy the SP1 SDK installer script
 COPY --chmod=755 scripts/sdk_installers/install_sp1_sdk.sh /tmp/install_sp1_sdk.sh
 
-# Define where SP1 SDK will be installed within the image.
-# The install_sp1_sdk.sh script will respect these ENV variables.
-ENV SP1_DIR="/root/.sp1" \
-    SP1_VERSION="v6.9.0"
+# Define where the SP1 SDK goes within the image.
+# The install_sp1_sdk.sh script reads these ENV variables.
+ENV SP1_DIR=/root/.sp1 \
+    SP1_VERSION=v6.9.0
 
 # Run the SP1 SDK installation script with secret mount
-# It will use the SP1_DIR and SP1_VERSION defined above.
+# It uses the SP1_DIR and SP1_VERSION defined above.
 RUN --mount=type=secret,id=github_token \
     if [ -s /run/secrets/github_token ]; then \
         export GITHUB_TOKEN="$(cat /run/secrets/github_token)"; \
-    fi && \
-    /tmp/install_sp1_sdk.sh && rm /tmp/install_sp1_sdk.sh
+    fi \
+    && /tmp/install_sp1_sdk.sh && rm /tmp/install_sp1_sdk.sh
 
-# Update the image's persistent PATH to include SP1 binaries.
-# This uses the SP1_DIR defined above.
-ENV PATH="${SP1_DIR}/bin:$PATH"
+# Add SP1 SDK to path
+ENV PATH=${SP1_DIR}/bin:$PATH
 
-# Verify SP1 installation (optional here, as script does it, but good for sanity)
+# Verify the SP1 SDK installation.
 RUN cargo prove --version
-
-CMD ["/bin/bash"]
