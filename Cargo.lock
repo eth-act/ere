@@ -3564,10 +3564,6 @@ dependencies = [
 [[package]]
 name = "ere-codec"
 version = "0.20.1"
-dependencies = [
- "bincode 2.0.1",
- "serde",
-]
 
 [[package]]
 name = "ere-compiler"
@@ -3942,8 +3938,6 @@ name = "ere-util-test"
 version = "0.20.1"
 dependencies = [
  "bincode 2.0.1",
- "ciborium",
- "ciborium-io",
  "ere-codec",
  "ere-platform-core",
  "ere-prover-core",

@@ -12,11 +12,10 @@
 
 use alloc::vec::Vec;
 
-use ere_codec::impl_codec_by_bincode_legacy;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumIter, EnumString, IntoEnumIterator, IntoStaticStr};
 
-use crate::program::Program;
+use crate::{codec::impl_codec_by_bincode_legacy, program::Program};
 
 // Only a guest defines the accelerator symbols. A host cannot stub them either, because `ziskos`
 // already defines them in the ZisK host prover.
