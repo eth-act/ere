@@ -11,7 +11,8 @@
 //! ## `zkVMProver` requirements
 //!
 //! - `cargo-openvm`
-//! - Setup via `cargo openvm setup` - Setup aggregation keys used by `zkVMProver::prove`
+//! - Setup via `cargo openvm setup` - Writes the aggregation proving key that `OpenVMProver::new`
+//!   reads
 //! - LLVM clang 19 or newer, `lld` and `make`, used by OpenVM's `rvr` backend to compile each guest
 //!   program to a shared library the first time it executes or proves
 //!

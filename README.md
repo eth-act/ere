@@ -74,6 +74,8 @@ This repository contains the following crates:
   - [`ere-verifier-pico`]
   - [`ere-verifier-sp1`]
   - [`ere-verifier-zisk`]
+- [`ere-verifier`] - Verifier over all supported zkVMs, which takes a `zkVMKind` and an encoded program VK and proof
+- [`ere-verifier-c`] - C ABI of [`ere-verifier`], with Go and Rust bindings in `bindings/`
 - [`ere-dockerized`] - Docker wrapper that spawns [`ere-server`] containers to run zkVM operations without local SDK installation
 - [`ere-cluster-client-zisk`] - ZisK distributed-cluster client used by [`ere-prover-zisk`] when `ProverResource::Cluster` is selected
 - [`ere-codec`] - Canonical byte codec (`Encode`/`Decode` + macros) shared across crates
@@ -113,6 +115,8 @@ This repository contains the following crates:
 [`ere-prover-zisk`]: https://github.com/eth-act/ere/tree/master/crates/prover/zisk
 [`ere-platform-zisk`]: https://github.com/eth-act/ere/tree/master/crates/platform/zisk
 [`ere-verifier-zisk`]: https://github.com/eth-act/ere/tree/master/crates/verifier/zisk
+[`ere-verifier`]: https://github.com/eth-act/ere/tree/master/crates/verifier/verifier
+[`ere-verifier-c`]: https://github.com/eth-act/ere/tree/master/bindings/c
 [`ere-dockerized`]: https://github.com/eth-act/ere/tree/master/crates/dockerized
 [`ere-compiler`]: https://github.com/eth-act/ere/tree/master/crates/compiler/cli
 [`ere-server`]: https://github.com/eth-act/ere/tree/master/crates/server/cli
@@ -230,13 +234,13 @@ type P = SP1Platform;
 pub fn main() {
     // Read serialized input and deserialize it.
     let input = P::read_input();
-    let n = u64::from_le_bytes(input.as_slice().try_into().unwrap());
+    let n = u64::from_le_bytes(input[..].try_into().unwrap());
 
     // Compute nth fib.
     let fib_n = fib(n);
 
     // Write serialized output.
-    let output = [input.as_slice(), &fib_n.to_le_bytes()].concat();
+    let output = [&input[..], &fib_n.to_le_bytes()].concat();
     P::write_output(&output);
 }
 
@@ -264,6 +268,8 @@ name = "host"
 edition = "2024"
 
 [dependencies]
+ere-compiler-core = { git = "https://github.com/eth-act/ere.git" }
+ere-compiler-sp1 = { git = "https://github.com/eth-act/ere.git" }
 ere-prover-core = { git = "https://github.com/eth-act/ere.git" }
 ere-prover-sp1 = { git = "https://github.com/eth-act/ere.git" }
 ```
@@ -294,17 +300,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Execute
     let (public_values, execution_duration) = zkvm.execute(&input)?;
-    assert_eq!(public_values, expected_output);
+    assert_eq!(*public_values, *expected_output);
     println!("Execution duration: {execution_duration:?}");
 
     // Prove
     let (public_values, proof, proving_time) = zkvm.prove(&input)?;
-    assert_eq!(public_values, expected_output);
+    assert_eq!(*public_values, *expected_output);
     println!("Proving time: {proving_time:?}");
 
     // Verify
     let public_values = zkvm.verify(&proof)?;
-    assert_eq!(public_values, expected_output);
+    assert_eq!(*public_values, *expected_output);
     println!("Proof verified successfully!");
 
     Ok(())
@@ -331,6 +337,7 @@ name = "host"
 edition = "2024"
 
 [dependencies]
+ere-compiler-core = { git = "https://github.com/eth-act/ere.git" }
 ere-prover-core = { git = "https://github.com/eth-act/ere.git" }
 ere-dockerized = { git = "https://github.com/eth-act/ere.git" }
 ```
@@ -342,7 +349,7 @@ use ere_compiler_core::Compiler;
 use ere_dockerized::{
     CompilerKind, DockerizedCompiler, DockerizedzkVM, DockerizedzkVMConfig, zkVMKind,
 };
-use ere_prover_core::{Input, ProverResource, zkVMProver};
+use ere_prover_core::{Input, ProverResource};
 use std::path::Path;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -369,17 +376,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Execute
     let (public_values, execution_duration) = zkvm.execute(&input)?;
-    assert_eq!(public_values, expected_output);
+    assert_eq!(*public_values, *expected_output);
     println!("Execution duration: {execution_duration:?}");
 
     // Prove
     let (public_values, proof, proving_time) = zkvm.prove(&input)?;
-    assert_eq!(public_values, expected_output);
+    assert_eq!(*public_values, *expected_output);
     println!("Proving time: {proving_time:?}");
 
     // Verify
     let public_values = zkvm.verify(&proof)?;
-    assert_eq!(public_values, expected_output);
+    assert_eq!(*public_values, *expected_output);
     println!("Proof verified successfully!");
 
     Ok(())
@@ -392,7 +399,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------- |
 | `ERE_IMAGE_REGISTRY`             | Specifies docker image registry of the images. When specified, it will try to pull image from the registry and possibly skip building.  | ``      |
 | `ERE_IMAGE_TAG`                  | Overrides the image tag, by default the short git revision of `ere`. GPU images still get the `-cuda` suffix.                           | ``      |
-| `ERE_FORCE_REBUILD_DOCKER_IMAGE` | Force to rebuild docker images locally even they exist, it also prevents pulling image from registry.                                   | `false` |
+| `ERE_FORCE_REBUILD_DOCKER_IMAGE` | When set to any value, forces a local rebuild of the docker images even if they exist, and prevents pulling them from the registry.     | ``      |
 | `ERE_GPU_DEVICES`                | Specifies which GPU devices to use when running Docker containers for GPU-enabled zkVMs. The value is passed to Docker's `--gpus` flag. | `all`   |
 | `ERE_DOCKER_NETWORK`             | Specifies the Docker network being used (if any) so spawned `ere-server-*` containers will join that network.                           | ``      |
 | `ERE_DOCKER_MEMORY`              | RAM limit of each spawned container. The value is passed to Docker's `--memory` flag.                                                   | 90% of Docker host memory |
@@ -407,16 +414,16 @@ Example usage:
 
 ```bash
 # Use all GPUs (default)
-ere prove ...
+cargo run --release
 
 # Use specific GPU devices
-ERE_GPU_DEVICES="device=0" ere prove ...
+ERE_GPU_DEVICES="device=0" cargo run --release
 
 # Use multiple specific GPUs
-ERE_GPU_DEVICES="device=0,1" ere prove ...
+ERE_GPU_DEVICES="device=0,1" cargo run --release
 
-# Can also signal to use any available GPUs
-ERE_GPU_DEVICES="4" ere prove ...
+# Use any 4 available GPUs
+ERE_GPU_DEVICES="4" cargo run --release
 ```
 
 ## Directory Layout
@@ -434,6 +441,7 @@ ere/
 │   │   └── {zkvm}/                # ere-platform-{zkvm}
 │   ├── verifier/
 │   │   ├── core/                  # ere-verifier-core
+│   │   ├── verifier/              # ere-verifier
 │   │   └── {zkvm}/                # ere-verifier-{zkvm}
 │   ├── dockerized/                # ere-dockerized
 │   ├── compiler/
@@ -459,6 +467,7 @@ ere/
 │       ├── Dockerfile.compiler    # ere-compiler-{zkvm}
 │       └── Dockerfile.server      # ere-server-{zkvm}
 │
+├── bindings/                      # C, Go and Rust bindings of ere-verifier
 ├── scripts/                       # SDK installation scripts per zkVM
 └── tests/                         # Guest programs per zkVM for integration test
 ```

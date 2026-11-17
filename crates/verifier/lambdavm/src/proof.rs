@@ -10,7 +10,7 @@ const ARCHIVE_ALIGNMENT: usize = 16;
 
 /// Proof produced by the LambdaVM host prover, wrapping the upstream [`VmProof`].
 ///
-/// Encoded via `rkyv`, the same as `lambda-vm-cli prove` writes a proof.
+/// Encoded via `rkyv`, the same as the `prove` command of the LambdaVM `cli` writes a proof.
 /// Decoding validates the archive, and rejects inputs longer than
 /// [`MAX_DECODE_BYTES`].
 #[derive(Clone, Debug)]

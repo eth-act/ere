@@ -9,18 +9,20 @@
 //! ## Docker image building
 //!
 //! It builds 4 Docker images in sequence if they don't exist:
-//! 1. `ere-base:{version}` - Base image with common dependencies
-//! 2. `ere-base-{zkvm}:{version}` - zkVM-specific base image with the zkVM SDK
-//! 3. `ere-compiler-{zkvm}:{version}` - Compiler image with the `ere-compiler` binary built with
-//!    the selected zkVM feature
-//! 4. `ere-server-{zkvm}:{version}` - Server image with the `ere-server` binary built with the
+//! 1. `ere-base:{tag}` - Base image with common dependencies
+//! 2. `ere-base-{zkvm}:{tag}` - zkVM-specific base image with the zkVM SDK
+//! 3. `ere-compiler-{zkvm}:{tag}` - Compiler image with the `ere-compiler` binary built with the
 //!    selected zkVM feature
+//! 4. `ere-server-{zkvm}:{tag}` - Server image with the `ere-server` binary built with the selected
+//!    zkVM feature
+//!
+//! The tag is `ERE_IMAGE_TAG` when it is set, else the short git revision of Ere.
 //!
 //! When [`ProverResource::Gpu`] is selected, the image with GPU support
 //! will be built and tagged with specific suffix.
 //!
-//! To force rebuild all images, set the environment variable
-//! `ERE_FORCE_REBUILD_DOCKER_IMAGE` to non-empty value.
+//! To force rebuild all images, set the environment variable `ERE_FORCE_REBUILD_DOCKER_IMAGE` to
+//! any value.
 //!
 //! ## Example
 //!
@@ -40,7 +42,7 @@
 //!
 //! // Compile a guest program
 //! let compiler = DockerizedCompiler::new(zkvm_kind, compiler_kind, "mounting/directory")?;
-//! let guest_path = "relative/path/to/guest/program";
+//! let guest_path = "mounting/directory/path/to/guest/program";
 //! let elf = compiler.compile(guest_path, &[])?;
 //!
 //! // Create zkVM instance

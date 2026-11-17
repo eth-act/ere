@@ -200,7 +200,7 @@ fn execute_concurrency() -> usize {
 /// Builds the Fast binary of the program into the ZisK cache, unless it is there.
 fn build(rom: &ZiskRom, elf_hash: &str) -> Result<PathBuf, Error> {
     let cache_dir = get_output_path(&None).map_err(Error::BuildAsmEmulator)?;
-    // Keyed by the ELF hash, like the MT, RH and MO binaries of `zisk_rom_setup`.
+    // Keyed by the ELF hash, like the MT, RH, MOH and MOL binaries of `zisk_rom_setup`.
     let binary_path = cache_dir.join(format!("{elf_hash}-ft.bin"));
     if binary_path.exists() {
         return Ok(binary_path);

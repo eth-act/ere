@@ -61,7 +61,7 @@ pub trait zkVMProver: Sync {
         self.verifier().name()
     }
 
-    /// Returns the version of the zkVM SDK (e.g. 0.1.0).
+    /// Returns the version of the zkVM SDK (e.g. v0.1.0).
     fn sdk_version(&self) -> &'static str {
         self.verifier().sdk_version()
     }

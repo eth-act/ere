@@ -17,12 +17,12 @@ static mut OUTPUT_LEN: usize = 0;
 /// OpenVM [`Platform`] implementation.
 ///
 /// `read_input` and `write_output` are inherited from the trait's default implementation, which
-/// calls the [zkvm-standards] FFI symbols that this crate exports.
+/// calls the [zkevm-standards] FFI symbols that this crate exports.
 ///
 /// Note that the maximum output size is 256 bytes, and output less than 256
 /// bytes will be padded to 256 bytes.
 ///
-/// [zkvm-standards]: https://github.com/eth-act/zkvm-standards
+/// [zkevm-standards]: https://github.com/eth-act/zkevm-standards
 pub struct OpenVMPlatform;
 
 impl Platform for OpenVMPlatform {

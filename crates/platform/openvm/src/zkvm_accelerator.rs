@@ -1,6 +1,6 @@
 //! [zkVM accelerator C interface] implemented by [`openvm_accelerators`].
 //!
-//! [zkVM accelerator C interface]: https://github.com/eth-act/zkvm-standards/blob/main/standards/c-interface-accelerators/zkvm_accelerators.h
+//! [zkVM accelerator C interface]: https://github.com/eth-act/zkevm-standards/blob/main/standards/c-interface-accelerators/zkvm_accelerators.h
 
 use openvm_accelerators as _;
 

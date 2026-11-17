@@ -7,7 +7,7 @@ use sp1_verifier::ProofFromNetwork;
 /// returns [`Error::UnexpectedProofKind`]. Serialized via bincode legacy.
 ///
 /// [`Compressed`]: sp1_verifier::SP1Proof::Compressed
-/// [`SP1Verifier::verify`]: crate::SP1Verifier::verify
+/// [`SP1Verifier::verify`]: crate::zkVMVerifier::verify
 /// [`Error::UnexpectedProofKind`]: crate::Error::UnexpectedProofKind
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(transparent)]

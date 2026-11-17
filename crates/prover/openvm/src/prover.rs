@@ -37,7 +37,8 @@ use crate::{
 /// Segment memory limit, 14.5 GiB. Execution starts a new segment above it.
 const DEFAULT_SEGMENT_MEMORY: usize = 29 << 29;
 
-/// `executor` and `estimator` are lazy, because two `rvr` libraries crash the process at exit.
+/// `executor` and `estimator` are lazy, so `setup` unloads the `rvr` libraries of the old program
+/// before a library of the new program loads.
 pub struct OpenVMProver {
     app_pk: AppProvingKey<SdkVmConfig>,
     prover_thread: ProverThread,

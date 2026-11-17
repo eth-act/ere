@@ -8,7 +8,7 @@
 //! nothing, so a mismatch fails the execution and the run costs only the accelerator calls. A host
 //! build calls nothing, because it only carries the vectors to the guest.
 //!
-//! [zkVM accelerator C interface]: https://github.com/eth-act/zkvm-standards/blob/main/standards/c-interface-accelerators/zkvm_accelerators.h
+//! [zkVM accelerator C interface]: https://github.com/eth-act/zkevm-standards/blob/main/standards/c-interface-accelerators/zkvm_accelerators.h
 
 use alloc::vec::Vec;
 

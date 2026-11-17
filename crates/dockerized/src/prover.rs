@@ -70,10 +70,10 @@ fn apply_cuda_build_args(
 }
 
 /// This method builds 3 Docker images in sequence:
-/// 1. `ere-base:{version}` - Base image with common dependencies
-/// 2. `ere-base-{zkvm}:{version}` - zkVM-specific base image with the zkVM SDK
-/// 3. `ere-server-{zkvm}:{version}` - Server image with the `ere-server` binary built with the
-///    selected zkVM feature
+/// 1. `ere-base:{tag}` - Base image with common dependencies
+/// 2. `ere-base-{zkvm}:{tag}` - zkVM-specific base image with the zkVM SDK
+/// 3. `ere-server-{zkvm}:{tag}` - Server image with the `ere-server` binary built with the selected
+///    zkVM feature
 ///
 /// When [`ProverResource::Gpu`] is selected, the image with GPU support
 /// will be built and tagged with specific suffix.

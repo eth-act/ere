@@ -87,7 +87,7 @@ impl CargoBuildCmd {
         self
     }
 
-    /// Environment variable `RUSTFLAGS`.
+    /// Environment variable `CARGO_ENCODED_RUSTFLAGS`.
     pub fn rustflags(mut self, rustflags: &[impl AsRef<str>]) -> Self {
         self.rustflags = rustflags
             .iter()
@@ -105,7 +105,7 @@ impl CargoBuildCmd {
         self
     }
 
-    /// Linker script to be saved into a file and pass to `RUSTFLAGS`.
+    /// Linker script to be saved into a file and pass to `CARGO_ENCODED_RUSTFLAGS`.
     pub fn linker_script(mut self, linker_script: Option<impl AsRef<str>>) -> Self {
         self.linker_script = linker_script.map(|v| v.as_ref().to_string());
         self

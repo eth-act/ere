@@ -1,6 +1,6 @@
 use crate::{util::env, zkVMKind};
 
-/// Returns tag of images in format of `{version}{suffix}`.
+/// Returns tag of images in format of `{tag}{suffix}`.
 pub fn image_tag(zkvm_kind: zkVMKind, gpu: bool) -> String {
     let suffix = match (zkvm_kind, gpu) {
         // Only the following zkVMs requires CUDA setup in the base image

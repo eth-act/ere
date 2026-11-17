@@ -26,6 +26,6 @@ pub trait zkVMVerifier: 'static + Send + Sync + Clone + Debug {
     /// Returns the name of the zkVM.
     fn name(&self) -> &'static str;
 
-    /// Returns the version of the zkVM SDK (e.g. 0.1.0).
+    /// Returns the version of the zkVM SDK (e.g. v0.1.0).
     fn sdk_version(&self) -> &'static str;
 }
