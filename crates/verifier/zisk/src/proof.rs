@@ -1,8 +1,7 @@
 use ere_verifier_core::PublicValues;
-pub use proofman_verifier::VadcopFinalProof;
 use serde::{Deserialize, Serialize};
-pub use zisk_verifier::IS_VADCOP_FINAL_PROOF;
-use zisk_verifier::{PROGRAM_VK_LEN, VADCOP_FINAL_FLAG_LEN, ZISK_PUBLICS};
+use zisk_verifier::{GOLDILOCKS_ORDER, PROGRAM_VK_LEN, VADCOP_FINAL_FLAG_LEN, ZISK_PUBLICS};
+pub use zisk_verifier::{IS_VADCOP_FINAL_PROOF, VadcopFinalProof};
 
 use crate::{Error, VADCOP_FINAL_HASH_FAMILY, ZiskProgramVk};
 
@@ -39,6 +38,10 @@ impl ZiskProof {
             return Err(Error::UnexpectedVadcopFinalFlag {
                 got: self.0.public_values[0],
             });
+        }
+
+        if self.0.proof.iter().any(|word| *word >= GOLDILOCKS_ORDER) {
+            return Err(Error::NonCanonicalProof);
         }
 
         let program_vk = self.0.public_values

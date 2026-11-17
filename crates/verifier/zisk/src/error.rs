@@ -3,6 +3,7 @@ use thiserror::Error;
 use crate::ZiskProgramVk;
 
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum Error {
     /// Failed to deserialize a proof.
     #[error("Failed to deserialize: {0}")]
@@ -29,6 +30,10 @@ pub enum Error {
     /// Expected leaf VadcopFinalProof
     #[error("Invalid is_vadcop_final_proof flag of VadcopFinalProof, got: {got}")]
     UnexpectedVadcopFinalFlag { got: u64 },
+
+    /// Proof contains a word that is not a canonical field element.
+    #[error("Non-canonical word in proof")]
+    NonCanonicalProof,
 
     /// User public values was not u32.
     #[error("Invalid word in user public values, expected u32")]
