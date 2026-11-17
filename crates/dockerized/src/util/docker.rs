@@ -27,7 +27,7 @@ impl CmdOption {
     pub fn to_args(&self) -> Vec<String> {
         let Self(key, value) = self;
         match value {
-            Some(value) => vec![format!("--{key}"), value.to_string()],
+            Some(value) => vec![format!("--{key}={value}")],
             None => vec![format!("--{key}")],
         }
     }
@@ -151,6 +151,12 @@ impl DockerRunCmd {
     pub fn gpus(self) -> Self {
         let devices = gpu_devices().unwrap_or_else(|| "all".to_string());
         self.option("gpus", &devices)
+    }
+
+    /// Limits the RAM of the container to `memory` and its RAM and swap together to `memory_swap`.
+    pub fn memory(self, memory: impl AsRef<str>, memory_swap: impl AsRef<str>) -> Self {
+        self.option("memory", memory)
+            .option("memory-swap", memory_swap)
     }
 
     pub fn network(self, name: impl AsRef<str>) -> Self {
@@ -362,6 +368,28 @@ pub fn docker_image_exists(image: impl AsRef<str>) -> Result<bool, CommonError> 
 
     // If image exists, image id will be printed hence stdout will be non-empty.
     Ok(!output.stdout.is_empty())
+}
+
+/// Returns the total memory of the Docker host in bytes, as `docker info` reports it.
+pub fn docker_host_memory() -> Result<u64, CommonError> {
+    let mut cmd = Command::new("docker");
+    let output = cmd
+        .args(["info", "--format", "{{.MemTotal}}"])
+        .output()
+        .map_err(|err| CommonError::command(&cmd, err))?;
+
+    if !output.status.success() {
+        Err(CommonError::command_exit_non_zero(
+            &cmd,
+            output.status,
+            Some(&output),
+        ))?
+    }
+
+    String::from_utf8_lossy(&output.stdout)
+        .trim()
+        .parse()
+        .map_err(|err| CommonError::deserialize("docker host memory", "std", err))
 }
 
 #[derive(Debug)]
