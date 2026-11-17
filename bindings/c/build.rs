@@ -9,6 +9,13 @@ fn main() {
     fs::create_dir_all(&build_dir).expect("failed to create build directory");
 
     cbindgen::Builder::new()
+        .with_config(cbindgen::Config {
+            function: cbindgen::FunctionConfig {
+                must_use: Some("__attribute__((warn_unused_result))".to_string()),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
         .with_crate(&crate_dir)
         .with_language(cbindgen::Language::C)
         .with_include_guard("ERE_VERIFIER_H")

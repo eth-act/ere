@@ -5,7 +5,8 @@
 
 /// Operation succeeded.
 pub const ERE_OK: i32 = 0;
-/// A required pointer argument was null when a value was expected.
+/// A required pointer argument was null when a value was expected, or a length was above
+/// `PTRDIFF_MAX`.
 pub const ERE_ERR_NULL_PTR: i32 = 1;
 /// `zkvm_kind` was not one of the documented values.
 pub const ERE_ERR_BAD_KIND: i32 = 2;
@@ -18,3 +19,6 @@ pub const ERE_ERR_VERIFY: i32 = 5;
 /// An unexpected internal condition occurred. This indicates a bug in the
 /// binding or the verifier library rather than an invalid argument.
 pub const ERE_ERR_INTERNAL: i32 = 6;
+/// The verifier code panicked. The caller treats this status as a rejected
+/// proof, because an untrusted proof or key can cause it.
+pub const ERE_ERR_PANIC: i32 = 7;
