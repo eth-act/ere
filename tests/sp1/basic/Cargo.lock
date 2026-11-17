@@ -388,15 +388,15 @@ dependencies = [
 
 [[package]]
 name = "ere-codec"
-version = "0.19.4"
+version = "0.20.1"
 
 [[package]]
 name = "ere-platform-core"
-version = "0.19.4"
+version = "0.20.1"
 
 [[package]]
 name = "ere-platform-sp1"
-version = "0.19.4"
+version = "0.20.1"
 dependencies = [
  "ere-platform-core",
  "libzkevm",
@@ -413,7 +413,7 @@ dependencies = [
 
 [[package]]
 name = "ere-util-test"
-version = "0.19.4"
+version = "0.20.1"
 dependencies = [
  "bincode 2.0.1",
  "ciborium",
@@ -1791,7 +1791,7 @@ checksum = "e13c156562582aa81c60cb29407084cdb54c4164760106ab78e6c5b0858cf64e"
 [[package]]
 name = "zkvm-interface"
 version = "0.1.0"
-source = "git+https://github.com/eth-act/zkvm-standards?rev=282cd356c3a0498416bb0619f9c8a347ce9933fb#282cd356c3a0498416bb0619f9c8a347ce9933fb"
+source = "git+https://github.com/eth-act/zkevm-standards?rev=282cd356c3a0498416bb0619f9c8a347ce9933fb#282cd356c3a0498416bb0619f9c8a347ce9933fb"
 dependencies = [
  "bindgen",
 ]
