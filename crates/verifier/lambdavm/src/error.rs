@@ -2,6 +2,7 @@ use lambda_vm_executor::elf::ElfError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum Error {
     /// Program VK byte slice length did not match its length prefix.
     #[error("Invalid program vk length, expected {expected}, got {got}")]
