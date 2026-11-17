@@ -110,7 +110,12 @@ fn test_invalid_proof_verify() {
 
     // Non-canonical field element
     let mut proof = ZiskProof::decode_from_slice(PROOF).unwrap();
-    proof.0.proof[1] = GOLDILOCKS_ORDER;
+    let index = proof
+        .0
+        .proof
+        .iter()
+        .position(|word| word.checked_add(GOLDILOCKS_ORDER).is_some());
+    proof.0.proof[index.unwrap()] += GOLDILOCKS_ORDER;
     let err = verifier.verify(&proof).unwrap_err();
     assert!(matches!(err, Error::InvalidProof));
 
