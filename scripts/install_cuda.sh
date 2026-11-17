@@ -16,7 +16,7 @@ else
 
     # From https://docs.nvidia.com/cuda/cuda-installation-guide-linux/#environment-setup.
     # Add to path.
-    cat >> ~/.bashrc <<EOF
+    cat >> ~/.bashrc <<'EOF'
 export PATH="$PATH:/usr/local/cuda/bin"
 export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/cuda/lib64"
 EOF
@@ -33,6 +33,7 @@ else
             | tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
 
     # Install the NVIDIA Container Toolkit packages:
+    apt-get update
     export NVIDIA_CONTAINER_TOOLKIT_VERSION=1.17.8-1
     apt-get install -y \
         nvidia-container-toolkit=${NVIDIA_CONTAINER_TOOLKIT_VERSION} \
