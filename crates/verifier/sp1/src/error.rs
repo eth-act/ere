@@ -2,6 +2,7 @@ use sp1_verifier::{SP1ProofMode, compressed::CompressedError};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum Error {
     /// Failed to deserialize a proof.
     #[error("Failed to deserialize: {0}")]
@@ -18,6 +19,10 @@ pub enum Error {
     /// Proof was not in the expected `Compressed` form.
     #[error("Unexpected proof kind, expected: Compressed, got: {0:?}")]
     UnexpectedProofKind(SP1ProofMode),
+
+    /// The proof's `sp1_version` is not [`SP1_CIRCUIT_VERSION`](crate::SP1_CIRCUIT_VERSION).
+    #[error("Unexpected SP1 version, expected: {}", crate::SP1_CIRCUIT_VERSION)]
+    UnexpectedSp1Version,
 
     /// `sp1-verifier` rejected the proof.
     #[error("Failed to verify: {0}")]
