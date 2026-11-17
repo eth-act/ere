@@ -223,6 +223,14 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn test_sp1_circuit_version() {
+        assert_eq!(
+            ere_verifier_sp1::SP1_CIRCUIT_VERSION,
+            sp1_sdk::SP1_CIRCUIT_VERSION
+        );
+    }
+
+    #[test]
     fn test_execute() {
         let zkvm = with_basic_elf(zkvm(false));
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
