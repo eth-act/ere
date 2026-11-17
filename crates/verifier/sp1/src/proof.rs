@@ -2,9 +2,13 @@ use bincode::{
     config::legacy,
     error::{DecodeError, EncodeError},
 };
-use ere_verifier_core::codec::{Decode, Encode, MAX_DECODE_BYTES};
+use ere_verifier_core::codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 use sp1_verifier::ProofFromNetwork;
+
+/// Upper bound on the bytes that the decode of a proof reads, above the compressed proof of about
+/// 1.27 MB with room for the public values.
+const MAX_PROOF_BYTES: usize = 2 * 1024 * 1024;
 
 /// A proof produced by the host prover that bundles everything needed for verification.
 ///
@@ -34,7 +38,7 @@ impl Decode for SP1Proof {
 
     fn decode_from_slice(slice: &[u8]) -> Result<Self, Self::Error> {
         let (proof, consumed): (Self, _) =
-            bincode::serde::decode_from_slice(slice, legacy().with_limit::<MAX_DECODE_BYTES>())?;
+            bincode::serde::decode_from_slice(slice, legacy().with_limit::<MAX_PROOF_BYTES>())?;
         if consumed != slice.len() {
             return Err(DecodeError::Other("trailing bytes after decoded value"));
         }
