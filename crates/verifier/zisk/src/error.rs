@@ -16,8 +16,10 @@ pub enum Error {
     #[error("Non-canonical ProgramVk")]
     NonCanonicalProgramVk,
 
-    /// Expected uncompressed VadcopFinalProof
-    #[error("Invalid kind of VadcopFinalProof, expected uncompressed")]
+    /// The proof is not an uncompressed final proof of the supported hash family.
+    #[error(
+        "Invalid kind of VadcopFinalProof, expected an uncompressed final proof of the supported hash family"
+    )]
     InvalidVadcopFinalProofKind,
 
     /// Public values of VadcopFinalProof was not the expected length.
