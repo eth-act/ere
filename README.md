@@ -321,6 +321,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 Use Docker for zkVM operations without installing SDKs locally. Only requires Docker to be installed.
 
+For a local build, run `.github/scripts/build-image.sh`, and `ere-dockerized` then uses the images that exist on the Docker host. Set `ERE_IMAGE_REGISTRY` to the `--registry` value of the build, or to the empty string for a build with no `--registry`, and set `ERE_IMAGE_TAG` to the `--tag` value with no `-cuda` suffix.
+
 #### 1. Create Guest Program
 
 We use the same guest program created above.
@@ -355,12 +357,12 @@ use std::path::Path;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let guest_directory = Path::new("path/to/guest");
 
-    // Compile guest program with SP1 customized toolchain (builds Docker images if needed)
+    // Compile guest program with SP1 customized toolchain (pulls Docker images if needed)
     let compiler =
         DockerizedCompiler::new(zkVMKind::SP1, CompilerKind::RustCustomized, guest_directory)?;
     let elf = compiler.compile(guest_directory, &[])?;
 
-    // Create zkVM instance (builds Docker images if needed)
+    // Create zkVM instance (pulls Docker images if needed)
     // It spawns a container that runs a gRPC server handling zkVM operations
     let zkvm = DockerizedzkVM::new(
         zkVMKind::SP1,
@@ -397,9 +399,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 | Variable                         | Description                                                                                                                             | Default |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `ERE_IMAGE_REGISTRY`             | Specifies docker image registry of the images. When specified, it will try to pull image from the registry and possibly skip building.  | ``      |
+| `ERE_IMAGE_REGISTRY`             | Registry of the images. An image that does not exist locally is pulled, and a failed pull is an error. An empty value is no registry.   | `ghcr.io/eth-act/ere` |
 | `ERE_IMAGE_TAG`                  | Overrides the image tag, by default the short git revision of `ere`. GPU images still get the `-cuda` suffix.                           | ``      |
-| `ERE_FORCE_REBUILD_DOCKER_IMAGE` | When set to any value, forces a local rebuild of the docker images even if they exist, and prevents pulling them from the registry.     | ``      |
 | `ERE_GPU_DEVICES`                | Specifies which GPU devices to use when running Docker containers for GPU-enabled zkVMs. The value is passed to Docker's `--gpus` flag. | `all`   |
 | `ERE_DOCKER_NETWORK`             | Specifies the Docker network being used (if any) so spawned `ere-server-*` containers will join that network.                           | ``      |
 | `ERE_DOCKER_MEMORY`              | RAM limit of each spawned container. The value is passed to Docker's `--memory` flag.                                                   | 90% of Docker host memory |

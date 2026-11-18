@@ -58,9 +58,6 @@ jobs:
       - name: Run cargo clippy ere-dockerized
         run: cargo clippy --all-targets --package ere-dockerized -- -D warnings
 
-      - name: Run cargo test ere-dockerized image
-        run: cargo test --release --package ere-dockerized --lib 'image::'
-
       - name: Run cargo clippy common crates
         run: cargo clippy --all-targets $PACKAGE_FLAGS -- -D warnings
 

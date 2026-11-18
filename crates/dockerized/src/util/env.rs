@@ -6,7 +6,6 @@ use crate::util::docker::docker_host_memory;
 
 pub const ERE_IMAGE_REGISTRY: &str = "ERE_IMAGE_REGISTRY";
 pub const ERE_IMAGE_TAG: &str = "ERE_IMAGE_TAG";
-pub const ERE_FORCE_REBUILD_DOCKER_IMAGE: &str = "ERE_FORCE_REBUILD_DOCKER_IMAGE";
 pub const ERE_GPU_DEVICES: &str = "ERE_GPU_DEVICES";
 pub const ERE_DOCKER_NETWORK: &str = "ERE_DOCKER_NETWORK";
 pub const ERE_DOCKER_MEMORY: &str = "ERE_DOCKER_MEMORY";
@@ -17,33 +16,29 @@ pub const ERE_PICO_PURE_CACHE_VOLUME: &str = "ERE_PICO_PURE_CACHE_VOLUME";
 pub const ERE_ZISK_CACHE_VOLUME: &str = "ERE_ZISK_CACHE_VOLUME";
 pub const ERE_ZISK_PROVING_KEY_VOLUME: &str = "ERE_ZISK_PROVING_KEY_VOLUME";
 
-/// Returns image registry from env variable `ERE_IMAGE_REGISTRY`.
+/// Returns image registry from env variable `ERE_IMAGE_REGISTRY`, or `ghcr.io/eth-act/ere` when it
+/// is unset.
 ///
-/// If env varialbe is valid, it will be prepended to all images. For example
-/// if `ERE_IMAGE_REGISTRY=ghcr.io/eth-act/ere`, the [`base_image`] will return
-/// `ghcr.io/eth-act/ere/ere-base:{image_tag}`.
-///
-/// [`base_image`]: crate::image::base_image
+/// An empty value gives no registry. The registry is prepended to all images.
 pub fn image_registry() -> Option<String> {
-    env::var(ERE_IMAGE_REGISTRY).ok()
+    match env::var(ERE_IMAGE_REGISTRY) {
+        Ok(registry) if registry.is_empty() => None,
+        Ok(registry) => Some(registry),
+        Err(_) => Some("ghcr.io/eth-act/ere".to_string()),
+    }
 }
 
 /// Returns image tag from env variable `ERE_IMAGE_TAG`, or [`DOCKER_IMAGE_TAG`] when it is unset.
 ///
-/// For example with `ERE_IMAGE_TAG=0.18.1`, the [`base_image`] with GPU returns
-/// `ere-base:0.18.1-cuda`.
+/// For example with `ERE_IMAGE_TAG=0.18.1`, the [`server_zkvm_image`] with GPU returns
+/// `ere-server-{zkvm}:0.18.1-cuda`.
 ///
 /// [`DOCKER_IMAGE_TAG`]: crate::DOCKER_IMAGE_TAG
-/// [`base_image`]: crate::image::base_image
+/// [`server_zkvm_image`]: crate::image::server_zkvm_image
 pub fn image_tag() -> String {
     env::var(ERE_IMAGE_TAG)
         .ok()
         .unwrap_or_else(|| crate::DOCKER_IMAGE_TAG.to_string())
-}
-
-/// Returns whether env variable `ERE_FORCE_REBUILD_DOCKER_IMAGE` is set or not.
-pub fn force_rebuild_docker_image() -> bool {
-    env::var_os(ERE_FORCE_REBUILD_DOCKER_IMAGE).is_some()
 }
 
 /// Returns env variable `ERE_GPU_DEVICES`.

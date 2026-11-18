@@ -8,7 +8,7 @@ use std::{
 };
 
 use ere_prover_core::CommonError;
-use tracing::{debug, error};
+use tracing::{debug, error, info};
 
 use crate::util::env::gpu_devices;
 
@@ -40,66 +40,6 @@ impl Display for CmdOption {
             Some(value) => write!(f, "--{key} {value}"),
             None => write!(f, "--{key}"),
         }
-    }
-}
-
-#[derive(Default)]
-pub struct DockerBuildCmd {
-    options: Vec<CmdOption>,
-}
-
-impl DockerBuildCmd {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn option(mut self, key: impl AsRef<str>, value: impl AsRef<str>) -> Self {
-        self.options.push(CmdOption::new(key, value));
-        self
-    }
-
-    pub fn file(self, file: impl AsRef<Path>) -> Self {
-        self.option("file", file.as_ref().to_string_lossy())
-    }
-
-    pub fn tag(self, tag: impl AsRef<str>) -> Self {
-        self.option("tag", tag)
-    }
-
-    pub fn build_arg(self, key: impl AsRef<str>, value: impl AsRef<str>) -> Self {
-        self.option(
-            "build-arg",
-            format!("{}={}", to_string(key), to_string(value)),
-        )
-    }
-
-    pub fn build_arg_from_env(self, key: impl AsRef<str>) -> Self {
-        let key = key.as_ref();
-        match env::var(key) {
-            Ok(val) => self.build_arg(key, val),
-            Err(_) => self,
-        }
-    }
-
-    pub fn exec(self, context: impl AsRef<Path>) -> Result<(), CommonError> {
-        let mut cmd = Command::new("docker");
-        cmd.arg("build");
-        for option in self.options {
-            cmd.args(option.to_args());
-        }
-        cmd.arg(context.as_ref().to_string_lossy().to_string());
-
-        debug!("Docker build with command: {cmd:?}");
-
-        let status = cmd
-            .status()
-            .map_err(|err| CommonError::command(&cmd, err))?;
-
-        if !status.success() {
-            Err(CommonError::command_exit_non_zero(&cmd, status, None))?
-        }
-
-        Ok(())
     }
 }
 
@@ -348,6 +288,15 @@ pub fn docker_pull_image(image: impl AsRef<str>) -> Result<(), CommonError> {
         ))?
     }
 
+    Ok(())
+}
+
+/// Pulls `image` when it does not exist locally.
+pub fn docker_ensure_image(image: &str) -> Result<(), CommonError> {
+    if !docker_image_exists(image)? {
+        docker_pull_image(image)?;
+        info!("Image {image} pulled");
+    }
     Ok(())
 }
 

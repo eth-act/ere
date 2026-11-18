@@ -8,23 +8,20 @@ use tokio::{
     sync::{RwLock, RwLockReadGuard},
     time::{sleep, timeout},
 };
-use tracing::{error, info, warn};
+use tracing::{error, info};
 
 use crate::{
-    image::{base_image, base_zkvm_image, server_zkvm_image},
+    image::server_zkvm_image,
     util::{
-        cuda::cuda_archs,
         docker::{
-            DockerBuildCmd, DockerContainer, DockerRunCmd, docker_image_exists,
-            docker_inspect_exit_info, docker_pull_image, docker_wait_for_exit,
-            remove_docker_container,
+            DockerContainer, DockerRunCmd, docker_ensure_image, docker_inspect_exit_info,
+            docker_wait_for_exit, remove_docker_container,
         },
         env::{
             ERE_OPENVM_CACHE_VOLUME, ERE_PICO_CACHE_VOLUME, ERE_PICO_PURE_CACHE_VOLUME,
             ERE_ZISK_CACHE_VOLUME, ERE_ZISK_PROVING_KEY_VOLUME, docker_memory, docker_memory_swap,
-            docker_network, force_rebuild_docker_image, image_registry,
+            docker_network,
         },
-        workspace_dir,
     },
     zkVMKind,
 };
@@ -32,133 +29,6 @@ use crate::{
 mod error;
 
 pub use error::Error;
-
-/// Applies per-zkVM CUDA architecture build args to a Docker build command.
-///
-/// Each zkVM expects a different format for specifying CUDA architectures:
-/// - OpenVM, Pico: `CUDA_ARCH` (comma-separated, e.g. "89,120")
-/// - Zisk: `CUDA_ARCHS` (comma-separated, e.g. "89,120")
-fn apply_cuda_build_args(
-    cmd: DockerBuildCmd,
-    zkvm_kind: zkVMKind,
-    cuda_archs: &[u32],
-) -> Result<DockerBuildCmd, Error> {
-    if cuda_archs.is_empty() {
-        warn!("No CUDA_ARCHS set or detected, use default value in Dockerfile");
-        return Ok(cmd);
-    }
-
-    Ok(match zkvm_kind {
-        zkVMKind::OpenVM | zkVMKind::Pico => {
-            let value = cuda_archs
-                .iter()
-                .map(|arch| arch.to_string())
-                .collect::<Vec<_>>()
-                .join(",");
-            cmd.build_arg("CUDA_ARCH", value)
-        }
-        zkVMKind::Zisk => {
-            let value = cuda_archs
-                .iter()
-                .map(|arch| arch.to_string())
-                .collect::<Vec<_>>()
-                .join(",");
-            cmd.build_arg("CUDA_ARCHS", value)
-        }
-        _ => cmd,
-    })
-}
-
-/// This method builds 3 Docker images in sequence:
-/// 1. `ere-base:{tag}` - Base image with common dependencies
-/// 2. `ere-base-{zkvm}:{tag}` - zkVM-specific base image with the zkVM SDK
-/// 3. `ere-server-{zkvm}:{tag}` - Server image with the `ere-server` binary built with the selected
-///    zkVM feature
-///
-/// When [`ProverResource::Gpu`] is selected, the image with GPU support
-/// will be built and tagged with specific suffix.
-///
-/// Images are cached and only rebuilt if they don't exist or if the
-/// `ERE_FORCE_REBUILD_DOCKER_IMAGE` environment variable is set.
-fn build_server_image(zkvm_kind: zkVMKind, gpu: bool) -> Result<(), Error> {
-    let force_rebuild = force_rebuild_docker_image();
-    let base_image = base_image(zkvm_kind, gpu);
-    let base_zkvm_image = base_zkvm_image(zkvm_kind, gpu);
-    let server_zkvm_image = server_zkvm_image(zkvm_kind, gpu);
-
-    if !force_rebuild {
-        if docker_image_exists(&server_zkvm_image)? {
-            info!("Image {server_zkvm_image} exists, skip building");
-            return Ok(());
-        }
-
-        if image_registry().is_some()
-            && docker_pull_image(&server_zkvm_image).is_ok()
-            && docker_image_exists(&server_zkvm_image)?
-        {
-            info!("Image {server_zkvm_image} pulled, skip building");
-            return Ok(());
-        }
-    }
-
-    let workspace_dir = workspace_dir()?;
-    let docker_dir = workspace_dir.join("docker");
-    let docker_zkvm_dir = docker_dir.join(zkvm_kind.as_str());
-
-    // Resolve CUDA architectures once for both base-zkvm and server builds.
-    let cuda_archs = if gpu { cuda_archs() } else { vec![] };
-
-    // Build `ere-base`
-    if force_rebuild || !docker_image_exists(&base_image)? {
-        info!("Building image {base_image}...");
-
-        let mut cmd = DockerBuildCmd::new()
-            .file(docker_dir.join("Dockerfile.base"))
-            .tag(&base_image);
-
-        if gpu {
-            cmd = cmd.build_arg("CUDA", "1");
-        }
-
-        cmd.exec(&workspace_dir)?;
-    }
-
-    // Build `ere-base-{zkvm_kind}`
-    if force_rebuild || !docker_image_exists(&base_zkvm_image)? {
-        info!("Building image {base_zkvm_image}...");
-
-        let mut cmd = DockerBuildCmd::new()
-            .file(docker_zkvm_dir.join("Dockerfile.base"))
-            .tag(&base_zkvm_image)
-            .build_arg("BASE_IMAGE", &base_image)
-            .build_arg_from_env("RUSTFLAGS");
-
-        if gpu {
-            cmd = cmd.build_arg("CUDA", "1");
-            cmd = apply_cuda_build_args(cmd, zkvm_kind, &cuda_archs)?;
-        }
-
-        cmd.exec(&workspace_dir)?;
-    }
-
-    // Build `ere-server-{zkvm_kind}`
-    info!("Building image {server_zkvm_image}...");
-
-    let mut cmd = DockerBuildCmd::new()
-        .file(docker_zkvm_dir.join("Dockerfile.server"))
-        .tag(&server_zkvm_image)
-        .build_arg("BASE_ZKVM_IMAGE", &base_zkvm_image)
-        .build_arg_from_env("RUSTFLAGS");
-
-    if gpu {
-        cmd = cmd.build_arg("CUDA", "1");
-        cmd = apply_cuda_build_args(cmd, zkvm_kind, &cuda_archs)?;
-    }
-
-    cmd.exec(&workspace_dir)?;
-
-    Ok(())
-}
 
 #[derive(Debug)]
 struct ServerContainer {
@@ -329,7 +199,7 @@ impl DockerizedzkVM {
         resource: ProverResource,
         config: DockerizedzkVMConfig,
     ) -> Result<Self, Error> {
-        build_server_image(zkvm_kind, resource.is_gpu())?;
+        docker_ensure_image(&server_zkvm_image(zkvm_kind, resource.is_gpu()))?;
 
         let (container, program_vk) = block_on(ServerContainer::new(
             zkvm_kind,

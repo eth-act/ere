@@ -6,23 +6,22 @@
 //! implementation of other zkVM crates `ere-compiler-{zkvm}` and `ere-prover-{zkvm}`, it requires
 //! only `docker` to be installed, but no zkVM specific SDK.
 //!
-//! ## Docker image building
+//! ## Docker images
 //!
-//! It builds 4 Docker images in sequence if they don't exist:
-//! 1. `ere-base:{tag}` - Base image with common dependencies
-//! 2. `ere-base-{zkvm}:{tag}` - zkVM-specific base image with the zkVM SDK
-//! 3. `ere-compiler-{zkvm}:{tag}` - Compiler image with the `ere-compiler` binary built with the
+//! It uses 2 Docker images for each zkVM:
+//! 1. `ere-compiler-{zkvm}:{tag}` - Compiler image with the `ere-compiler` binary built with the
 //!    selected zkVM feature
-//! 4. `ere-server-{zkvm}:{tag}` - Server image with the `ere-server` binary built with the selected
+//! 2. `ere-server-{zkvm}:{tag}` - Server image with the `ere-server` binary built with the selected
 //!    zkVM feature
 //!
 //! The tag is `ERE_IMAGE_TAG` when it is set, else the short git revision of Ere.
 //!
-//! When [`ProverResource::Gpu`] is selected, the image with GPU support
-//! will be built and tagged with specific suffix.
+//! When [`ProverResource::Gpu`] is selected, the server image with GPU support is used, and its tag
+//! has a specific suffix.
 //!
-//! To force rebuild all images, set the environment variable `ERE_FORCE_REBUILD_DOCKER_IMAGE` to
-//! any value.
+//! The image names start with the registry `ERE_IMAGE_REGISTRY`, which is `ghcr.io/eth-act/ere`
+//! when unset, and an empty value gives no registry. The crate uses a local image, and else pulls
+//! it. A failed pull is an error. A local build is made with `.github/scripts/build-image.sh`.
 //!
 //! ## Example
 //!
