@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.20.2](https://github.com/eth-act/ere/compare/v0.20.1...v0.20.2) (2026-11-18)
+
+
+### Features
+
+* cleanup and hardening ([#480](https://github.com/eth-act/ere/issues/480)) ([af34e35](https://github.com/eth-act/ere/commit/af34e35a68492744c3d7af7d260164d3788a12c4))
+* **openvm:** build `rust-customized` guests with `openvm-1.97.1` ([#478](https://github.com/eth-act/ere/issues/478)) ([503ad51](https://github.com/eth-act/ere/commit/503ad51a861d88ccbb3aa840cb42320f577c36ab))
+* update pico to v3.1.5, proving the test monitor suites within a 128 GB memory limit ([#477](https://github.com/eth-act/ere/issues/477)) ([764d067](https://github.com/eth-act/ere/commit/764d0675979a4fc72927d0de4239074772cf3553))
+
 ## [0.20.1](https://github.com/eth-act/ere/compare/v0.20.0...v0.20.1) (2026-11-17)
 
 
