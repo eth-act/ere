@@ -1,4 +1,4 @@
-use std::{fs, path::Path};
+use std::{env, fs, path::Path};
 
 use ere_compiler_core::{Compiler, Elf};
 use ere_util_compile::{CommonError, parse_cargo_build_options};
@@ -6,8 +6,20 @@ use openvm_build::GuestOptions;
 
 use crate::Error;
 
+/// Env variable `openvm-build` reads the Rust toolchain from.
+const TOOLCHAIN_ENV: &str = "OPENVM_RUST_TOOLCHAIN";
+
+/// Rust toolchain used when [`TOOLCHAIN_ENV`] is unset. `openvm-build` defaults to
+/// `openvm-1.94.1`, which is too old for guests that need Rust 1.96.
+///
+/// Keep in sync with `OPENVM_TOOLCHAIN_VERSION` in `scripts/sdk_installers/install_openvm_sdk.sh`.
+const DEFAULT_TOOLCHAIN: &str = "openvm-1.97.1";
+
 /// Compiler for Rust guest program to RV64IMA architecture, using customized
 /// Rust toolchain of OpenVM and target `riscv64im-unknown-openvm-elf`.
+///
+/// The toolchain is `openvm-1.97.1` by default, and env variable
+/// `OPENVM_RUST_TOOLCHAIN` overrides it.
 pub struct OpenVMRustRv64imaCustomized;
 
 impl Compiler for OpenVMRustRv64imaCustomized {
@@ -18,7 +30,14 @@ impl Compiler for OpenVMRustRv64imaCustomized {
         guest_directory: impl AsRef<Path>,
         args: &[String],
     ) -> Result<Elf, Self::Error> {
-        let extra_rustflags = std::env::var("ERE_RUSTFLAGS").unwrap_or_default();
+        let extra_rustflags = env::var("ERE_RUSTFLAGS").unwrap_or_default();
+
+        // `openvm-build` has no option for the toolchain, it only reads the env variable.
+        if env::var_os(TOOLCHAIN_ENV).is_none() {
+            // SAFETY: Every caller sets the same value, and `std::env` serializes its own
+            // reads and writes. Only a concurrent `getenv` from non-Rust code could race.
+            unsafe { env::set_var(TOOLCHAIN_ENV, DEFAULT_TOOLCHAIN) };
+        }
 
         // Inlining `openvm_sdk::Sdk::build` in order to get raw elf bytes.
         let guest_directory = guest_directory.as_ref();

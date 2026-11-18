@@ -29,6 +29,10 @@ ensure_tool_installed "git" "to install cargo-openvm from a git repository"
 ensure_tool_installed "cargo" "to build and install Rust packages"
 
 OPENVM_CLI_VERSION_TAG="v2.1.0-preview"
+# `cargo-openvm` defaults to `openvm-1.94.1`, which is too old for guests that
+# need Rust 1.96. Keep in sync with `DEFAULT_TOOLCHAIN` in
+# `crates/compiler/openvm/src/rust_rv64ima_customized.rs`.
+OPENVM_TOOLCHAIN_VERSION="openvm-1.97.1"
 
 # Install cargo-openvm using the specified toolchain and version tag
 echo "Installing cargo-openvm (version ${OPENVM_CLI_VERSION_TAG}) from GitHub repository (openvm-org/openvm)..."
@@ -47,8 +51,8 @@ fi
 
 # Install the customized Rust toolchain providing the built-in guest target
 # `riscv64im-unknown-openvm-elf`, and link it into rustup
-echo "Installing OpenVM Rust toolchain..."
-cargo openvm toolchain install
+echo "Installing OpenVM Rust toolchain (${OPENVM_TOOLCHAIN_VERSION})..."
+cargo openvm toolchain install --version "${OPENVM_TOOLCHAIN_VERSION}"
 
 # Setup aggregation keys
 cargo openvm setup
