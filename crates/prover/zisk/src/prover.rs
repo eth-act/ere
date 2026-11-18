@@ -97,8 +97,9 @@ pub(crate) mod tests {
         program::{basic::BasicProgram, zkvm_interface},
     };
     use zisk_core::STACK_SIZE;
+    use zisk_prover_backend::GuestProgram;
 
-    use crate::prover::ZiskProver;
+    use crate::{prover::ZiskProver, sdk::local::compute_program_vk};
 
     pub(crate) fn basic_elf() -> Elf {
         static ELF: OnceLock<Elf> = OnceLock::new();
@@ -142,6 +143,18 @@ pub(crate) mod tests {
     fn with_zkvm_interface<T: zkVMProver>(mut zkvm: MutexGuard<T>) -> MutexGuard<T> {
         zkvm.setup(zkvm_interface_elf()).unwrap();
         zkvm
+    }
+
+    #[test]
+    fn test_deterministic_program_vk() {
+        let program = GuestProgram::from_bytes("guest", basic_elf().0);
+        let resource = if cfg!(feature = "cuda") {
+            ProverResource::Gpu
+        } else {
+            ProverResource::Cpu
+        };
+        let program_vk = || compute_program_vk(&resource, &program).unwrap();
+        assert_eq!(program_vk(), program_vk());
     }
 
     #[test]

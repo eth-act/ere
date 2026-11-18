@@ -173,9 +173,11 @@ pub(crate) mod tests {
         },
         program::{basic::BasicProgram, zkvm_interface},
     };
+    use ere_util_tokio::block_on;
     use sp1_primitives::consts::STACK_TOP;
+    use sp1_sdk::HashableKey;
 
-    use crate::prover::SP1Prover;
+    use crate::{prover::SP1Prover, sdk::SP1Sdk};
 
     pub(crate) fn basic_elf() -> Elf {
         static ELF: OnceLock<Elf> = OnceLock::new();
@@ -220,6 +222,17 @@ pub(crate) mod tests {
     fn with_zkvm_interface<T: zkVMProver>(mut zkvm: MutexGuard<T>) -> MutexGuard<T> {
         zkvm.setup(zkvm_interface_elf()).unwrap();
         zkvm
+    }
+
+    #[test]
+    fn test_deterministic_program_vk() {
+        let program_vk = || {
+            block_on(SP1Sdk::new(basic_elf().0.into(), &ProverResource::Cpu))
+                .unwrap()
+                .vk()
+                .hash_koalabear()
+        };
+        assert_eq!(program_vk(), program_vk());
     }
 
     #[test]

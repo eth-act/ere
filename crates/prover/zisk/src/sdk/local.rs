@@ -233,7 +233,7 @@ fn build_prover(config: &Config, resource: &ProverResource) -> Result<ZiskProver
 /// Vendored from [`zisk_rom_setup::rom_merkle_setup`] to do program setup without creating
 /// `ProofCtx` or generating assembly, which can only be created once due to mpi initialization.
 /// Shares the cache files of `rom_merkle_setup` with the prover setup.
-fn compute_program_vk(
+pub(crate) fn compute_program_vk(
     resource: &ProverResource,
     program: &GuestProgram,
 ) -> Result<ZiskProgramVk, Error> {
