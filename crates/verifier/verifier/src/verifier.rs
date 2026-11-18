@@ -81,7 +81,6 @@ impl Verifier {
     ///
     /// A proof that verifies only shows that the program ran. The caller compares the returned
     /// public values with the expected bytes and treats a difference as a rejected proof.
-    #[must_use = "the public values must be compared with the expected public values"]
     pub fn verify(&self, encoded_proof: &[u8]) -> Result<PublicValues, Error> {
         catch_panic(|| self.verify_inner(encoded_proof))
     }

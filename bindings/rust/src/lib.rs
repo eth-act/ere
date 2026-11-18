@@ -112,7 +112,6 @@ impl Verifier {
 
     /// Verifies `proof` and returns its public values, which the caller compares with the expected
     /// bytes.
-    #[must_use = "the public values must be compared with the expected public values"]
     pub fn verify(&self, proof: &[u8]) -> Result<Vec<u8>, Error> {
         let (mut bytes, mut len) = (ptr::null_mut(), 0);
         // SAFETY: the handle is live, the proof is readable for its length, and the outputs are

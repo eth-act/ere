@@ -103,11 +103,13 @@ pub unsafe extern "C" fn ere_verifier_new(
 /// and the corresponding status code is returned. Only a null `public_values_ptr` or
 /// `public_values_len` leaves both unwritten.
 ///
-/// [`ERE_OK`] only shows that the program ran. The caller compares the public values with the
-/// expected bytes and treats a difference as a rejected proof. OpenVM and ZisK return 256 bytes,
-/// which are the bytes that the guest wrote followed by zeros, so the caller pads its expected
-/// bytes with zeros to 256 bytes. The other kinds return the exact bytes that the guest wrote.
-/// [`ERE_ERR_DECODE_PROOF`], [`ERE_ERR_VERIFY`] and [`ERE_ERR_PANIC`] all mean a rejected proof.
+/// # Public values
+///
+/// [`ERE_OK`] shows only that the program ran. The caller must compare the public values with the
+/// expected bytes.
+///
+/// - OpenVM and ZisK return 256 bytes, the guest output padded with zeros.
+/// - LambdaVM, Pico and SP1 return the guest output.
 ///
 /// # Safety
 ///

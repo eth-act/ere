@@ -20,7 +20,6 @@ CRATE=$1
 # Prints the highest semver tag without a leading v. A pre-release sorts before its release.
 get_github_latest() {
     local org_repo=$1
-    echo "https://github.com/$org_repo"
     git ls-remote --tags --refs "https://github.com/$org_repo" \
         | sed 's#.*refs/tags/##' \
         | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$' \
