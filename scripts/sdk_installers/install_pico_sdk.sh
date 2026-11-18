@@ -30,10 +30,10 @@ ensure_tool_installed "cargo" "to build and install Rust packages"
 
 # The nightly Pico builds its host crates with, and whose `rust-src` the guest
 # toolchain links for `-Z build-std`, according to
-# https://github.com/brevis-network/pico/blob/v3.1.4/rust-toolchain
+# https://github.com/brevis-network/pico/blob/v3.1.5/rust-toolchain
 PICO_TOOLCHAIN_VERSION="nightly-2026-09-27"
 # Keep in sync with the `pico-sdk` tag in the workspace `Cargo.toml`.
-PICO_CLI_TAG="v3.1.4"
+PICO_CLI_TAG="v3.1.5"
 
 # Install the nightly toolchain Pico pins
 echo "Installing Pico host Rust toolchain (${PICO_TOOLCHAIN_VERSION})..."

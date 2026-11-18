@@ -119,7 +119,7 @@ LambdaVM has no verifying key separate from the program: its verifier binds a pr
 
 ### Format
 
-The v2 VK bundle of [`pico-verifier`](https://github.com/brevis-network/pico/tree/v3.1.4/verifier): `PICOMLEV`, version `2` as a `u32` little endian, then the zstd compressed bincode of the guest exe identity (25 `u32`), the whitelist root of the recursion verifying keys (8 `u32`), and the Merkle memberships of the keys a root or a compress proof can carry. `ere-prover-pico` proves in whitelist mode under the whitelist shipped in Pico, so the bundle is a function of the ELF and that whitelist.
+The v2 VK bundle of [`pico-verifier`](https://github.com/brevis-network/pico/tree/v3.1.5/verifier): `PICOMLEV`, version `2` as a `u32` little endian, then the zstd compressed bincode of the guest exe identity (25 `u32`), the whitelist root of the recursion verifying keys (8 `u32`), and the Merkle memberships of the keys a root or a compress proof can carry. `ere-prover-pico` proves in whitelist mode under the whitelist shipped in Pico, so the bundle is a function of the ELF and that whitelist.
 
 ### Instructions
 
@@ -133,7 +133,7 @@ The `mle-ethproofs-vk-bundle` binary in the Pico repository builds the bundle fr
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly-2026-09-27
     . "$HOME/.cargo/env"
 
-    ZKVM_VERSION="v3.1.4"
+    ZKVM_VERSION="v3.1.5"
     git clone https://github.com/brevis-network/pico && git -C pico checkout "$ZKVM_VERSION"
     ```
 2. Generate VK

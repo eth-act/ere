@@ -233,6 +233,7 @@ impl ServerContainer {
             zkVMKind::LambdaVM => cmd,
             zkVMKind::Pico => cmd
                 .inherit_env("PICO_GPU_MEM")
+                .inherit_env("PICO_HOST_MEM")
                 .inherit_env("G1_JIT")
                 .inherit_env("Z1_JIT")
                 .inherit_env("ERE_PICO_GPU_EVENT_POOL_SIZE")
