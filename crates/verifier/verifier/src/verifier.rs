@@ -1,8 +1,21 @@
+use std::{
+    any::Any,
+    panic::{AssertUnwindSafe, catch_unwind},
+};
+
 use ere_catalog::zkVMKind;
 use ere_verifier_core::{PublicValues, codec::Decode, zkVMVerifier};
 
 use crate::error::Error;
 
+/// Verifier of one zkVM kind, bound to one program verifying key.
+///
+/// [`Verifier::new`] and [`Verifier::verify`] return a panic of the verifier code as
+/// [`Error::Panic`]. A `Verifier` holds only values that `new` derives from the program verifying
+/// key, and `verify` only reads them, so a caught panic leaves it usable.
+///
+/// The SP1 and OpenVM verifiers keep a process-wide key that initializes on first use. If that
+/// initialization panics, every later call of that kind returns [`Error::Panic`].
 #[derive(Debug)]
 pub enum Verifier {
     OpenVM(Box<ere_verifier_openvm::OpenVMVerifier>),
@@ -13,7 +26,13 @@ pub enum Verifier {
 }
 
 impl Verifier {
+    /// Decodes `encoded_program_vk` as a program verifying key of `zkvm_kind` and constructs a
+    /// verifier for it.
     pub fn new(zkvm_kind: zkVMKind, encoded_program_vk: &[u8]) -> Result<Self, Error> {
+        catch_panic(|| Self::new_unguarded(zkvm_kind, encoded_program_vk))
+    }
+
+    fn new_unguarded(zkvm_kind: zkVMKind, encoded_program_vk: &[u8]) -> Result<Self, Error> {
         Ok(match zkvm_kind {
             zkVMKind::OpenVM => {
                 let program_vk = Decode::decode_from_slice(encoded_program_vk)
@@ -58,7 +77,15 @@ impl Verifier {
         }
     }
 
+    /// Decodes and verifies `encoded_proof`, then returns the public values of the proof.
+    ///
+    /// A proof that verifies only shows that the program ran. The caller compares the returned
+    /// public values with the expected bytes and treats a difference as a rejected proof.
     pub fn verify(&self, encoded_proof: &[u8]) -> Result<PublicValues, Error> {
+        catch_panic(|| self.verify_inner(encoded_proof))
+    }
+
+    fn verify_inner(&self, encoded_proof: &[u8]) -> Result<PublicValues, Error> {
         Ok(match self {
             Self::OpenVM(verifier) => {
                 let proof =
@@ -87,4 +114,21 @@ impl Verifier {
             }
         })
     }
+}
+
+/// Runs `body` and returns a panic of it as [`Error::Panic`].
+fn catch_panic<T>(body: impl FnOnce() -> Result<T, Error>) -> Result<T, Error> {
+    // The body only reads a `Verifier` and its input bytes, so a panic leaves no state half
+    // changed.
+    catch_unwind(AssertUnwindSafe(body))
+        .unwrap_or_else(|payload| Err(Error::Panic(panic_message(&*payload))))
+}
+
+/// Returns the message of a panic payload.
+fn panic_message(payload: &(dyn Any + Send)) -> String {
+    payload
+        .downcast_ref::<&str>()
+        .map(|message| message.to_string())
+        .or_else(|| payload.downcast_ref::<String>().cloned())
+        .unwrap_or_else(|| "panic payload is not a string".to_string())
 }

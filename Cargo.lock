@@ -3564,10 +3564,6 @@ dependencies = [
 [[package]]
 name = "ere-codec"
 version = "0.20.1"
-dependencies = [
- "bincode 2.0.1",
- "serde",
-]
 
 [[package]]
 name = "ere-compiler"
@@ -3942,8 +3938,6 @@ name = "ere-util-test"
 version = "0.20.1"
 dependencies = [
  "bincode 2.0.1",
- "ciborium",
- "ciborium-io",
  "ere-codec",
  "ere-platform-core",
  "ere-prover-core",
@@ -4056,15 +4050,9 @@ name = "ere-verifier-zisk"
 version = "0.20.1"
 dependencies = [
  "bincode 2.0.1",
- "bytemuck",
  "ere-util-build",
  "ere-verifier-core",
- "flate2",
- "proofman-util",
- "proofman-verifier",
- "reqwest",
  "serde",
- "tar",
  "thiserror 2.0.18",
  "zisk-verifier 1.4.0-alpha (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -16251,7 +16239,7 @@ dependencies = [
 [[package]]
 name = "zkvm-interface"
 version = "0.1.0"
-source = "git+https://github.com/eth-act/zkvm-standards?rev=282cd356c3a0498416bb0619f9c8a347ce9933fb#282cd356c3a0498416bb0619f9c8a347ce9933fb"
+source = "git+https://github.com/eth-act/zkevm-standards?rev=282cd356c3a0498416bb0619f9c8a347ce9933fb#282cd356c3a0498416bb0619f9c8a347ce9933fb"
 dependencies = [
  "bindgen 0.72.1",
 ]

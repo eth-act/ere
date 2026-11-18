@@ -7,9 +7,5 @@ license.workspace = true
 
 [dependencies]
 
-[dev-dependencies]
-bincode = { workspace = true, features = ["alloc", "serde"] }
-serde = { workspace = true, features = ["alloc", "derive"] }
-
 [lints]
 workspace = true

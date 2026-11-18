@@ -34,7 +34,7 @@ OPENVM_CLI_VERSION_TAG="v2.1.0-preview"
 # `crates/compiler/openvm/src/rust_rv64ima_customized.rs`.
 OPENVM_TOOLCHAIN_VERSION="openvm-1.97.1"
 
-# Install cargo-openvm using the specified toolchain and version tag
+# Install cargo-openvm at the specified version tag
 echo "Installing cargo-openvm (version ${OPENVM_CLI_VERSION_TAG}) from GitHub repository (openvm-org/openvm)..."
 cargo install --locked --git https://github.com/openvm-org/openvm.git --tag "${OPENVM_CLI_VERSION_TAG}" cargo-openvm
 

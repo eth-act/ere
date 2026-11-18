@@ -3,11 +3,11 @@ use ere_platform_core::Platform;
 /// ZisK [`Platform`] implementation.
 ///
 /// `read_input` and `write_output` are inherited from the trait's default
-/// implementation, which calls [zkvm-standards] FFI symbols exported by `ziskos`.
+/// implementation, which calls [zkevm-standards] FFI symbols exported by `ziskos`.
 ///
 /// Note that ZisK enforces a 256-byte output cap at the runtime level.
 ///
-/// [zkvm-standards]: https://github.com/eth-act/zkvm-standards
+/// [zkevm-standards]: https://github.com/eth-act/zkevm-standards
 pub struct ZiskPlatform;
 
 impl Platform for ZiskPlatform {

@@ -3,6 +3,7 @@ use thiserror::Error;
 use crate::ZiskProgramVk;
 
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum Error {
     /// Failed to deserialize a proof.
     #[error("Failed to deserialize: {0}")]
@@ -16,17 +17,15 @@ pub enum Error {
     #[error("Non-canonical ProgramVk")]
     NonCanonicalProgramVk,
 
-    /// Expected uncompressed VadcopFinalProof
-    #[error("Invalid kind of VadcopFinalProof, expected uncompressed")]
+    /// The proof is not a compressed final proof of the supported hash family.
+    #[error(
+        "Invalid kind of VadcopFinalProof, expected a compressed final proof of the supported hash family"
+    )]
     InvalidVadcopFinalProofKind,
 
     /// Public values of VadcopFinalProof was not the expected length.
     #[error("Invalid public value length of VadcopFinalProof, expected: {expected}, got: {got}")]
     InvalidPublicValueLength { expected: usize, got: usize },
-
-    /// Expected leaf VadcopFinalProof
-    #[error("Invalid is_vadcop_final_proof flag of VadcopFinalProof, got: {got}")]
-    UnexpectedVadcopFinalFlag { got: u64 },
 
     /// User public values was not u32.
     #[error("Invalid word in user public values, expected u32")]

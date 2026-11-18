@@ -20,7 +20,7 @@ const WORD_BITS: u32 = 31;
 /// Wraps poseidon2 digest of an [`sp1_hypercube::SP1VerifyingKey`], produced by
 /// [`sp1_hypercube::HashableKey::hash_koalabear`].
 ///
-/// Encodes to the 32-byte form as [`sp1_hypercube::HashableKey::bytes32`],
+/// Encodes to the 32-byte form of [`sp1_hypercube::HashableKey::bytes32_raw`],
 /// which packs the elements as base-`2^31` digits of a big endian integer with
 /// the first element most significant.
 #[derive(Debug, Copy, Clone, Eq, Ord, PartialOrd, PartialEq, Hash, Serialize, Deserialize)]

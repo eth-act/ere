@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eo pipefail
 
 # --- Utility functions (duplicated) ---
 # Checks if a tool is installed and available in PATH.
@@ -35,10 +35,10 @@ ensure_tool_installed "rustup" "for managing Rust toolchains (ZisK installs its 
 export ZISK_VERSION="1.4.0-alpha"
 export USE_GPU=$([ -n "$CUDA" ] && echo true || echo false)
 export SETUP_KEY=none
-curl "https://raw.githubusercontent.com/0xPolygonHermez/zisk/v$ZISK_VERSION/ziskup/ziskup" | bash
+curl -fsSL "https://raw.githubusercontent.com/0xPolygonHermez/zisk/v$ZISK_VERSION/ziskup/ziskup" | bash
 unset SETUP_KEY
 
 # The ASM services build from this source. The patched one makes them exit with the prover.
 # Keep the revision equal to the zisk git revision in Cargo.lock.
-curl -fsSL "https://raw.githubusercontent.com/han0110/zisk/6127f18bd52063eb842246636669985b94e0c8b1/emulator-asm/src/main.c" \
+curl -fsSL "https://raw.githubusercontent.com/han0110/zisk/fe919f2aa2a897fa885f3b7552f4648f2f4102bd/emulator-asm/src/main.c" \
     -o "$HOME/.zisk/zisk/emulator-asm/src/main.c"

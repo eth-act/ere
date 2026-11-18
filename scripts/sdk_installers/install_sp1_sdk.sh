@@ -21,7 +21,7 @@ DEFAULT_SP1_DIR="${HOME}/.sp1"
 export SP1_DIR="${SP1_DIR:-${DEFAULT_SP1_DIR}}"
 
 # Run sp1up installer script
-curl -L https://sp1up.succinct.xyz | bash
+curl -fL https://sp1up.succinct.xyz | bash
 
 # Add sp1up and sp1 binaries to PATH for this script's execution context
 # and for subsequent commands if this script is sourced.

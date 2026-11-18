@@ -57,7 +57,7 @@ jobs:
             .github/workflows/test-zkvm-${{ inputs.zkvm }}.yml
             docker/Dockerfile.base
             docker/${{ inputs.zkvm }}/**
-            scripts/**
+            scripts/sdk_installers/**
 
       - name: Get image metadata
         id: image_meta
@@ -336,6 +336,7 @@ jobs:
         env:
           RUST_LOG: info
           ERE_IMAGE_REGISTRY: ${{ needs.image_meta.outputs.image_registry }}
+          ERE_IMAGE_TAG: ${{ needs.image_meta.outputs.image_tag }}
         run: |
           cargo test --release --package ere-dockerized \
             -- ${{ inputs.zkvm }} ${{ inputs.skip_prove_test && '--skip test_prove' || ''  }} --test-threads=1

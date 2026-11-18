@@ -37,7 +37,8 @@ use crate::{
 /// Segment memory limit, 14.5 GiB. Execution starts a new segment above it.
 const DEFAULT_SEGMENT_MEMORY: usize = 29 << 29;
 
-/// `executor` and `estimator` are lazy, because two `rvr` libraries crash the process at exit.
+/// `executor` and `estimator` are lazy, so `setup` unloads the `rvr` libraries of the old program
+/// before a library of the new program loads.
 pub struct OpenVMProver {
     app_pk: AppProvingKey<SdkVmConfig>,
     prover_thread: ProverThread,
@@ -266,7 +267,7 @@ pub(crate) mod tests {
 
     use ere_compiler_core::{Compiler, Elf};
     use ere_compiler_openvm::OpenVMRustRv64imaCustomized;
-    use ere_prover_core::{Input, ProverResource, zkVMProver};
+    use ere_prover_core::{Input, ProverResource, codec::Encode, zkVMProver};
     use ere_util_test::{
         codec::BincodeLegacy,
         host::{
@@ -280,9 +281,16 @@ pub(crate) mod tests {
             zkvm_interface::{self, Accelerator},
         },
     };
+    use ere_verifier_openvm::OpenVMProgramVk;
+    use openvm_stark_sdk::{
+        config::baby_bear_poseidon2::BabyBearPoseidon2CpuEngine, openvm_stark_backend::StarkEngine,
+    };
     use openvm_transpiler::openvm_platform::memory::STACK_TOP;
 
-    use crate::prover::OpenVMProver;
+    use crate::{
+        baseline::{app_exe_commit, baseline},
+        prover::{OpenVMProver, cpu_sdk, transpile},
+    };
 
     pub(crate) fn basic_elf() -> Elf {
         static ELF: OnceLock<Elf> = OnceLock::new();
@@ -327,6 +335,21 @@ pub(crate) mod tests {
     fn with_zkvm_interface<T: zkVMProver>(mut zkvm: MutexGuard<T>) -> MutexGuard<T> {
         zkvm.setup(zkvm_interface_elf()).unwrap();
         zkvm
+    }
+
+    #[test]
+    fn test_deterministic_program_vk() {
+        let app_exe = transpile(&basic_elf().0).unwrap();
+        let sdk = cpu_sdk(None, None).unwrap();
+        let agg_prover = sdk.agg_prover();
+        let engine = <BabyBearPoseidon2CpuEngine>::new(sdk.app_pk().app_vm_pk.get_params());
+        let program_vk = || {
+            let app_exe_commit = app_exe_commit(&engine, sdk.app_pk(), &app_exe);
+            OpenVMProgramVk::new(baseline(sdk.app_pk(), &agg_prover, app_exe_commit))
+                .encode_to_vec()
+                .unwrap()
+        };
+        assert_eq!(program_vk(), program_vk());
     }
 
     #[test]

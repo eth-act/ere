@@ -1,11 +1,11 @@
 use alloc::vec::Vec;
 use core::{fmt::Debug, marker::PhantomData};
 
-use ere_codec::{Decode, Encode, impl_codec_by_bincode_legacy, impl_codec_by_ciborium};
+use ere_codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    codec::{BincodeLegacy, Cbor},
+    codec::{BincodeLegacy, impl_codec_by_bincode_legacy},
     program::Program,
 };
 
@@ -64,8 +64,6 @@ pub struct BasicProgramOutput<C> {
 
 impl_codec_by_bincode_legacy!(BasicProgramInput<BincodeLegacy>);
 impl_codec_by_bincode_legacy!(BasicProgramOutput<BincodeLegacy>);
-impl_codec_by_ciborium!(BasicProgramInput<Cbor>);
-impl_codec_by_ciborium!(BasicProgramOutput<Cbor>);
 
 #[cfg(feature = "host")]
 mod host {

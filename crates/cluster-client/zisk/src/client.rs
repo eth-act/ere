@@ -1,13 +1,13 @@
 //! Remote ZisK cluster proving.
 
-use core::{iter, time::Duration};
+use core::time::Duration;
 use std::collections::HashMap;
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{Input, RemoteProverConfig, zkVMVerifier};
 use ere_verifier_zisk::{
-    IS_VADCOP_FINAL_PROOF, PROGRAM_VK_WORDS, PUBLIC_VALUES_WORDS, VADCOP_FINAL_HASH_FAMILY,
-    VadcopFinalProof, ZiskProgramVk, ZiskProof, ZiskVerifier,
+    PROGRAM_VK_WORDS, PUBLIC_VALUES_WORDS, VADCOP_FINAL_HASH_FAMILY, VadcopFinalProof,
+    ZiskProgramVk, ZiskProof, ZiskVerifier,
 };
 use serde::Deserialize;
 use tokio::time::{Instant, sleep, timeout, timeout_at};
@@ -281,7 +281,7 @@ fn prove_job(hash_id: &str, input: &Input) -> JobKind {
                     data: framed_stdin(input.stdin()),
                 })),
             }),
-            proof_dest: ProofKind::Stark as i32,
+            proof_dest: ProofKind::StarkMinimal as i32,
             proof_timeout: None,
             hints: None,
             random_seed: None,
@@ -304,7 +304,7 @@ fn framed_stdin(data: &[u8]) -> Vec<u8> {
 
 fn parse_proof(bytes: &[u8]) -> Result<ZiskProof, Error> {
     /// Mirrors `zisk_common::VadcopKind`, whose discriminant order fixes the
-    /// encoding. Only `Final` is accepted below.
+    /// encoding. Only `Minimal` is accepted below.
     #[derive(Deserialize, PartialEq)]
     enum VadcopKind {
         Final,
@@ -320,8 +320,7 @@ fn parse_proof(bytes: &[u8]) -> Result<ZiskProof, Error> {
             kind: VadcopKind,
             hash: String,
             /// Canonical flag-free `[program_vk(4) | inputs(64)]` at full u64
-            /// width, for every kind. The `is_vadcop_final_proof` flag the
-            /// uncompressed stage commits at index 0 lives in `kind`.
+            /// width, for every kind.
             publics_full: Vec<u64>,
         },
         Plonk,
@@ -362,7 +361,7 @@ fn parse_proof(bytes: &[u8]) -> Result<ZiskProof, Error> {
     else {
         return Err(ere_verifier_zisk::Error::InvalidVadcopFinalProofKind)?;
     };
-    if kind != VadcopKind::Final || hash != VADCOP_FINAL_HASH_FAMILY {
+    if kind != VadcopKind::Minimal || hash != VADCOP_FINAL_HASH_FAMILY {
         Err(ere_verifier_zisk::Error::InvalidVadcopFinalProofKind)?;
     }
     if publics_full.len() != PROGRAM_VK_WORDS + PUBLIC_VALUES_WORDS {
@@ -372,15 +371,10 @@ fn parse_proof(bytes: &[u8]) -> Result<ZiskProof, Error> {
         })?;
     };
 
-    // Re-add the leaf flag the uncompressed stage commits at index 0.
-    let public_values = iter::once(IS_VADCOP_FINAL_PROOF)
-        .chain(publics_full)
-        .collect();
-
     Ok(ZiskProof(VadcopFinalProof::new(
         proof,
-        public_values,
-        false,
+        publics_full,
+        true,
         VADCOP_FINAL_HASH_FAMILY.to_string(),
     )))
 }

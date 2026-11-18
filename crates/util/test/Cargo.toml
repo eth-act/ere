@@ -7,8 +7,6 @@ license.workspace = true
 
 [dependencies]
 bincode = { workspace = true, features = ["alloc", "serde"] }
-ciborium = { workspace = true }
-ciborium-io = { workspace = true }
 hex = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }
 serde = { workspace = true, features = ["derive"] }

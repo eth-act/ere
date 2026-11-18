@@ -128,7 +128,7 @@ pub trait TestCase {
     fn assert_output(&self, public_values: &[u8]);
 }
 
-/// Wrapper for [`ProgramInput`] that implements [`TestCase`].
+/// Wrapper for [`Program::Input`] that implements [`TestCase`].
 pub struct ProgramTestCase<P: Program> {
     input: P::Input,
     _marker: PhantomData<P>,

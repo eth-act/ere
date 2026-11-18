@@ -1,4 +1,4 @@
-use ere_verifier_core::codec::{Decode, Encode, MAX_DECODE_BYTES};
+use ere_verifier_core::codec::{Decode, Encode};
 use lambda_vm_prover::VmProof;
 use rkyv::{rancor, util::AlignedVec};
 
@@ -8,11 +8,15 @@ use crate::Error;
 /// alignment `lambda-vm-prover` requires for its archives.
 const ARCHIVE_ALIGNMENT: usize = 16;
 
+/// Upper bound on the length of an encoded proof, more than four times the 14.9 MB of a proof of
+/// the test guests.
+const MAX_PROOF_BYTES: usize = 64 * 1024 * 1024;
+
 /// Proof produced by the LambdaVM host prover, wrapping the upstream [`VmProof`].
 ///
-/// Encoded via `rkyv`, the same as `lambda-vm-cli prove` writes a proof.
+/// Encoded via `rkyv`, the same as the `prove` command of the LambdaVM `cli` writes a proof.
 /// Decoding validates the archive, and rejects inputs longer than
-/// [`MAX_DECODE_BYTES`].
+/// `MAX_PROOF_BYTES`.
 #[derive(Clone, Debug)]
 pub struct LambdaVMProof(pub VmProof);
 
@@ -34,9 +38,9 @@ impl Decode for LambdaVMProof {
     type Error = Error;
 
     fn decode_from_slice(slice: &[u8]) -> Result<Self, Self::Error> {
-        if slice.len() > MAX_DECODE_BYTES {
+        if slice.len() > MAX_PROOF_BYTES {
             return Err(Error::DecodeLimitExceeded {
-                limit: MAX_DECODE_BYTES,
+                limit: MAX_PROOF_BYTES,
                 got: slice.len(),
             });
         }

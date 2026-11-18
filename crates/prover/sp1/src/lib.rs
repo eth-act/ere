@@ -5,9 +5,13 @@
 //! To install all requirements, run [`install_sp1_sdk.sh`] from the Ere
 //! repository at the same git revision as your `ere-prover-sp1` dependency.
 //!
+//! GPU proving requires the `cuda` Cargo feature.
+//!
 //! ## `zkVMProver` requirements
 //!
-//! - `docker` - Used by `zkVMProver::prove` if `ProverResource::Gpu` is selected
+//! - `sp1-gpu-server` in `$HOME/.sp1/bin` - Used by `zkVMProver::prove` if `ProverResource::Gpu` is
+//!   selected. The installer downloads it when `CUDA` is set, and the SP1 SDK downloads it when it
+//!   is absent.
 //!
 //! # `Compiler` implementation
 //!
@@ -45,6 +49,13 @@
 //! `cost_estimation` equals the `execute_estimated_cost` result. The frames follow
 //! [`ere_prover_core::CallTree`]. SP1 does not prove `unconstrained!` blocks, so the profile does
 //! not count their cost, memory or stack. `profile` fails for programs with untrusted programs.
+//!
+//! ## Environment variables
+//!
+//! | Variable                                | Type  | Default                                        | Description                                                   |
+//! | --------------------------------------- | ----- | ---------------------------------------------- | ------------------------------------------------------------- |
+//! | `ERE_SP1_EXECUTE_CONCURRENCY`           | Value | CPUs, max 32                                   | Executions that run at once                                   |
+//! | `ERE_SP1_EXECUTE_ESTIMATED_CONCURRENCY` | Value | What free memory fits, at most the value above | Cost estimates and profiles that run at once, on x86_64 Linux |
 //!
 //! [`install_sp1_sdk.sh`]: https://github.com/eth-act/ere/blob/master/scripts/sdk_installers/install_sp1_sdk.sh
 

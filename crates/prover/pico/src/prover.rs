@@ -257,7 +257,7 @@ mod tests {
 
     use crate::{
         error::Error,
-        prover::{PicoProver, stdin},
+        prover::{PicoProver, builder, stdin},
     };
 
     fn basic_elf() -> Elf {
@@ -309,6 +309,12 @@ mod tests {
     /// The prover a build has: CPU without `cuda`, GPU with it.
     fn default_zkvm() -> MutexGuard<'static, PicoProver> {
         zkvm(cfg!(feature = "cuda"))
+    }
+
+    #[test]
+    fn test_deterministic_program_vk() {
+        let program_vk = || builder(&basic_elf()).build().unwrap().vk_bundle().unwrap();
+        assert_eq!(program_vk(), program_vk());
     }
 
     #[test]

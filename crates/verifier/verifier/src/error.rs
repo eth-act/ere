@@ -1,4 +1,5 @@
 #[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
 pub enum Error {
     #[error("failed to decode program vk: {0}")]
     DecodeProgramVk(String),
@@ -6,6 +7,8 @@ pub enum Error {
     DecodeProof(String),
     #[error("verification failed: {0}")]
     Verification(String),
+    #[error("verifier panicked: {0}")]
+    Panic(String),
 }
 
 impl Error {

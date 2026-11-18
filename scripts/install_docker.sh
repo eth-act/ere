@@ -8,7 +8,7 @@ else
     # From https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository.
     # Add Docker's official GPG key:
     apt-get update
-    apt-get install ca-certificates curl
+    apt-get install -y ca-certificates curl
     install -m 0755 -d /etc/apt/keyrings
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
     chmod a+r /etc/apt/keyrings/docker.asc
@@ -25,5 +25,4 @@ fi
 # From https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user.
 # Use docker as a non-root user:
 grep -q docker /etc/group || groupadd docker
-usermod -aG docker $USER
-newgrp docker
+usermod -aG docker "${SUDO_USER:-$USER}"

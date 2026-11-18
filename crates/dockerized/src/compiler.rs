@@ -6,15 +6,13 @@ use std::{
 use ere_compiler_core::{Compiler, Elf};
 use ere_prover_core::CommonError;
 use tempfile::TempDir;
-use tracing::info;
 
 use crate::{
     CompilerKind,
-    image::{base_image, base_zkvm_image, compiler_zkvm_image},
+    image::compiler_zkvm_image,
     util::{
-        docker::{DockerBuildCmd, DockerRunCmd, docker_image_exists, docker_pull_image},
-        env::{docker_memory, docker_memory_swap, force_rebuild_docker_image, image_registry},
-        workspace_dir,
+        docker::{DockerRunCmd, docker_ensure_image},
+        env::{docker_memory, docker_memory_swap},
     },
     zkVMKind,
 };
@@ -22,73 +20,6 @@ use crate::{
 mod error;
 
 pub use error::Error;
-
-/// This method builds 3 Docker images in sequence:
-/// 1. `ere-base:{version}` - Base image with common dependencies
-/// 2. `ere-base-{zkvm}:{version}` - zkVM-specific base image with the zkVM SDK
-/// 3. `ere-compiler-{zkvm}:{version}` - Compiler image with the `ere-compiler` binary built with
-///    the selected zkVM feature
-///
-/// Images are cached and only rebuilt if they don't exist or if the
-/// `ERE_FORCE_REBUILD_DOCKER_IMAGE` environment variable is set.
-fn build_compiler_image(zkvm_kind: zkVMKind) -> Result<(), Error> {
-    let force_rebuild = force_rebuild_docker_image();
-    let base_image = base_image(zkvm_kind, false);
-    let base_zkvm_image = base_zkvm_image(zkvm_kind, false);
-    let compiler_zkvm_image = compiler_zkvm_image(zkvm_kind);
-
-    if !force_rebuild {
-        if docker_image_exists(&compiler_zkvm_image)? {
-            info!("Image {compiler_zkvm_image} exists, skip building");
-            return Ok(());
-        }
-
-        if image_registry().is_some()
-            && docker_pull_image(&compiler_zkvm_image).is_ok()
-            && docker_image_exists(&compiler_zkvm_image)?
-        {
-            info!("Image {compiler_zkvm_image} pulled, skip building");
-            return Ok(());
-        }
-    }
-
-    let workspace_dir = workspace_dir()?;
-    let docker_dir = workspace_dir.join("docker");
-    let docker_zkvm_dir = docker_dir.join(zkvm_kind.as_str());
-
-    // Build `ere-base`
-    if force_rebuild || !docker_image_exists(&base_image)? {
-        info!("Building image {base_image}...");
-
-        DockerBuildCmd::new()
-            .file(docker_dir.join("Dockerfile.base"))
-            .tag(&base_image)
-            .exec(&workspace_dir)?;
-    }
-
-    // Build `ere-base-{zkvm_kind}`
-    if force_rebuild || !docker_image_exists(&base_zkvm_image)? {
-        info!("Building image {base_zkvm_image}...");
-
-        DockerBuildCmd::new()
-            .file(docker_zkvm_dir.join("Dockerfile.base"))
-            .tag(&base_zkvm_image)
-            .build_arg("BASE_IMAGE", &base_image)
-            .build_arg_from_env("RUSTFLAGS")
-            .exec(&workspace_dir)?;
-    }
-
-    // Build `ere-compiler-{zkvm_kind}`
-    info!("Building image {compiler_zkvm_image}...");
-
-    DockerBuildCmd::new()
-        .file(docker_zkvm_dir.join("Dockerfile.compiler"))
-        .tag(&compiler_zkvm_image)
-        .build_arg("BASE_ZKVM_IMAGE", &base_zkvm_image)
-        .exec(&workspace_dir)?;
-
-    Ok(())
-}
 
 pub struct DockerizedCompiler {
     zkvm_kind: zkVMKind,
@@ -102,7 +33,7 @@ impl DockerizedCompiler {
         compiler_kind: CompilerKind,
         mount_directory: impl AsRef<Path>,
     ) -> Result<Self, Error> {
-        build_compiler_image(zkvm_kind)?;
+        docker_ensure_image(&compiler_zkvm_image(zkvm_kind))?;
         Ok(Self {
             zkvm_kind,
             compiler_kind,
@@ -191,21 +122,30 @@ impl Compiler for DockerizedCompiler {
 
 #[cfg(test)]
 pub(crate) mod tests {
+    use std::path::Path;
+
     use ere_compiler_core::{Compiler, Elf};
     use ere_util_test::host::testing_guest_directory;
     use tracing_subscriber::EnvFilter;
 
-    use crate::{CompilerKind, compiler::DockerizedCompiler, util::workspace_dir, zkVMKind};
+    use crate::{CompilerKind, compiler::DockerizedCompiler, zkVMKind};
 
     pub fn compile(zkvm_kind: zkVMKind, compiler_kind: CompilerKind, program: &'static str) -> Elf {
         let _ = tracing_subscriber::fmt()
             .with_env_filter(EnvFilter::from_default_env())
             .try_init();
 
-        DockerizedCompiler::new(zkvm_kind, compiler_kind, workspace_dir().unwrap())
-            .unwrap()
-            .compile(testing_guest_directory(zkvm_kind.as_str(), program), &[])
-            .unwrap()
+        DockerizedCompiler::new(
+            zkvm_kind,
+            compiler_kind,
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .ancestors()
+                .nth(2)
+                .unwrap(),
+        )
+        .unwrap()
+        .compile(testing_guest_directory(zkvm_kind.as_str(), program), &[])
+        .unwrap()
     }
 
     macro_rules! test_compile {

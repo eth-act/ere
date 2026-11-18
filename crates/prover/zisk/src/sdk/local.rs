@@ -10,7 +10,7 @@ use once_cell::sync::OnceCell;
 use parking_lot::{Mutex, MutexGuard};
 use proofman_fields::{Field, Goldilocks, PrimeField64};
 use proofman_util::DeviceBuffer;
-use zisk_common::{HashMode, ZiskPaths, io::ZiskStdin};
+use zisk_common::{HashMode, ProofKind, ZiskPaths, io::ZiskStdin};
 use zisk_prover_backend::{
     Asm, AsmOptions, BackendProverOpts, GuestProgram, ProgramId, ProverClientBuilder, ZiskProver,
 };
@@ -162,6 +162,7 @@ impl LocalProver {
         let output = shared_prover
             .prover
             .prove(&self.program, stdin)
+            .wrap_proof(ProofKind::VadcopFinalMinimal)
             .run()
             .map_err(Error::Prove)?;
         let proving_time = started.elapsed();
@@ -232,7 +233,7 @@ fn build_prover(config: &Config, resource: &ProverResource) -> Result<ZiskProver
 /// Vendored from [`zisk_rom_setup::rom_merkle_setup`] to do program setup without creating
 /// `ProofCtx` or generating assembly, which can only be created once due to mpi initialization.
 /// Shares the cache files of `rom_merkle_setup` with the prover setup.
-fn compute_program_vk(
+pub(crate) fn compute_program_vk(
     resource: &ProverResource,
     program: &GuestProgram,
 ) -> Result<ZiskProgramVk, Error> {

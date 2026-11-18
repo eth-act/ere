@@ -2,13 +2,11 @@ use core::{array::from_fn, convert::Infallible};
 
 use ere_verifier_core::codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
+use zisk_verifier::GOLDILOCKS_ORDER;
 
 use crate::{Error, proof::PROGRAM_VK_WORDS};
 
 const PROGRAM_VK_BYTES: usize = PROGRAM_VK_WORDS * 8;
-
-/// Goldilocks field order (`2^64 - 2^32 + 1`); inner u64s must be strictly less.
-const GOLDILOCKS_ORDER: u64 = 0xFFFF_FFFF_0000_0001;
 
 /// Verifying key that identifies a specific compiled guest program.
 ///

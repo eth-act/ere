@@ -177,6 +177,14 @@ fn test_null_ptr() {
             ere_verifier_verify(non_null(), non_null(), 1, &mut pv_ptr, null_mut()),
             ere_verifier_zkvm_kind(null(), null_mut()),
             ere_verifier_zkvm_kind(non_null(), null_mut()),
+            ere_verifier_new(0, non_null(), isize::MAX as usize + 1, &mut null_mut()),
+            ere_verifier_verify(
+                non_null(),
+                non_null(),
+                isize::MAX as usize + 1,
+                &mut pv_ptr,
+                &mut pv_len,
+            ),
         ]
     } {
         assert_eq!(rc, ERE_ERR_NULL_PTR);

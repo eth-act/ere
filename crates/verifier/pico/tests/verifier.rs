@@ -1,9 +1,10 @@
+use bincode::error::DecodeError;
 use ere_verifier_core::{
     codec::{Decode, Encode},
     zkVMVerifier,
 };
 use ere_verifier_pico::{Error, PicoProgramVk, PicoProof, PicoVerifier};
-use pico_verifier::{VerifyError, VmVk};
+use pico_verifier::{VerifyError, VmVk, shipped_compress_vk, whitelist::vk_identity};
 
 const PROGRAM_VK: &[u8] = include_bytes!("./fixtures/program_vk.bin");
 const PROOF: &[u8] = include_bytes!("./fixtures/proof.bin");
@@ -56,6 +57,19 @@ fn test_invalid_program_vk_decode() {
         err,
         Error::UntrustedProgramVk(VerifyError::MemberOffRoot { .. })
     ));
+
+    // A bundle without the compress key shipped with Pico.
+    let mut program_vk = PicoProgramVk::decode_from_slice(PROGRAM_VK).unwrap();
+    let compress_identity = vk_identity(&shipped_compress_vk());
+    program_vk
+        .0
+        .members
+        .retain(|member| member.identity != compress_identity);
+    let err = PicoVerifier::new(program_vk).unwrap_err();
+    assert!(matches!(
+        err,
+        Error::UntrustedProgramVk(VerifyError::NotWhitelisted)
+    ));
 }
 
 #[test]
@@ -66,6 +80,12 @@ fn test_invalid_proof_decode() {
     let mut extended = PROOF.to_vec();
     extended.push(0xFF);
     PicoProof::decode_from_slice(&extended).unwrap_err();
+
+    // Length prefix above the size limit
+    let mut oversized = (300 * 1024 + 1u64).to_le_bytes().to_vec();
+    oversized.resize(8 + 300 * 1024 + 1, 0);
+    let err = PicoProof::decode_from_slice(&oversized).unwrap_err();
+    assert!(matches!(err, DecodeError::LimitExceeded));
 }
 
 #[test]

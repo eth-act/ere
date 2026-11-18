@@ -117,7 +117,7 @@ case "$TARGET" in
 esac
 
 rustup target add "$TARGET" >/dev/null 2>&1 || true
-cargo zigbuild --release --manifest-path "$REPO/Cargo.toml" --target "$ZIGBUILD_TARGET" -p ere-verifier-c
+cargo zigbuild --release --locked --manifest-path "$REPO/Cargo.toml" --target "$ZIGBUILD_TARGET" -p ere-verifier-c
 
 # The work happens on a copy, so a failed run leaves the build output untouched
 # rather than feeding a half localized archive to the next one.

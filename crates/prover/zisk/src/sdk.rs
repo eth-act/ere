@@ -31,7 +31,7 @@ use crate::{
     sdk::local::LocalProver,
 };
 
-mod local;
+pub(crate) mod local;
 mod proving_key;
 
 /// Step limit of the ZisK prover, whose PIL gives each step index 36 bits.

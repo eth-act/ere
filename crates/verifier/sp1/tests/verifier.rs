@@ -59,6 +59,11 @@ fn test_invalid_proof_decode() {
         err,
         DecodeError::Other("trailing bytes after decoded value")
     ));
+
+    // Non-canonical field element
+    let non_canonical = proof_bytes_with_aliased_field_element();
+    let err = SP1Proof::decode_from_slice(&non_canonical).unwrap_err();
+    assert!(matches!(err, DecodeError::Other("non-canonical encoding")));
 }
 
 #[test]
@@ -75,6 +80,12 @@ fn test_invalid_proof_verify() {
     let proof = proof_with_invalid_merkle_path();
     let err = verifier.verify(&proof).unwrap_err();
     assert!(matches!(err, Error::Verify(_)));
+
+    // Unexpected SP1 version
+    let mut proof = SP1Proof::decode_from_slice(PROOF).unwrap();
+    proof.0.sp1_version = "v6.1.1".to_string();
+    let err = verifier.verify(&proof).unwrap_err();
+    assert!(matches!(err, Error::UnexpectedSp1Version));
 
     // Unexpected program vk
     let verifier = verifier_with_unexpected_program_vk();
@@ -108,17 +119,6 @@ fn verifier_with_unexpected_program_vk() -> SP1Verifier {
 
 fn halve_plus_two<F: PrimeField32>(value: F) -> F {
     value.halve() + F::two()
-}
-
-// FIXME: Do we need to restrict proof to be non-malleable?
-#[test]
-fn test_malleable_proof() {
-    let bytes = proof_bytes_with_aliased_field_element();
-    let proof = SP1Proof::decode_from_slice(&bytes).unwrap();
-    let program_vk = Decode::decode_from_slice(PROGRAM_VK).unwrap();
-    let verifier = SP1Verifier::new(program_vk);
-    let public_values = verifier.verify(&proof).unwrap();
-    assert_eq!(&*public_values, PUBLIC_VALUES);
 }
 
 fn proof_bytes_with_aliased_field_element() -> Vec<u8> {

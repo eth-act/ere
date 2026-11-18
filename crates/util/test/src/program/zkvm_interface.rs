@@ -8,15 +8,14 @@
 //! nothing, so a mismatch fails the execution and the run costs only the accelerator calls. A host
 //! build calls nothing, because it only carries the vectors to the guest.
 //!
-//! [zkVM accelerator C interface]: https://github.com/eth-act/zkvm-standards/blob/main/standards/c-interface-accelerators/zkvm_accelerators.h
+//! [zkVM accelerator C interface]: https://github.com/eth-act/zkevm-standards/blob/main/standards/c-interface-accelerators/zkvm_accelerators.h
 
 use alloc::vec::Vec;
 
-use ere_codec::impl_codec_by_bincode_legacy;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumIter, EnumString, IntoEnumIterator, IntoStaticStr};
 
-use crate::program::Program;
+use crate::{codec::impl_codec_by_bincode_legacy, program::Program};
 
 // Only a guest defines the accelerator symbols. A host cannot stub them either, because `ziskos`
 // already defines them in the ZisK host prover.

@@ -11,5 +11,5 @@ pub use crate::{
     error::Error,
     program_vk::SP1ProgramVk,
     proof::SP1Proof,
-    verifier::{SP1Verifier, extract_exit_code},
+    verifier::{SP1_CIRCUIT_VERSION, SP1Verifier, extract_exit_code},
 };

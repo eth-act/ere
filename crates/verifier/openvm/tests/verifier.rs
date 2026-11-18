@@ -1,11 +1,10 @@
-use core::iter;
 use std::io;
 
 use ere_verifier_core::{codec::Decode, zkVMVerifier};
 use ere_verifier_openvm::{Error, OpenVMProgramVk, OpenVMProof, OpenVMVerifier};
 use openvm_stark_sdk::{
-    config::baby_bear_poseidon2::F,
-    openvm_stark_backend::p3_field::{PrimeCharacteristicRing, PrimeField32},
+    config::baby_bear_poseidon2::{DIGEST_SIZE, F},
+    openvm_stark_backend::p3_field::PrimeCharacteristicRing,
 };
 use openvm_verify_stark_host::error::VerifyStarkError;
 
@@ -47,6 +46,27 @@ fn test_invalid_proof_decode() {
     };
     assert_eq!(err.kind(), io::ErrorKind::InvalidData);
     assert_eq!(err.to_string(), "trailing bytes after decoded value");
+
+    // Proof above the size limit
+    let mut oversized = PROOF.to_vec();
+    oversized.resize(3 * 1024 * 1024 + 1, 0);
+    let err = OpenVMProof::decode_from_slice(&oversized).unwrap_err();
+    assert!(matches!(err, Error::DecodeLimitExceeded { .. }));
+
+    // Unexpected number of AIRs
+    let mut proof = PROOF.to_vec();
+    proof[4 + 4 * DIGEST_SIZE] += 1;
+    let err = OpenVMProof::decode_from_slice(&proof).unwrap_err();
+    assert!(matches!(err, Error::InvalidNumAirs { .. }));
+
+    // Non-canonical field element
+    let mut proof = PROOF.to_vec();
+    proof[4..8].copy_from_slice(&u32::MAX.to_le_bytes());
+    let Error::DecodeProof(err) = OpenVMProof::decode_from_slice(&proof).unwrap_err() else {
+        unreachable!()
+    };
+    assert_eq!(err.kind(), io::ErrorKind::Other);
+    assert!(err.to_string().contains("F >= F::ORDER_U32"));
 }
 
 #[test]
@@ -97,44 +117,4 @@ fn verifier_with_unexpected_program_vk() -> OpenVMVerifier {
     let mut program_vk = OpenVMProgramVk::decode_from_slice(PROGRAM_VK).unwrap();
     program_vk.0.app_exe_commit[0] += F::ONE;
     OpenVMVerifier::new(program_vk)
-}
-
-#[test]
-fn test_malleable_proof() {
-    let bytes = proof_bytes_with_aliased_field_element();
-    let Error::DecodeProof(err) = OpenVMProof::decode_from_slice(&bytes).unwrap_err() else {
-        unreachable!()
-    };
-    assert_eq!(err.kind(), io::ErrorKind::Other);
-    assert!(err.to_string().contains("F >= F::ORDER_U32"));
-}
-
-fn proof_bytes_with_aliased_field_element() -> Vec<u8> {
-    const BABYBEAR_MODULUS: u32 = 0x7800_0001;
-
-    let proof = OpenVMProof::decode_from_slice(PROOF).unwrap();
-    let bytes = iter::empty()
-        .chain(&proof.0.inner.whir_proof.codeword_merkle_proofs)
-        .flatten()
-        .flatten()
-        .flatten()
-        .map(|value| value.as_canonical_u32().to_le_bytes())
-        .find(|bytes| subslice_positions(PROOF, bytes).count() == 1)
-        .unwrap();
-    let offset = subslice_positions(PROOF, &bytes).next().unwrap();
-
-    let value = u32::from_le_bytes(PROOF[offset..offset + 4].try_into().unwrap());
-    let aliased = value.checked_add(BABYBEAR_MODULUS).unwrap();
-
-    let mut proof_aliased = PROOF.to_vec();
-    proof_aliased[offset..offset + 4].copy_from_slice(&aliased.to_le_bytes());
-    assert_ne!(PROOF, proof_aliased);
-    proof_aliased
-}
-
-fn subslice_positions(haystack: &[u8], needle: &[u8]) -> impl Iterator<Item = usize> {
-    haystack
-        .windows(needle.len())
-        .enumerate()
-        .filter_map(move |(i, subslice)| (subslice == needle).then_some(i))
 }

@@ -1,8 +1,10 @@
-use core::iter;
-
 use bincode::error::DecodeError;
-use ere_verifier_core::{codec::Decode, zkVMVerifier};
+use ere_verifier_core::{
+    codec::{Decode, Encode},
+    zkVMVerifier,
+};
 use ere_verifier_zisk::{Error, ZiskProgramVk, ZiskProof, ZiskVerifier};
+use zisk_verifier::GOLDILOCKS_ORDER;
 
 const PROGRAM_VK: &[u8] = include_bytes!("./fixtures/program_vk.bin");
 const PROOF: &[u8] = include_bytes!("./fixtures/proof.bin");
@@ -59,6 +61,12 @@ fn test_invalid_proof_decode() {
         err,
         DecodeError::Other("trailing bytes after decoded value")
     ));
+
+    // Proof above the size limit
+    let mut proof = ZiskProof::decode_from_slice(PROOF).unwrap();
+    proof.0.proof.resize(300 * 1024 / 8, 0);
+    let err = ZiskProof::decode_from_slice(&proof.encode_to_vec().unwrap()).unwrap_err();
+    assert!(matches!(err, DecodeError::LimitExceeded));
 }
 
 #[test]
@@ -73,6 +81,41 @@ fn test_invalid_proof_verify() {
 
     // Invalid merkle proof
     let proof = proof_with_invalid_merkle_path();
+    let err = verifier.verify(&proof).unwrap_err();
+    assert!(matches!(err, Error::InvalidProof));
+
+    // Uncompressed proof
+    let mut proof = ZiskProof::decode_from_slice(PROOF).unwrap();
+    proof.0.compressed = false;
+    let err = verifier.verify(&proof).unwrap_err();
+    assert!(matches!(err, Error::InvalidVadcopFinalProofKind));
+
+    // Unsupported hash family
+    let mut proof = ZiskProof::decode_from_slice(PROOF).unwrap();
+    proof.0.hash = "Poseidon2".to_string();
+    let err = verifier.verify(&proof).unwrap_err();
+    assert!(matches!(err, Error::InvalidVadcopFinalProofKind));
+
+    // Public value above u32
+    let mut proof = ZiskProof::decode_from_slice(PROOF).unwrap();
+    proof.0.public_values[4] |= 1 << 32;
+    let err = verifier.verify(&proof).unwrap_err();
+    assert!(matches!(err, Error::InvalidPublicValue));
+
+    // Unexpected public value length
+    let mut proof = ZiskProof::decode_from_slice(PROOF).unwrap();
+    proof.0.public_values.push(0);
+    let err = verifier.verify(&proof).unwrap_err();
+    assert!(matches!(err, Error::InvalidPublicValueLength { .. }));
+
+    // Non-canonical field element
+    let mut proof = ZiskProof::decode_from_slice(PROOF).unwrap();
+    let index = proof
+        .0
+        .proof
+        .iter()
+        .position(|word| word.checked_add(GOLDILOCKS_ORDER).is_some());
+    proof.0.proof[index.unwrap()] += GOLDILOCKS_ORDER;
     let err = verifier.verify(&proof).unwrap_err();
     assert!(matches!(err, Error::InvalidProof));
 
@@ -100,43 +143,4 @@ fn verifier_with_unexpected_program_vk() -> ZiskVerifier {
     let mut program_vk = ZiskProgramVk::decode_from_slice(PROGRAM_VK).unwrap();
     program_vk.0[0] ^= 0xFF;
     ZiskVerifier::new(program_vk)
-}
-
-// FIXME: Do we need to restrict proof to be non-malleable?
-#[test]
-fn test_malleable_proof() {
-    let bytes = proof_bytes_with_aliased_field_element();
-    let proof = ZiskProof::decode_from_slice(&bytes).unwrap();
-    let program_vk = Decode::decode_from_slice(PROGRAM_VK).unwrap();
-    let verifier = ZiskVerifier::new(program_vk);
-    let public_values = verifier.verify(&proof).unwrap();
-    assert_eq!(&*public_values, PUBLIC_VALUES);
-}
-
-fn proof_bytes_with_aliased_field_element() -> Vec<u8> {
-    const GOLDILOCKS_MODULUS: u64 = 0xFFFF_FFFF_0000_0001;
-
-    let proof = ZiskProof::decode_from_slice(PROOF).unwrap();
-    let bytes = iter::empty()
-        .chain(&proof.0.proof)
-        .filter(|value| value.checked_add(GOLDILOCKS_MODULUS).is_some())
-        .map(|value| value.to_le_bytes())
-        .find(|bytes| subslice_positions(PROOF, bytes).count() == 1)
-        .unwrap();
-    let offset = subslice_positions(PROOF, &bytes).next().unwrap();
-
-    let value = u64::from_le_bytes(PROOF[offset..offset + 8].try_into().unwrap());
-    let aliased = value.checked_add(GOLDILOCKS_MODULUS).unwrap();
-
-    let mut proof_aliased = PROOF.to_vec();
-    proof_aliased[offset..offset + 8].copy_from_slice(&aliased.to_le_bytes());
-    assert_ne!(PROOF, proof_aliased);
-    proof_aliased
-}
-
-fn subslice_positions(haystack: &[u8], needle: &[u8]) -> impl Iterator<Item = usize> {
-    haystack
-        .windows(needle.len())
-        .enumerate()
-        .filter_map(move |(i, subslice)| (subslice == needle).then_some(i))
 }

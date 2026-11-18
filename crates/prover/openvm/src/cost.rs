@@ -71,8 +71,8 @@ impl Component {
     }
 }
 
-/// `instance` is built on the first estimate, because a second `rvr` shared library in the process
-/// crashes it at exit and a caller that only executes or proves never needs one.
+/// `instance` is built on the first estimate, because a caller that only executes or proves never
+/// needs one.
 pub(crate) struct CostEstimator {
     instance: OnceCell<RvrMeteredInstance<'static>>,
     profile_instance: OnceCell<RvrMeteredInstance<'static>>,

@@ -1,6 +1,6 @@
 use crate::{util::env, zkVMKind};
 
-/// Returns tag of images in format of `{version}{suffix}`.
+/// Returns tag of images in format of `{tag}{suffix}`.
 pub fn image_tag(zkvm_kind: zkVMKind, gpu: bool) -> String {
     let suffix = match (zkvm_kind, gpu) {
         // Only the following zkVMs requires CUDA setup in the base image
@@ -9,18 +9,6 @@ pub fn image_tag(zkvm_kind: zkVMKind, gpu: bool) -> String {
         _ => "",
     };
     format!("{}{suffix}", env::image_tag())
-}
-
-/// Returns `ere-base:{image_tag}`
-pub fn base_image(zkvm_kind: zkVMKind, gpu: bool) -> String {
-    let image_tag = image_tag(zkvm_kind, gpu);
-    with_image_registry(format!("ere-base:{image_tag}"))
-}
-
-/// Returns `ere-base-{zkvm_kind}:{image_tag}`
-pub fn base_zkvm_image(zkvm_kind: zkVMKind, gpu: bool) -> String {
-    let image_tag = image_tag(zkvm_kind, gpu);
-    with_image_registry(format!("ere-base-{zkvm_kind}:{image_tag}"))
 }
 
 /// Returns `ere-server-{zkvm_kind}:{image_tag}`

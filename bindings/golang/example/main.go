@@ -1,6 +1,8 @@
 // Command example verifies a zkVM proof through the ere Go binding. It reads the
 // encoded program verifying key, the encoded proof, and the expected public
-// values from files, then prints the verified public values.
+// values from files, then prints the verified public values. A proof that
+// verifies only shows that the program ran, so the example rejects a proof
+// whose public values differ from the expected bytes.
 package main
 
 import (
@@ -11,6 +13,10 @@ import (
 
 	ereverifier "github.com/eth-act/ere/bindings/golang"
 )
+
+// paddedPublicValuesLength is the length of the public values of OpenVM and
+// ZisK, which pad the bytes that the guest wrote with zeros.
+const paddedPublicValuesLength = 256
 
 func main() {
 	kindName := flag.String("kind", "openvm", "zkvm kind, one of openvm, sp1, zisk, lambdavm, pico")
@@ -38,11 +44,24 @@ func main() {
 	if err != nil {
 		fail(err)
 	}
-	if !bytes.Equal(publicValues, expectedPublicValues) {
+	if !publicValuesMatch(kind, publicValues, expectedPublicValues) {
 		fail(fmt.Errorf("public values mismatch, got %x want %x", publicValues, expectedPublicValues))
 	}
 
 	fmt.Printf("verified, public values %x\n", publicValues)
+}
+
+// publicValuesMatch reports whether the verified public values equal the
+// expected bytes. For OpenVM and ZisK it pads the expected bytes with zeros to
+// 256 bytes first. For the other kinds the comparison is exact.
+func publicValuesMatch(kind ereverifier.ZkVMKind, publicValues, expected []byte) bool {
+	if kind == ereverifier.OpenVM || kind == ereverifier.Zisk {
+		if len(expected) > paddedPublicValuesLength {
+			return false
+		}
+		expected = append(append([]byte{}, expected...), make([]byte, paddedPublicValuesLength-len(expected))...)
+	}
+	return bytes.Equal(publicValues, expected)
 }
 
 func parseKind(name string) (ereverifier.ZkVMKind, error) {

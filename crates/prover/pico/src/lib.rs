@@ -74,17 +74,18 @@
 //!
 //! ## Security
 //!
-//! Proofs are proved in whitelist mode at log stacked height 23, the only
-//! operating point the shipped whitelist of recursion keys covers. The Pico 3.0
-//! MLE backend targets 100 bits of provable round-by-round soundness.
+//! Proofs are proved in whitelist mode at log stacked height 23, the only operating point the
+//! shipped whitelist of recursion keys covers. The Pico 3.1 MLE backend targets 128 bits of
+//! provable round-by-round soundness.
 //!
 //! ## Environment variables
 //!
-//! | Variable                | Type  | Default                                                | Description                                                  |
-//! | ----------------------- | ----- | ------------------------------------------------------ | ------------------------------------------------------------ |
-//! | `ERE_PICO_PURE_CACHE`   | Value | `$XDG_CACHE_HOME/pico-pure`, else `~/.cache/pico-pure` | Absolute path of the pure-mode library cache                 |
-//! | `ERE_PICO_PURE_RUNTIME` | Value | The source `ere-prover-pico` was built from            | Cargo dependency entry of `pico-aot-pure` for the library    |
-//! | `ERE_PICO_PURE_OFFLINE` | Flag  |                                                        | Build the pure-mode library with `--offline` when set to `1` |
+//! | Variable                       | Type  | Default                                                | Description                                                  |
+//! | ------------------------------ | ----- | ------------------------------------------------------ | ------------------------------------------------------------ |
+//! | `ERE_PICO_PURE_CACHE`          | Value | `$XDG_CACHE_HOME/pico-pure`, else `~/.cache/pico-pure` | Absolute path of the pure-mode library cache                 |
+//! | `ERE_PICO_PURE_RUNTIME`        | Value | The Pico source `pico-prover` was built from           | Cargo dependency entry of `pico-aot-pure` for the library    |
+//! | `ERE_PICO_PURE_OFFLINE`        | Flag  |                                                        | Build the pure-mode library with `--offline` when set to `1` |
+//! | `ERE_PICO_GPU_EVENT_POOL_SIZE` | Value | The Pico default                                       | Event pool size of the GPU prover, read in a `cuda` build    |
 //!
 //! [`install_pico_sdk.sh`]: https://github.com/eth-act/ere/blob/master/scripts/sdk_installers/install_pico_sdk.sh
 
