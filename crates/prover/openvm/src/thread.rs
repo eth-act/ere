@@ -10,7 +10,7 @@ use std::{
 
 use ere_prover_core::ProverResource;
 use openvm_circuit::arch::{
-    ContinuationProverBuilder, VirtualMachineError,
+    ContinuationProverBuilder, VirtualMachine, VirtualMachineError, VmBuilder,
     instructions::{VM_DIGEST_WIDTH, exe::VmExe},
 };
 use openvm_sdk::{
@@ -123,7 +123,7 @@ fn serve<E, VB>(
                     &app_pk,
                     &agg_prover,
                     &app_exe,
-                    |prover| build_rvr_libraries(prover, &app_exe, gpu),
+                    |prover| build_rvr_libraries(&prover.app_prover.instance().vm, &app_exe, gpu),
                 ));
             }
             Request::Reset(reply) => {
@@ -201,19 +201,18 @@ where
 
 /// Builds the rvr libraries that a prove uses in parallel, so the first prove loads them from the
 /// cache. The GPU prove builds its own preflight library, while the CPU one interprets preflight.
-fn build_rvr_libraries<E, VB>(
-    prover: &StarkProver<E, VB>,
+pub(crate) fn build_rvr_libraries<E, VB>(
+    vm: &VirtualMachine<E, VB>,
     app_exe: &VmExe<F>,
     gpu: bool,
 ) -> Result<(), Error>
 where
     E: StarkEngine<SC = SC>,
-    VB: ContinuationProverBuilder<E, VmConfig = SdkVmConfig>,
+    VB: VmBuilder<E, VmConfig = SdkVmConfig>,
 {
     if env::var_os("OPENVM_RVR_NATIVE_CACHE_DIR").is_none() {
         return Ok(());
     }
-    let vm = &prover.app_prover.instance().vm;
     let (executor, executor_idx_to_air_idx) = (vm.executor(), vm.executor_idx_to_air_idx());
     thread::scope(|scope| {
         let preflight = gpu.then(|| scope.spawn(|| executor.preflight_instance(app_exe).map(drop)));

@@ -20,9 +20,13 @@ use openvm_sdk::{
     config::{AggregationSystemParams, AppConfig},
     fs::read_object_from_file,
     keygen::{AggProvingKey, AppProvingKey},
+    prover::AppProver,
 };
-use openvm_sdk_config::{SdkVmConfig, TranspilerConfig};
-use openvm_stark_sdk::config::{MAX_APP_LOG_STACKED_HEIGHT, app_params_with_100_bits_security};
+use openvm_sdk_config::{SdkVmConfig, SdkVmCpuBuilder, TranspilerConfig};
+use openvm_stark_sdk::config::{
+    MAX_APP_LOG_STACKED_HEIGHT, app_params_with_100_bits_security,
+    baby_bear_poseidon2::BabyBearPoseidon2CpuEngine,
+};
 use openvm_transpiler::{FromElf, openvm_platform::memory::MEM_SIZE};
 use openvm_verify_stark_host::vk::VerificationBaseline;
 
@@ -31,7 +35,7 @@ use crate::{
     cost::CostEstimator,
     error::Error,
     executor::Executor,
-    thread::{ProverThread, Request},
+    thread::{ProverThread, Request, build_rvr_libraries},
 };
 
 /// Segment memory limit, 14.5 GiB. Execution starts a new segment above it.
@@ -117,6 +121,21 @@ impl OpenVMProver {
 impl zkVMProver for OpenVMProver {
     type Verifier = OpenVMVerifier;
     type Error = Error;
+
+    /// Builds the `rvr` libraries of both the CPU and the GPU prover on the CPU, when
+    /// `OPENVM_RVR_NATIVE_CACHE_DIR` is set.
+    fn preprocess(&self) -> Result<(), Error> {
+        if env::var_os("OPENVM_RVR_NATIVE_CACHE_DIR").is_none() {
+            return Ok(());
+        }
+        let app_prover = AppProver::<BabyBearPoseidon2CpuEngine, SdkVmCpuBuilder>::new(
+            SdkVmCpuBuilder,
+            &self.app_pk.app_vm_pk,
+            self.app_exe.clone(),
+        )
+        .map_err(|err| Error::ProverInit(err.into()))?;
+        build_rvr_libraries(app_prover.vm(), &self.app_exe, true)
+    }
 
     fn verifier(&self) -> &OpenVMVerifier {
         &self.verifier

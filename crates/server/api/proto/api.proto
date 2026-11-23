@@ -4,6 +4,7 @@ package api;
 
 service ZkvmService {
     rpc Setup(SetupRequest) returns (SetupResponse) {}
+    rpc Preprocess(PreprocessRequest) returns (PreprocessResponse) {}
     rpc Execute(ExecuteRequest) returns (ExecuteResponse) {}
     rpc ExecuteEstimatedCost(ExecuteEstimatedCostRequest) returns (ExecuteEstimatedCostResponse) {}
     rpc Profile(ProfileRequest) returns (ProfileResponse) {}
@@ -26,6 +27,17 @@ message SetupResponse {
 message SetupOk {
     bytes program_vk = 1;
 }
+
+message PreprocessRequest {}
+
+message PreprocessResponse {
+    oneof result {
+        PreprocessOk ok = 1;
+        string err = 2;
+    }
+}
+
+message PreprocessOk {}
 
 message ExecuteRequest {
     bytes input_stdin = 1;

@@ -246,6 +246,12 @@ impl DockerizedzkVM {
         block_on(self.setup_async(elf))
     }
 
+    /// Builds the disk caches of the current program, see `zkVMProver::preprocess`. They outlive
+    /// the container only in the cache volumes of the zkVM, such as `ERE_ZISK_CACHE_VOLUME`.
+    pub fn preprocess(&self) -> anyhow::Result<()> {
+        block_on(self.preprocess_async())
+    }
+
     pub fn execute(&self, input: &Input) -> anyhow::Result<(PublicValues, Duration)> {
         block_on(self.execute_async(input.clone()))
     }
@@ -318,6 +324,14 @@ impl DockerizedzkVM {
         self.program_vk = program_vk;
         self.elf = elf;
         Ok(())
+    }
+
+    pub async fn preprocess_async(&self) -> anyhow::Result<()> {
+        self.with_retry(
+            |client| Box::pin(async move { client.preprocess().await }),
+            None,
+        )
+        .await
     }
 
     pub async fn execute_async(&self, input: Input) -> anyhow::Result<(PublicValues, Duration)> {

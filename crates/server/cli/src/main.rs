@@ -74,6 +74,8 @@ enum Command {
         #[arg(long)]
         program_vk_path: String,
     },
+    /// Build the disk caches that the prover reads for the ELF, without starting the prover.
+    Preprocess,
 }
 
 #[tokio::main]
@@ -82,7 +84,7 @@ async fn main() -> Result<(), Error> {
 
     let (tracer_provider, otel_layer) = match &args.command {
         Command::Server(_) => crate::otel::init(),
-        Command::Keygen { .. } => (None, None),
+        Command::Keygen { .. } | Command::Preprocess => (None, None),
     };
 
     tracing_subscriber::registry()
@@ -102,6 +104,7 @@ async fn main() -> Result<(), Error> {
             commands::server::run(args.port, elf, resource, prove_timeout).await?
         }
         Command::Keygen { program_vk_path } => commands::keygen::run(elf, &program_vk_path)?,
+        Command::Preprocess => commands::preprocess::run(elf)?,
     }
 
     if let Some(provider) = tracer_provider {

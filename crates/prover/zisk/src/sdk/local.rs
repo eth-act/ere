@@ -1,5 +1,7 @@
 use std::{
     env, fs,
+    panic::{self, AssertUnwindSafe},
+    path::Path,
     time::{Duration, Instant},
 };
 
@@ -14,12 +16,15 @@ use zisk_common::{HashMode, ProofKind, ZiskPaths, io::ZiskStdin};
 use zisk_prover_backend::{
     Asm, AsmOptions, BackendProverOpts, GuestProgram, ProgramId, ProverClientBuilder, ZiskProver,
 };
-use zisk_rom_setup::{get_elf_bin_file_path_with_hash, get_elf_bin_verkey_file_path_with_hash};
+use zisk_rom_setup::{
+    generate_assembly, get_assembly_file_paths_from_id, get_elf_bin_file_path_with_hash,
+    get_elf_bin_verkey_file_path_with_hash, get_elf_data_hash, get_output_path,
+};
 use zisk_sm_rom::CustomRom;
 
 use crate::{
     error::Error,
-    sdk::{framed_stdin, proving_key::ensure_proving_key},
+    sdk::{framed_stdin, panic_msg, proving_key::ensure_proving_key},
 };
 
 // Use a shared prover instance to avoid `MpiCtx` get initialized twice, to support multiple
@@ -128,6 +133,14 @@ impl LocalProver {
         Ok(local)
     }
 
+    /// Builds the four ASM binaries of the setup into the ZisK cache, unless it holds all four.
+    pub fn preprocess(&self) -> Result<(), Error> {
+        // The setup of the shared prover writes the same files, so it must not run meanwhile.
+        let _shared_prover = SHARED_PROVER.get().map(Mutex::lock);
+        let cache_dir = get_output_path(&None).map_err(Error::Setup)?;
+        build_setup_binaries(self.program.elf(), &cache_dir)
+    }
+
     /// Replaces the program and removes the old one from the shared prover.
     pub fn setup(&mut self, elf: Elf) -> Result<(), Error> {
         let program = GuestProgram::from_bytes("guest", elf.0);
@@ -186,6 +199,20 @@ impl LocalProver {
             })
             .map(Mutex::lock)
     }
+}
+
+/// Builds the four ASM binaries of the setup of `elf` into `cache_dir`, unless it holds all four.
+pub(crate) fn build_setup_binaries(elf: &[u8], cache_dir: &Path) -> Result<(), Error> {
+    let binaries = get_assembly_file_paths_from_id(&get_elf_data_hash(elf), cache_dir, false);
+    if !binaries.iter().all(|binary| binary.exists()) {
+        // The generator panics on an operation it does not support, such as `Profile`.
+        panic::catch_unwind(AssertUnwindSafe(|| {
+            generate_assembly(elf, cache_dir, false, false)
+        }))
+        .map_err(|err| Error::Setup(anyhow::anyhow!(panic_msg(err))))?
+        .map_err(Error::Setup)?;
+    }
+    Ok(())
 }
 
 fn build_prover(config: &Config, resource: &ProverResource) -> Result<ZiskProver<Asm>, Error> {

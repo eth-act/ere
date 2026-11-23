@@ -2,12 +2,13 @@ use core::{ops::Deref, time::Duration};
 
 use ere_prover_core::{CostEstimation, CostProfile, Elf, Input, PublicValues, pprof};
 use ere_server_api::{
-    ExecuteEstimatedCostRequest, ExecuteRequest, ProfileRequest, ProgramVkRequest, ProveRequest,
-    SetupRequest, VerifyRequest, ZkvmService,
+    ExecuteEstimatedCostRequest, ExecuteRequest, PreprocessRequest, ProfileRequest,
+    ProgramVkRequest, ProveRequest, SetupRequest, VerifyRequest, ZkvmService,
     execute_estimated_cost_response::Result as ExecuteEstimatedCostResult,
-    execute_response::Result as ExecuteResult, profile_response::Result as ProfileResult,
-    program_vk_response::Result as ProgramVkResult, prove_response::Result as ProveResult,
-    setup_response::Result as SetupResult, verify_response::Result as VerifyResult,
+    execute_response::Result as ExecuteResult, preprocess_response::Result as PreprocessResult,
+    profile_response::Result as ProfileResult, program_vk_response::Result as ProgramVkResult,
+    prove_response::Result as ProveResult, setup_response::Result as SetupResult,
+    verify_response::Result as VerifyResult,
 };
 #[cfg(feature = "otel")]
 pub use otel_propagation::OtelPropagation;
@@ -118,6 +119,17 @@ impl zkVMClient {
         match response.into_body().result.ok_or_else(result_none_err)? {
             SetupResult::Ok(result) => Ok(EncodedProgramVk(result.program_vk)),
             SetupResult::Err(err) => Err(Error::zkVM(err)),
+        }
+    }
+
+    pub async fn preprocess(&self) -> Result<(), Error> {
+        let request = Request::new(PreprocessRequest {});
+
+        let response = self.client.preprocess(request).await?;
+
+        match response.into_body().result.ok_or_else(result_none_err)? {
+            PreprocessResult::Ok(_) => Ok(()),
+            PreprocessResult::Err(err) => Err(Error::zkVM(err)),
         }
     }
 

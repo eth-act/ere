@@ -107,6 +107,15 @@ impl ZiskSdk {
         })
     }
 
+    /// Builds the ASM binary of execution, and the ASM binaries of the setup of a local prover.
+    pub fn preprocess(&self) -> Result<(), Error> {
+        self.executor.preprocess(&self.rom)?;
+        match &self.backend {
+            Backend::Local(local) => local.preprocess(),
+            Backend::Cluster { .. } => Ok(()),
+        }
+    }
+
     /// Replaces the program.
     pub fn setup(&mut self, elf: &Elf) -> Result<(), Error> {
         let rom = rom(elf)?;

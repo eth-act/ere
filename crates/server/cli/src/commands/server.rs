@@ -13,13 +13,15 @@ use ere_prover_core::{
 };
 use ere_server_api::{
     ExecuteEstimatedCostOk, ExecuteEstimatedCostRequest, ExecuteEstimatedCostResponse, ExecuteOk,
-    ExecuteRequest, ExecuteResponse, ProfileOk, ProfileRequest, ProfileResponse, ProgramVkOk,
-    ProgramVkRequest, ProgramVkResponse, ProveOk, ProveRequest, ProveResponse, SetupOk,
-    SetupRequest, SetupResponse, VerifyOk, VerifyRequest, VerifyResponse, ZkvmService,
+    ExecuteRequest, ExecuteResponse, PreprocessOk, PreprocessRequest, PreprocessResponse,
+    ProfileOk, ProfileRequest, ProfileResponse, ProgramVkOk, ProgramVkRequest, ProgramVkResponse,
+    ProveOk, ProveRequest, ProveResponse, SetupOk, SetupRequest, SetupResponse, VerifyOk,
+    VerifyRequest, VerifyResponse, ZkvmService,
     execute_estimated_cost_response::Result as ExecuteEstimatedCostResult,
-    execute_response::Result as ExecuteResult, profile_response::Result as ProfileResult,
-    program_vk_response::Result as ProgramVkResult, prove_response::Result as ProveResult, router,
-    setup_response::Result as SetupResult, verify_response::Result as VerifyResult,
+    execute_response::Result as ExecuteResult, preprocess_response::Result as PreprocessResult,
+    profile_response::Result as ProfileResult, program_vk_response::Result as ProgramVkResult,
+    prove_response::Result as ProveResult, router, setup_response::Result as SetupResult,
+    verify_response::Result as VerifyResult,
 };
 use parking_lot::Mutex;
 use tokio::{
@@ -146,6 +148,8 @@ impl Drop for ProveInFlight {
 ///
 /// `execute`, `execute_estimated_cost`, `profile` and `verify` are assumed concurrent-safe for the
 /// underlying implementation. A backend that needs a bound applies its own.
+///
+/// `setup` and `preprocess` wait for the calls in progress, because both write the disk caches.
 #[allow(non_camel_case_types)]
 pub struct zkVMServer<T> {
     zkvm: Arc<RwLock<T>>,
@@ -172,6 +176,13 @@ impl<T: 'static + zkVMProver + Send + Sync> zkVMServer<T> {
         })
         .await
         .context("setup panicked")?
+    }
+
+    async fn preprocess(&self) -> anyhow::Result<()> {
+        let zkvm = Arc::clone(&self.zkvm).write_owned().await;
+        tokio::task::spawn_blocking(move || Ok(zkvm.preprocess()?))
+            .await
+            .context("preprocess panicked")?
     }
 
     async fn execute(&self, input: Input) -> anyhow::Result<(PublicValues, Duration)> {
@@ -241,6 +252,20 @@ impl<T: 'static + zkVMProver + Send + Sync> ZkvmService for zkVMServer<T> {
         };
 
         Ok(Response::new(SetupResponse {
+            result: Some(result),
+        }))
+    }
+
+    async fn preprocess(
+        &self,
+        _: Request<PreprocessRequest>,
+    ) -> twirp::Result<Response<PreprocessResponse>> {
+        let result = match self.preprocess().await {
+            Ok(()) => PreprocessResult::Ok(PreprocessOk {}),
+            Err(err) => PreprocessResult::Err(err.to_string()),
+        };
+
+        Ok(Response::new(PreprocessResponse {
             result: Some(result),
         }))
     }

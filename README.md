@@ -82,7 +82,7 @@ This repository contains the following crates:
 - [`ere-catalog`] - Catalog of supported zkVMs and compilers (`zkVMKind`, `CompilerKind`, SDK versions, Docker image tag)
 - Internal crates
   - [`ere-compiler`] - CLI binary to run `Compiler` used by [`ere-dockerized`]
-  - [`ere-server`] - Server binary that exposes `zkVMProver` operations over gRPC (also provides a `keygen` subcommand)
+  - [`ere-server`] - Server binary that exposes `zkVMProver` operations over gRPC (also provides `keygen` and `preprocess` subcommands)
   - [`ere-server-api`] - gRPC wire contract (`proto/api.proto` and generated prost/twirp types) shared by [`ere-server`] and [`ere-server-client`]
   - [`ere-server-client`] - Client library for [`ere-server`], used by [`ere-dockerized`]
   - [`ere-util-build`] - Build-time utilities (SDK version + Docker image tag detection)
@@ -290,7 +290,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let compiler = SP1RustRv64imaCustomized;
     let elf = compiler.compile(guest_directory, &[])?;
 
-    // Create zkVM instance (setup/preprocessing happens here)
+    // Create zkVM instance (setup happens here)
     let zkvm = SP1Prover::new(elf, ProverResource::Cpu)?;
 
     // Prepare input as raw bytes. The prover handles any framing needed by the SDK.

@@ -17,6 +17,9 @@
 //! `cargo` is on `PATH`, the setup builds them in the cargo checkout of the ZisK
 //! crates.
 //!
+//! `preprocess` builds these ASM binaries into the ZisK cache, so the setup reuses them. A guest
+//! too large for the address space of the ASM emulator fails there.
+//!
 //! ## `zkVMProver` requirements
 //!
 //! - Installation via [`ziskup`]
