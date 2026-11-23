@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.3](https://github.com/eth-act/ere/compare/v0.20.2...v0.20.3) (2026-11-23)
+
+
+### Features
+
+* add `zkVMProver::preprocess` to build the disk caches of a program ([#482](https://github.com/eth-act/ere/issues/482)) ([c5030e7](https://github.com/eth-act/ere/commit/c5030e71434508195baca6231f4112a8a5dc2fa2))
+
 ## [0.20.2](https://github.com/eth-act/ere/compare/v0.20.1...v0.20.2) (2026-11-18)
 
 
