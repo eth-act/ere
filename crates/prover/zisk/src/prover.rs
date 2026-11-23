@@ -102,9 +102,12 @@ pub(crate) mod tests {
     };
     use zisk_core::STACK_SIZE;
     use zisk_prover_backend::GuestProgram;
-    use zisk_rom_setup::{get_assembly_file_paths_from_id, get_elf_data_hash, get_output_path};
+    use zisk_rom_setup::{get_assembly_file_paths_from_id, get_elf_data_hash};
 
-    use crate::{prover::ZiskProver, sdk::local::compute_program_vk};
+    use crate::{
+        prover::ZiskProver,
+        sdk::local::{build_setup_binaries, compute_program_vk},
+    };
 
     pub(crate) fn basic_elf() -> Elf {
         static ELF: OnceLock<Elf> = OnceLock::new();
@@ -164,14 +167,11 @@ pub(crate) mod tests {
 
     #[test]
     fn test_preprocess() {
-        let zkvm = with_basic_elf(zkvm());
-        zkvm.preprocess().unwrap();
-        let cache_dir = get_output_path(&None).unwrap();
-        let elf_hash = get_elf_data_hash(&basic_elf());
-        let fast_binary = cache_dir.join(format!("{elf_hash}-ft.bin"));
-        for binary in get_assembly_file_paths_from_id(&elf_hash, &cache_dir, false)
-            .into_iter()
-            .chain([fast_binary])
+        let elf = basic_elf();
+        let cache_dir = tempfile::tempdir().unwrap();
+        build_setup_binaries(&elf, cache_dir.path()).unwrap();
+        for binary in
+            get_assembly_file_paths_from_id(&get_elf_data_hash(&elf), cache_dir.path(), false)
         {
             assert!(binary.exists(), "{} is missing", binary.display());
         }
