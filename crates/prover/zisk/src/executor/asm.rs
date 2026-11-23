@@ -110,6 +110,14 @@ impl AsmExecutor {
         self.get(rom)?.execute(stdin, self.execute_timeout)
     }
 
+    /// Returns the Fast binary of the program, which it builds into the ZisK cache on first use.
+    pub(crate) fn binary_path(&self, rom: &ZiskRom) -> Result<&PathBuf, Error> {
+        self.binary_path.get_or_try_init(|| {
+            panic::catch_unwind(AssertUnwindSafe(|| build(rom, &self.elf_hash)))
+                .map_err(|err| Error::BuildAsmEmulator(anyhow!(panic_msg(err))))?
+        })
+    }
+
     /// Takes the most recently used idle service, starts a new one if the pool is not full, or
     /// waits for one to return.
     fn get(&self, rom: &ZiskRom) -> Result<PooledService<'_>, Error> {
@@ -136,10 +144,7 @@ impl AsmExecutor {
                     executor: self,
                     service: None,
                 };
-                let binary_path = self.binary_path.get_or_try_init(|| {
-                    panic::catch_unwind(AssertUnwindSafe(|| build(rom, &self.elf_hash)))
-                        .map_err(|err| Error::BuildAsmEmulator(anyhow!(panic_msg(err))))?
-                })?;
+                let binary_path = self.binary_path(rom)?;
                 pooled.service = Some(Service::spawn(binary_path, self.execute_timeout)?);
                 return Ok(pooled);
             }

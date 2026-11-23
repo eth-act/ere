@@ -37,6 +37,19 @@ impl ZiskExecutor {
         }
     }
 
+    /// Builds the ASM emulator binary that the first execution would build.
+    #[cfg_attr(
+        not(all(target_arch = "x86_64", target_os = "linux")),
+        allow(unused_variables)
+    )]
+    pub(crate) fn preprocess(&self, rom: &ZiskRom) -> Result<(), Error> {
+        #[cfg(all(target_arch = "x86_64", target_os = "linux"))]
+        if let Some(asm) = &self.asm {
+            asm.binary_path(rom)?;
+        }
+        Ok(())
+    }
+
     /// Runs the framed `stdin` on `rom`.
     pub(crate) fn execute(
         &self,

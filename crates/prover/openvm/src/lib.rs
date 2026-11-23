@@ -38,6 +38,8 @@
 //! `OPENVM_RVR_NATIVE_CACHE_DIR` is also set, they build the `rvr` libraries of the prove in
 //! parallel into that cache, so the first prove only loads them.
 //!
+//! `preprocess` builds the same `rvr` libraries into that cache on the CPU, without the prover.
+//!
 //! ## Cost estimation
 //!
 //! The unit is trace cells. A table costs its rows times its width. The count is

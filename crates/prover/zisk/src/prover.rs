@@ -26,6 +26,10 @@ impl zkVMProver for ZiskProver {
     type Verifier = ZiskVerifier;
     type Error = Error;
 
+    fn preprocess(&self) -> Result<(), Error> {
+        self.sdk.preprocess()
+    }
+
     fn verifier(&self) -> &ZiskVerifier {
         &self.verifier
     }
@@ -98,6 +102,7 @@ pub(crate) mod tests {
     };
     use zisk_core::STACK_SIZE;
     use zisk_prover_backend::GuestProgram;
+    use zisk_rom_setup::{get_assembly_file_paths_from_id, get_elf_data_hash, get_output_path};
 
     use crate::{prover::ZiskProver, sdk::local::compute_program_vk};
 
@@ -155,6 +160,21 @@ pub(crate) mod tests {
         };
         let program_vk = || compute_program_vk(&resource, &program).unwrap();
         assert_eq!(program_vk(), program_vk());
+    }
+
+    #[test]
+    fn test_preprocess() {
+        let zkvm = with_basic_elf(zkvm());
+        zkvm.preprocess().unwrap();
+        let cache_dir = get_output_path(&None).unwrap();
+        let elf_hash = get_elf_data_hash(&basic_elf());
+        let fast_binary = cache_dir.join(format!("{elf_hash}-ft.bin"));
+        for binary in get_assembly_file_paths_from_id(&elf_hash, &cache_dir, false)
+            .into_iter()
+            .chain([fast_binary])
+        {
+            assert!(binary.exists(), "{} is missing", binary.display());
+        }
     }
 
     #[test]

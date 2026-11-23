@@ -29,6 +29,29 @@ pub struct SetupOk {
     pub program_vk: ::prost::alloc::vec::Vec<u8>,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct PreprocessRequest {}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct PreprocessResponse {
+    #[prost(oneof = "preprocess_response::Result", tags = "1, 2")]
+    pub result: ::core::option::Option<preprocess_response::Result>,
+}
+/// Nested message and enum types in `PreprocessResponse`.
+pub mod preprocess_response {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
+    pub enum Result {
+        #[prost(message, tag = "1")]
+        Ok(super::PreprocessOk),
+        #[prost(string, tag = "2")]
+        Err(::prost::alloc::string::String),
+    }
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct PreprocessOk {}
+#[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ExecuteRequest {
     #[prost(bytes = "vec", tag = "1")]
@@ -228,6 +251,10 @@ pub trait ZkvmService: Send + Sync {
         &self,
         req: twirp::Request<SetupRequest>,
     ) -> twirp::Result<twirp::Response<SetupResponse>>;
+    async fn preprocess(
+        &self,
+        req: twirp::Request<PreprocessRequest>,
+    ) -> twirp::Result<twirp::Response<PreprocessResponse>>;
     async fn execute(
         &self,
         req: twirp::Request<ExecuteRequest>,
@@ -263,6 +290,12 @@ where
         req: twirp::Request<SetupRequest>,
     ) -> twirp::Result<twirp::Response<SetupResponse>> {
         T::setup(&*self, req).await
+    }
+    async fn preprocess(
+        &self,
+        req: twirp::Request<PreprocessRequest>,
+    ) -> twirp::Result<twirp::Response<PreprocessResponse>> {
+        T::preprocess(&*self, req).await
     }
     async fn execute(
         &self,
@@ -313,6 +346,12 @@ where
             },
         )
         .route(
+            "/Preprocess",
+            |api: T, req: twirp::Request<PreprocessRequest>| async move {
+                api.preprocess(req).await
+            },
+        )
+        .route(
             "/Execute",
             |api: T, req: twirp::Request<ExecuteRequest>| async move {
                 api.execute(req).await
@@ -357,6 +396,12 @@ impl ZkvmService for twirp::client::Client {
         req: twirp::Request<SetupRequest>,
     ) -> twirp::Result<twirp::Response<SetupResponse>> {
         self.request("api.ZkvmService/Setup", req).await
+    }
+    async fn preprocess(
+        &self,
+        req: twirp::Request<PreprocessRequest>,
+    ) -> twirp::Result<twirp::Response<PreprocessResponse>> {
+        self.request("api.ZkvmService/Preprocess", req).await
     }
     async fn execute(
         &self,
@@ -425,6 +470,14 @@ pub mod handler {
                         self
                             .inner
                             .setup(twirp::details::decode_request(req).await?)
+                            .await?,
+                    )
+                }
+                "Preprocess" => {
+                    twirp::details::encode_response(
+                        self
+                            .inner
+                            .preprocess(twirp::details::decode_request(req).await?)
                             .await?,
                     )
                 }

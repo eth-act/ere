@@ -145,6 +145,7 @@ pub async fn handler(State(handle): State<PrometheusHandle>) -> String {
 pub fn path_to_method(path: &str) -> &'static str {
     match path {
         "/twirp/api.ZkvmService/Setup" => "setup",
+        "/twirp/api.ZkvmService/Preprocess" => "preprocess",
         "/twirp/api.ZkvmService/Execute" => "execute",
         "/twirp/api.ZkvmService/ExecuteEstimatedCost" => "execute_estimated_cost",
         "/twirp/api.ZkvmService/Profile" => "profile",
