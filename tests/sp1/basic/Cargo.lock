@@ -361,15 +361,15 @@ dependencies = [
 
 [[package]]
 name = "ere-codec"
-version = "0.20.1"
+version = "0.20.3"
 
 [[package]]
 name = "ere-platform-core"
-version = "0.20.1"
+version = "0.20.3"
 
 [[package]]
 name = "ere-platform-sp1"
-version = "0.20.1"
+version = "0.20.3"
 dependencies = [
  "ere-platform-core",
  "libzkevm",
@@ -386,7 +386,7 @@ dependencies = [
 
 [[package]]
 name = "ere-util-test"
-version = "0.20.1"
+version = "0.20.3"
 dependencies = [
  "bincode 2.0.1",
  "ere-codec",
