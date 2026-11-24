@@ -4,9 +4,13 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 #[non_exhaustive]
 pub enum Error {
-    /// Failed to deserialize a program VK.
-    #[error("Failed to decode program vk: {0}")]
-    DecodeProgramVk(#[from] bitcode::Error),
+    /// Program VK is not 32 bytes.
+    #[error("Invalid ProgramVk length, expected: {expected}, got: {got}")]
+    InvalidProgramVkLength { expected: usize, got: usize },
+
+    /// Program VK has an element not less than `F::ORDER_U32`.
+    #[error("Non-canonical ProgramVk")]
+    NonCanonicalProgramVk,
 
     /// Proof byte slice was longer than the decode limit.
     #[error("Proof size exceeds decode limit, expected at most {limit}, got {got}")]

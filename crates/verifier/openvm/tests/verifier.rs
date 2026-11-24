@@ -24,11 +24,17 @@ fn test_verifier() {
 #[test]
 fn test_invalid_program_vk_decode() {
     let truncated = &PROGRAM_VK[..PROGRAM_VK.len() - 1];
-    OpenVMProgramVk::decode_from_slice(truncated).unwrap_err();
+    let err = OpenVMProgramVk::decode_from_slice(truncated).unwrap_err();
+    assert!(matches!(err, Error::InvalidProgramVkLength { .. }));
 
     let mut extended = PROGRAM_VK.to_vec();
     extended.push(0xFF);
-    OpenVMProgramVk::decode_from_slice(&extended).unwrap_err();
+    let err = OpenVMProgramVk::decode_from_slice(&extended).unwrap_err();
+    assert!(matches!(err, Error::InvalidProgramVkLength { .. }));
+
+    // Element not less than `F::ORDER_U32`
+    let err = OpenVMProgramVk::decode_from_slice(&[0xFF; 32]).unwrap_err();
+    assert!(matches!(err, Error::NonCanonicalProgramVk));
 }
 
 #[test]
@@ -115,6 +121,6 @@ fn proof_with_invalid_merkle_path() -> OpenVMProof {
 
 fn verifier_with_unexpected_program_vk() -> OpenVMVerifier {
     let mut program_vk = OpenVMProgramVk::decode_from_slice(PROGRAM_VK).unwrap();
-    program_vk.0.app_exe_commit[0] += F::ONE;
+    program_vk.0[0] += F::ONE;
     OpenVMVerifier::new(program_vk)
 }
