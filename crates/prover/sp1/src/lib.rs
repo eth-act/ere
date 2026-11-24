@@ -28,6 +28,11 @@
 //! | `Network` |    Yes    |
 //! | `Cluster` |    No     |
 //!
+//! ## Preprocess
+//!
+//! `preprocess` compiles the program with the JIT in the tracing mode of a prove. It keeps nothing,
+//! because SP1 has no disk cache for the compiled program.
+//!
 //! ## Cost estimation
 //!
 //! The unit is `3 * trace_area + complexity`. The trace area counts the cells the

@@ -75,12 +75,6 @@ impl zkVMProver for PicoProver {
     type Verifier = PicoVerifier;
     type Error = Error;
 
-    /// Builds the pure-mode AOT library of execution into its cache.
-    fn preprocess(&self) -> Result<(), Error> {
-        self.emulator()?;
-        Ok(())
-    }
-
     fn verifier(&self) -> &PicoVerifier {
         &self.verifier
     }

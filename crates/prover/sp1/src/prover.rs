@@ -1,5 +1,7 @@
 use std::{
+    any::Any,
     ops::Range,
+    panic::{self, AssertUnwindSafe},
     sync::{Arc, OnceLock},
     time::{Duration, Instant},
 };
@@ -12,7 +14,7 @@ use ere_prover_core::{
 };
 use ere_util_tokio::block_on;
 use ere_verifier_sp1::{SP1ProgramVk, SP1Proof, SP1Verifier};
-use sp1_core_executor::Program;
+use sp1_core_executor::{MinimalExecutorEnum, Program};
 use sp1_sdk::{HashableKey, SP1Stdin};
 use tracing::info;
 
@@ -70,6 +72,16 @@ impl SP1Prover {
 impl zkVMProver for SP1Prover {
     type Verifier = SP1Verifier;
     type Error = Error;
+
+    /// Compiles the program with the JIT in tracing mode, as the runner process of a prove does.
+    fn preprocess(&self) -> Result<(), Error> {
+        // The JIT panics on a program it cannot compile.
+        panic::catch_unwind(AssertUnwindSafe(|| {
+            MinimalExecutorEnum::new(Arc::clone(&self.program), false, Some(1))
+        }))
+        .map(|_| ())
+        .map_err(|err| Error::setup(anyhow!(panic_msg(err))))
+    }
 
     fn verifier(&self) -> &SP1Verifier {
         &self.verifier
@@ -157,6 +169,12 @@ fn input_to_stdin(input: &Input) -> Result<SP1Stdin, Error> {
     Ok(stdin)
 }
 
+fn panic_msg(err: Box<dyn Any + Send + 'static>) -> String {
+    None.or_else(|| err.downcast_ref::<String>().cloned())
+        .or_else(|| err.downcast_ref::<&'static str>().map(ToString::to_string))
+        .unwrap_or_else(|| "unknown panic msg".to_string())
+}
+
 #[cfg(test)]
 pub(crate) mod tests {
     use std::sync::{Mutex, MutexGuard, OnceLock};
@@ -241,6 +259,15 @@ pub(crate) mod tests {
             ere_verifier_sp1::SP1_CIRCUIT_VERSION,
             sp1_sdk::SP1_CIRCUIT_VERSION
         );
+    }
+
+    #[test]
+    fn test_preprocess() {
+        for elf in [basic_elf(), zkvm_interface_elf()] {
+            let mut zkvm = zkvm(false);
+            zkvm.setup(elf).unwrap();
+            zkvm.preprocess().unwrap();
+        }
     }
 
     #[test]

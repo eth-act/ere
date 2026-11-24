@@ -8,7 +8,7 @@ use tracing::info;
 use crate::construct_zkvm;
 
 pub fn run(elf: Elf, program_vk_path: &str) -> Result<(), Error> {
-    let zkvm = construct_zkvm(elf, ProverResource::Cpu)?;
+    let zkvm = construct_zkvm(elf, resource())?;
     let program_vk = zkvm
         .program_vk()
         .encode_to_vec()
@@ -21,4 +21,13 @@ pub fn run(elf: Elf, program_vk_path: &str) -> Result<(), Error> {
     info!("wrote {program_vk_size} bytes of encoded program_vk to {program_vk_path}");
 
     Ok(())
+}
+
+/// Returns the CPU, except for a Pico `cuda` build, which has no CPU prover.
+fn resource() -> ProverResource {
+    if cfg!(all(feature = "pico", feature = "cuda")) {
+        ProverResource::Gpu
+    } else {
+        ProverResource::Cpu
+    }
 }
