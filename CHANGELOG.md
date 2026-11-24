@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.4](https://github.com/eth-act/ere/compare/v0.20.3...v0.20.4) (2026-11-24)
+
+
+### Bug Fixes
+
+* make `preprocess` build everything the prover builds for a program on the CPU ([#484](https://github.com/eth-act/ere/issues/484)) ([038c946](https://github.com/eth-act/ere/commit/038c94643ba8538c3d0550b37855363cb2582bae))
+
 ## [0.20.3](https://github.com/eth-act/ere/compare/v0.20.2...v0.20.3) (2026-11-23)
 
 
