@@ -14,7 +14,7 @@ use ere_verifier_openvm::{
     NUM_PUBLIC_VALUES_BYTES, OpenVMProgramVk, OpenVMProof, OpenVMVerifier, extract_public_values,
 };
 use once_cell::sync::OnceCell;
-use openvm_circuit::arch::instructions::exe::VmExe;
+use openvm_circuit::arch::{VirtualMachineError, instructions::exe::VmExe};
 use openvm_sdk::{
     CpuSdk, F, GenericSdk, StdIn,
     config::{AggregationSystemParams, AppConfig},
@@ -122,18 +122,20 @@ impl zkVMProver for OpenVMProver {
     type Verifier = OpenVMVerifier;
     type Error = Error;
 
-    /// Builds the `rvr` libraries of both the CPU and the GPU prover on the CPU, when
+    /// Builds the preflight interpreter of the CPU prover and the `rvr` libraries of both the CPU
+    /// and the GPU prover on the CPU. The libraries go into the cache only when
     /// `OPENVM_RVR_NATIVE_CACHE_DIR` is set.
     fn preprocess(&self) -> Result<(), Error> {
-        if env::var_os("OPENVM_RVR_NATIVE_CACHE_DIR").is_none() {
-            return Ok(());
-        }
         let app_prover = AppProver::<BabyBearPoseidon2CpuEngine, SdkVmCpuBuilder>::new(
             SdkVmCpuBuilder,
             &self.app_pk.app_vm_pk,
             self.app_exe.clone(),
         )
         .map_err(|err| Error::ProverInit(err.into()))?;
+        app_prover
+            .vm()
+            .preflight_interpreter(&self.app_exe)
+            .map_err(|err| Error::ProverInit(VirtualMachineError::from(err).into()))?;
         build_rvr_libraries(app_prover.vm(), &self.app_exe, true)
     }
 
@@ -369,6 +371,15 @@ pub(crate) mod tests {
                 .unwrap()
         };
         assert_eq!(program_vk(), program_vk());
+    }
+
+    #[test]
+    fn test_preprocess() {
+        for elf in [basic_elf(), zkvm_interface_elf()] {
+            let mut zkvm = zkvm(false);
+            zkvm.setup(elf).unwrap();
+            zkvm.preprocess().unwrap();
+        }
     }
 
     #[test]

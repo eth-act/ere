@@ -22,8 +22,9 @@ pub trait zkVMProver: Sync {
     type Verifier: zkVMVerifier;
     type Error: 'static + Send + Sync + Error + From<<Self::Verifier as zkVMVerifier>::Error>;
 
-    /// Builds the disk caches that the prover reads for the current program, without starting the
-    /// prover. Backends without a disk cache do nothing.
+    /// Builds what the prover builds for the current program, without starting the prover, so a
+    /// program that the prover cannot build fails here. A backend keeps the result in its disk
+    /// cache when it has one. Backends that build nothing for a program do nothing.
     fn preprocess(&self) -> Result<(), Self::Error> {
         Ok(())
     }

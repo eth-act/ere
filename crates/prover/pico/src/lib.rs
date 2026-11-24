@@ -53,7 +53,6 @@
 //!
 //! - The first execution of a program builds the library, outside the reported time, which takes
 //!   about 30 s for a block-validation guest. Later executions use the library cached by ELF.
-//!   `preprocess` builds it ahead.
 //! - If the build fails, the execution fails, and the next execution builds again.
 //! - The cache must be owned by the current user and accessible only by it (mode 700), because the
 //!   prover loads the library as it is.

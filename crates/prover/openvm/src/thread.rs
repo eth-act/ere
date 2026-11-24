@@ -123,7 +123,11 @@ fn serve<E, VB>(
                     &app_pk,
                     &agg_prover,
                     &app_exe,
-                    |prover| build_rvr_libraries(&prover.app_prover.instance().vm, &app_exe, gpu),
+                    |prover| {
+                        env::var_os("OPENVM_RVR_NATIVE_CACHE_DIR").map_or(Ok(()), |_| {
+                            build_rvr_libraries(&prover.app_prover.instance().vm, &app_exe, gpu)
+                        })
+                    },
                 ));
             }
             Request::Reset(reply) => {
@@ -210,9 +214,6 @@ where
     E: StarkEngine<SC = SC>,
     VB: VmBuilder<E, VmConfig = SdkVmConfig>,
 {
-    if env::var_os("OPENVM_RVR_NATIVE_CACHE_DIR").is_none() {
-        return Ok(());
-    }
     let (executor, executor_idx_to_air_idx) = (vm.executor(), vm.executor_idx_to_air_idx());
     thread::scope(|scope| {
         let preflight = gpu.then(|| scope.spawn(|| executor.preflight_instance(app_exe).map(drop)));

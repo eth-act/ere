@@ -246,8 +246,8 @@ impl DockerizedzkVM {
         block_on(self.setup_async(elf))
     }
 
-    /// Builds the disk caches of the current program, see `zkVMProver::preprocess`. They outlive
-    /// the container only in the cache volumes of the zkVM, such as `ERE_ZISK_CACHE_VOLUME`.
+    /// Runs `zkVMProver::preprocess` for the current program. Its disk caches outlive the container
+    /// only in the cache volumes `ERE_ZISK_CACHE_VOLUME` and `ERE_OPENVM_CACHE_VOLUME`.
     pub fn preprocess(&self) -> anyhow::Result<()> {
         block_on(self.preprocess_async())
     }
