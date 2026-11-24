@@ -11,6 +11,7 @@ serde = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
 
 # Pico dependencies
+pico-mle-core.workspace = true
 pico-verifier.workspace = true
 
 # Local dependencies

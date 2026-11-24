@@ -122,16 +122,16 @@ LambdaVM has no verifying key separate from the program: its verifier binds a pr
 
 ### Format
 
-The v2 VK bundle of [`pico-verifier`](https://github.com/brevis-network/pico/tree/v3.1.5/verifier): `PICOMLEV`, version `2` as a `u32` little endian, then the zstd compressed bincode of the guest exe identity (25 `u32`), the whitelist root of the recursion verifying keys (8 `u32`), and the Merkle memberships of the keys a root or a compress proof can carry. `ere-prover-pico` proves in whitelist mode under the whitelist shipped in Pico, so the bundle is a function of the ELF and that whitelist.
+100-bytes holding the 25 KoalaBear elements of the `vm_vk` of the program, each as a canonical `u32` in little-endian.
 
 ### Instructions
 
-The `mle-ethproofs-vk-bundle` binary in the Pico repository builds the bundle from an ELF with the shipped whitelist.
+The `mle-ethproofs-vk-bundle` binary in the Pico repository builds the VK bundle of an ELF. The VK is its `vm_vk`, bytes 8 to 107 of the zstd body.
 
 1. Setup
 
     ```bash
-    sudo apt-get update && sudo apt-get install -y curl ca-certificates git build-essential
+    sudo apt-get update && sudo apt-get install -y curl ca-certificates git build-essential pkg-config libssl-dev protobuf-compiler libprotobuf-dev zstd
 
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly-2026-09-27
     . "$HOME/.cargo/env"
@@ -146,13 +146,17 @@ The `mle-ethproofs-vk-bundle` binary in the Pico repository builds the bundle fr
     GUEST_NAME="<guest-name>"
     ELF_PATH="$(realpath <elf-path>)"
     VK="$PWD/stateless-validator-$GUEST_NAME-pico-$ZKVM_VERSION.vk"
-    (cd pico && cargo run --release -p distributed-vm --bin mle-ethproofs-vk-bundle -- --elf "$ELF_PATH" "$VK")
+    TEMPDIR="$(mktemp -d)"
+    (cd pico && cargo run --release -p distributed-vm --bin mle-ethproofs-vk-bundle -- --elf "$ELF_PATH" "$TEMPDIR/bundle")
+    tail -c +13 "$TEMPDIR/bundle" | zstd -dc > "$TEMPDIR/body"
+    dd if="$TEMPDIR/body" of="$VK" bs=1 skip=8 count=100 status=none
+    rm -rf "$TEMPDIR"
     ```
 3. Sanity check
 
     ```bash
-    [ "$(head -c 8 "$VK")" = "PICOMLEV" ] || { echo "not a Pico VK bundle" >&2; exit 1; }
-    printf 'Generated Pico VK sha256: %s\n' "$(sha256sum "$VK" | cut -d' ' -f1)"
+    [ "$(stat -c%s "$VK")" -eq 100 ] || { echo "expected 100 bytes, got $(stat -c%s "$VK")" >&2; exit 1; }
+    printf 'Generated Pico VK: 0x%s\n' "$(od -An -v -tx1 "$VK" | tr -d ' \n')"
     ```
 
 ## SP1

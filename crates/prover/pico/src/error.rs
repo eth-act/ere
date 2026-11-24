@@ -1,5 +1,6 @@
 use ere_prover_core::CommonError;
 use pico_prover::ProveError;
+use pico_verifier::VerifyError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -18,6 +19,9 @@ pub enum Error {
 
     #[error("Initialize prover failed: {0}")]
     ProverInit(#[source] ProveError),
+
+    #[error("Decode Pico VK bundle failed: {0}")]
+    DecodeVkBundle(#[from] VerifyError),
 
     #[error("Pico prover panicked in an earlier call")]
     ProverPoisoned,

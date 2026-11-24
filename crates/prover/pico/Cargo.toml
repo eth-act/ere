@@ -12,6 +12,7 @@ thiserror.workspace = true
 
 # Pico dependencies
 pico-prover = { workspace = true, features = ["pure-build"] }
+pico-verifier.workspace = true
 
 # Local dependencies
 ere-compiler-core.workspace = true
