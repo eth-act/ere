@@ -29,7 +29,7 @@ impl OpenVMVerifier {
     pub fn new(program_vk: OpenVMProgramVk) -> Self {
         let vk = VmStarkVerifyingKey {
             mvk: AGG_VK.clone(),
-            baseline: program_vk.0.clone(),
+            baseline: program_vk.baseline(),
         };
         Self { program_vk, vk }
     }

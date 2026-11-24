@@ -39,11 +39,11 @@ LambdaVM has no verifying key separate from the program: its verifier binds a pr
 
 ### Format
 
-`bitcode` encoding of the upstream `VerificationBaseline`.
+32-bytes holding the 8 BabyBear elements of the `app_exe_commit` of the program, each as a canonical `u32` in little-endian.
 
 ### Instructions
 
-`cargo openvm commit` has no flag for a compiled ELF and works off a Rust project it builds itself, so the VK comes from the rust script below instead. The script applies the same app config `ere-prover-openvm` builds its prover with and generates the aggregation keys in process, so no OpenVM installation is involved.
+`cargo openvm commit` cannot read an ELF, so a script computes the commit. It builds the OpenVM fork of ere, because the upstream tag depends on a deleted `stark-backend` branch.
 
 1. Setup
 
@@ -52,12 +52,9 @@ LambdaVM has no verifying key separate from the program: its verifier binds a pr
 
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly-2026-07-01
     . "$HOME/.cargo/env"
-    ```
-2. Save the script as `openvm_vk_gen.rs`
 
-    ```rust
-    #!/usr/bin/env -S cargo +nightly-2026-07-01 -Zscript
-
+    ZKVM_VERSION="v2.1.0-preview"
+    cat > openvm_vk_gen.rs <<EOF
     ---
     [package]
     edition = "2024"
@@ -66,16 +63,18 @@ LambdaVM has no verifying key separate from the program: its verifier binds a pr
     opt-level = 3
 
     [dependencies]
-    bitcode = { version = "0.6", features = ["serde"] }
-    openvm-sdk = { git = "https://github.com/openvm-org/openvm.git", tag = "v2.1.0-preview" }
-    openvm-sdk-config = { git = "https://github.com/openvm-org/openvm.git", tag = "v2.1.0-preview" }
-    openvm-stark-sdk = { git = "https://github.com/openvm-org/stark-backend.git", branch = "develop-v2.1.0" }
+    openvm-sdk = { git = "https://github.com/han0110/openvm.git", branch = "patch/$ZKVM_VERSION" }
+    openvm-sdk-config = { git = "https://github.com/han0110/openvm.git", branch = "patch/$ZKVM_VERSION" }
+    openvm-stark-sdk = { git = "https://github.com/han0110/stark-backend.git", branch = "patch/$ZKVM_VERSION" }
     ---
 
     use std::{env, error::Error, fs};
     use openvm_sdk::{Sdk, config::AppConfig};
     use openvm_sdk_config::SdkVmConfig;
-    use openvm_stark_sdk::config::{MAX_APP_LOG_STACKED_HEIGHT, app_params_with_100_bits_security};
+    use openvm_stark_sdk::{
+        config::{MAX_APP_LOG_STACKED_HEIGHT, app_params_with_100_bits_security},
+        openvm_stark_backend::p3_field::PrimeField32,
+    };
 
     fn main() -> Result<(), Box<dyn Error>> {
         let mut args = env::args().skip(1);
@@ -92,27 +91,31 @@ LambdaVM has no verifying key separate from the program: its verifier binds a pr
             .app_config(app_config)
             .agg_params(Default::default())
             .build()?;
-        let baseline = sdk.prover(fs::read(elf_path)?)?.generate_baseline();
+        let app_exe_commit = sdk.app_prover(fs::read(elf_path)?)?.app_exe_commit();
 
-        fs::write(vk_path, bitcode::serialize(&baseline)?)?;
+        let vk: Vec<u8> = app_exe_commit
+            .iter()
+            .flat_map(|element| element.as_canonical_u32().to_le_bytes())
+            .collect();
+        fs::write(vk_path, vk)?;
         Ok(())
     }
+    EOF
     ```
-3. Generate VK
+2. Generate VK
 
     ```bash
     set -euo pipefail
-    ZKVM_VERSION="v2.1.0-preview"
     GUEST_NAME="<guest-name>"
     ELF_PATH="<elf-path>"
     VK="stateless-validator-$GUEST_NAME-openvm-$ZKVM_VERSION.vk"
     cargo +nightly-2026-07-01 -Zscript openvm_vk_gen.rs "$ELF_PATH" "$VK"
     ```
-4. Sanity check
+3. Sanity check
 
     ```bash
-    [ -s "$VK" ] || { echo "empty vk" >&2; exit 1; }
-    printf 'Generated OpenVM VK sha256: %s\n' "$(sha256sum "$VK" | cut -d' ' -f1)"
+    [ "$(stat -c%s "$VK")" -eq 32 ] || { echo "expected 32 bytes, got $(stat -c%s "$VK")" >&2; exit 1; }
+    printf 'Generated OpenVM VK: 0x%s\n' "$(od -An -v -tx1 "$VK" | tr -d ' \n')"
     ```
 
 ## Pico

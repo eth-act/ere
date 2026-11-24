@@ -28,10 +28,8 @@ use openvm_stark_sdk::config::{
     baby_bear_poseidon2::BabyBearPoseidon2CpuEngine,
 };
 use openvm_transpiler::{FromElf, openvm_platform::memory::MEM_SIZE};
-use openvm_verify_stark_host::vk::VerificationBaseline;
 
 use crate::{
-    baseline::baseline,
     cost::CostEstimator,
     error::Error,
     executor::Executor,
@@ -84,11 +82,7 @@ impl OpenVMProver {
 
         let app_exe_commit =
             prover_thread.request(|reply| Request::Commit(app_exe.clone(), reply))?;
-        let verifier = OpenVMVerifier::new(OpenVMProgramVk::new(baseline(
-            &app_pk,
-            &agg_prover,
-            app_exe_commit,
-        )));
+        let verifier = OpenVMVerifier::new(OpenVMProgramVk::new(app_exe_commit));
 
         let setup_on_init = env::var_os("ERE_OPENVM_SETUP_ON_INIT").is_some();
         if setup_on_init {
@@ -149,12 +143,10 @@ impl zkVMProver for OpenVMProver {
         }
 
         let app_exe = transpile(&elf.0)?;
-        let verifier = OpenVMVerifier::new(OpenVMProgramVk::new(VerificationBaseline {
-            app_exe_commit: self
-                .prover_thread
+        let verifier = OpenVMVerifier::new(OpenVMProgramVk::new(
+            self.prover_thread
                 .request(|reply| Request::Commit(app_exe.clone(), reply))?,
-            ..self.program_vk().0.clone()
-        }));
+        ));
         // Unloads the rvr libraries of the old program before the setup loads new ones.
         self.executor = OnceCell::new();
         self.estimator = OnceCell::new();
@@ -309,7 +301,7 @@ pub(crate) mod tests {
     use openvm_transpiler::openvm_platform::memory::STACK_TOP;
 
     use crate::{
-        baseline::{app_exe_commit, baseline},
+        baseline::app_exe_commit,
         prover::{OpenVMProver, cpu_sdk, transpile},
     };
 
@@ -362,11 +354,9 @@ pub(crate) mod tests {
     fn test_deterministic_program_vk() {
         let app_exe = transpile(&basic_elf().0).unwrap();
         let sdk = cpu_sdk(None, None).unwrap();
-        let agg_prover = sdk.agg_prover();
         let engine = <BabyBearPoseidon2CpuEngine>::new(sdk.app_pk().app_vm_pk.get_params());
         let program_vk = || {
-            let app_exe_commit = app_exe_commit(&engine, sdk.app_pk(), &app_exe);
-            OpenVMProgramVk::new(baseline(sdk.app_pk(), &agg_prover, app_exe_commit))
+            OpenVMProgramVk::new(app_exe_commit(&engine, sdk.app_pk(), &app_exe))
                 .encode_to_vec()
                 .unwrap()
         };

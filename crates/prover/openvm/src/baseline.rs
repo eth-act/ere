@@ -9,7 +9,7 @@ use openvm_circuit::{
     },
     system::program::{ProgramExecutionCols, trace::compute_exe_commit_from_mem_config},
 };
-use openvm_sdk::{DeferralSetup, F, SC, keygen::AppProvingKey, prover::AggProver};
+use openvm_sdk::{F, SC, keygen::AppProvingKey};
 use openvm_sdk_config::SdkVmConfig;
 use openvm_stark_sdk::openvm_stark_backend::{
     StarkEngine,
@@ -18,27 +18,6 @@ use openvm_stark_sdk::openvm_stark_backend::{
     p3_maybe_rayon::prelude::*,
     prover::{ColMajorMatrix, DeviceDataTransporter, TraceCommitter},
 };
-use openvm_verify_stark_host::vk::VerificationBaseline;
-
-/// Returns the baseline of a program with commit `app_exe_commit`, as
-/// `StarkProver::generate_baseline` does without a prover.
-pub(crate) fn baseline(
-    app_pk: &AppProvingKey<SdkVmConfig>,
-    agg_prover: &AggProver,
-    app_exe_commit: [F; VM_DIGEST_WIDTH],
-) -> VerificationBaseline {
-    let system_config = app_pk.app_vm_pk.vm_config.as_ref();
-    VerificationBaseline {
-        app_exe_commit,
-        memory_dimensions: system_config.memory_config.memory_dimensions(),
-        num_user_pvs: system_config.num_public_values,
-        app_vk_commit: agg_prover.leaf_prover.get_vk_commit(false),
-        leaf_vk_commit: agg_prover.internal_for_leaf_prover.get_vk_commit(false),
-        internal_for_leaf_vk_commit: agg_prover.internal_recursive_prover.get_vk_commit(false),
-        internal_recursive_vk_commit: agg_prover.internal_recursive_prover.get_vk_commit(true),
-        expected_def_hook_commit: DeferralSetup::Disabled.hook_commit(),
-    }
-}
 
 /// Returns the commit of `app_exe`, as `VirtualMachine::commit_program_on_device` and
 /// `AppProver::app_exe_commit` do without the proving key.
@@ -106,12 +85,13 @@ fn padding_instruction<F: Field>() -> Instruction<F> {
 
 #[cfg(test)]
 mod tests {
+    use ere_verifier_openvm::OpenVMProgramVk;
     use openvm_stark_sdk::{
         config::baby_bear_poseidon2::BabyBearPoseidon2CpuEngine, openvm_stark_backend::StarkEngine,
     };
 
     use crate::{
-        baseline::{app_exe_commit, baseline},
+        baseline::app_exe_commit,
         prover::{cpu_sdk, tests::basic_elf, transpile},
     };
 
@@ -120,8 +100,8 @@ mod tests {
         let app_exe = transpile(&basic_elf()).unwrap();
         let sdk = cpu_sdk(None, None).unwrap();
         let engine = <BabyBearPoseidon2CpuEngine>::new(sdk.app_pk().app_vm_pk.get_params());
-        let app_exe_commit = app_exe_commit(&engine, sdk.app_pk(), &app_exe);
-        let baseline = baseline(sdk.app_pk(), &sdk.agg_prover(), app_exe_commit);
+        let program_vk = OpenVMProgramVk::new(app_exe_commit(&engine, sdk.app_pk(), &app_exe));
+        let baseline = program_vk.baseline();
         let expected = sdk.prover(app_exe).unwrap().generate_baseline();
         assert_eq!(format!("{baseline:?}"), format!("{expected:?}"));
     }

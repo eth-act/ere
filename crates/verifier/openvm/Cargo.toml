@@ -19,6 +19,7 @@ ere-verifier-core.workspace = true
 
 [dev-dependencies]
 openvm-sdk.workspace = true
+openvm-sdk-config.workspace = true
 
 [build-dependencies]
 ere-util-build.workspace = true

@@ -4012,6 +4012,7 @@ dependencies = [
  "ere-util-build",
  "ere-verifier-core",
  "openvm-sdk",
+ "openvm-sdk-config",
  "openvm-stark-sdk",
  "openvm-verify-stark-host",
  "serde",
