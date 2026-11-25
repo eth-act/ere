@@ -4,7 +4,7 @@ use ere_verifier_core::{
     zkVMVerifier,
 };
 use ere_verifier_pico::{Error, PicoProgramVk, PicoProof, PicoVerifier};
-use pico_verifier::{VerifyError, VmVk, shipped_compress_vk, whitelist::vk_identity};
+use pico_verifier::{VerifyError, VmVk};
 
 const PROGRAM_VK: &[u8] = include_bytes!("./fixtures/program_vk.bin");
 const PROOF: &[u8] = include_bytes!("./fixtures/proof.bin");
@@ -13,7 +13,7 @@ const PUBLIC_VALUES: &[u8] = include_bytes!("./fixtures/public_values.bin");
 #[test]
 fn test_verifier() {
     let program_vk = Decode::decode_from_slice(PROGRAM_VK).unwrap();
-    let verifier = PicoVerifier::new(program_vk).unwrap();
+    let verifier = PicoVerifier::new(program_vk);
     let proof = Decode::decode_from_slice(PROOF).unwrap();
     let public_values = verifier.verify(&proof).unwrap();
     assert_eq!(&*public_values, PUBLIC_VALUES);
@@ -32,44 +32,17 @@ fn test_invalid_program_vk_decode() {
     let len = PROGRAM_VK.len();
     for program_vk in [&PROGRAM_VK[..len - 1], &PROGRAM_VK[..12], &[]] {
         let err = PicoProgramVk::decode_from_slice(program_vk).unwrap_err();
-        assert!(matches!(err, Error::DecodeProgramVk(_)));
+        assert!(matches!(err, Error::InvalidProgramVkLength { .. }));
     }
 
     let mut extended = PROGRAM_VK.to_vec();
     extended.push(0xFF);
     let err = PicoProgramVk::decode_from_slice(&extended).unwrap_err();
-    assert!(matches!(err, Error::DecodeProgramVk(_)));
+    assert!(matches!(err, Error::InvalidProgramVkLength { .. }));
 
-    // A whitelist root other than the one shipped with Pico.
-    let mut program_vk = PicoProgramVk::decode_from_slice(PROGRAM_VK).unwrap();
-    program_vk.0.vk_root[0] = program_vk.0.vk_root[1];
-    let err = PicoVerifier::new(program_vk).unwrap_err();
-    assert!(matches!(
-        err,
-        Error::UntrustedProgramVk(VerifyError::UntrustedVkRoot)
-    ));
-
-    // A membership whose path does not reach the shipped root.
-    let mut program_vk = PicoProgramVk::decode_from_slice(PROGRAM_VK).unwrap();
-    program_vk.0.members[0].siblings[0][0] = program_vk.0.members[0].siblings[0][1];
-    let err = PicoVerifier::new(program_vk).unwrap_err();
-    assert!(matches!(
-        err,
-        Error::UntrustedProgramVk(VerifyError::MemberOffRoot { .. })
-    ));
-
-    // A bundle without the compress key shipped with Pico.
-    let mut program_vk = PicoProgramVk::decode_from_slice(PROGRAM_VK).unwrap();
-    let compress_identity = vk_identity(&shipped_compress_vk());
-    program_vk
-        .0
-        .members
-        .retain(|member| member.identity != compress_identity);
-    let err = PicoVerifier::new(program_vk).unwrap_err();
-    assert!(matches!(
-        err,
-        Error::UntrustedProgramVk(VerifyError::NotWhitelisted)
-    ));
+    // Limb not less than the KoalaBear modulus
+    let err = PicoProgramVk::decode_from_slice(&[0xFF; 100]).unwrap_err();
+    assert!(matches!(err, Error::NonCanonicalProgramVk));
 }
 
 #[test]
@@ -91,7 +64,7 @@ fn test_invalid_proof_decode() {
 #[test]
 fn test_invalid_proof_verify() {
     let program_vk = Decode::decode_from_slice(PROGRAM_VK).unwrap();
-    let verifier = PicoVerifier::new(program_vk).unwrap();
+    let verifier = PicoVerifier::new(program_vk);
 
     // Unexpected public values
     let mut proof = PicoProof::decode_from_slice(PROOF).unwrap();
@@ -121,9 +94,8 @@ fn test_invalid_proof_verify() {
 
 fn verifier_with_unexpected_program_vk() -> PicoVerifier {
     // Another program: a different entry pc under the same whitelist.
-    let mut program_vk = PicoProgramVk::decode_from_slice(PROGRAM_VK).unwrap();
-    let mut words = program_vk.0.vm_vk.to_u32s();
+    let program_vk = PicoProgramVk::decode_from_slice(PROGRAM_VK).unwrap();
+    let mut words = program_vk.0.to_u32s();
     words[8] += 4;
-    program_vk.0.vm_vk = VmVk::from_u32s(&words).unwrap();
-    PicoVerifier::new(program_vk).unwrap()
+    PicoVerifier::new(PicoProgramVk::new(VmVk::from_u32s(&words).unwrap()))
 }

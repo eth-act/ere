@@ -153,6 +153,7 @@ rvr-openvm-ir = { git = "https://github.com/han0110/openvm.git", branch = "patch
 rvr-openvm-lift = { git = "https://github.com/han0110/openvm.git", branch = "patch/v2.1.0-preview", default-features = false }
 
 # Pico dependencies
+pico-mle-core = { git = "https://github.com/brevis-network/pico", tag = "v3.1.5", default-features = false }
 pico-prover = { git = "https://github.com/brevis-network/pico", tag = "v3.1.5", default-features = false }
 pico-sdk = { git = "https://github.com/brevis-network/pico", tag = "v3.1.5" }
 pico-verifier = { git = "https://github.com/brevis-network/pico", tag = "v3.1.5" }

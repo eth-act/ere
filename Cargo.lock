@@ -3795,6 +3795,7 @@ dependencies = [
  "libc",
  "once_cell",
  "pico-prover",
+ "pico-verifier",
  "thiserror 2.0.18",
 ]
 
@@ -4026,6 +4027,7 @@ dependencies = [
  "bincode 2.0.1",
  "ere-util-build",
  "ere-verifier-core",
+ "pico-mle-core",
  "pico-verifier",
  "serde",
  "thiserror 2.0.18",

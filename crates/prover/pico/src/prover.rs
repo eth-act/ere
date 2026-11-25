@@ -13,7 +13,7 @@ use std::{
 use ere_compiler_core::Elf;
 use ere_prover_core::{
     CommonError, CostEstimation, CostProfile, Input, ProverResource, ProverResourceKind,
-    PublicValues, codec::Decode, zkVMProver,
+    PublicValues, zkVMProver,
 };
 use ere_verifier_pico::{PicoProgramVk, PicoProof, PicoVerifier};
 use once_cell::sync::OnceCell;
@@ -21,6 +21,7 @@ use pico_prover::{
     CostComponent, Phase, Prover, ProverBuilder, PureBuildOptions, PureLibrary, Stdin,
     build_pure_library,
 };
+use pico_verifier::bundle::decode_vk_bundle_v2;
 
 use crate::error::Error;
 
@@ -223,7 +224,8 @@ fn ensure_private(dir: &Path) -> Result<(), Error> {
 fn load(elf: &Elf) -> Result<(Prover, PicoVerifier), Error> {
     let prover = builder(elf).build().map_err(Error::ProverInit)?;
     let bundle = prover.vk_bundle().map_err(Error::ProverInit)?;
-    let verifier = PicoVerifier::new(PicoProgramVk::decode_from_slice(&bundle)?)?;
+    let vm_vk = decode_vk_bundle_v2(&bundle)?.vm_vk;
+    let verifier = PicoVerifier::new(PicoProgramVk::new(vm_vk));
     Ok((prover, verifier))
 }
 

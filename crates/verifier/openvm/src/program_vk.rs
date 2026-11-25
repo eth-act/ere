@@ -37,11 +37,9 @@ impl Encode for OpenVMProgramVk {
     type Error = Infallible;
 
     fn encode_to_vec(&self) -> Result<Vec<u8>, Self::Error> {
-        Ok(self
-            .0
-            .iter()
-            .flat_map(|element| element.as_canonical_u32().to_le_bytes())
-            .collect())
+        Ok(u32s_to_bytes(
+            &self.0.map(|element| element.as_canonical_u32()),
+        ))
     }
 }
 
@@ -55,11 +53,25 @@ impl Decode for OpenVMProgramVk {
                 got: slice.len(),
             });
         }
-        let words: [u32; DIGEST_SIZE] =
-            from_fn(|i| u32::from_le_bytes(from_fn(|j| slice[4 * i + j])));
+        let words = bytes_to_u32s(slice);
         if words.iter().any(|word| *word >= F::ORDER_U32) {
             return Err(Error::NonCanonicalProgramVk);
         }
-        Ok(Self(words.map(F::from_u32)))
+        Ok(Self(from_fn(|i| F::from_u32(words[i]))))
     }
+}
+
+/// Encodes `limbs` as `u32` in little endian.
+fn u32s_to_bytes(limbs: &[u32]) -> Vec<u8> {
+    limbs.iter().flat_map(|limb| limb.to_le_bytes()).collect()
+}
+
+/// Inverse of [`u32s_to_bytes`].
+fn bytes_to_u32s(bytes: &[u8]) -> Vec<u32> {
+    bytes
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|chunk| u32::from_le_bytes(*chunk))
+        .collect()
 }
