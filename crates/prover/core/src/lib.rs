@@ -11,7 +11,7 @@ mod test;
 
 pub use ere_codec as codec;
 pub use ere_compiler_core::Elf;
-pub use ere_verifier_core::{PublicValues, zkVMVerifier};
+pub use ere_verifier_core::{ExitCode, PublicValues, zkVMVerifier};
 
 pub use crate::{
     cost::{

@@ -9,11 +9,11 @@ use std::{
 use anyhow::anyhow;
 use ere_compiler_core::Elf;
 use ere_prover_core::{
-    CommonError, CostEstimation, CostProfile, Input, ProverResource, PublicValues, SymbolMap,
-    loadable_segments, zkVMProver,
+    CommonError, CostEstimation, CostProfile, ExitCode, Input, ProverResource, PublicValues,
+    SymbolMap, loadable_segments, zkVMProver,
 };
 use ere_util_tokio::block_on;
-use ere_verifier_sp1::{SP1ProgramVk, SP1Proof, SP1Verifier};
+use ere_verifier_sp1::{SP1ProgramVk, SP1Proof, SP1Verifier, extract_exit_code};
 use sp1_core_executor::{MinimalExecutorEnum, Program};
 use sp1_sdk::{HashableKey, SP1Stdin};
 use tracing::info;
@@ -138,6 +138,17 @@ impl zkVMProver for SP1Prover {
     }
 
     fn prove(&self, input: &Input) -> Result<(PublicValues, SP1Proof, Duration), Error> {
+        let (exit_code, public_values, proof, proving_time) = self.prove_any_exit_code(input)?;
+        if exit_code != ExitCode(0) {
+            return Err(Error::ExecutionFailed(exit_code.0 as u32));
+        }
+        Ok((public_values, proof, proving_time))
+    }
+
+    fn prove_any_exit_code(
+        &self,
+        input: &Input,
+    ) -> Result<(ExitCode, PublicValues, SP1Proof, Duration), Error> {
         info!("Generating proof...");
 
         let stdin = input_to_stdin(input)?;
@@ -146,9 +157,10 @@ impl zkVMProver for SP1Prover {
         let proof = block_on(self.sdk.prove(stdin))?;
         let proving_time = start.elapsed();
 
+        let exit_code = extract_exit_code(&proof.proof)?;
         let public_values = proof.public_values.as_slice().into();
 
-        Ok((public_values, SP1Proof(proof), proving_time))
+        Ok((exit_code, public_values, SP1Proof(proof), proving_time))
     }
 }
 
@@ -181,7 +193,7 @@ pub(crate) mod tests {
 
     use ere_compiler_core::{Compiler, Elf};
     use ere_compiler_sp1::SP1RustRv64imaCustomized;
-    use ere_prover_core::{Input, ProverResource, RemoteProverConfig, zkVMProver};
+    use ere_prover_core::{ExitCode, Input, ProverResource, RemoteProverConfig, zkVMProver};
     use ere_util_test::{
         codec::BincodeLegacy,
         host::{
@@ -347,6 +359,12 @@ pub(crate) mod tests {
             assert!(zkvm.prove(&input).is_err());
         }
 
+        // Proof of non-zero exit code
+        let input = BasicProgram::<BincodeLegacy>::invalid_test_case().input();
+        let (exit_code, _, proof, _) = zkvm.prove_any_exit_code(&input).unwrap();
+        assert_eq!(exit_code, ExitCode(1));
+        assert_eq!(zkvm.verify_any_exit_code(&proof).unwrap().0, ExitCode(1));
+
         // Should be able to recover
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();
         run_zkvm_prove(&*zkvm, &test_case);
@@ -370,6 +388,12 @@ pub(crate) mod tests {
         ] {
             assert!(zkvm.prove(&input).is_err());
         }
+
+        // Proof of non-zero exit code
+        let input = BasicProgram::<BincodeLegacy>::invalid_test_case().input();
+        let (exit_code, _, proof, _) = zkvm.prove_any_exit_code(&input).unwrap();
+        assert_eq!(exit_code, ExitCode(1));
+        assert_eq!(zkvm.verify_any_exit_code(&proof).unwrap().0, ExitCode(1));
 
         // Should be able to recover
         let test_case = BasicProgram::<BincodeLegacy>::valid_test_case();

@@ -1,13 +1,15 @@
 use core::{ops::Deref, time::Duration};
 
-use ere_prover_core::{CostEstimation, CostProfile, Elf, Input, PublicValues, pprof};
+use ere_prover_core::{CostEstimation, CostProfile, Elf, ExitCode, Input, PublicValues, pprof};
 use ere_server_api::{
     ExecuteEstimatedCostRequest, ExecuteRequest, PreprocessRequest, ProfileRequest,
     ProgramVkRequest, ProveRequest, SetupRequest, VerifyRequest, ZkvmService,
     execute_estimated_cost_response::Result as ExecuteEstimatedCostResult,
     execute_response::Result as ExecuteResult, preprocess_response::Result as PreprocessResult,
     profile_response::Result as ProfileResult, program_vk_response::Result as ProgramVkResult,
+    prove_any_exit_code_response::Result as ProveAnyExitCodeResult,
     prove_response::Result as ProveResult, setup_response::Result as SetupResult,
+    verify_any_exit_code_response::Result as VerifyAnyExitCodeResult,
     verify_response::Result as VerifyResult,
 };
 #[cfg(feature = "otel")]
@@ -214,6 +216,28 @@ impl zkVMClient {
         }
     }
 
+    pub async fn prove_any_exit_code(
+        &self,
+        input: Input,
+    ) -> Result<(ExitCode, PublicValues, EncodedProof, Duration), Error> {
+        let request = Request::new(ProveRequest {
+            input_stdin: input.stdin,
+            input_proofs: input.proofs,
+        });
+
+        let response = self.client.prove_any_exit_code(request).await?;
+
+        match response.into_body().result.ok_or_else(result_none_err)? {
+            ProveAnyExitCodeResult::Ok(result) => Ok((
+                ExitCode(result.exit_code),
+                result.public_values.into(),
+                EncodedProof(result.proof),
+                Duration::from_nanos(result.duration_nanos),
+            )),
+            ProveAnyExitCodeResult::Err(err) => Err(Error::zkVM(err)),
+        }
+    }
+
     pub async fn verify(&self, proof: EncodedProof) -> Result<PublicValues, Error> {
         let request = Request::new(VerifyRequest { proof: proof.0 });
 
@@ -222,6 +246,22 @@ impl zkVMClient {
         match response.into_body().result.ok_or_else(result_none_err)? {
             VerifyResult::Ok(result) => Ok(result.public_values.into()),
             VerifyResult::Err(err) => Err(Error::zkVM(err)),
+        }
+    }
+
+    pub async fn verify_any_exit_code(
+        &self,
+        proof: EncodedProof,
+    ) -> Result<(ExitCode, PublicValues), Error> {
+        let request = Request::new(VerifyRequest { proof: proof.0 });
+
+        let response = self.client.verify_any_exit_code(request).await?;
+
+        match response.into_body().result.ok_or_else(result_none_err)? {
+            VerifyAnyExitCodeResult::Ok(result) => {
+                Ok((ExitCode(result.exit_code), result.public_values.into()))
+            }
+            VerifyAnyExitCodeResult::Err(err) => Err(Error::zkVM(err)),
         }
     }
 

@@ -34,5 +34,5 @@ pub enum Error {
 
     /// The proof's public values hold a non-zero exit code.
     #[error("Execution failed with exit code: {0}")]
-    ExecutionFailed(u32),
+    ExecutionFailed(i32),
 }

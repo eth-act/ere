@@ -191,6 +191,35 @@ pub struct ProveOk {
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ProveAnyExitCodeResponse {
+    #[prost(oneof = "prove_any_exit_code_response::Result", tags = "1, 2")]
+    pub result: ::core::option::Option<prove_any_exit_code_response::Result>,
+}
+/// Nested message and enum types in `ProveAnyExitCodeResponse`.
+pub mod prove_any_exit_code_response {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
+    pub enum Result {
+        #[prost(message, tag = "1")]
+        Ok(super::ProveAnyExitCodeOk),
+        #[prost(string, tag = "2")]
+        Err(::prost::alloc::string::String),
+    }
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ProveAnyExitCodeOk {
+    #[prost(int32, tag = "1")]
+    pub exit_code: i32,
+    #[prost(bytes = "vec", tag = "2")]
+    pub public_values: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes = "vec", tag = "3")]
+    pub proof: ::prost::alloc::vec::Vec<u8>,
+    #[prost(uint64, tag = "4")]
+    pub duration_nanos: u64,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct VerifyRequest {
     #[prost(bytes = "vec", tag = "1")]
     pub proof: ::prost::alloc::vec::Vec<u8>,
@@ -216,6 +245,31 @@ pub mod verify_response {
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct VerifyOk {
     #[prost(bytes = "vec", tag = "1")]
+    pub public_values: ::prost::alloc::vec::Vec<u8>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct VerifyAnyExitCodeResponse {
+    #[prost(oneof = "verify_any_exit_code_response::Result", tags = "1, 2")]
+    pub result: ::core::option::Option<verify_any_exit_code_response::Result>,
+}
+/// Nested message and enum types in `VerifyAnyExitCodeResponse`.
+pub mod verify_any_exit_code_response {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
+    pub enum Result {
+        #[prost(message, tag = "1")]
+        Ok(super::VerifyAnyExitCodeOk),
+        #[prost(string, tag = "2")]
+        Err(::prost::alloc::string::String),
+    }
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct VerifyAnyExitCodeOk {
+    #[prost(int32, tag = "1")]
+    pub exit_code: i32,
+    #[prost(bytes = "vec", tag = "2")]
     pub public_values: ::prost::alloc::vec::Vec<u8>,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -271,10 +325,18 @@ pub trait ZkvmService: Send + Sync {
         &self,
         req: twirp::Request<ProveRequest>,
     ) -> twirp::Result<twirp::Response<ProveResponse>>;
+    async fn prove_any_exit_code(
+        &self,
+        req: twirp::Request<ProveRequest>,
+    ) -> twirp::Result<twirp::Response<ProveAnyExitCodeResponse>>;
     async fn verify(
         &self,
         req: twirp::Request<VerifyRequest>,
     ) -> twirp::Result<twirp::Response<VerifyResponse>>;
+    async fn verify_any_exit_code(
+        &self,
+        req: twirp::Request<VerifyRequest>,
+    ) -> twirp::Result<twirp::Response<VerifyAnyExitCodeResponse>>;
     async fn program_vk(
         &self,
         req: twirp::Request<ProgramVkRequest>,
@@ -321,11 +383,23 @@ where
     ) -> twirp::Result<twirp::Response<ProveResponse>> {
         T::prove(&*self, req).await
     }
+    async fn prove_any_exit_code(
+        &self,
+        req: twirp::Request<ProveRequest>,
+    ) -> twirp::Result<twirp::Response<ProveAnyExitCodeResponse>> {
+        T::prove_any_exit_code(&*self, req).await
+    }
     async fn verify(
         &self,
         req: twirp::Request<VerifyRequest>,
     ) -> twirp::Result<twirp::Response<VerifyResponse>> {
         T::verify(&*self, req).await
+    }
+    async fn verify_any_exit_code(
+        &self,
+        req: twirp::Request<VerifyRequest>,
+    ) -> twirp::Result<twirp::Response<VerifyAnyExitCodeResponse>> {
+        T::verify_any_exit_code(&*self, req).await
     }
     async fn program_vk(
         &self,
@@ -376,9 +450,21 @@ where
             },
         )
         .route(
+            "/ProveAnyExitCode",
+            |api: T, req: twirp::Request<ProveRequest>| async move {
+                api.prove_any_exit_code(req).await
+            },
+        )
+        .route(
             "/Verify",
             |api: T, req: twirp::Request<VerifyRequest>| async move {
                 api.verify(req).await
+            },
+        )
+        .route(
+            "/VerifyAnyExitCode",
+            |api: T, req: twirp::Request<VerifyRequest>| async move {
+                api.verify_any_exit_code(req).await
             },
         )
         .route(
@@ -427,11 +513,23 @@ impl ZkvmService for twirp::client::Client {
     ) -> twirp::Result<twirp::Response<ProveResponse>> {
         self.request("api.ZkvmService/Prove", req).await
     }
+    async fn prove_any_exit_code(
+        &self,
+        req: twirp::Request<ProveRequest>,
+    ) -> twirp::Result<twirp::Response<ProveAnyExitCodeResponse>> {
+        self.request("api.ZkvmService/ProveAnyExitCode", req).await
+    }
     async fn verify(
         &self,
         req: twirp::Request<VerifyRequest>,
     ) -> twirp::Result<twirp::Response<VerifyResponse>> {
         self.request("api.ZkvmService/Verify", req).await
+    }
+    async fn verify_any_exit_code(
+        &self,
+        req: twirp::Request<VerifyRequest>,
+    ) -> twirp::Result<twirp::Response<VerifyAnyExitCodeResponse>> {
+        self.request("api.ZkvmService/VerifyAnyExitCode", req).await
     }
     async fn program_vk(
         &self,
@@ -515,11 +613,31 @@ pub mod handler {
                             .await?,
                     )
                 }
+                "ProveAnyExitCode" => {
+                    twirp::details::encode_response(
+                        self
+                            .inner
+                            .prove_any_exit_code(
+                                twirp::details::decode_request(req).await?,
+                            )
+                            .await?,
+                    )
+                }
                 "Verify" => {
                     twirp::details::encode_response(
                         self
                             .inner
                             .verify(twirp::details::decode_request(req).await?)
+                            .await?,
+                    )
+                }
+                "VerifyAnyExitCode" => {
+                    twirp::details::encode_response(
+                        self
+                            .inner
+                            .verify_any_exit_code(
+                                twirp::details::decode_request(req).await?,
+                            )
                             .await?,
                     )
                 }

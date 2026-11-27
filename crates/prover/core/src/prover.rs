@@ -2,7 +2,7 @@ use core::error::Error;
 use std::time::Duration;
 
 use crate::{
-    Elf, Input, PublicValues,
+    Elf, ExitCode, Input, PublicValues,
     cost::{CostEstimation, CostProfile},
     zkVMVerifier,
 };
@@ -49,13 +49,35 @@ pub trait zkVMProver: Sync {
     fn profile(&self, input: &Input) -> Result<(PublicValues, CostProfile), Self::Error>;
 
     /// Creates a proof of the program execution with given input.
+    ///
+    /// It returns an error for an execution that terminates with a non-zero exit code.
     fn prove(&self, input: &Input) -> Result<(PublicValues, Proof<Self>, Duration), Self::Error>;
+
+    /// Creates a proof of the program execution with given input, and returns the exit code of
+    /// the execution with it.
+    ///
+    /// A zkVM that can prove a non-zero exit code also proves an execution that terminates with a
+    /// non-zero exit code. Other zkVMs return an error for it, as [`Self::prove`] does.
+    fn prove_any_exit_code(
+        &self,
+        input: &Input,
+    ) -> Result<(ExitCode, PublicValues, Proof<Self>, Duration), Self::Error>;
 
     /// Verifies a proof of the current program of this zkVM prover instance, then
     /// returns the public values extracted from the proof.
     #[must_use = "Public values must be used"]
     fn verify(&self, proof: &Proof<Self>) -> Result<PublicValues, Self::Error> {
         Ok(self.verifier().verify(proof)?)
+    }
+
+    /// Verifies a proof of the current program of this zkVM prover instance, then returns the
+    /// exit code and the public values extracted from the proof.
+    #[must_use = "Exit code and public values must be used"]
+    fn verify_any_exit_code(
+        &self,
+        proof: &Proof<Self>,
+    ) -> Result<(ExitCode, PublicValues), Self::Error> {
+        Ok(self.verifier().verify_any_exit_code(proof)?)
     }
 
     /// Returns the verifying key for the specific program.

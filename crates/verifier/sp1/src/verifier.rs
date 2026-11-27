@@ -1,6 +1,6 @@
 use std::{borrow::Borrow, sync::LazyLock};
 
-use ere_verifier_core::{PublicValues, zkVMVerifier};
+use ere_verifier_core::{ExitCode, PublicValues, zkVMVerifier};
 use sp1_hypercube::PrimeField32;
 use sp1_recursion_executor::{RECURSIVE_PROOF_NUM_PV_ELTS, RecursionPublicValues};
 use sp1_verifier::{SP1ProofMode, compressed::SP1CompressedVerifier};
@@ -39,10 +39,15 @@ impl zkVMVerifier for SP1Verifier {
     }
 
     fn verify(&self, proof: &SP1Proof) -> Result<PublicValues, Error> {
-        let exit_code = extract_exit_code(&proof.0.proof)?;
-        if exit_code != 0 {
-            return Err(Error::ExecutionFailed(exit_code));
+        let (exit_code, public_values) = self.verify_any_exit_code(proof)?;
+        if exit_code != ExitCode(0) {
+            return Err(Error::ExecutionFailed(exit_code.0));
         }
+        Ok(public_values)
+    }
+
+    fn verify_any_exit_code(&self, proof: &SP1Proof) -> Result<(ExitCode, PublicValues), Error> {
+        let exit_code = extract_exit_code(&proof.0.proof)?;
 
         let Some(compressed_proof) = proof.0.proof.try_as_compressed_ref() else {
             return Err(Error::UnexpectedProofKind(proof.0.mode()));
@@ -60,7 +65,7 @@ impl zkVMVerifier for SP1Verifier {
             &self.program_vk.0,
         )?;
 
-        Ok(public_values.into())
+        Ok((exit_code, public_values.into()))
     }
 
     fn name(&self) -> &'static str {
@@ -72,8 +77,9 @@ impl zkVMVerifier for SP1Verifier {
     }
 }
 
-/// Exit code that a compressed proof commits to.
-pub fn extract_exit_code(proof: &sp1_verifier::SP1Proof) -> Result<u32, Error> {
+/// Exit code that a compressed proof commits to. A canonical KoalaBear element is less than 2^31,
+/// so it fits into an `i32`.
+pub fn extract_exit_code(proof: &sp1_verifier::SP1Proof) -> Result<ExitCode, Error> {
     let Some(proof) = proof.try_as_compressed_ref() else {
         return Err(Error::UnexpectedProofKind(SP1ProofMode::from(proof)));
     };
@@ -81,7 +87,7 @@ pub fn extract_exit_code(proof: &sp1_verifier::SP1Proof) -> Result<u32, Error> {
         .then(|| {
             let public_values: &RecursionPublicValues<_> =
                 proof.proof.public_values.as_slice().borrow();
-            public_values.exit_code.as_canonical_u32()
+            ExitCode(public_values.exit_code.as_canonical_u32() as i32)
         })
         .ok_or(Error::ExitCodeExtractionFailed)
 }
