@@ -1,4 +1,4 @@
-use ere_verifier_core::{PublicValues, zkVMVerifier};
+use ere_verifier_core::{ExitCode, PublicValues, zkVMVerifier};
 use zisk_verifier::{VADCOP_FINAL_COMPRESSED_VK_BLAKE3, verify_vadcop_final};
 
 use crate::{Error, ZiskProgramVk, ZiskProof};
@@ -44,6 +44,14 @@ impl zkVMVerifier for ZiskVerifier {
         }
 
         Ok(public_values)
+    }
+
+    fn verify_any_exit_code(
+        &self,
+        proof: &ZiskProof,
+    ) -> Result<(ExitCode, PublicValues), Self::Error> {
+        self.verify(proof)
+            .map(|public_values| (ExitCode(0), public_values))
     }
 
     fn name(&self) -> &'static str {

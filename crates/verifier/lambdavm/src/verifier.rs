@@ -1,4 +1,4 @@
-use ere_verifier_core::{PublicValues, zkVMVerifier};
+use ere_verifier_core::{ExitCode, PublicValues, zkVMVerifier};
 use lambda_vm_prover::{GoldilocksCubicProofOptions, verify_with_options};
 
 use crate::{Error, LambdaVMProgramVk, LambdaVMProof};
@@ -47,6 +47,14 @@ impl zkVMVerifier for LambdaVMVerifier {
         }
 
         Ok(proof.0.public_output.as_slice().into())
+    }
+
+    fn verify_any_exit_code(
+        &self,
+        proof: &LambdaVMProof,
+    ) -> Result<(ExitCode, PublicValues), Error> {
+        self.verify(proof)
+            .map(|public_values| (ExitCode(0), public_values))
     }
 
     fn name(&self) -> &'static str {

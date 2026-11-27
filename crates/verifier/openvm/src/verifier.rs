@@ -1,4 +1,4 @@
-use ere_verifier_core::{PublicValues, zkVMVerifier};
+use ere_verifier_core::{ExitCode, PublicValues, zkVMVerifier};
 use openvm_stark_sdk::{
     config::baby_bear_poseidon2::F, openvm_stark_backend::p3_field::PrimeField32,
 };
@@ -48,6 +48,11 @@ impl zkVMVerifier for OpenVMVerifier {
         verify_vm_stark_proof_decoded(&self.vk, &proof.0)?;
 
         extract_public_values(&proof.0.user_pvs_proof.public_values)
+    }
+
+    fn verify_any_exit_code(&self, proof: &OpenVMProof) -> Result<(ExitCode, PublicValues), Error> {
+        self.verify(proof)
+            .map(|public_values| (ExitCode(0), public_values))
     }
 
     fn name(&self) -> &'static str {

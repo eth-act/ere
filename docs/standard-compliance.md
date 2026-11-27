@@ -16,7 +16,7 @@ Ere adds no compliance wrapper for Pico.
 
 ## SP1
 
-- [`ere-verifier-sp1`](../crates/verifier/sp1) rejects a proof with a non-zero exit code, so that it is a Type 1 verifier as the [Execution Termination Semantics](https://github.com/eth-act/zkevm-standards/blob/main/standards/standard-termination-semantics/README.md) define.
+- [`ere-verifier-sp1`](../crates/verifier/sp1) rejects a proof with a non-zero exit code in `verify`, so that it is a Type 1 verifier as the [Execution Termination Semantics](https://github.com/eth-act/zkevm-standards/blob/main/standards/standard-termination-semantics/README.md) define. `verify_any_exit_code` returns the exit code of the proof, so that a caller can compare it with an expected exit code as a Type 2 verifier does. SP1 proves only the low 8 bits of the value that `main` returns, so a guest that returns -1 proves exit code 255.
 
 ## ZisK
 

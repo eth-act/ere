@@ -159,16 +159,16 @@ pico-sdk = { git = "https://github.com/brevis-network/pico", tag = "v3.1.5" }
 pico-verifier = { git = "https://github.com/brevis-network/pico", tag = "v3.1.5" }
 
 # SP1 dependencies
-sp1-core-executor = { git = "https://github.com/succinctlabs/sp1", tag = "v6.9.0" }
-sp1-cuda = { git = "https://github.com/succinctlabs/sp1", tag = "v6.9.0" }
-sp1-hypercube = { git = "https://github.com/succinctlabs/sp1", tag = "v6.9.0" }
-sp1-jit = { git = "https://github.com/succinctlabs/sp1", tag = "v6.9.0" }
-sp1-primitives = { git = "https://github.com/succinctlabs/sp1", tag = "v6.9.0" }
-sp1-recursion-executor = { git = "https://github.com/succinctlabs/sp1", tag = "v6.9.0" }
-sp1-sdk = { git = "https://github.com/succinctlabs/sp1", tag = "v6.9.0" }
-sp1-verifier = { git = "https://github.com/succinctlabs/sp1", tag = "v6.9.0" }
-sp1-zkvm = { git = "https://github.com/succinctlabs/sp1", tag = "v6.9.0", default-features = false }
-sp1-libzkevm = { git = "https://github.com/succinctlabs/sp1", tag = "v6.9.0", package = "libzkevm" }
+sp1-core-executor = { git = "https://github.com/succinctlabs/sp1", tag = "v6.10.0" }
+sp1-cuda = { git = "https://github.com/succinctlabs/sp1", tag = "v6.10.0" }
+sp1-hypercube = { git = "https://github.com/succinctlabs/sp1", tag = "v6.10.0" }
+sp1-jit = { git = "https://github.com/succinctlabs/sp1", tag = "v6.10.0" }
+sp1-primitives = { git = "https://github.com/succinctlabs/sp1", tag = "v6.10.0" }
+sp1-recursion-executor = { git = "https://github.com/succinctlabs/sp1", tag = "v6.10.0" }
+sp1-sdk = { git = "https://github.com/succinctlabs/sp1", tag = "v6.10.0" }
+sp1-verifier = { git = "https://github.com/succinctlabs/sp1", tag = "v6.10.0" }
+sp1-zkvm = { git = "https://github.com/succinctlabs/sp1", tag = "v6.10.0", default-features = false }
+sp1-libzkevm = { git = "https://github.com/succinctlabs/sp1", tag = "v6.10.0", package = "libzkevm" }
 
 # ZisK dependencies
 proofman-fields = "1.4.0-alpha"

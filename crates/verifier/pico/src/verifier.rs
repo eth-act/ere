@@ -1,7 +1,7 @@
 use core::fmt;
 use std::sync::Arc;
 
-use ere_verifier_core::{PublicValues, zkVMVerifier};
+use ere_verifier_core::{ExitCode, PublicValues, zkVMVerifier};
 use pico_mle_core::config::recursion_params_with_128_bits_security;
 use pico_verifier::{
     Kb, MleApexVerifier, shipped_compress_vk, shipped_vk_root,
@@ -86,6 +86,11 @@ impl zkVMVerifier for PicoVerifier {
         )
         .map_err(Error::Verify)?;
         Ok(proof.committed.as_slice().into())
+    }
+
+    fn verify_any_exit_code(&self, proof: &PicoProof) -> Result<(ExitCode, PublicValues), Error> {
+        self.verify(proof)
+            .map(|public_values| (ExitCode(0), public_values))
     }
 
     fn name(&self) -> &'static str {

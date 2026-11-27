@@ -4,7 +4,7 @@ use std::{
 };
 
 use ere_catalog::zkVMKind;
-use ere_verifier_core::{PublicValues, codec::Decode, zkVMVerifier};
+use ere_verifier_core::{ExitCode, PublicValues, codec::Decode, zkVMVerifier};
 
 use crate::error::Error;
 
@@ -79,35 +79,59 @@ impl Verifier {
     /// A proof that verifies only shows that the program ran. The caller compares the returned
     /// public values with the expected bytes and treats a difference as a rejected proof.
     pub fn verify(&self, encoded_proof: &[u8]) -> Result<PublicValues, Error> {
+        match self.verify_any_exit_code(encoded_proof)? {
+            (ExitCode(0), public_values) => Ok(public_values),
+            (ExitCode(exit_code), _) => Err(Error::verification(format!(
+                "execution failed with exit code {exit_code}"
+            ))),
+        }
+    }
+
+    /// Decodes and verifies `encoded_proof`, then returns the exit code and the public values of
+    /// the proof. See [`zkVMVerifier::verify_any_exit_code`].
+    pub fn verify_any_exit_code(
+        &self,
+        encoded_proof: &[u8],
+    ) -> Result<(ExitCode, PublicValues), Error> {
         catch_panic(|| self.verify_inner(encoded_proof))
     }
 
-    fn verify_inner(&self, encoded_proof: &[u8]) -> Result<PublicValues, Error> {
+    fn verify_inner(&self, encoded_proof: &[u8]) -> Result<(ExitCode, PublicValues), Error> {
         Ok(match self {
             Self::OpenVM(verifier) => {
                 let proof =
                     Decode::decode_from_slice(encoded_proof).map_err(Error::decode_proof)?;
-                verifier.verify(&proof).map_err(Error::verification)?
+                verifier
+                    .verify_any_exit_code(&proof)
+                    .map_err(Error::verification)?
             }
             Self::SP1(verifier) => {
                 let proof =
                     Decode::decode_from_slice(encoded_proof).map_err(Error::decode_proof)?;
-                verifier.verify(&proof).map_err(Error::verification)?
+                verifier
+                    .verify_any_exit_code(&proof)
+                    .map_err(Error::verification)?
             }
             Self::Zisk(verifier) => {
                 let proof =
                     Decode::decode_from_slice(encoded_proof).map_err(Error::decode_proof)?;
-                verifier.verify(&proof).map_err(Error::verification)?
+                verifier
+                    .verify_any_exit_code(&proof)
+                    .map_err(Error::verification)?
             }
             Self::LambdaVM(verifier) => {
                 let proof =
                     Decode::decode_from_slice(encoded_proof).map_err(Error::decode_proof)?;
-                verifier.verify(&proof).map_err(Error::verification)?
+                verifier
+                    .verify_any_exit_code(&proof)
+                    .map_err(Error::verification)?
             }
             Self::Pico(verifier) => {
                 let proof =
                     Decode::decode_from_slice(encoded_proof).map_err(Error::decode_proof)?;
-                verifier.verify(&proof).map_err(Error::verification)?
+                verifier
+                    .verify_any_exit_code(&proof)
+                    .map_err(Error::verification)?
             }
         })
     }

@@ -1,7 +1,7 @@
 use core::{future::Future, iter, pin::Pin, time::Duration};
 
 use ere_compiler_core::Elf;
-use ere_prover_core::{CostEstimation, CostProfile, Input, ProverResource, PublicValues};
+use ere_prover_core::{CostEstimation, CostProfile, ExitCode, Input, ProverResource, PublicValues};
 use ere_server_client::{EncodedProgramVk, EncodedProof, url::Url, zkVMClient};
 use ere_util_tokio::block_on;
 use tokio::{
@@ -271,8 +271,22 @@ impl DockerizedzkVM {
         block_on(self.prove_async(input.clone()))
     }
 
+    pub fn prove_any_exit_code(
+        &self,
+        input: &Input,
+    ) -> anyhow::Result<(ExitCode, PublicValues, EncodedProof, Duration)> {
+        block_on(self.prove_any_exit_code_async(input.clone()))
+    }
+
     pub fn verify(&self, proof: &EncodedProof) -> anyhow::Result<PublicValues> {
         block_on(self.verify_async(proof.clone()))
+    }
+
+    pub fn verify_any_exit_code(
+        &self,
+        proof: &EncodedProof,
+    ) -> anyhow::Result<(ExitCode, PublicValues)> {
+        block_on(self.verify_any_exit_code_async(proof.clone()))
     }
 
     /// A timeout (`health_timeout`), an RPC failure or a cancel removes the container.
@@ -384,11 +398,39 @@ impl DockerizedzkVM {
         .await
     }
 
+    pub async fn prove_any_exit_code_async(
+        &self,
+        input: Input,
+    ) -> anyhow::Result<(ExitCode, PublicValues, EncodedProof, Duration)> {
+        self.with_retry(
+            |client| {
+                let input = input.clone();
+                Box::pin(async move { client.prove_any_exit_code(input).await })
+            },
+            self.config.prove_timeout,
+        )
+        .await
+    }
+
     pub async fn verify_async(&self, proof: EncodedProof) -> anyhow::Result<PublicValues> {
         self.with_retry(
             |client| {
                 let proof = proof.clone();
                 Box::pin(async move { client.verify(proof).await })
+            },
+            self.config.verify_timeout,
+        )
+        .await
+    }
+
+    pub async fn verify_any_exit_code_async(
+        &self,
+        proof: EncodedProof,
+    ) -> anyhow::Result<(ExitCode, PublicValues)> {
+        self.with_retry(
+            |client| {
+                let proof = proof.clone();
+                Box::pin(async move { client.verify_any_exit_code(proof).await })
             },
             self.config.verify_timeout,
         )
@@ -509,7 +551,7 @@ mod tests {
     use std::process::{self, Command};
 
     use ere_compiler_core::Elf;
-    use ere_prover_core::{Input, ProverResource};
+    use ere_prover_core::{ExitCode, Input, ProverResource};
     use ere_util_test::{
         codec::BincodeLegacy,
         host::{TestCase, assert_profile},
@@ -707,12 +749,14 @@ mod tests {
 
             // Should be able to recover
             for test_case in $valid_test_cases {
-                let (prover_public_values, proof, _report) = zkvm
-                    .prove(&test_case.input())
-                    .expect("prove should not fail with valid input");
-                let verifier_public_values = zkvm
-                    .verify(&proof)
-                    .expect("verify should not fail with valid input");
+                let (prover_exit_code, prover_public_values, proof, _report) = zkvm
+                    .prove_any_exit_code(&test_case.input())
+                    .expect("prove_any_exit_code should not fail with valid input");
+                let (verifier_exit_code, verifier_public_values) = zkvm
+                    .verify_any_exit_code(&proof)
+                    .expect("verify_any_exit_code should not fail with valid input");
+                assert_eq!(prover_exit_code, ExitCode(0));
+                assert_eq!(verifier_exit_code, ExitCode(0));
                 assert_eq!(prover_public_values, verifier_public_values);
                 test_case.assert_output(&verifier_public_values);
             }

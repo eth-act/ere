@@ -1,5 +1,5 @@
 use bincode::error::DecodeError;
-use ere_verifier_core::{codec::Decode, zkVMVerifier};
+use ere_verifier_core::{ExitCode, codec::Decode, zkVMVerifier};
 use ere_verifier_sp1::{Error, SP1ProgramVk, SP1Proof, SP1Verifier};
 use sp1_hypercube::PrimeField32;
 use sp1_primitives::io::SP1PublicValues;
@@ -7,6 +7,7 @@ use sp1_primitives::io::SP1PublicValues;
 const PROGRAM_VK: &[u8] = include_bytes!("./fixtures/program_vk.bin");
 const PROOF: &[u8] = include_bytes!("./fixtures/proof.bin");
 const PUBLIC_VALUES: &[u8] = include_bytes!("./fixtures/public_values.bin");
+const PANIC_PROOF: &[u8] = include_bytes!("./fixtures/panic_proof.bin");
 
 #[test]
 fn test_verifier() {
@@ -15,6 +16,12 @@ fn test_verifier() {
     let proof = Decode::decode_from_slice(PROOF).unwrap();
     let public_values = verifier.verify(&proof).unwrap();
     assert_eq!(&*public_values, PUBLIC_VALUES);
+
+    // Proof of non-zero exit code.
+    let proof = SP1Proof::decode_from_slice(PANIC_PROOF).unwrap();
+    let (exit_code, public_values) = verifier.verify_any_exit_code(&proof).unwrap();
+    assert_eq!(exit_code, ExitCode(1));
+    assert!(public_values.is_empty());
 }
 
 #[test]
@@ -70,6 +77,11 @@ fn test_invalid_proof_decode() {
 fn test_invalid_proof_verify() {
     let program_vk = Decode::decode_from_slice(PROGRAM_VK).unwrap();
     let verifier = SP1Verifier::new(program_vk);
+
+    // Non-zero exit code
+    let proof = SP1Proof::decode_from_slice(PANIC_PROOF).unwrap();
+    let err = verifier.verify(&proof).unwrap_err();
+    assert!(matches!(err, Error::ExecutionFailed(1)));
 
     // Unexpected public values
     let proof = proof_with_unexpected_public_values();

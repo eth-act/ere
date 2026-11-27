@@ -2,7 +2,8 @@ use std::time::Duration;
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{
-    CommonError, CostEstimation, CostProfile, Input, ProverResource, PublicValues, zkVMProver,
+    CommonError, CostEstimation, CostProfile, ExitCode, Input, ProverResource, PublicValues,
+    zkVMProver,
 };
 use ere_verifier_zisk::{ZiskProof, ZiskVerifier};
 
@@ -80,6 +81,14 @@ impl zkVMProver for ZiskProver {
         let (public_values, proof, proving_time) = self.sdk.prove(input)?;
 
         Ok((public_values, proof, proving_time))
+    }
+
+    fn prove_any_exit_code(
+        &self,
+        input: &Input,
+    ) -> Result<(ExitCode, PublicValues, ZiskProof, Duration), Error> {
+        self.prove(input)
+            .map(|(public_values, proof, duration)| (ExitCode(0), public_values, proof, duration))
     }
 }
 

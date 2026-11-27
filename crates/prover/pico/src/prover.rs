@@ -12,7 +12,7 @@ use std::{
 
 use ere_compiler_core::Elf;
 use ere_prover_core::{
-    CommonError, CostEstimation, CostProfile, Input, ProverResource, ProverResourceKind,
+    CommonError, CostEstimation, CostProfile, ExitCode, Input, ProverResource, ProverResourceKind,
     PublicValues, zkVMProver,
 };
 use ere_verifier_pico::{PicoProgramVk, PicoProof, PicoVerifier};
@@ -148,6 +148,14 @@ impl zkVMProver for PicoProver {
         let proof = PicoProof::new(envelope, committed);
 
         Ok((public_values, proof, proving_time))
+    }
+
+    fn prove_any_exit_code(
+        &self,
+        input: &Input,
+    ) -> Result<(ExitCode, PublicValues, PicoProof, Duration), Error> {
+        self.prove(input)
+            .map(|(public_values, proof, duration)| (ExitCode(0), public_values, proof, duration))
     }
 }
 

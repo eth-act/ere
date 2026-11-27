@@ -9,7 +9,9 @@ service ZkvmService {
     rpc ExecuteEstimatedCost(ExecuteEstimatedCostRequest) returns (ExecuteEstimatedCostResponse) {}
     rpc Profile(ProfileRequest) returns (ProfileResponse) {}
     rpc Prove(ProveRequest) returns (ProveResponse) {}
+    rpc ProveAnyExitCode(ProveRequest) returns (ProveAnyExitCodeResponse) {}
     rpc Verify(VerifyRequest) returns (VerifyResponse) {}
+    rpc VerifyAnyExitCode(VerifyRequest) returns (VerifyAnyExitCodeResponse) {}
     rpc ProgramVk(ProgramVkRequest) returns (ProgramVkResponse) {}
 }
 
@@ -112,6 +114,20 @@ message ProveOk {
     uint64 duration_nanos = 3;
 }
 
+message ProveAnyExitCodeResponse {
+    oneof result {
+        ProveAnyExitCodeOk ok = 1;
+        string err = 2;
+    }
+}
+
+message ProveAnyExitCodeOk {
+    int32 exit_code = 1;
+    bytes public_values = 2;
+    bytes proof = 3;
+    uint64 duration_nanos = 4;
+}
+
 message VerifyRequest {
     bytes proof = 1;
 }
@@ -125,6 +141,18 @@ message VerifyResponse {
 
 message VerifyOk {
     bytes public_values = 1;
+}
+
+message VerifyAnyExitCodeResponse {
+    oneof result {
+        VerifyAnyExitCodeOk ok = 1;
+        string err = 2;
+    }
+}
+
+message VerifyAnyExitCodeOk {
+    int32 exit_code = 1;
+    bytes public_values = 2;
 }
 
 message ProgramVkRequest {}

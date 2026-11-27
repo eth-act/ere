@@ -1,7 +1,6 @@
 use std::{env, sync::Arc};
 
 use ere_prover_core::{CommonError, ProverResource, ProverResourceKind, RemoteProverConfig};
-use ere_verifier_sp1::extract_exit_code;
 #[cfg(feature = "cuda")]
 use sp1_cuda::CudaProvingKey;
 #[cfg(feature = "cuda")]
@@ -9,7 +8,7 @@ use sp1_sdk::CudaProver;
 use sp1_sdk::{
     CpuProver, Elf, NetworkProver, ProofFromNetwork, ProveRequest, Prover as SP1Prover,
     ProverClient, ProvingKey as SP1ProvingKeyTrait, SP1ProvingKey as CpuProvingKey, SP1Stdin,
-    SP1VerifyingKey, StatusCode,
+    SP1VerifyingKey,
 };
 
 use crate::error::Error;
@@ -102,11 +101,6 @@ impl SP1Sdk {
                 req.await.map_err(Error::prove)
             }
         }?;
-
-        let exit_code = extract_exit_code(&proof.proof)?;
-        if exit_code != StatusCode::SUCCESS.as_u32() {
-            return Err(Error::ExecutionFailed(exit_code));
-        }
 
         Ok(ProofFromNetwork {
             proof: proof.proof,

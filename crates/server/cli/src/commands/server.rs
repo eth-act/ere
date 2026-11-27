@@ -15,12 +15,15 @@ use ere_server_api::{
     ExecuteEstimatedCostOk, ExecuteEstimatedCostRequest, ExecuteEstimatedCostResponse, ExecuteOk,
     ExecuteRequest, ExecuteResponse, PreprocessOk, PreprocessRequest, PreprocessResponse,
     ProfileOk, ProfileRequest, ProfileResponse, ProgramVkOk, ProgramVkRequest, ProgramVkResponse,
-    ProveOk, ProveRequest, ProveResponse, SetupOk, SetupRequest, SetupResponse, VerifyOk,
+    ProveAnyExitCodeOk, ProveAnyExitCodeResponse, ProveOk, ProveRequest, ProveResponse, SetupOk,
+    SetupRequest, SetupResponse, VerifyAnyExitCodeOk, VerifyAnyExitCodeResponse, VerifyOk,
     VerifyRequest, VerifyResponse, ZkvmService,
     execute_estimated_cost_response::Result as ExecuteEstimatedCostResult,
     execute_response::Result as ExecuteResult, preprocess_response::Result as PreprocessResult,
     profile_response::Result as ProfileResult, program_vk_response::Result as ProgramVkResult,
+    prove_any_exit_code_response::Result as ProveAnyExitCodeResult,
     prove_response::Result as ProveResult, router, setup_response::Result as SetupResult,
+    verify_any_exit_code_response::Result as VerifyAnyExitCodeResult,
     verify_response::Result as VerifyResult,
 };
 use parking_lot::Mutex;
@@ -209,7 +212,13 @@ impl<T: 'static + zkVMProver + Send + Sync> zkVMServer<T> {
             .context("profile panicked")?
     }
 
-    async fn prove(&self, input: Input) -> anyhow::Result<(PublicValues, Proof<T>, Duration)> {
+    /// Runs `prove`, which is [`zkVMProver::prove`] or [`zkVMProver::prove_any_exit_code`], one
+    /// at a time.
+    async fn prove<R: 'static + Send>(
+        &self,
+        input: Input,
+        prove: fn(&T, &Input) -> Result<R, T::Error>,
+    ) -> anyhow::Result<R> {
         let permit = Arc::clone(&self.prove_sem)
             .acquire_owned()
             .await
@@ -220,15 +229,20 @@ impl<T: 'static + zkVMProver + Send + Sync> zkVMServer<T> {
         tokio::task::spawn_blocking(move || {
             let _permit = permit;
             let _in_flight = ProveInFlight::new(prove_state);
-            Ok(zkvm.prove(&input)?)
+            Ok(prove(&zkvm, &input)?)
         })
         .await
         .context("prove panicked")?
     }
 
-    async fn verify(&self, proof: Proof<T>) -> anyhow::Result<PublicValues> {
+    /// Runs `verify`, which is [`zkVMProver::verify`] or [`zkVMProver::verify_any_exit_code`].
+    async fn verify<R: 'static + Send>(
+        &self,
+        proof: Proof<T>,
+        verify: fn(&T, &Proof<T>) -> Result<R, T::Error>,
+    ) -> anyhow::Result<R> {
         let zkvm = Arc::clone(&self.zkvm).read_owned().await;
-        tokio::task::spawn_blocking(move || Ok(zkvm.verify(&proof)?))
+        tokio::task::spawn_blocking(move || Ok(verify(&zkvm, &proof)?))
             .await
             .context("verify panicked")?
     }
@@ -370,7 +384,7 @@ impl<T: 'static + zkVMProver + Send + Sync> ZkvmService for zkVMServer<T> {
         let input = Input { stdin, proofs };
 
         let start = Instant::now();
-        let result = self.prove(input).await;
+        let result = self.prove(input, T::prove).await;
         metrics::record_prove(&result, start.elapsed());
 
         let result = match result {
@@ -393,6 +407,42 @@ impl<T: 'static + zkVMProver + Send + Sync> ZkvmService for zkVMServer<T> {
         }))
     }
 
+    async fn prove_any_exit_code(
+        &self,
+        request: Request<ProveRequest>,
+    ) -> twirp::Result<Response<ProveAnyExitCodeResponse>> {
+        let ProveRequest {
+            input_stdin: stdin,
+            input_proofs: proofs,
+        } = request.into_body();
+
+        let input = Input { stdin, proofs };
+
+        let start = Instant::now();
+        let result = self.prove(input, T::prove_any_exit_code).await;
+        metrics::record_prove(&result, start.elapsed());
+
+        let result = match result {
+            Ok((exit_code, public_values, proof, duration)) => {
+                let proof = proof
+                    .encode_to_vec()
+                    .map_err(|err| internal(format!("failed to encode proof: {err:?}")))?;
+                metrics::record_prove_proof_bytes(proof.len());
+                ProveAnyExitCodeResult::Ok(ProveAnyExitCodeOk {
+                    exit_code: exit_code.0,
+                    public_values: public_values.into(),
+                    proof,
+                    duration_nanos: duration.as_nanos() as u64,
+                })
+            }
+            Err(err) => ProveAnyExitCodeResult::Err(err.to_string()),
+        };
+
+        Ok(Response::new(ProveAnyExitCodeResponse {
+            result: Some(result),
+        }))
+    }
+
     async fn verify(
         &self,
         request: Request<VerifyRequest>,
@@ -403,7 +453,7 @@ impl<T: 'static + zkVMProver + Send + Sync> ZkvmService for zkVMServer<T> {
             .map_err(|err| invalid_argument(format!("failed to decode proof: {err:?}")))?;
 
         let start = Instant::now();
-        let result = self.verify(proof).await;
+        let result = self.verify(proof, T::verify).await;
         metrics::record_verify(&result, start.elapsed());
 
         let result = match result {
@@ -414,6 +464,32 @@ impl<T: 'static + zkVMProver + Send + Sync> ZkvmService for zkVMServer<T> {
         };
 
         Ok(Response::new(VerifyResponse {
+            result: Some(result),
+        }))
+    }
+
+    async fn verify_any_exit_code(
+        &self,
+        request: Request<VerifyRequest>,
+    ) -> twirp::Result<Response<VerifyAnyExitCodeResponse>> {
+        let request = request.into_body();
+
+        let proof = Proof::<T>::decode_from_slice(&request.proof)
+            .map_err(|err| invalid_argument(format!("failed to decode proof: {err:?}")))?;
+
+        let start = Instant::now();
+        let result = self.verify(proof, T::verify_any_exit_code).await;
+        metrics::record_verify(&result, start.elapsed());
+
+        let result = match result {
+            Ok((exit_code, public_values)) => VerifyAnyExitCodeResult::Ok(VerifyAnyExitCodeOk {
+                exit_code: exit_code.0,
+                public_values: public_values.into(),
+            }),
+            Err(err) => VerifyAnyExitCodeResult::Err(err.to_string()),
+        };
+
+        Ok(Response::new(VerifyAnyExitCodeResponse {
             result: Some(result),
         }))
     }
