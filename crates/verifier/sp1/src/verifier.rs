@@ -9,7 +9,7 @@ use crate::{Error, SP1ProgramVk, SP1Proof};
 
 include!(concat!(env!("OUT_DIR"), "/name_and_sdk_version.rs"));
 
-/// Circuit version that an accepted proof carries in `sp1_version`, from <https://github.com/succinctlabs/sp1/blob/v6.9.0/crates/prover/src/lib.rs#L19>.
+/// Circuit version that an accepted proof carries in `sp1_version`, from <https://github.com/succinctlabs/sp1/blob/v6.10.0/crates/prover/src/lib.rs#L19>.
 pub const SP1_CIRCUIT_VERSION: &str = "v6.1.0";
 
 static COMPRESSED_VERIFIER: LazyLock<SP1CompressedVerifier> =
