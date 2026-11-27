@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.21.0](https://github.com/eth-act/ere/compare/v0.20.4...v0.21.0) (2026-11-27)
+
+
+### Features
+
+* add verify_any_exit_code and update sp1 to v6.10.0 ([#490](https://github.com/eth-act/ere/issues/490)) ([27f9513](https://github.com/eth-act/ere/commit/27f9513141a3902c26273f0d39795444ba67bfd0))
+* openvm smaller program vk ([#487](https://github.com/eth-act/ere/issues/487)) ([66e0d1e](https://github.com/eth-act/ere/commit/66e0d1e923f56ef72bea3508490b610bf8fbb63b))
+* pico smaller program vk ([#489](https://github.com/eth-act/ere/issues/489)) ([f106993](https://github.com/eth-act/ere/commit/f106993f853b26dcd17516ad31372bad7b05ef89))
+
 ## [0.20.4](https://github.com/eth-act/ere/compare/v0.20.3...v0.20.4) (2026-11-24)
 
 
